@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-parent</artifactId>
+		<version>1.26-SNAPSHOT</version>
+	</parent>
+	<artifactId>dept44-build-tools</artifactId>
+
+	<properties>
+		<enforcer-api.version>3.1.0</enforcer-api.version>
+		<maven-api.version>3.8.7</maven-api.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.maven.enforcer</groupId>
+			<artifactId>enforcer-api</artifactId>
+			<version>${enforcer-api.version}</version>
+		</dependency>
+
+		<!-- Maven API -->
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>${maven-api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+			<version>${maven-api.version}</version>
+		</dependency>
+
+		<!-- Jackson -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>${argLine}</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>check-coverage-metrics</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<!-- Tell jacoco which file to analyze -->
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.line.level}</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.branch.level}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

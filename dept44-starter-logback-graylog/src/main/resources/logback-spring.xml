@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true" scan="false" scanPeriod="60 seconds">
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property name="CONSOLE_LOG_PATTERN" value="%date{ISO8601} [%t] %12X{RequestID} %5p %-40.40logger{39} %m%n%xEx" />
+
+    <springProperty scope="context" name="applicationName" source="spring.application.name" defaultValue="name-not-set"/>
+    <springProperty scope="context" name="maxChunkSize" source="dept44.logback.graylog.maxchunksize" defaultValue="508"/>
+
+    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+        <then>
+            <appender name="GELF" class="de.siegmar.logbackgelf.GelfUdpAppender">
+                <graylogHost>${GRAYLOG_HOST}</graylogHost>  <!-- Defined as environment variable -->
+                <graylogPort>${GRAYLOG_PORT}</graylogPort>  <!-- Defined as environment variable -->
+                <maxChunkSize>${maxChunkSize}</maxChunkSize>
+                <useCompression>true</useCompression>
+                <encoder class="de.siegmar.logbackgelf.GelfEncoder">
+                    <originHost>${hostname}</originHost>
+                    <includeMarker>true</includeMarker>
+                    <includeMdcData>true</includeMdcData>
+                    <includeCallerData>true</includeCallerData>
+                    <includeRootCauseData>true</includeRootCauseData>
+                    <includeLevelName>true</includeLevelName>
+                    <shortPatternLayout class="ch.qos.logback.classic.PatternLayout">
+                        <!-- Only display the first 100 chars in the short message -->
+                        <pattern>%.-100m%nopex</pattern>
+                    </shortPatternLayout>
+                    <fullPatternLayout class="ch.qos.logback.classic.PatternLayout">
+                        <pattern>%m%n</pattern>
+                    </fullPatternLayout>
+                    <staticField>application_name:${applicationName}</staticField>
+                    <staticField>spring_profile:${SPRING_PROFILES_ACTIVE}</staticField> <!-- Defined as environment variable -->
+                </encoder>
+            </appender>
+        </then>
+    </if>
+
+    <!-- Enables console logging -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>TRACE</level>
+        </filter>
+    </appender>
+
+    <logger name="se.sundsvall" additivity="false" level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+            <then>
+                <appender-ref ref="GELF"/>
+            </then>
+        </if>
+    </logger>
+
+    <logger name="se.sundsvall.dept44.payload" additivity="false" level="TRACE">
+        <appender-ref ref="CONSOLE" />
+        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+            <then>
+                <appender-ref ref="GELF"/>
+            </then>
+        </if>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+            <then>
+                <appender-ref ref="GELF"/>
+            </then>
+        </if>
+    </root>
+
+</configuration>

@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-parent</artifactId>
+		<version>1.26-SNAPSHOT</version>
+	</parent>
+	<artifactId>dept44-service-parent</artifactId>
+	<packaging>pom</packaging>
+
+	<properties>
+		<!-- Don't make services generate source and JavaDoc JAR:s, unless overridden -->
+		<maven.source.skip>true</maven.source.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+
+		<!-- The Nexus/Docker repository -->
+		<docker.repository>evil.sundsvall.se</docker.repository>
+
+		<!-- Default Jenkins pipeline properties -->
+		<exposed.app.port>8080</exposed.app.port>
+	</properties>
+
+	<dependencies>
+		<!-- Framework -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter</artifactId>
+		</dependency>
+		<!-- Automatically adds the graylog/logback dependency, disable via properties. -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-logback-graylog</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>${basedir}/src/test/resources</directory>
+				<filtering>true</filtering>
+			</testResource>
+		</testResources>
+
+		<pluginManagement>
+			<plugins />
+		</pluginManagement>
+
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
+				<configuration>
+					<addResources>true</addResources>
+					<layers>
+						<enabled>true</enabled>
+					</layers>
+					<!-- Name the docker image when using build-image-->
+					<image>
+						<name>${docker.repository}/${docker.image.name}</name>
+						<tags>${docker.repository}/${docker.image.name}:latest</tags>
+					</image>
+					<profiles>
+						<profile>${spring.profiles.active}</profile>
+					</profiles>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<!-- Without this the manifest-file will be missing Main-Class -->
+							<goal>repackage</goal>
+							<goal>build-info</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<compilerArgs>
+						<arg>-parameters</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${maven-resources-plugin.version}</version>
+				<configuration>
+					<nonFilteredFileExtensions>
+						<!-- Ignore filtering of keystores and certificates -->
+						<nonFilteredFileExtension>cer</nonFilteredFileExtension>
+						<nonFilteredFileExtension>cert</nonFilteredFileExtension>
+						<nonFilteredFileExtension>crt</nonFilteredFileExtension>
+						<nonFilteredFileExtension>jks</nonFilteredFileExtension>
+						<nonFilteredFileExtension>p12</nonFilteredFileExtension>
+						<nonFilteredFileExtension>pem</nonFilteredFileExtension>
+						<nonFilteredFileExtension>pfx</nonFilteredFileExtension>
+					</nonFilteredFileExtensions>
+					<encoding>${project.encoding}</encoding>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>integration-test</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>integration-test</goal>
+						</goals>
+						<configuration>
+							<reuseForks>true</reuseForks>
+							<argLine>-Dfile.encoding=${project.encoding} ${failsafeArgLine}</argLine>
+							<includes>
+								<include>**/IT*.java</include>
+								<include>**/*IT.java</include>
+								<include>**/*ITCase.java</include>
+							</includes>
+							<classesDirectory>${project.build.outputDirectory}</classesDirectory>
+							<additionalClasspathElements>
+								<additionalClasspathElement>${project.basedir}/target/classes</additionalClasspathElement>
+							</additionalClasspathElements>
+						</configuration>
+					</execution>
+					<execution>
+						<id>verify</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<argLine>-Dfile.encoding=${project.encoding} -Xmx256m ${surefireArgLine}</argLine>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>${build-helper-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>add-test-sources</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${project.basedir}/src/integration-test/java</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-test-resources</id>
+						<phase>generate-test-sources</phase>
+						<goals>
+							<goal>add-test-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/src/integration-test/resources
+									</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-maven-plugin.version}</version>
+				<executions>
+					<!-- Tell jacoco where to generate the unit applyRulesToGoodiesList file -->
+					<execution>
+						<id>pre-unit-test</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+						<configuration>
+							<propertyName>surefireArgLine</propertyName>
+							<destFile>${project.build.directory}/jacoco-ut.exec</destFile>
+						</configuration>
+					</execution>
+					<!-- Tell jacoco where to find the unit applyRulesToGoodiesList file and where to generate the report -->
+					<execution>
+						<id>post-unit-test</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-ut.exec</dataFile>
+							<outputDirectory>${project.build.directory}/jacoco-ut-report/</outputDirectory>
+						</configuration>
+					</execution>
+					<!-- Tell jacoco where to generate the integration applyRulesToGoodiesList file -->
+					<execution>
+						<id>pre-integration-test</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>prepare-agent-integration</goal>
+						</goals>
+						<configuration>
+							<destFile>${project.build.directory}/jacoco-it.exec</destFile>
+							<propertyName>failsafeArgLine</propertyName>
+						</configuration>
+					</execution>
+					<!-- Tell jacoco where to find the integration applyRulesToGoodiesList file and where to generate the report -->
+					<execution>
+						<id>post-integration-test</id>
+						<!-- Cannot bind it to a phase before this since the tests haven't been collected yet. -->
+						<phase>verify</phase>
+						<goals>
+							<goal>report-integration</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
+							<outputDirectory>${project.build.directory}/jacoco-it-report/</outputDirectory>
+						</configuration>
+					</execution>
+					<!--Combine UT and IT report into MERGE report-->
+					<execution>
+						<id>merge</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>merge</goal>
+						</goals>
+						<configuration>
+							<fileSets>
+								<fileSet>
+									<directory>${project.build.directory}</directory>
+									<includes>
+										<include>*.exec</include>
+									</includes>
+								</fileSet>
+							</fileSets>
+							<destFile>${project.build.directory}/jacoco-merge.exec</destFile>
+						</configuration>
+					</execution>
+					<!-- Tell jacoco where to find the merge applyRulesToGoodiesList file and where to generate the report -->
+					<execution>
+						<id>merge-report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report-integration</goal>
+						</goals>
+						<configuration>
+							<dataFile>${project.build.directory}/jacoco-merge.exec</dataFile>
+							<outputDirectory>${project.build.directory}/jacoco-merge-report/</outputDirectory>
+						</configuration>
+					</execution>
+					<!-- Merge and generate Jacoco report -->
+					<execution>
+						<id>check-coverage-metrics</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<!-- Tell jacoco which file to analyze -->
+							<dataFile>${project.build.directory}/jacoco-merge.exec</dataFile>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<!-- We want line and branch coverage of 85%. -->
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.line.level}</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.branch.level}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.1.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>se.sundsvall.dept44</groupId>
+						<artifactId>dept44-build-tools</artifactId>
+						<version>1.26-SNAPSHOT</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>enforce-build-rules</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<dept44RequiredBuildProperties implementation="se.sundsvall.dept44.maven.enforcer.rule.Dept44RequiredPropertiesRule">
+									<requireDockerImageName>false</requireDockerImageName>
+								</dept44RequiredBuildProperties>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>io.github.git-commit-id</groupId>
+				<artifactId>git-commit-id-maven-plugin</artifactId>
+				<version>${git-commit-id-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>get-the-git-infos</id>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<generateGitPropertiesFile>true</generateGitPropertiesFile>
+					<generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+					<includeOnlyProperties>
+						<includeOnlyProperty>^git.commit.id.full$</includeOnlyProperty>
+						<includeOnlyProperty>^git.commit.time$</includeOnlyProperty>
+					</includeOnlyProperties>
+					<commitIdGenerationMode>full</commitIdGenerationMode>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+				<property>
+					<name>!${buildnumber}</name>
+				</property>
+			</activation>
+			<properties>
+				<buildnumber>local</buildnumber>
+				<spring.profiles.active>default</spring.profiles.active>
+
+				<!-- Download sources and JavaDoc by default -->
+				<downloadSources>true</downloadSources>
+				<downloadJavadocs>true</downloadJavadocs>
+			</properties>
+		</profile>
+	</profiles>
+
+</project>
+

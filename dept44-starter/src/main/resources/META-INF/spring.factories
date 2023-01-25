@@ -1,0 +1,3 @@
+org.springframework.cloud.bootstrap.BootstrapConfiguration=\
+se.sundsvall.dept44.configuration.TruststoreConfiguration,\
+se.sundsvall.dept44.configuration.ConfigClientBootstrapConfiguration

@@ -32,7 +32,6 @@
 		<module>dept44-starter-authorization</module>
 		<module>dept44-starter-feign</module>
 		<module>dept44-starter-logback-graylog</module>
-		<module>dept44-starter-resttemplate</module>
 		<module>dept44-starter-test</module>
 		<module>dept44-starter-webclient</module>
 		<module>dept44-starter-webservicetemplate</module>

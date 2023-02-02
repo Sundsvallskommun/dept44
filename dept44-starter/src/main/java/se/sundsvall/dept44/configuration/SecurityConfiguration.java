@@ -19,8 +19,6 @@ public class SecurityConfiguration {
                 .requestMatchers(EndpointRequest.toAnyEndpoint())
                 .permitAll()
             .and()
-            .csrf()
-                .disable()
                 .build();
     }
 

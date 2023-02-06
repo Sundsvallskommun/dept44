@@ -57,8 +57,8 @@ public class GenericGrantedAuthority implements GrantedAuthority {
 		hasText(jsonPath, REQUESTED_ACCESS_REQUIRED);
 		isValid(jsonPath);
 
-		JSONArray matches = isNull(accesses) ? null : accesses.read(jsonPath);
-		return hasAuthority(role) && nonNull(matches) && !matches.isEmpty();
+		JSONArray matches = isNull(accesses) ? new JSONArray() : accesses.read(jsonPath);
+		return hasAuthority(role) && !matches.isEmpty();
 	}
 
 	private static void isValid(String accessPath) {

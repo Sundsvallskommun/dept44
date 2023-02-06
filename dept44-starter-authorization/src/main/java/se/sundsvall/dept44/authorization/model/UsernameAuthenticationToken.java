@@ -29,8 +29,6 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * <code>UsernameAuthenticationToken</code>, as the {@link #isAuthenticated()}
 	 * will return <code>false</code>.
 	 *
-	 * @param principal
-	 * @param credentials
 	 */
 	public UsernameAuthenticationToken(Object principal, Object credentials) {
 		super(null);
@@ -44,10 +42,7 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * <code>AuthenticationProvider</code> implementations that are satisfied with
 	 * producing a trusted (i.e. {@link #isAuthenticated()} = <code>true</code>)
 	 * authentication token.
-	 * 
-	 * @param principal
-	 * @param credentials
-	 * @param authorities
+	 *
 	 */
 	public UsernameAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
 		super(authorities);
@@ -59,9 +54,7 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	/**
 	 * This factory method can be safely used by any code that wishes to create a
 	 * unauthenticated <code>UsernameAuthenticationToken</code>.
-	 * 
-	 * @param principal
-	 * @param credentials
+	 *
 	 * @return UsernameAuthenticationToken with false isAuthenticated() result
 	 */
 	public static UsernameAuthenticationToken unauthenticated(Object principal, Object credentials) {
@@ -71,9 +64,7 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	/**
 	 * This factory method can be safely used by any code that wishes to create a
 	 * authenticated <code>UsernameAuthenticationToken</code>.
-	 * 
-	 * @param principal
-	 * @param authorities
+	 *
 	 * @return UsernameAuthenticationToken with true isAuthenticated() result
 	 */
 	public static UsernameAuthenticationToken authenticated(Object principal, Collection<? extends GrantedAuthority> authorities) {

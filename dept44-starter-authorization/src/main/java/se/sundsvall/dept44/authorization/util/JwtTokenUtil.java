@@ -5,6 +5,7 @@ import static java.util.Collections.emptyMap;
 import static org.springframework.util.Assert.hasText;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class JwtTokenUtil implements Serializable {
 
 	public JwtTokenUtil(String secret) {
 		hasText(secret, "String containing secret must be present");
-		this.secret = secret.getBytes();
+		this.secret = secret.getBytes(Charset.defaultCharset());
 	}
 
 	/**
@@ -48,7 +49,7 @@ public class JwtTokenUtil implements Serializable {
 	 */
 	public Collection<GenericGrantedAuthority> getRolesFromToken(String token) {
 		Map<?, ?> roles = getAllClaimsFromToken(token).get("roles", Map.class);
-		return Optional.of(roles).orElse(emptyMap()).entrySet().stream()
+		return Optional.ofNullable(roles).orElse(emptyMap()).entrySet().stream()
 			.map(entry -> GenericGrantedAuthority.create(valueOf(entry.getKey()), Objects.toString(entry.getValue(), null)))
 			.toList();
 	}

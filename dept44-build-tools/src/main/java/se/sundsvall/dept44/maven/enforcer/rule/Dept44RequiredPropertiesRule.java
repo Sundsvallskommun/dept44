@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
@@ -24,6 +25,7 @@ import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluatio
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
 
 public class Dept44RequiredPropertiesRule implements EnforcerRule {
 
@@ -79,6 +81,7 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 		return errors;
 	}
 
+	@SuppressFBWarnings("PATH_TRAVERSAL_IN")
 	private List<String> ensureOpenApiPropertiesAreSet(final String resourcesDir) throws EnforcerRuleException {
 		var openApiEnabled = true;
 		var openApiNamePropertySet = false;

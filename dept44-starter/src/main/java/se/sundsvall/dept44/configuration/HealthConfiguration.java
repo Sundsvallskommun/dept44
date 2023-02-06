@@ -45,9 +45,7 @@ public class HealthConfiguration {
 
 	/**
 	 * Returns true if any of the sent in statuses matches any of the statuses in the match-set.
-	 * 
-	 * @param statuses
-	 * @param matchSet
+	 *
 	 * @return true if match, false otherwise.
 	 */
 	private boolean matches(Set<Status> statuses, Set<Status> matchSet) {

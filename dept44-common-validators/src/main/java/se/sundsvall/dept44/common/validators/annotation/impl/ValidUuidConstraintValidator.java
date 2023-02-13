@@ -12,12 +12,15 @@ import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
+/**
+ * Defines the logic to validate that a string is a valid UUID.
+ */
 public class ValidUuidConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidUuid, String> {
 
 	private boolean nullable;
 
 	@Override
-	public void initialize(ValidUuid constraintAnnotation) {
+	public void initialize(final ValidUuid constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 
@@ -42,10 +45,10 @@ public class ValidUuidConstraintValidator extends AbstractValidator implements C
 			.orElseThrow(createException(ValidUuid.class.getName()));
 	}
 
-	private boolean isValidUUID(String value) {
+	private boolean isValidUUID(final String value) {
 		try {
 			UUID.fromString(String.valueOf(value));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 

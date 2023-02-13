@@ -12,13 +12,16 @@ import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidMobileNumber;
 
+/**
+ * Defines the logic to validate that a string is a valid mobile number.
+ */
 public class ValidMobileNumberConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidMobileNumber, String> {
 
 	private static final String REGEX_PATTERN = "^07[02369]\\d{7}$";
 	private boolean nullable;
 
 	@Override
-	public void initialize(ValidMobileNumber constraintAnnotation) {
+	public void initialize(final ValidMobileNumber constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 

@@ -12,13 +12,16 @@ import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidOrganizationNumber;
 
+/**
+ * Defines the logic to validate that a string is a valid organization number.
+ */
 public class ValidOrganizationNumberConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidOrganizationNumber, String> {
 
 	private static final String REGEX_PATTERN = "^([1235789][\\d][2-9]\\d{7})$";
 	private boolean nullable;
 
 	@Override
-	public void initialize(ValidOrganizationNumber constraintAnnotation) {
+	public void initialize(final ValidOrganizationNumber constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 

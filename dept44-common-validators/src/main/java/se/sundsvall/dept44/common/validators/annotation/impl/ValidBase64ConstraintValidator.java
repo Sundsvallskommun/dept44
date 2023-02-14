@@ -12,6 +12,9 @@ import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 
+/**
+ * Defines the logic to validate that a string is a valid base64-string.
+ */
 public class ValidBase64ConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidBase64, String> {
 
 	private static final Base64.Decoder BASE64_DECODER = Base64.getDecoder();
@@ -47,7 +50,7 @@ public class ValidBase64ConstraintValidator extends AbstractValidator implements
 	private boolean isValidBase64(final String value) {
 		try {
 			BASE64_DECODER.decode(value);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 

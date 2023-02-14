@@ -11,14 +11,17 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
+import se.sundsvall.dept44.util.MunicipalityUtils;
 
+/**
+ * Defines the logic to validate that a string is a valid municipality ID.
+ */
 public class ValidMunicipalityIdConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidMunicipalityId, String> {
 
-	private static final String REGEX = "^\\d{4}$";
 	private boolean nullable;
 
 	@Override
-	public void initialize(ValidMunicipalityId constraintAnnotation) {
+	public void initialize(final ValidMunicipalityId constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 
@@ -28,7 +31,7 @@ public class ValidMunicipalityIdConstraintValidator extends AbstractValidator im
 			return true;
 		}
 
-		return nonNull(value) && value.matches(REGEX);
+		return nonNull(value) && MunicipalityUtils.existsById(value);
 	}
 
 	@Override

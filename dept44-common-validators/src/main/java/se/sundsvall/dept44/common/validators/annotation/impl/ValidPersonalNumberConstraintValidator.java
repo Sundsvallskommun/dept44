@@ -12,13 +12,16 @@ import javax.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidPersonalNumber;
 
+/**
+ * Defines the logic to validate that a string is a valid personal number.
+ */
 public class ValidPersonalNumberConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidPersonalNumber, String> {
 
 	private static final String REGEX_PATTERN = "^(19|20)\\d{10}$";
 	private boolean nullable;
 
 	@Override
-	public void initialize(ValidPersonalNumber constraintAnnotation) {
+	public void initialize(final ValidPersonalNumber constraintAnnotation) {
 		this.nullable = constraintAnnotation.nullable();
 	}
 

@@ -30,6 +30,9 @@ import feign.codec.ErrorDecoder;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 
+/**
+ * The base error decoder.
+ */
 public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractErrorDecoder.class);
@@ -128,6 +131,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 *
 	 * @param response the response that caused the error.
 	 * @return a String that represents the error message returned in the response.
+	 * @throws Exception if something goes wrong.
 	 */
 	public abstract String extractErrorMessage(Response response) throws Exception;
 

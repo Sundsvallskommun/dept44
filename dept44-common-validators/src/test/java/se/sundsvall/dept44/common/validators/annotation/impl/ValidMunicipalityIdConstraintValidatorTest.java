@@ -28,8 +28,8 @@ class ValidMunicipalityIdConstraintValidatorTest {
 		// Mock
 		validator.initialize(annotationMock);
 
-		assertThat(validator.isValid("1234")).isTrue();
-		assertThat(validator.isValid("1234", null)).isTrue();
+		assertThat(validator.isValid("2281")).isTrue();
+		assertThat(validator.isValid("2281", null)).isTrue();
 
 		verify(annotationMock).nullable();
 	}
@@ -74,7 +74,7 @@ class ValidMunicipalityIdConstraintValidatorTest {
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must match the regular expression ^\\d{4}$");
+		assertThat(validator.getMessage()).isEqualTo("not a valid municipality ID");
 
 		verifyNoInteractions(annotationMock);
 	}

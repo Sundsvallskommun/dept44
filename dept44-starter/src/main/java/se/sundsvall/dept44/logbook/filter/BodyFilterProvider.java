@@ -46,12 +46,11 @@ public class BodyFilterProvider {
 	}
 	
 	public static List<BodyFilter> buildXPathFilters(Map<String, String> xPathFilters) {
-		DocumentBuilderFactory builderFactory = createDocumentBuilderFactory();
 		TransformerFactory transformerFactory = createTransformerFactory();
 
 		return xPathFilters.entrySet()
 			.stream()
-			.map(filter -> xPath(createDocumentBuilder(builderFactory), filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))
+			.map(filter -> xPath(filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))
 			.toList();
 	}
 
@@ -93,7 +92,7 @@ public class BodyFilterProvider {
 		}
 	}
 
-	static BodyFilter xPath(DocumentBuilder builder, String xPath, String replacement, Transformer transformer) {
+	static BodyFilter xPath(String xPath, String replacement, Transformer transformer) {
 		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
 
 		return (contentTypeString, body) -> {
@@ -103,6 +102,7 @@ public class BodyFilterProvider {
 				ContentType contentType = ContentType.parse(contentTypeString);
 				if (xmlContentTypes.contains(contentType.getMimeType())) {
 					// Create document and xpath
+					var builder = createDocumentBuilder(createDocumentBuilderFactory());
 					Document document = builder.parse(new ByteArrayInputStream(body.getBytes(contentType.getCharset())));
 					XPath path = XPathFactory.newInstance().newXPath();
 					

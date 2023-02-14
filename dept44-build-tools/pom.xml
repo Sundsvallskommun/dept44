@@ -4,13 +4,14 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-parent</artifactId>
-		<version>1.26-SNAPSHOT</version>
+		<version>1.27-SNAPSHOT</version>
 	</parent>
 	<artifactId>dept44-build-tools</artifactId>
 
 	<properties>
-		<enforcer-api.version>3.1.0</enforcer-api.version>
-		<maven-api.version>3.8.7</maven-api.version>
+		<enforcer-api.version>3.2.1</enforcer-api.version>
+		<maven-api.version>3.9.0</maven-api.version>
+		<spotbugs-annotations.version>4.7.3</spotbugs-annotations.version>
 	</properties>
 
 	<dependencies>
@@ -18,6 +19,12 @@
 			<groupId>org.apache.maven.enforcer</groupId>
 			<artifactId>enforcer-api</artifactId>
 			<version>${enforcer-api.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>${spotbugs-annotations.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- Maven API -->

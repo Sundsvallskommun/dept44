@@ -152,10 +152,9 @@ class BodyFilterProviderTest {
 	@MethodSource("argumentProvider")
 	void testBodyFilter(String contentType, String body, String expectedResult) throws Exception {
 		final var xPath = "//replace[string-length(text()) > 0]";
-		final var documentBuilder = BodyFilterProvider.createDocumentBuilder(BodyFilterProvider.createDocumentBuilderFactory());
 		final var transformer = BodyFilterProvider.createTransformer(BodyFilterProvider.createTransformerFactory());
 		
-		BodyFilter filter = BodyFilterProvider.xPath(documentBuilder, xPath, "replacement", transformer);
+		BodyFilter filter = BodyFilterProvider.xPath(xPath, "replacement", transformer);
 		assertThat(filter.filter(contentType, body)).isEqualTo(expectedResult);
 	}
 	

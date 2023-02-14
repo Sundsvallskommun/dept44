@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.authorization;
 
-import static java.lang.String.valueOf;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -154,6 +153,6 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	}
 
 	private String extractMessage(Exception e) {
-		return ofNullable(e.getMessage()).orElse(valueOf(e));
+		return ofNullable(e.getMessage()).orElse(String.valueOf(e));
 	}
 }

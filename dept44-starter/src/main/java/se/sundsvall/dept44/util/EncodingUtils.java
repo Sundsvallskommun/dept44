@@ -13,7 +13,7 @@ public final class EncodingUtils {
 	 * If a String contains characters like: "ÃÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * By running it through this method, it will become correctly UTF-8 encoded again.
 	 *
-	 * @param string
+	 * @param string String to fix
 	 * @return the corrected string
 	 */
 	public static String fixDoubleEncodedUTF8Content(final String string) {

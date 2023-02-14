@@ -37,7 +37,7 @@ public final class DateUtils {
 	 * 2021-11-10T09:23:42 -> 2021-11-10T11:23:42+01:00
 	 * </pre>
 	 *
-	 * @param temporal the input date
+	 * @param temporal the provided date-time.
 	 * @return a new offsetDateTime with the local offset. If the temporal is null, null is returned.
 	 * @throws IllegalArgumentException if a temporal type is not OffsetDateTime or LocalDateTime.
 	 */

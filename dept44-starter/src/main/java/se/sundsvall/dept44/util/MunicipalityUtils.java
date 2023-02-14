@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class MunicipalityUtils {
+public final class MunicipalityUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MunicipalityUtils.class);
 	private static final String MUNICIPALITY_DEFINITION_PATH = "classpath:data/municipality.json";

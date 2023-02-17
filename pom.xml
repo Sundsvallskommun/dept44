@@ -199,7 +199,7 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-resttemplate</artifactId>
-				<version>1.27-SNAPSHOT</version>
+				<version>1.28-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>

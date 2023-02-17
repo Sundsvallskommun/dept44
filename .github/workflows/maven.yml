@@ -50,13 +50,10 @@ jobs:
         env:
           MAVEN_USERNAME: ${"Utvecklingsfabriken"}
           MAVEN_PASSWORD: ${GITHUB_TOKEN}
-#          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn -B -X release:prepare
 
       - name: Perform release with Maven
-#        env:
-#          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-#          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-#          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: mvn -B -X release:perform -Pmaven-central -Darguments="-DskipTests"

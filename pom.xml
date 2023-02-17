@@ -1,346 +1,206 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>se.sundsvall.dept44</groupId>
-	<artifactId>dept44-parent</artifactId>
-	<version>1.28-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>dept44-parent</name>
-	<description>Sundsvalls kommun spring boot library</description>
-	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>1.48-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
+	</parent>
+	<artifactId>dept44-starter</artifactId>
 
-	<licenses>
-		<license>
-			<name>MIT License</name>
-			<url>https://opensource.org/licenses/MIT</url>
-		</license>
-	</licenses>
+	<dependencies>
+		<!-- Spring Boot and Spring -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+		</dependency>
 
-	<developers>
-		<developer>
-			<name>Utvecklingsfabriken Sundsvall kommun</name>
-			<organization>Sundsvalls kommun</organization>
-			<url>https://github.com/orgs/Sundsvallskommun/people</url>
-		</developer>
-	</developers>
+		<!-- Jackson -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-jaxb-annotations</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+		</dependency>
 
-	<modules>
-		<module>dept44-build-tools</module>
-		<module>dept44-service-parent</module>
-		<module>dept44-starter-parent</module>
-		<module>dept44-starter</module>
-		<module>dept44-starter-authorization</module>
-		<module>dept44-starter-feign</module>
-		<module>dept44-starter-logback-graylog</module>
-		<module>dept44-starter-test</module>
-		<module>dept44-starter-webclient</module>
-		<module>dept44-starter-webservicetemplate</module>
-		<module>dept44-common-validators</module>
-	</modules>
-	
-	<scm>
-		<url>https://github.com/Sundsvallskommun/dept44</url>
-		<developerConnection>scm:git:git@github.com:Sundsvallskommun/dept44.git</developerConnection>
-		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
-		<tag>HEAD</tag>
-	</scm>
+		<!-- Logbook -->
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>logbook-spring-boot-autoconfigure</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>logbook-spring-boot-webflux-autoconfigure</artifactId>
+		</dependency>
 
-	<profiles>
-		<profile>
-			<id>maven-central</id>
-			<distributionManagement>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-				</snapshotRepository>
-				<repository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-			</distributionManagement>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>${maven-gpg-plugin.version}</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-								<configuration>
-									<gpgArguments>
-										<arg>--pinentry-mode</arg>
-										<arg>loopback</arg>
-									</gpgArguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>${nexus-staging-maven-plugin.version}</version>
-						<extensions>true</extensions>
-						<configuration>
-						        <serverId>ossrh</serverId>
-						        <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-						        <autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
+		<!-- Problem -->
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>problem</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>jackson-datatype-problem</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>problem-gson</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>problem-spring-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>problem-spring-web-autoconfigure</artifactId>
+		</dependency>
 
-	<properties>
-		<java.version>17</java.version>
-		<spring-boot.version>2.7.8</spring-boot.version>
-		<project.encoding>UTF-8</project.encoding>
-		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<downloadSources>true</downloadSources>
-		<downloadJavadocs>true</downloadJavadocs>
+		<!-- SpringDoc -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-webmvc-core</artifactId>
+		</dependency>
 
-		<!-- Dependency versions -->
-		<apache-commons.version>3.12.0</apache-commons.version>
-		<logbook.version>2.14.0</logbook.version>
-		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
-		<problem-spring-web.version>0.27.0</problem-spring-web.version>
-		<springdoc.version>1.6.14</springdoc.version>
-		<spring-cloud.version>2021.0.5</spring-cloud.version>
-		<bean-matchers.version>0.14</bean-matchers.version>
-		<json-unit.version>2.36.1</json-unit.version>
-		<spring-dotenv.version>3.0.0</spring-dotenv.version>
-		<logback-gelf.version>4.0.2</logback-gelf.version>
-		<janino.version>3.1.9</janino.version>
-		<jsonwebtoken.version>0.11.5</jsonwebtoken.version>
+		<!-- Centralized config client -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-bootstrap</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>${spring-dotenv.version}</version>
+		</dependency>
+		
+		<!-- Resilience4j Circuitbreaker (health-indicators) -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+		</dependency>
+
+		<!-- Commons lang 3 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
 
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>2.7.10</spring-boot-admin.version>
+		<dependency>
+			<groupId>de.codecentric</groupId>
+			<artifactId>spring-boot-admin-starter-client</artifactId>
+			<version>${spring-boot-admin.version}</version>
+		</dependency>
 
-		<!-- Plugin versions -->
-		<maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-		<maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
-		<build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
-		<maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-		<maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
-		<maven-surefire-plugin.version>3.0.0-M8</maven-surefire-plugin.version>
-		<maven-failsafe-plugin.version>3.0.0-M8</maven-failsafe-plugin.version>
-		<jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-		<git-commit-id-maven-plugin.version>5.0.0</git-commit-id-maven-plugin.version>
-		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
-		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
-
-		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
-		<coverage.line.level>0.85</coverage.line.level>
-		<coverage.branch.level>0.50</coverage.branch.level>
-	</properties>
-
-	<dependencyManagement>
-		<dependencies>
-			<!-- Spring Boot dependencies BOM -->
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring-boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			
-			<!-- Spring Cloud BOM -->
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-
-			<!-- Logbook BOM -->
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>logbook-bom</artifactId>
-				<version>${logbook.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-
-			<!-- Framework -->
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-authorization</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-common-validators</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-feign</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-logback-graylog</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-resttemplate</artifactId>
-				<version>1.27-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-test</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-webclient</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>1.28-SNAPSHOT</version>
-			</dependency>
-
-			<!-- Problem -->
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>jackson-datatype-problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-gson</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-spring-web</artifactId>
-				<version>${problem-spring-web.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-spring-web-autoconfigure</artifactId>
-				<version>${problem-spring-web.version}</version>
-			</dependency>
-
-			<!-- SpringDoc -->
-			<dependency>
-				<groupId>org.springdoc</groupId>
-				<artifactId>springdoc-openapi-ui</artifactId>
-				<version>${springdoc.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springdoc</groupId>
-				<artifactId>springdoc-openapi-webmvc-core</artifactId>
-				<version>${springdoc.version}</version>
-			</dependency>
-
-			<!-- Other -->
-			<dependency>
-				<groupId>com.google.code.bean-matchers</groupId>
-				<artifactId>bean-matchers</artifactId>
-				<version>${bean-matchers.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>net.javacrumbs.json-unit</groupId>
-				<artifactId>json-unit</artifactId>
-				<version>${json-unit.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>net.javacrumbs.json-unit</groupId>
-				<artifactId>json-unit-assertj</artifactId>
-				<version>${json-unit.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.commons</groupId>
-				<artifactId>commons-lang3</artifactId>
-				<version>${apache-commons.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.siegmar</groupId>
-				<artifactId>logback-gelf</artifactId>
-				<version>${logback-gelf.version}</version>
-			</dependency>
-			<dependency>
-				<!-- Needed for conditionals in logback-spring.xml -->
-				<groupId>org.codehaus.janino</groupId>
-				<artifactId>janino</artifactId>
-				<version>${janino.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+		<!-- Test -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<argLine>-Dspring.main.banner-mode=off</argLine>
+					<argLine>${argLine}</argLine>
 				</configuration>
 			</plugin>
 
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven-source-plugin.version}</version>
+				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-maven-plugin.version}</version>
 				<executions>
 					<execution>
-						<id>attach-sources</id>
 						<goals>
-							<goal>jar</goal>
+							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${maven-javadoc-plugin.version}</version>
-				<executions>
 					<execution>
-						<id>attach-javadocs</id>
+						<id>report</id>
+						<phase>test</phase>
 						<goals>
-							<goal>jar</goal>
+							<goal>report</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>check-coverage-metrics</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<!-- Tell jacoco which file to analyze -->
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.line.level}</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.branch.level}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
-				<configuration>
-					<autoVersionSubmodules>true</autoVersionSubmodules>
-					<useReleaseProfile>false</useReleaseProfile>
-					<releaseProfiles>maven-central</releaseProfiles>
-					<goals>deploy</goals>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
 
 </project>
+

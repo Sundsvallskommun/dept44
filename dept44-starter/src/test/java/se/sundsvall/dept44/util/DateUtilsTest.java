@@ -14,6 +14,7 @@ import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.time.chrono.ThaiBuddhistDate;
 import java.time.temporal.Temporal;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +24,7 @@ class DateUtilsTest {
 
 	@BeforeAll
 	static void beforeAll() {
-		System.setProperty("user.timezone", "Europe/Stockholm");
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"));
 	}
 
 	@Test

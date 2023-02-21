@@ -57,3 +57,18 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: mvn -B -X release:perform -Pmaven-central -Darguments="-DskipTests"
+
+      - name: Generate changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v4.0.1
+        with:
+          myToken: GITHUB_TOKEN
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false

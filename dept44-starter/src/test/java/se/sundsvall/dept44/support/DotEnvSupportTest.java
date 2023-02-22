@@ -38,6 +38,12 @@ class DotEnvSupportTest {
 	private String propertyValue2;
 
 	/*****************************************
+	 * From properties file (junit)
+	 *****************************************/
+	@Value("${property.that.will.be.overridden.in.env:}")
+	private String overrideValue;
+
+	/*****************************************
 	 * Should be empty (test legacy prefixing)
 	 *****************************************/
 	@Value("${env.ENV_KEY_1:}")
@@ -64,5 +70,10 @@ class DotEnvSupportTest {
 	void readEnvConfigLegacyPrefixed() {
 		assertThat(envValueLegacyPrefixed1).isEmpty();
 		assertThat(envValueLegacyPrefixed2).isEmpty();
+	}
+
+	@Test
+	void readOverriddenValueFromEnv() {
+		assertThat(overrideValue).isEqualTo("Override value");
 	}
 }

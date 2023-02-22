@@ -11,7 +11,6 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-
     runs-on: ubuntu-latest
     steps:
 
@@ -40,10 +39,11 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-      - name: Configure Git user
+      - name: Configure Git user and get release version
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) |cut -f1 -d'-'" >> $GITHUB_ENV
 
       - name: Prepare release with Maven
         env:
@@ -57,23 +57,19 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: mvn -B -X release:perform -Pmaven-central -Darguments="-DskipTests"
 
-      - name: conventional changelog action
+      - name: Generate changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@latest
+        uses: metcalfc/changelog-generator@v4.0.1
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Set Release version env variable
-        run: |
-          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+          myToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
         env:
           with:
-          tag_name:  ${RELEASE_VERSION}
-          release_name:  ${RELEASE_VERSION}
-          body: ${{steps.changelog.outputs.clean_changelog}}
+          tag_name:  dept44-parent-${{  env.RELEASE_VERSION }}
+          release_name:  dept44 release ${{  env.RELEASE_VERSION }}
+          body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false

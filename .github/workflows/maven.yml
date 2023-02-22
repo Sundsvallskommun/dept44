@@ -11,6 +11,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
     runs-on: ubuntu-latest
     steps:
 
@@ -62,13 +63,17 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Set Release version env variable
+        run: |
+          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
         env:
           with:
-          tag_name:  ${{ steps.changelog.outputs.tag }}
-          release_name:  ${{ steps.changelog.outputs.tag }}
+          tag_name:  ${RELEASE_VERSION}
+          release_name:  ${RELEASE_VERSION}
           body: ${{steps.changelog.outputs.clean_changelog}}
           draft: false
           prerelease: false

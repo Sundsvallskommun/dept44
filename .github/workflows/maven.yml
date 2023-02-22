@@ -43,7 +43,13 @@ jobs:
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
-          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) |cut -f1 -d'-'" >> $GITHUB_ENV
+#          echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) |cut -f1 -d'-'" >> $GITHUB_ENV
+
+      - name: "Get latest tag"
+        id: latest_tag
+        run: |
+          echo "::set-output name=name::$(git tag --sort=-creatordate | head -1)"
+          echo "::set-output name=version::$( mvn help:evaluate -Dexpression=project.version -q -DforceStdout| cut -f1 -d'-')"
 
       - name: Prepare release with Maven
         env:
@@ -68,8 +74,8 @@ jobs:
         uses: actions/create-release@v1.1.4
         env:
           with:
-          tag_name:  dept44-parent-${{  env.RELEASE_VERSION }}
-          release_name:  dept44 release ${{  env.RELEASE_VERSION }}
+          tag_name:  ${{ steps.latest_tag.outputs.name }}
+          release_name:  dept44 release ${{ steps.latest_tag.outputs.version }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false

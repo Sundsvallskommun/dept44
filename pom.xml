@@ -199,7 +199,7 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-resttemplate</artifactId>
-				<version>1.28-SNAPSHOT</version>
+				<version>1.29-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
@@ -336,6 +336,7 @@
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 					<useReleaseProfile>false</useReleaseProfile>
+					<tagNameFormat>dept44-release-@{project.version}</tagNameFormat>
 					<releaseProfiles>maven-central</releaseProfiles>
 					<goals>deploy</goals>
 				</configuration>

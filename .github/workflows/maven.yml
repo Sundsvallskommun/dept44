@@ -1,7 +1,7 @@
 name: Publish package to the Maven Central Repository
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   publish:
@@ -36,7 +36,7 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
-      - name: Configure Git user
+      - name: Configure Git user and get release version
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
@@ -52,3 +52,24 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: mvn -B -X release:perform -Pmaven-central -Darguments="-DskipTests"
+
+      - name: "Get latest tag"
+        id: latest_tag
+        run:
+          echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v4.0.1
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        with:
+          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false

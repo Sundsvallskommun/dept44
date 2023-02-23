@@ -336,6 +336,7 @@
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 					<useReleaseProfile>false</useReleaseProfile>
+					<tagNameFormat>dept44-release-@{project.version}</tagNameFormat>
 					<releaseProfiles>maven-central</releaseProfiles>
 					<goals>deploy</goals>
 				</configuration>

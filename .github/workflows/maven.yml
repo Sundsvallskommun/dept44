@@ -50,10 +50,10 @@ jobs:
         run:
           echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: "Get version"
-        id: get_version
-        run:
-          echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout| cut -f1 -d'-')" >> $GITHUB_OUTPUT
+#      - name: "Get version"
+#        id: get_version
+#        run:
+#          echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout| cut -f1 -d'-')" >> $GITHUB_OUTPUT
 
       - name: Prepare release with Maven
         env:
@@ -79,7 +79,7 @@ jobs:
         env:
           with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
+          release_name: dept44 release 1.47 #${{ steps.get_version.outputs.VERSION }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false

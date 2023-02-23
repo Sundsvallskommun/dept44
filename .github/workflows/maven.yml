@@ -75,13 +75,12 @@ jobs:
       - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
-        env:
-          with:
-            tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-            release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
-            #          body: ${{ steps.changelog.outputs.changelog }}
-            draft: true
-            prerelease: true
-            generate_release_notes: true
+        with:
+          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
+          draft: true
+          prerelease: true
+          generate_release_notes: true
 
+            #          body: ${{ steps.changelog.outputs.changelog }}
           #${{ steps.get_version.outputs.VERSION }}

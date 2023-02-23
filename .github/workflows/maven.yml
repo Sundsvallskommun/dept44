@@ -47,9 +47,13 @@ jobs:
 
       - name: "Get latest tag"
         id: latest_tag
-        run: |
-          echo "::set-output name=name::$(git tag --sort=-creatordate | head -1)"
-          echo "::set-output name=version::$( mvn help:evaluate -Dexpression=project.version -q -DforceStdout| cut -f1 -d'-')"
+        run:
+          echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+
+      - name: "Get version"
+        id: get_version
+        run:
+          echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout| cut -f1 -d'-')" >> $GITHUB_OUTPUT
 
       - name: Prepare release with Maven
         env:
@@ -74,8 +78,8 @@ jobs:
         uses: actions/create-release@v1.1.4
         env:
           with:
-          tag_name:  ${{ steps.latest_tag.outputs.name }}
-          release_name:  dept44 release ${{ steps.latest_tag.outputs.version }}
+          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false

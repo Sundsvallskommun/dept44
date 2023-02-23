@@ -63,15 +63,14 @@ jobs:
 
       - name: "Get latest tag"
         id: latest_tag
-        run: |
-          echo TAG_NAME: $(git tag --sort=-creatordate | head -1)
+        run:
           echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog
-        id: changelog
-        uses: metcalfc/changelog-generator@v4.0.1
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Generate changelog
+#        id: changelog
+#        uses: metcalfc/changelog-generator@v4.0.1
+#        with:
+#          myToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         id: create_release
@@ -80,8 +79,9 @@ jobs:
           with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
           release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
-          body: ${{ steps.changelog.outputs.changelog }}
-          draft: false
-          prerelease: false
+#          body: ${{ steps.changelog.outputs.changelog }}
+          draft: true
+          prerelease: true
+          generate_release_notes: true
 
           #${{ steps.get_version.outputs.VERSION }}

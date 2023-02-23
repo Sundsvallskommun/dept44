@@ -79,7 +79,9 @@ jobs:
         env:
           with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          release_name: dept44 release 1.47 #${{ steps.get_version.outputs.VERSION }}
+          release_name: dept44 release 1.47
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
+
+          #${{ steps.get_version.outputs.VERSION }}

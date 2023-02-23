@@ -78,8 +78,8 @@ jobs:
         uses: actions/create-release@v1.1.4
         env:
           with:
-          tag_name: ${{ env.TAG_NAME }}
-          release_name: dept44 release ${{ env.VERSION }}
+          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false

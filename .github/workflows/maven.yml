@@ -78,8 +78,8 @@ jobs:
         with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
           release_name: dept44 release ${{ steps.get_version.outputs.VERSION }}
-          draft: true
-          prerelease: true
+          draft: false
+          prerelease: false
           generate_release_notes: true
 
             #          body: ${{ steps.changelog.outputs.changelog }}

@@ -54,7 +54,7 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-        run: mvn -B -X release:perform -Pmaven-central -Darguments="-DskipTests"
+        run: mvn -B -X release:perform -Darguments="-DskipTests"
 
       - name: "Get latest tag"
         id: latest_tag
@@ -76,6 +76,4 @@ jobs:
           body: ${{ steps.changelog.outputs.changelog }}
           draft: true
           prerelease: true
-
-#          generate_release_notes: true
-          #${{ steps.get_version.outputs.VERSION }}
+}

@@ -71,8 +71,8 @@ jobs:
         id: create_release
         uses: actions/create-release@v1.1.4
         with:
-          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: ${{ env.TAG_NAME }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: true
           prerelease: true

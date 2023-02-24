@@ -45,13 +45,13 @@ jobs:
         env:
           MAVEN_USERNAME: ${"Utvecklingsfabriken"}
           MAVEN_PASSWORD: ${GITHUB_TOKEN}
-        run: mvn -B -X release:prepare
+        run: mvn -B release:prepare
 
       - name: Perform release with Maven
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-        run: mvn -B -X release:perform -Darguments="-DskipTests"
+        run: mvn -B release:perform -Darguments="-DskipTests"
 
       - name: "Get latest tag"
         id: latest_tag

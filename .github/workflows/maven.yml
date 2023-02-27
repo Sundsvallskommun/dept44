@@ -71,6 +71,6 @@ jobs:
         with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
           release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          body: ${{ steps.changelog.outputs.changelog }}
-          draft: true
-          prerelease: true
+          body: ${{steps.build_changelog.outputs.changelog}}
+          draft: false
+          prerelease: false

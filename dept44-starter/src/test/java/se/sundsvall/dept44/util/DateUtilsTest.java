@@ -1,7 +1,10 @@
 package se.sundsvall.dept44.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,18 +14,21 @@ import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.time.chrono.ThaiBuddhistDate;
 import java.time.temporal.Temporal;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DateUtilsTest {
 
+	@BeforeAll
+	static void beforeAll() {
+		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"));
+	}
+
 	@Test
 	void toOffsetDateTimeWithLocalOffset() {
-
 		// Zulu time zone into time with local offset +1h.
 		assertThat(DateUtils.toOffsetDateTimeWithLocalOffset(OffsetDateTime.parse("2021-11-10T09:23:42.500Z"))).hasToString("2021-11-10T10:23:42.500+01:00");
 

@@ -71,6 +71,9 @@ jobs:
         with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
           release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          body: ${{steps.build_changelog.outputs.changelog}}
+          body: |
+                ## What's Changed
+                ${{steps.build_changelog.outputs.changelog}}
+                **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.build_changelog.outputs.fromTag}}...${{steps.build_changelog.outputs.toTag}}
           draft: false
           prerelease: false

@@ -15,9 +15,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.openfeign.FeignLogbookLogger;
 
 import feign.okhttp.OkHttpClient;
-import se.sundsvall.dept44.configuration.feign.logging.FeignNullBodyFriendlyLogbookLogger;
 import se.sundsvall.dept44.security.Truststore;
 
 @SpringBootTest(classes = { FeignConfiguration.class })
@@ -31,15 +31,15 @@ class FeignConfigurationTest {
 
 	@Test
 	void testMethodAnnotations() {
-		var methodsToTest = List.of("logLevel", "logbookLogger", "okHttpClient");
-		for (Method method : configuration.getClass().getDeclaredMethods()) {
+		final var methodsToTest = List.of("logLevel", "logbookLogger", "okHttpClient");
+		for (final Method method : configuration.getClass().getDeclaredMethods()) {
 			if (methodsToTest.contains(method.getName())) {
 				verifyMethodAnnotations(method);
 			}
 		}
 	}
 
-	private void verifyMethodAnnotations(Method method) {
+	private void verifyMethodAnnotations(final Method method) {
 		assertTrue(method.isAnnotationPresent(Bean.class));
 		switch (method.getName()) {
 			case "logLevel" -> {
@@ -53,7 +53,7 @@ class FeignConfigurationTest {
 				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));
 				assertThat(method.getAnnotation(ConditionalOnBean.class).value()).containsExactly(Truststore.class);
 			}
-		};
+		}
 	}
 
 	@Test
@@ -63,7 +63,7 @@ class FeignConfigurationTest {
 
 	@Test
 	void testLogbookLogger() {
-		assertThat(configuration.logbookLogger(logbookMock)).isNotNull().isInstanceOf(FeignNullBodyFriendlyLogbookLogger.class);
+		assertThat(configuration.logbookLogger(logbookMock)).isNotNull().isInstanceOf(FeignLogbookLogger.class);
 	}
 
 	@Test

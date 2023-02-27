@@ -5,11 +5,11 @@ import javax.net.ssl.X509TrustManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.openfeign.FeignLogbookLogger;
 
 import feign.Client;
 import feign.Logger;
 import feign.okhttp.OkHttpClient;
-import se.sundsvall.dept44.configuration.feign.logging.FeignNullBodyFriendlyLogbookLogger;
 import se.sundsvall.dept44.security.Truststore;
 
 public class FeignConfiguration {
@@ -22,8 +22,7 @@ public class FeignConfiguration {
 	@Bean
 	@ConditionalOnBean(Logbook.class)
 	Logger logbookLogger(final Logbook logbook) {
-		// TODO: Replace with org.zalando.logbook.openfeign.FeignLogbookLogger when zalando/logbook#1222 is released.
-		return new FeignNullBodyFriendlyLogbookLogger(logbook);
+		return new FeignLogbookLogger(logbook);
 	}
 
 	@Bean

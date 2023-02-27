@@ -58,11 +58,9 @@ jobs:
         run:
           echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog
-        id: changelog
-        uses: metcalfc/changelog-generator@v4.0.1
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v3.7.0
 
       - name: Create release
         id: create_release
@@ -70,6 +68,10 @@ jobs:
         with:
           tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
           release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: |
+            ## What's Changed
+            ${{steps.build_changelog.outputs.changelog}}
+            ##
+            **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.build_changelog.outputs.fromTag}}...${{steps.build_changelog.outputs.toTag}}
           draft: false
           prerelease: false

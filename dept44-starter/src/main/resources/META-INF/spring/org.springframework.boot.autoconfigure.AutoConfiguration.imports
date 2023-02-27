@@ -5,3 +5,4 @@ se.sundsvall.dept44.configuration.WebFluxConfiguration
 se.sundsvall.dept44.configuration.OpenApiConfiguration
 se.sundsvall.dept44.configuration.SecurityConfiguration
 se.sundsvall.dept44.configuration.HealthConfiguration
+se.sundsvall.dept44.configuration.DefaultCircuitBreakerPropertiesConfiguration

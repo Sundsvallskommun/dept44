@@ -4,6 +4,8 @@ import javax.net.ssl.X509TrustManager;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
+import org.zalando.logbook.Logbook;
+import org.zalando.logbook.openfeign.FeignLogbookLogger;
 
 import feign.Client;
 import feign.Logger;
@@ -15,6 +17,12 @@ public class FeignConfiguration {
 	@Bean
 	Logger.Level logLevel() {
 		return Logger.Level.FULL;
+	}
+
+	@Bean
+	@ConditionalOnBean(Logbook.class)
+	Logger logbookLogger(final Logbook logbook) {
+		return new FeignLogbookLogger(logbook);
 	}
 
 	@Bean

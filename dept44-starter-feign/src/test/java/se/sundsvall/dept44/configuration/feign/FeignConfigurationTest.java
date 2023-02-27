@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.openfeign.FeignLogbookLogger;
 
 import feign.okhttp.OkHttpClient;
 import se.sundsvall.dept44.security.Truststore;
@@ -58,6 +59,11 @@ class FeignConfigurationTest {
 	@Test
 	void testLogLevel() {
 		assertThat(configuration.logLevel()).isEqualTo(FULL);
+	}
+
+	@Test
+	void testLogbookLogger() {
+		assertThat(configuration.logbookLogger(logbookMock)).isNotNull().isInstanceOf(FeignLogbookLogger.class);
 	}
 
 	@Test

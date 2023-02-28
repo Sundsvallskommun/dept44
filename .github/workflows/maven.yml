@@ -9,7 +9,7 @@ on:
 jobs:
   publish:
     env:
-      GH_PAT: ${{ secrets.UTVECKLINGSFABRIKEN_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.UTVECKLINGSFABRIKEN_TOKEN }}
       MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
     runs-on: ubuntu-latest
     steps:

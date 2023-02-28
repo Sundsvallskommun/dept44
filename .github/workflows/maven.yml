@@ -15,6 +15,13 @@ jobs:
     steps:
 
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "Get from tag"
+        id: from_tag
+        run:
+          echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
@@ -38,21 +45,16 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-
       - name: Configure Git user and get release version
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
 
-      - name: "Get from tag"
-        id: from_tag
-        run:
-          echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: "Read from tag"
-        id: read_from_tag
+      - name: "Read tags"
+        id: read_tags
         run:
-          echo ${{steps.from_tag.outputs.FROM_TAG}}
+          echo $(git tag --sort=-creatordate)
 
       - name: Prepare release with Maven
         env:
@@ -74,7 +76,7 @@ jobs:
       - name: "Read latest tag"
         id: read_latest_tag
         run:
-          echo ${{ steps.latest_tag.outputs.TO_TAG }}
+          echo "${{ steps.latest_tag.outputs.TO_TAG }}"
 
       - name: "Build Changelog"
         id: build_changelog

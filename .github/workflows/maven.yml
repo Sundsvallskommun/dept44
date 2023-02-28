@@ -83,6 +83,6 @@ jobs:
                 ## What's Changed
                 ${{steps.build_changelog.outputs.changelog}}
                 ##
-                **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.build_changelog.outputs.fromTag}}...${{steps.build_changelog.outputs.toTag}}
+                **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.from_tag.outputs.FROM_TAG}}...${{steps.build_changelog.outputs.toTag}}
           draft: false
           prerelease: false

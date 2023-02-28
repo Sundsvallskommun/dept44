@@ -44,6 +44,11 @@ jobs:
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
 
+      - name: "Get from tag"
+        id: from_tag
+        run:
+          echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+
       - name: Prepare release with Maven
         env:
           MAVEN_USERNAME: ${"Utvecklingsfabriken"}
@@ -59,18 +64,21 @@ jobs:
       - name: "Get latest tag"
         id: latest_tag
         run:
-          echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+          echo "TO_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
       - name: "Build Changelog"
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.0
+        with:
+          fromTag: ${{ steps.from_tag.outputs.FROM_TAG }}
+          toTag: ${{ steps.latest_tag.outputs.TO_TAG }}
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
         with:
-          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          tag_name: ${{ steps.latest_tag.outputs.TO_TAG }}
+          release_name: ${{ steps.latest_tag.outputs.TO_TAG }}
           body: |
                 ## What's Changed
                 ${{steps.build_changelog.outputs.changelog}}

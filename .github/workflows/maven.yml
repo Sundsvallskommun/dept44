@@ -6,12 +6,19 @@ on:
 jobs:
   publish:
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.UTVECKLINGSFABRIKEN_TOKEN }}
       MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
     runs-on: ubuntu-latest
     steps:
 
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: "Get from tag"
+        id: from_tag
+        run:
+          echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
@@ -35,7 +42,6 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-
       - name: Configure Git user and get release version
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
@@ -56,22 +62,25 @@ jobs:
       - name: "Get latest tag"
         id: latest_tag
         run:
-          echo "TAG_NAME=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+          echo "TO_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
       - name: "Build Changelog"
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.0
+        with:
+          fromTag: ${{ steps.from_tag.outputs.FROM_TAG }}
+          toTag: ${{ steps.latest_tag.outputs.TO_TAG }}
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
         with:
-          tag_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
-          release_name: ${{ steps.latest_tag.outputs.TAG_NAME }}
+          tag_name: ${{ steps.latest_tag.outputs.TO_TAG }}
+          release_name: ${{ steps.latest_tag.outputs.TO_TAG }}
           body: |
             ## What's Changed
             ${{steps.build_changelog.outputs.changelog}}
             ##
-            **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.build_changelog.outputs.fromTag}}...${{steps.build_changelog.outputs.toTag}}
+            **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{ steps.from_tag.outputs.FROM_TAG }}...${{ steps.latest_tag.outputs.TO_TAG }}
           draft: false
           prerelease: false

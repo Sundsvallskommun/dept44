@@ -83,6 +83,7 @@ jobs:
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.0
         with:
+          includeOpen: true
           fromTag: ${{ steps.from_tag.outputs.FROM_TAG }}
           toTag: ${{ steps.latest_tag.outputs.TO_TAG }}
 

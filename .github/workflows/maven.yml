@@ -16,17 +16,17 @@ jobs:
           token: ${{ secrets.UTVECKLINGSFABRIKEN_TOKEN }}
           fetch-depth: 0
 
-      - name: "Get from tag"
+      - name: Get from tag
         id: from_tag
         run:
           echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: "Create release branch-name"
+      - name: Create release branch-name
         id: branch_name
         run:
           echo "BRANCH_NAME=release-$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | awk -F- '{print $1}')" >> $GITHUB_OUTPUT
 
-      - name: "Creat release branch"
+      - name: Create release branch
         run:
           git checkout -b ${{ steps.branch_name.outputs.BRANCH_NAME }}
 
@@ -70,16 +70,16 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
         run: mvn -B release:perform -Darguments="-DskipTests"
 
-      - name: "Get latest tag"
+      - name: Get latest tag
         id: latest_tag
         run:
           echo "TO_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
-      - name: create pull request
+      - name: Create pull request
         run:
           gh pr create -B uf-4249-temporary-test-branch -H ${{ steps.branch_name.outputs.BRANCH_NAME }} --title 'PR for release  ${{ steps.branch_name.outputs.BRANCH_NAME }}' --body 'PR for creating release  ${{ steps.branch_name.outputs.BRANCH_NAME }}'
 
-      - name: "Build Changelog"
+      - name: Build Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.0
         with:

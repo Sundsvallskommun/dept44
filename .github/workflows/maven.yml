@@ -77,7 +77,7 @@ jobs:
 
       - name: create pull request
         run:
-          gh pr create -B uf-4249-temporary-test-branch -H ${{ steps.branch_name.outputs.BRANCH_NAME }} --title 'Testing creating PR when creating release title' --body 'Testing creating PR when creating release'
+          gh pr create -B uf-4249-temporary-test-branch -H ${{ steps.branch_name.outputs.BRANCH_NAME }} --title 'PR for release::  ${{ steps.branch_name.outputs.BRANCH_NAME }}' --body 'PR for creating release::  ${{ steps.branch_name.outputs.BRANCH_NAME }}'
 
       - name: "Build Changelog"
         id: build_changelog

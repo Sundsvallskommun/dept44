@@ -1,10 +1,7 @@
 name: Publish package to the Maven Central Repository
 
 on:
-  push:
-    branches:
-      - 'uf-4249-temporary-test-branch'
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -16,12 +13,22 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
+          token: ${{ secrets.UTVECKLINGSFABRIKEN_TOKEN }}
           fetch-depth: 0
 
       - name: "Get from tag"
         id: from_tag
         run:
           echo "FROM_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
+
+      - name: "Create release branch-name"
+        id: branch_name
+        run:
+          echo "BRANCH_NAME=release-$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | awk -F- '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: "Creat release branch"
+        run:
+          git checkout -b ${{ steps.branch_name.outputs.BRANCH_NAME }}
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
@@ -45,7 +52,8 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      - name: Configure Git user and get release version
+
+      - name: Configure Git user
         run: |
           git config --global user.email ${{ secrets.USER_EMAIL }}
           git config --global user.name "Utvecklingsfabriken"
@@ -54,23 +62,18 @@ jobs:
         env:
           MAVEN_USERNAME: ${"Utvecklingsfabriken"}
           MAVEN_PASSWORD: ${GITHUB_TOKEN}
-        run: mvn -B -X release:prepare
+        run: mvn -B release:prepare
 
       - name: Perform release with Maven
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-        run: mvn -B -X release:perform -Darguments="-DskipTests"
+        run: mvn -B release:perform -Darguments="-DskipTests"
 
       - name: "Get latest tag"
         id: latest_tag
         run:
           echo "TO_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
-
-      - name: "Read latest tag"
-        id: read_latest_tag
-        run:
-          echo "${{ steps.latest_tag.outputs.TO_TAG }}"
 
       - name: "Build Changelog"
         id: build_changelog
@@ -86,9 +89,9 @@ jobs:
           tag_name: ${{ steps.latest_tag.outputs.TO_TAG }}
           release_name: ${{ steps.latest_tag.outputs.TO_TAG }}
           body: |
-                ## What's Changed
-                ${{steps.build_changelog.outputs.changelog}}
-                ##
-                **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{steps.from_tag.outputs.FROM_TAG}}...${{steps.build_changelog.outputs.toTag}}
+            ## What's Changed
+            ${{steps.build_changelog.outputs.changelog}}
+            ##
+            **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{ steps.from_tag.outputs.FROM_TAG }}...${{ steps.latest_tag.outputs.TO_TAG }}
           draft: false
           prerelease: false

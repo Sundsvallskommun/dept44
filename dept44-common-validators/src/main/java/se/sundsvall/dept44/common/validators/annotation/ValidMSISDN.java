@@ -21,7 +21,7 @@ public @interface ValidMSISDN {
 	 *
 	 * @return the message.
 	 */
-	String message() default "must match the regular expression ^\\+[1-9]{1}[0-9]{3,14}$";
+	String message() default "must be a valid MSISDN, regular expression ^\\+[1-9]{1}[0-9]{3,14}$";
 
 	/**
 	 * Controls whether the value can be null or not.

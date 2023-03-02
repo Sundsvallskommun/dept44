@@ -24,8 +24,8 @@ class ValidMSISDNConstraintValidatorTest {
 	private ValidMSISDNConstraintValidator validator;
 
 	@ParameterizedTest
-	@ValueSource(strings = {"+46701234567", "+46721234567", "+46731234567", "+46761234567", "+46791234567"})
-	void validMobileNumber(String number) {
+	@ValueSource(strings = {"+46701234567", "+46721234567", "+46731234567", "+46761234567", "+46791234567", "+123456789012345", "+1234"})
+	void validMSISDN(String number) {
 
 		validator.initialize(annotationMock);
 
@@ -35,32 +35,20 @@ class ValidMSISDNConstraintValidatorTest {
 		verify(annotationMock).nullable();
 	}
 
-	@Test
-	void validMSISDN() {
+	@ParameterizedTest
+	@ValueSource(strings = {"not-valid", "46701234567", "+06701234567", "+1234567890123456", "+123"})
+	void invalidMSISDN(String number) {
+
 		validator.initialize(annotationMock);
 
-		assertThat(validator.isValid("+123456789012345")).isTrue();
-		assertThat(validator.isValid("+123456789012345", null)).isTrue();
-
-		assertThat(validator.isValid("+1234")).isTrue();
-		assertThat(validator.isValid("+1234", null)).isTrue();
+		assertThat(validator.isValid(number)).isFalse();
+		assertThat(validator.isValid(number, null)).isFalse();
 
 		verify(annotationMock).nullable();
 	}
 
 	@Test
-	void invalidMobileNumber() {
-
-		validator.initialize(annotationMock);
-
-		assertThat(validator.isValid("not-valid")).isFalse();
-		assertThat(validator.isValid("not-valid", null)).isFalse();
-
-		verify(annotationMock).nullable();
-	}
-
-	@Test
-	void nullMobileNumber() {
+	void nullMSISDN() {
 
 		validator.initialize(annotationMock);
 
@@ -88,7 +76,7 @@ class ValidMSISDNConstraintValidatorTest {
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must match the regular expression ^\\+[1-9]{1}[0-9]{3,14}$");
+		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN, regular expression ^\\+[1-9]{1}[0-9]{3,14}$");
 
 		verifyNoInteractions(annotationMock);
 	}

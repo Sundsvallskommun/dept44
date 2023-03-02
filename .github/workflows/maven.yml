@@ -86,6 +86,20 @@ jobs:
           includeOpen: true
           fromTag: ${{ steps.from_tag.outputs.FROM_TAG }}
           toTag: ${{ steps.latest_tag.outputs.TO_TAG }}
+          configurationJson: |
+            {
+              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Uncategorized</summary>\n\n#{{UNCATEGORIZED}}\n</details>",
+              "categories": [
+                {
+                  "title": "## 💬 Other",
+                  "labels": [ "other" ]
+                },
+                {
+                  "title": "## 📦 Dependencies",
+                  "labels": [ "dependencies" ]
+                }
+              ]
+            }
 
       - name: Read changelog
         run:

@@ -75,6 +75,15 @@ jobs:
         run:
           echo "TO_TAG=$(git tag --sort=-creatordate | head -1)" >> $GITHUB_OUTPUT
 
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          commit-message: "UF-4249: Testing creating PR when creating release message"
+          title: "UF-4249: Testing creating PR when creating release title"
+          body: "UF-4249: Testing creating PR when creating release"
+          branch: ${{ steps.branch_name.outputs.BRANCH_NAME }}
+          base: uf-4249-temporary-test-branch
+
       - name: "Build Changelog"
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3.7.0
@@ -95,12 +104,3 @@ jobs:
             **Full Changelog**: https://github.com/Sundsvallskommun/dept44/compare/${{ steps.from_tag.outputs.FROM_TAG }}...${{ steps.latest_tag.outputs.TO_TAG }}
           draft: false
           prerelease: false
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
-        with:
-          commit-message: "UF-4249: Testing creating PR when creating release message"
-          title: "UF-4249: Testing creating PR when creating release title"
-          body: "UF-4249: Testing creating PR when creating release"
-          branch: ${{ steps.branch_name.outputs.BRANCH_NAME }}
-          base: uf-4249-temporary-test-branch

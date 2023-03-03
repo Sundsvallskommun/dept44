@@ -87,7 +87,6 @@ jobs:
           toTag: ${{ steps.latest_tag.outputs.TO_TAG }}
           configurationJson: |
             {
-              "template": "${{CHANGELOG}}",
               "categories": [
                 {
                   "title": "## 💬 Other",

@@ -101,9 +101,9 @@ jobs:
               ]
             }
 
-      - name: Read changelog
-        run:
-          echo ${{ steps.build_changelog.outputs.changelog }}
+#      - name: Read changelog
+#        run:
+#          echo ${{ steps.build_changelog.outputs.changelog }}
 
       - name: Create release
         id: create_release

@@ -88,16 +88,16 @@ jobs:
           configurationJson: |
             {
               "template": "## What's changed ## \n #{{UNCATEGORIZED}}\n\n",
-              "categories": [
-                {
-                  "title": "## 💬 Other",
-                  "labels": [ "other" ]
-                },
-                {
-                  "title": "## 📦 Dependencies",
-                  "labels": [ "dependencies" ]
-                }
-              ]
+  #            "categories": [
+  #              {
+  #                "title": "## 💬 Other",
+  #                "labels": [ "other" ]
+  #              },
+  #              {
+  #                "title": "## 📦 Dependencies",
+  #                "labels": [ "dependencies" ]
+  #              }
+  #            ]
             }
 
       - name: Create release

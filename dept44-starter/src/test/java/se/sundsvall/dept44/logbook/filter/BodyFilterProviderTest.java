@@ -159,30 +159,33 @@ class BodyFilterProviderTest {
 	}
 	
 	private static Stream<Arguments> argumentProvider() {
-		final var UNKNOWN_TYPE = ";";
+		final var INVALID_TYPE = ";";
 
 		return Stream.of(
 			Arguments.of(null, "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
 			Arguments.of(null, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
-			Arguments.of(UNKNOWN_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
+			Arguments.of(INVALID_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
 			Arguments.of(APPLICATION_JSON.toString(), null, null),
 			Arguments.of(APPLICATION_JSON.toString(), "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
 			Arguments.of(APPLICATION_JSON.toString(), "{\"parent\": [{\"node\": \"some_long_data_string\"}]}", "{\"parent\": [{\"node\": \"some_long_data_string\"}]}"),
-			Arguments.of(APPLICATION_XHTML_XML.toString(), null, null), 
+			Arguments.of(APPLICATION_XHTML_XML.toString(), null, null),
 			Arguments.of(APPLICATION_XHTML_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>", 
+				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
 				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
 			Arguments.of(APPLICATION_XHTML_XML.toString(), 
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>", 
+				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
 				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(APPLICATION_XML.toString(), null, null), 
+			Arguments.of(APPLICATION_XML.toString(), null, null),
 			Arguments.of(APPLICATION_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>", 
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+			Arguments.of(APPLICATION_XHTML_XML.withCharset("").toString(),
+				"<?xml version=\"1.0\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
 			Arguments.of(APPLICATION_XML.toString(), 
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>", 
+				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
 				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(TEXT_XML.toString(), null, null), 
+			Arguments.of(TEXT_XML.toString(), null, null),
 			Arguments.of(TEXT_XML.toString(), 
 				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>", 
 				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),

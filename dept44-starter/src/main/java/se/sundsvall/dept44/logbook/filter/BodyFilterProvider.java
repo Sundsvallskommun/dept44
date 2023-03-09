@@ -9,6 +9,8 @@ import static org.zalando.logbook.json.JsonPathBodyFilters.jsonPath;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +18,7 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
@@ -26,12 +29,16 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.http.entity.ContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
 
 public class BodyFilterProvider {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
+
 	private BodyFilterProvider() {}
 	
 	public static BodyFilter passwordFilter() {
@@ -101,28 +108,41 @@ public class BodyFilterProvider {
 			try {
 				ContentType contentType = ContentType.parse(contentTypeString);
 				if (xmlContentTypes.contains(contentType.getMimeType())) {
+					// Evaluate what charSet to use 
+					final var charSet = evaluateCharset(contentType);
+					
 					// Create document and xpath
 					var builder = createDocumentBuilder(createDocumentBuilderFactory());
-					Document document = builder.parse(new ByteArrayInputStream(body.getBytes(contentType.getCharset())));
-					XPath path = XPathFactory.newInstance().newXPath();
-					
+					Document document = builder.parse(new ByteArrayInputStream(body.getBytes(charSet)));
+
 					// Evaluate xpath matches and replace content
+					XPath path = XPathFactory.newInstance().newXPath();
 					NodeList matches = (NodeList)path.evaluate(xPath, document, XPathConstants.NODESET);
 				    for (int i=0; i<matches.getLength(); i++) {
 				    	matches.item(i).setTextContent(replacement);
 				    }
 
+					// Setup transformer to use incoming encoding and to set standalone attribute
+				    transformer.setOutputProperty(OutputKeys.ENCODING, charSet.name());
+					transformer.setOutputProperty(OutputKeys.STANDALONE, document.getXmlStandalone() ? "yes" : "no");
+					
 				    // Return filtered body as string
 				    StringWriter writer = new StringWriter();
-				    transformer.transform(new DOMSource(document), new StreamResult(writer));
-				    return writer.toString();
+					transformer.transform(new DOMSource(document), new StreamResult(writer));
+					return writer.toString();
 				}
 
 				return body;
 				
 			} catch (Exception e) {
+				LOGGER.warn("An exception occured while filtering content from incoming xml request body", e);
 				return body;
 			}
 		};
+	}
+
+	private static Charset evaluateCharset(ContentType contentType) {
+		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is returned
+		return isNull(contentType.getCharset()) ? StandardCharsets.UTF_8 : contentType.getCharset();
 	}
 }

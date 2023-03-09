@@ -159,12 +159,12 @@ class BodyFilterProviderTest {
 	}
 	
 	private static Stream<Arguments> argumentProvider() {
-		final var UNKNOWN_TYPE = ";";
+		final var INVALID_TYPE = ";";
 
 		return Stream.of(
 			Arguments.of(null, "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
 			Arguments.of(null, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
-			Arguments.of(UNKNOWN_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
+			Arguments.of(INVALID_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
 			Arguments.of(APPLICATION_JSON.toString(), null, null),
 			Arguments.of(APPLICATION_JSON.toString(), "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
 			Arguments.of(APPLICATION_JSON.toString(), "{\"parent\": [{\"node\": \"some_long_data_string\"}]}", "{\"parent\": [{\"node\": \"some_long_data_string\"}]}"),

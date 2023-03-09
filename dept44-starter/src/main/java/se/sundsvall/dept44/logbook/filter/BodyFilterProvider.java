@@ -82,6 +82,7 @@ public class BodyFilterProvider {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 			return factory;
 		} catch (ParserConfigurationException e) {
 			throw new InvalidConfigurationException(e);

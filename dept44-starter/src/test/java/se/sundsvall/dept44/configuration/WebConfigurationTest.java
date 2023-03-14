@@ -1,6 +1,21 @@
 package se.sundsvall.dept44.configuration;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,22 +28,10 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+
 import se.sundsvall.dept44.requestid.RequestId;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class WebConfigurationTest {
 
@@ -38,13 +41,16 @@ class WebConfigurationTest {
 
 		@MockBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
+
 		@Autowired
 		private WebConfiguration.IndexPageController indexPageController;
+
 		@Autowired
 		private WebConfiguration webConfiguration;
 
@@ -65,14 +71,14 @@ class WebConfigurationTest {
 
 			assertThat(contentNegotiationConfigurer).isNotNull();
 			assertThat(contentNegotiationConfigurer).extracting("mediaTypes")
-					.asInstanceOf(InstanceOfAssertFactories.map(String.class, MediaType.class))
-					.hasSize(8);
+				.asInstanceOf(InstanceOfAssertFactories.map(String.class, MediaType.class))
+				.hasSize(8);
 			assertThat(contentNegotiationConfigurer).extracting("factory").extracting("favorParameter").isEqualTo(false);
 		}
 
 		@Test
 		void test_extendMessageConverters() {
-			List<HttpMessageConverter<?>> converterList = new ArrayList<>();
+			final List<HttpMessageConverter<?>> converterList = new ArrayList<>();
 			webConfiguration.extendMessageConverters(converterList);
 
 			assertThat(converterList).isNotNull().hasSize(1);
@@ -85,11 +91,13 @@ class WebConfigurationTest {
 
 		@MockBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
+
 		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
 
@@ -110,11 +118,13 @@ class WebConfigurationTest {
 
 		@MockBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired(required = false)
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
+
 		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
 
@@ -135,6 +145,7 @@ class WebConfigurationTest {
 
 		@MockBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
@@ -150,9 +161,9 @@ class WebConfigurationTest {
 		}
 
 		@Test
-		void test_getApiDocs() throws Exception{
+		void test_getApiDocs() throws Exception {
 			final var yamlString = "yamlString";
-			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlString);
+			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlString.getBytes());
 			final var apiDocs = indexPageController.getApiDocs(httpServletRequestMock);
 			assertThat(apiDocs).isNotNull().isEqualTo(yamlString);
 		}
@@ -164,13 +175,16 @@ class WebConfigurationTest {
 
 		@MockBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
 		private HttpServletRequest httpServletRequestMock;
+
 		@Mock
 		private HttpServletResponse httpServletResponseMock;
+
 		@Mock
 		private FilterChain filterChainMock;
 

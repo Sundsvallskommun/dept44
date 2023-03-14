@@ -108,10 +108,10 @@
 
 		<!-- Dependency versions -->
 		<apache-commons.version>3.12.0</apache-commons.version>
-		<logbook.version>2.15.0</logbook.version>
+		<logbook.version>2.16.0</logbook.version>
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.27.0</problem-spring-web.version>
-		<springdoc.version>1.6.14</springdoc.version>
+		<springdoc.version>1.6.15</springdoc.version>
 		<spring-cloud.version>2021.0.5</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>2.36.1</json-unit.version>

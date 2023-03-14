@@ -109,11 +109,6 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
-			<version>${spring-dotenv.version}</version>
-		</dependency>
 		
 		<!-- Resilience4j Circuitbreaker (health-indicators) -->
 		<dependency>

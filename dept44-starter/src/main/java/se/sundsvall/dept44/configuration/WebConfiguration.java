@@ -10,6 +10,7 @@ import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 
@@ -119,7 +120,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Operation(tags = "API", summary = "OpenAPI")
 		@GetMapping(value = "${springdoc.api-docs.path}", produces = "application/yaml")
 		String getApiDocs(final HttpServletRequest request) throws JsonProcessingException {
-			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()));
+			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset.defaultCharset());
 		}
 	}
 

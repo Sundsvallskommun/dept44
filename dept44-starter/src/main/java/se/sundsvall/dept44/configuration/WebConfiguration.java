@@ -10,6 +10,7 @@ import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 
@@ -56,7 +57,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 	@Bean
 	FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
-		var registration = new FilterRegistrationBean<>(new RequestIdFilter());
+		final var registration = new FilterRegistrationBean<>(new RequestIdFilter());
 		registration.addUrlPatterns("/*");
 		registration.setOrder(1);
 		return registration;
@@ -79,8 +80,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 	}
 
 	@Override
-	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-		var yamlConverter = new MappingJackson2HttpMessageConverter(yamlMapper);
+	public void extendMessageConverters(final List<HttpMessageConverter<?>> converters) {
+		final var yamlConverter = new MappingJackson2HttpMessageConverter(yamlMapper);
 		yamlConverter.setSupportedMediaTypes(List.of(APPLICATION_YAML, APPLICATION_YML));
 		converters.add(yamlConverter);
 
@@ -119,7 +120,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Operation(tags = "API", summary = "OpenAPI")
 		@GetMapping(value = "${springdoc.api-docs.path}", produces = "application/yaml")
 		String getApiDocs(final HttpServletRequest request) throws JsonProcessingException {
-			return openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault());
+			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset.defaultCharset());
 		}
 	}
 
@@ -128,7 +129,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
 			final FilterChain chain) throws ServletException, IOException {
-			var requestId = request.getHeader(RequestId.HEADER_NAME);
+			final var requestId = request.getHeader(RequestId.HEADER_NAME);
 
 			RequestId.init(requestId);
 			response.setHeader(RequestId.HEADER_NAME, RequestId.get());

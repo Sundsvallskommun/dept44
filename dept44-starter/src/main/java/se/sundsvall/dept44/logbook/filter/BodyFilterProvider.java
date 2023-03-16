@@ -6,7 +6,6 @@ import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 import static org.apache.http.entity.ContentType.TEXT_XML;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
-import static org.zalando.logbook.json.JsonPathBodyFilters.jsonPath;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
@@ -14,6 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -35,27 +35,29 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
+import org.zalando.logbook.json.JsonBodyFilters;
 
 public class BodyFilterProvider {
-
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
-
-	private BodyFilterProvider() {}
-
+	
+	private BodyFilterProvider() {
+	}
+	
 	public static BodyFilter passwordFilter() {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
-
-	public static List<BodyFilter> buildJsonPathFilters(Map<String, String> jsonPathFilters) {
-		return jsonPathFilters.entrySet()
+	
+	public static List<BodyFilter> buildJsonPropertyFilters(Map<String, String> jsonPropertyFilters) {
+		return jsonPropertyFilters.entrySet()
 			.stream()
-			.map(filter -> jsonPath(filter.getKey()).replace(filter.getValue()))
+			.map(filter -> JsonBodyFilters.replaceJsonStringProperty(Set.of(filter.getKey()), filter.getValue()))
 			.toList();
 	}
-
+	
 	public static List<BodyFilter> buildXPathFilters(Map<String, String> xPathFilters) {
 		TransformerFactory transformerFactory = createTransformerFactory();
-
+		
 		return xPathFilters.entrySet()
 			.stream()
 			.map(filter -> xPath(filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))

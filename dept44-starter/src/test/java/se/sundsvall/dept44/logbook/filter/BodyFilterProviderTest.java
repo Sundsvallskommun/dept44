@@ -57,7 +57,7 @@ class BodyFilterProviderTest {
 	
 	@Test
 	void tesBuildJsonPathFilters() {
-		assertThat(BodyFilterProvider.buildJsonPathFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
+		assertThat(BodyFilterProvider.buildJsonPropertyFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
 	}
 
 	@Test

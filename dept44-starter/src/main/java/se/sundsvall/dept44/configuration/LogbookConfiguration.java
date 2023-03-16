@@ -1,7 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
 import static org.zalando.logbook.Conditions.exclude;
-import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
+import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPropertyFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
 import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,24 +31,22 @@ import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
 public class LogbookConfiguration {
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
-	private final Map<String, String> exclusionFiltersJsonPath;
+	private final Map<String, String> exclusionFiltersJsonProperty;
 	private final Map<String, String> exclusionFiltersXPath;
 
 	LogbookConfiguration(
-		@Value("#{${logbook.exclusionfilters.json-path: {} }}") Map<String, String> exclusionFiltersJsonPath,
+		@Value("#{${logbook.exclusionfilters.json-property: {} }}") Map<String, String> exclusionFiltersJsonProperty,
 		@Value("#{${logbook.exclusionfilters.x-path: {} }}") Map<String, String> exclusionFiltersXPath,
 		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") final String loggerName,
 		@Value("#{'${logbook.excluded.paths:${logbook.default.excluded.paths:}}'}") final Set<String> excludedPaths) {
 		this.loggerName = loggerName;
 		this.excludedPaths = excludedPaths;
-		this.exclusionFiltersJsonPath = Objects.requireNonNullElseGet(exclusionFiltersJsonPath, Map::of);
+		this.exclusionFiltersJsonProperty = Objects.requireNonNullElseGet(exclusionFiltersJsonProperty, Map::of);
 		this.exclusionFiltersXPath = Objects.requireNonNullElseGet(exclusionFiltersXPath, Map::of);
 	}
 
@@ -59,7 +58,7 @@ public class LogbookConfiguration {
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.bodyFilter(passwordFilter())
-			.bodyFilters(buildJsonPathFilters(exclusionFiltersJsonPath))
+			.bodyFilters(buildJsonPropertyFilters(exclusionFiltersJsonProperty))
 			.bodyFilters(buildXPathFilters(exclusionFiltersXPath))
 			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
 			.condition(exclude(getExclusions()))

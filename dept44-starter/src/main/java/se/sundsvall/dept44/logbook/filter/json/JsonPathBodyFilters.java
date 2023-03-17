@@ -34,7 +34,7 @@ import org.zalando.logbook.BodyFilter;
  * of {@code JacksonJsonNodeJsonProvider} in order to avoid NPE:s due to a bug in JsonPath (see
  * https://github.com/zalando/logbook/issues/1369 and https://github.com/json-path/JsonPath/issues/678).
  *
- * Should be removed when the above is fixed.
+ * TODO: should be removed when the above is fixed.
  */
 @API(status = EXPERIMENTAL)
 public final class JsonPathBodyFilters {

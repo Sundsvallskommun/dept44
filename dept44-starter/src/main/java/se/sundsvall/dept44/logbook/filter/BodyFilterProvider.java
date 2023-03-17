@@ -6,7 +6,7 @@ import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 import static org.apache.http.entity.ContentType.TEXT_XML;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
-import static org.zalando.logbook.json.JsonPathBodyFilters.jsonPath;
+import static se.sundsvall.dept44.logbook.filter.json.JsonPathBodyFilters.jsonPath;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;

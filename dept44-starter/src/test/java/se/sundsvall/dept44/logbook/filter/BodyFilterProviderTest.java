@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.logbook.filter;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
@@ -35,7 +36,10 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.logbook.BodyFilter;
 
-@ExtendWith(MockitoExtension.class)
+import se.sundsvall.dept44.test.annotation.resource.Load;
+import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
+
+@ExtendWith({MockitoExtension.class, ResourceLoaderExtension.class})
 class BodyFilterProviderTest {
 
 	@Spy
@@ -56,12 +60,26 @@ class BodyFilterProviderTest {
 	}
 	
 	@Test
-	void tesBuildJsonPathFilters() {
+	void testBuildJsonPathFilters() {
 		assertThat(BodyFilterProvider.buildJsonPathFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
 	}
 
 	@Test
-	void tesBuildXPathFilters() throws Exception {
+	void testJsonPathFilter(@Load("/json-path-filter.input.json") final String input,
+			@Load("/json-path-filter.expected.json") final String expected) {
+		var filters = BodyFilterProvider.buildJsonPathFilters(
+			Map.of("$.pin", "[pin]", "$.social_accounts[*].password", "[password]", "$.missing", "???"));
+
+		var result = input;
+		for (var filter : filters) {
+			result = filter.filter("application/json", result);
+		}
+
+		assertThatJson(result).isEqualTo(expected);
+	}
+
+	@Test
+	void testBuildXPathFilters() {
 		assertThat(BodyFilterProvider.buildXPathFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
 	}
 	
@@ -107,7 +125,7 @@ class BodyFilterProviderTest {
 	}
 	
 	@Test
-	void testCreateTransformerFactory() throws Exception {
+	void testCreateTransformerFactory() {
 		try (MockedStatic<TransformerFactory> transformerFactoryMock = Mockito.mockStatic(TransformerFactory.class)) {
 			transformerFactoryMock.when(TransformerFactory::newInstance).thenReturn(transformerFactorySpy);
 			
@@ -118,7 +136,7 @@ class BodyFilterProviderTest {
 	}
 	
 	@Test
-	void testCreateTransformerFactoryThrowsException() throws Exception {
+	void testCreateTransformerFactoryThrowsException() {
 		try (MockedStatic<TransformerFactory> transformerFactoryMock = Mockito.mockStatic(TransformerFactory.class)) {
 			final var cause = new IllegalArgumentException("test");
 			transformerFactoryMock.when(TransformerFactory::newInstance).thenReturn(transformerFactorySpy);
@@ -150,7 +168,7 @@ class BodyFilterProviderTest {
 	
 	@ParameterizedTest
 	@MethodSource("argumentProvider")
-	void testBodyFilter(String contentType, String body, String expectedResult) throws Exception {
+	void testBodyFilter(String contentType, String body, String expectedResult) {
 		final var xPath = "//replace[string-length(text()) > 0]";
 		final var transformer = BodyFilterProvider.createTransformer(BodyFilterProvider.createTransformerFactory());
 		

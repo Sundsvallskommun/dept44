@@ -5,13 +5,15 @@ import static org.apache.commons.lang3.ObjectUtils.anyNull;
 import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 import static org.apache.http.entity.ContentType.TEXT_XML;
+import static org.zalando.logbook.BodyFilter.merge;
+import static org.zalando.logbook.BodyFilters.defaultValue;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
-import static org.zalando.logbook.json.JsonPathBodyFilters.jsonPath;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +31,11 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,10 +53,28 @@ public class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(final Map<String, String> jsonPathFilters) {
+		var jsonPathConfiguration = Configuration.builder()
+			.jsonProvider(new JacksonJsonProvider())
+			.mappingProvider(new JacksonMappingProvider())
+			.options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
+			.build();
+
 		return jsonPathFilters.entrySet()
 			.stream()
-			.map(filter -> jsonPath(filter.getKey()).replace(filter.getValue()))
+			.map(filter -> merge(defaultValue(), (contentType, body) -> {
+				if ("".equals(body.trim())) {
+					return "";
+				}
+
+				var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
+				var value = documentContext.read(filter.getKey());
+				if (value instanceof Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+					documentContext.set(filter.getKey(), filter.getValue());
+				}
+
+				return documentContext.jsonString();
+			}))
 			.toList();
 	}
 

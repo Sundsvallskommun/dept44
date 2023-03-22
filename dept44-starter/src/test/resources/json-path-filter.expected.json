@@ -1,0 +1,11 @@
+{
+  "name": "Andy",
+  "pin": "[pin]",
+  "social_accounts": [
+    {
+      "platform": "Twitter",
+      "username": "andy12345",
+      "password": "[password]"
+    }
+  ]
+}

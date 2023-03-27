@@ -57,11 +57,12 @@ public abstract class AbstractAppTest {
 	private static final String COMMON_MAPPING_DIR = "/common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
 	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
-	private static final int DEFAULT_WAIT_TIME_IN_SEC = 5;
+	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
 	private boolean expectedResponseBodyIsNull;
+	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
 	private String requestBody;
 	private String expectedResponseBody;
 	private String mappingPath;
@@ -125,7 +126,7 @@ public abstract class AbstractAppTest {
 
 	/**
 	 * Set expected response header.
-	 * 
+	 *
 	 * @param expectedHeaderKey   the expected header key.
 	 * @param expectedHeaderValue the list of expected header values, as regular expressions.
 	 */
@@ -170,11 +171,11 @@ public abstract class AbstractAppTest {
 	 * By default the test will compare arrays with option to ignore array order. If the need to use
 	 * maximum strictness in JsonAssert - send in null or an empty list to just reset options to
 	 * JsonAsserts default ones.
-	 * 
+	 *
 	 * @param options list of options to use when doing the json assertion or null/empty list for resetting
 	 *                to JsonAssert defaults (strict comparison)
 	 */
-	public AbstractAppTest withJsonAssertOptions(List<Option> options) {
+	public AbstractAppTest withJsonAssertOptions(final List<Option> options) {
 		// Reset to JsonAssert strict assertion options (removing option IGNORING_ARRAY_ORDER)
 		JsonAssert.resetOptions();
 
@@ -206,14 +207,24 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
+	/**
+	 * Set max verification delay in seconds.
+	 *
+	 * I.e. the maximum time to spend while verifying a condition.
+	 *
+	 * @param maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
+	 */
+	public AbstractAppTest withMaxVerificationDelayInSeconds(final int maxVerificationDelayInSeconds) {
+		this.maxVerificationDelayInSeconds = maxVerificationDelayInSeconds;
+		return this;
+	}
+
 	public AbstractAppTest sendRequestAndVerifyResponse(final MediaType mediaType) {
 		logger.info(getTestMethodName());
 
 		// Call service and fetch response.
 		final var response = this.restTemplate.exchange(this.servicePath, this.method, restTemplateRequest(mediaType, this.requestBody), String.class);
 		this.responseBody = response.getBody();
-
-		verifyAllStubs();
 
 		if (nonNull(this.expectedResponseHeaders)) {
 			this.expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
@@ -236,6 +247,14 @@ public abstract class AbstractAppTest {
 		if (this.expectedResponseBodyIsNull) {
 			assertThat(this.responseBody).isNull();
 		}
+
+		await()
+			.atMost(maxVerificationDelayInSeconds, SECONDS)
+			.pollDelay(1, SECONDS)
+			.until(this::verifyAllStubs);
+
+		this.wiremock.resetAll();
+
 		return this;
 	}
 
@@ -245,11 +264,11 @@ public abstract class AbstractAppTest {
 
 	/**
 	 * Method returns the received server response mapped to the sent in class
-	 * 
+	 *
 	 * @param clazz class to map response to
 	 * @return response mapped to sent in class type
 	 */
-	public <T> T andReturnBody(Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(this.responseBody, forName(clazz.getName())));
 	}
 
@@ -259,12 +278,16 @@ public abstract class AbstractAppTest {
 	 * @param typeReference the type reference to map response to
 	 * @return response mapped to given type reference
 	 */
-	public <T> T andReturnBody(TypeReference<T> typeReference) throws JsonProcessingException {
+	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
 		return JSON_MAPPER.readValue(this.responseBody, typeReference);
 	}
 
 	public AbstractAppTest andVerifyThat(final Callable<Boolean> conditionIsMet) {
-		await().atMost(DEFAULT_WAIT_TIME_IN_SEC, SECONDS).until(conditionIsMet);
+		await()
+			.atMost(maxVerificationDelayInSeconds, SECONDS)
+			.pollDelay(1, SECONDS)
+			.until(conditionIsMet);
+
 		return this;
 	}
 
@@ -285,7 +308,7 @@ public abstract class AbstractAppTest {
 	private String fromFile(final String filePath) {
 		try {
 			return readString(getFile("classpath:" + filePath).toPath());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			return null;
 		}
 	}
@@ -305,28 +328,27 @@ public abstract class AbstractAppTest {
 
 	/**
 	 * Verifies that all setup stubs setup have been called.
-	 * 
+	 *
 	 * @throws VerificationException if verification fails
 	 */
-	public void verifyAllStubs() {
-		try {
-			// Verify all stubs by URL.
-			this.wiremock.listAllStubMappings().getMappings().forEach(stub -> {
-				final var requestPattern = stub.getRequest();
-				this.wiremock.verify(
-					anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
-			});
+	public boolean verifyAllStubs() {
 
-			final var unmatchedRequests = this.wiremock.findAllUnmatchedRequests();
-			if (!unmatchedRequests.isEmpty()) {
-				final var unmatchedUrls = unmatchedRequests
-					.stream()
-					.map(LoggedRequest::getUrl)
-					.toList();
-				throw new AssertionError(format("The following requests was not matched: %s", unmatchedUrls));
-			}
-		} finally {
-			this.wiremock.resetAll();
+		// Verify all stubs by URL.
+		this.wiremock.listAllStubMappings().getMappings().forEach(stub -> {
+			final var requestPattern = stub.getRequest();
+			this.wiremock.verify(
+				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
+		});
+
+		final var unmatchedRequests = this.wiremock.findAllUnmatchedRequests();
+		if (!isEmpty(unmatchedRequests)) {
+			final var unmatchedUrls = unmatchedRequests
+				.stream()
+				.map(LoggedRequest::getUrl)
+				.toList();
+			throw new AssertionError(format("The following requests was not matched: %s", unmatchedUrls));
 		}
+
+		return true;
 	}
 }

@@ -82,7 +82,7 @@ class AbstractAppTestTest {
 		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<String>("{}", responseHeaders, OK));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
@@ -93,6 +93,7 @@ class AbstractAppTestTest {
 			.withHeader("headerKey", "headerValue")
 			.withExpectedResponse("{}")
 			.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
+			.withMaxVerificationDelayInSeconds(5)
 			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
 			.withExpectedResponseStatus(OK)
 			.sendRequestAndVerifyResponse();
@@ -131,6 +132,7 @@ class AbstractAppTestTest {
 			.withHeader("headerKey", "headerValue")
 			.withRequest("{}")
 			.withExpectedResponseBodyIsNull()
+			.withMaxVerificationDelayInSeconds(5)
 			.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
 			.withExpectedResponseStatus(OK)
 			.sendRequestAndVerifyResponse();
@@ -169,6 +171,7 @@ class AbstractAppTestTest {
 			.withHeader("headerKey", "headerValue")
 			.withRequest("{}")
 			.withExpectedResponseBodyIsNull()
+			.withMaxVerificationDelayInSeconds(5)
 			.withExpectedResponseHeader("responseHeader", List.of("^http://(.*)/(.*)$"))
 			.withExpectedResponseStatus(OK)
 			.sendRequestAndVerifyResponse();
@@ -196,7 +199,7 @@ class AbstractAppTestTest {
 		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<String>("""
+		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
 			{
 			  "key": "this-is-key",
 			  "value": "this-is-value"
@@ -210,6 +213,7 @@ class AbstractAppTestTest {
 			.withServicePath("/some/path")
 			.withHttpMethod(PUT)
 			.withExpectedResponseStatus(NO_CONTENT)
+			.withMaxVerificationDelayInSeconds(5)
 			.sendRequestAndVerifyResponse()
 			.andReturnBody(TestBody.class);
 
@@ -238,7 +242,7 @@ class AbstractAppTestTest {
 		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<String>("{}", responseHeaders, NO_CONTENT));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
@@ -246,6 +250,7 @@ class AbstractAppTestTest {
 			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(DELETE)
+			.withMaxVerificationDelayInSeconds(5)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.sendRequestAndVerifyResponse();
 

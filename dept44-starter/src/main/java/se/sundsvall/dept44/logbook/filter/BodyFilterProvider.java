@@ -2,6 +2,7 @@ package se.sundsvall.dept44.logbook.filter;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 import static org.apache.http.entity.ContentType.TEXT_XML;
@@ -31,17 +32,18 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
+
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
 public class BodyFilterProvider {
 
@@ -54,7 +56,7 @@ public class BodyFilterProvider {
 	}
 
 	public static List<BodyFilter> buildJsonPathFilters(final Map<String, String> jsonPathFilters) {
-		var jsonPathConfiguration = Configuration.builder()
+		final var jsonPathConfiguration = Configuration.builder()
 			.jsonProvider(new JacksonJsonProvider())
 			.mappingProvider(new JacksonMappingProvider())
 			.options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
@@ -63,23 +65,32 @@ public class BodyFilterProvider {
 		return jsonPathFilters.entrySet()
 			.stream()
 			.map(filter -> merge(defaultValue(), (contentType, body) -> {
+
+				if (anyNull(contentType, body)) {
+					return body;
+				}
+
 				if ("".equals(body.trim())) {
 					return "";
 				}
 
-				var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-				var value = documentContext.read(filter.getKey());
-				if (value instanceof Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-					documentContext.set(filter.getKey(), filter.getValue());
+				if (ContentType.parse(contentType).getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
+					final var value = documentContext.read(filter.getKey());
+					if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+						documentContext.set(filter.getKey(), filter.getValue());
+					}
+
+					return documentContext.jsonString();
 				}
 
-				return documentContext.jsonString();
+				return body;
 			}))
 			.toList();
 	}
 
-	public static List<BodyFilter> buildXPathFilters(Map<String, String> xPathFilters) {
-		TransformerFactory transformerFactory = createTransformerFactory();
+	public static List<BodyFilter> buildXPathFilters(final Map<String, String> xPathFilters) {
+		final TransformerFactory transformerFactory = createTransformerFactory();
 
 		return xPathFilters.entrySet()
 			.stream()
@@ -87,29 +98,29 @@ public class BodyFilterProvider {
 			.toList();
 	}
 
-	static DocumentBuilder createDocumentBuilder(DocumentBuilderFactory factory) {
+	static DocumentBuilder createDocumentBuilder(final DocumentBuilderFactory factory) {
 		try {
 			return factory.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
+		} catch (final ParserConfigurationException e) {
 			throw new InvalidConfigurationException(e);
 		}
 	}
 
-	static Transformer createTransformer(TransformerFactory factory) {
+	static Transformer createTransformer(final TransformerFactory factory) {
 		try {
 			return factory.newTransformer();
-		} catch (TransformerConfigurationException e) {
+		} catch (final TransformerConfigurationException e) {
 			throw new InvalidConfigurationException(e);
 		}
 	}
 
 	static DocumentBuilderFactory createDocumentBuilderFactory() {
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 			return factory;
-		} catch (ParserConfigurationException e) {
+		} catch (final ParserConfigurationException e) {
 			throw new InvalidConfigurationException(e);
 		}
 
@@ -117,16 +128,16 @@ public class BodyFilterProvider {
 
 	static TransformerFactory createTransformerFactory() {
 		try {
-			TransformerFactory factory = TransformerFactory.newInstance();
+			final TransformerFactory factory = TransformerFactory.newInstance();
 			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 			factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 			return factory;
-		} catch (IllegalArgumentException e) {
+		} catch (final IllegalArgumentException e) {
 			throw new InvalidConfigurationException(e);
 		}
 	}
 
-	static BodyFilter xPath(String xPath, String replacement, Transformer transformer) {
+	static BodyFilter xPath(final String xPath, final String replacement, final Transformer transformer) {
 		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
 
 		return (contentTypeString, body) -> {
@@ -135,18 +146,18 @@ public class BodyFilterProvider {
 			}
 
 			try {
-				ContentType contentType = ContentType.parse(contentTypeString);
+				final ContentType contentType = ContentType.parse(contentTypeString);
 				if (xmlContentTypes.contains(contentType.getMimeType())) {
 					// Evaluate what charSet to use
 					final var charSet = evaluateCharset(contentType);
 
 					// Create document and xpath
-					var builder = createDocumentBuilder(createDocumentBuilderFactory());
-					Document document = builder.parse(new ByteArrayInputStream(body.getBytes(charSet)));
+					final var builder = createDocumentBuilder(createDocumentBuilderFactory());
+					final Document document = builder.parse(new ByteArrayInputStream(body.getBytes(charSet)));
 
 					// Evaluate xpath matches and replace content
-					XPath path = XPathFactory.newInstance().newXPath();
-					NodeList matches = (NodeList) path.evaluate(xPath, document, XPathConstants.NODESET);
+					final XPath path = XPathFactory.newInstance().newXPath();
+					final NodeList matches = (NodeList) path.evaluate(xPath, document, XPathConstants.NODESET);
 					for (int i = 0; i < matches.getLength(); i++) {
 						matches.item(i).setTextContent(replacement);
 					}
@@ -156,21 +167,21 @@ public class BodyFilterProvider {
 					transformer.setOutputProperty(OutputKeys.STANDALONE, document.getXmlStandalone() ? "yes" : "no");
 
 					// Return filtered body as string
-					StringWriter writer = new StringWriter();
+					final StringWriter writer = new StringWriter();
 					transformer.transform(new DOMSource(document), new StreamResult(writer));
 					return writer.toString();
 				}
 
 				return body;
 
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				LOGGER.warn("An exception occured while filtering content from incoming xml request body ({}).", e.getMessage());
 				return body;
 			}
 		};
 	}
 
-	private static Charset evaluateCharset(ContentType contentType) {
+	private static Charset evaluateCharset(final ContentType contentType) {
 		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is returned
 		return isNull(contentType.getCharset()) ? StandardCharsets.UTF_8 : contentType.getCharset();
 	}

@@ -250,7 +250,9 @@ public abstract class AbstractAppTest {
 
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
-			.pollDelay(1, SECONDS)
+			.pollDelay(0, SECONDS)
+			.pollInterval(1, SECONDS)
+			.ignoreExceptions()
 			.until(this::verifyAllStubs);
 
 		this.wiremock.resetAll();
@@ -285,7 +287,8 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest andVerifyThat(final Callable<Boolean> conditionIsMet) {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
-			.pollDelay(1, SECONDS)
+			.pollDelay(0, SECONDS)
+			.pollInterval(1, SECONDS)
 			.until(conditionIsMet);
 
 		return this;

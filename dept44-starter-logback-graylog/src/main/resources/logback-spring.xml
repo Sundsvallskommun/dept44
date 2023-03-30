@@ -48,29 +48,35 @@
 
     <logger name="se.sundsvall" additivity="false" level="INFO">
         <appender-ref ref="CONSOLE" />
-        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
-            <then>
-                <appender-ref ref="GELF"/>
-            </then>
-        </if>
     </logger>
+    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+        <then>
+            <logger name="se.sundsvall">
+                <appender-ref ref="GELF"/>
+            </logger>
+        </then>
+    </if>
 
     <logger name="se.sundsvall.dept44.payload" additivity="false" level="TRACE">
         <appender-ref ref="CONSOLE" />
-        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
-            <then>
-                <appender-ref ref="GELF"/>
-            </then>
-        </if>
     </logger>
+    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+        <then>
+            <logger name="se.sundsvall.dept44.payload">
+                <appender-ref ref="GELF"/>
+            </logger>
+        </then>
+    </if>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
-        <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
-            <then>
-                <appender-ref ref="GELF"/>
-            </then>
-        </if>
     </root>
+    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+        <then>
+            <root>
+                <appender-ref ref="GELF"/>
+            </root>
+        </then>
+    </if>
 
 </configuration>

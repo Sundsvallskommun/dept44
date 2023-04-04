@@ -17,7 +17,7 @@ on:
     - cron: '32 3 * * 4'
 env:
   MAVEN_OPTS: >-
-    -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
 jobs:
   analyze:
     name: Analyze

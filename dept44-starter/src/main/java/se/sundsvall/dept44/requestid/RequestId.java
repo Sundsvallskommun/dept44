@@ -10,8 +10,8 @@ import org.slf4j.MDC;
 
 public final class RequestId {
 
-	public static final String REQUEST_ID_KEY = "RequestID";
-	public static final String HEADER_NAME = "X-Request-ID";
+	public static final String MDC_REQUEST_ID_KEY = "x-request-id";
+	public static final String HEADER_NAME = "x-request-id";
 	private static final ThreadLocal<Integer> THREAD_LOCAL_COUNTER = new ThreadLocal<>();
 
 	private RequestId() {}
@@ -38,7 +38,7 @@ public final class RequestId {
 			if (isNull(localId)) {
 				localId = UUID.randomUUID().toString();
 			}
-			MDC.put(REQUEST_ID_KEY, localId);
+			MDC.put(MDC_REQUEST_ID_KEY, localId);
 			created = true;
 		}
 
@@ -55,7 +55,7 @@ public final class RequestId {
 			counter--;
 			THREAD_LOCAL_COUNTER.set(counter);
 			if (INTEGER_ZERO.equals(counter)) {
-				MDC.remove(REQUEST_ID_KEY);
+				MDC.remove(MDC_REQUEST_ID_KEY);
 				THREAD_LOCAL_COUNTER.remove();
 				cleared = true;
 			}
@@ -64,6 +64,6 @@ public final class RequestId {
 	}
 
 	public static String get() {
-		return MDC.get(REQUEST_ID_KEY);
+		return MDC.get(MDC_REQUEST_ID_KEY);
 	}
 }

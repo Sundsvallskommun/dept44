@@ -3,7 +3,7 @@
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <property name="CONSOLE_LOG_PATTERN" value="%date{ISO8601} [%t] %12X{RequestID} %5p %-40.40logger{39} %m%n%xEx" />
+    <property name="CONSOLE_LOG_PATTERN" value="%date{ISO8601} [%t] %12X{x-request-id} %5p %-40.40logger{39} %m%n%xEx" />
 
     <springProperty scope="context" name="applicationName" source="spring.application.name" defaultValue="name-not-set"/>
     <springProperty scope="context" name="maxChunkSize" source="dept44.logback.graylog.maxchunksize" defaultValue="508"/>

@@ -1,0 +1,23 @@
+{
+	"name": "api-petstore-pet",
+	"request": {
+		"urlPath": "/api-petstore/pets/3",
+		"method": "GET",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": {
+			"id": 3,
+			"price": 1337.5,
+			"type": "BIRD"
+		}
+	}
+}

@@ -17,7 +17,7 @@ on:
     - cron: '32 3 * * 4'
 env:
   MAVEN_OPTS: >-
-    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3
 jobs:
   analyze:
     name: Analyze

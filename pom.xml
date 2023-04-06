@@ -36,6 +36,7 @@
 		<module>dept44-starter-webclient</module>
 		<module>dept44-starter-webservicetemplate</module>
 		<module>dept44-common-validators</module>
+		<module>dept44-example</module>
 	</modules>
 	
 	<scm>
@@ -98,7 +99,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring-boot.version>2.7.9</spring-boot.version>
+		<spring-boot.version>2.7.10</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
@@ -112,7 +113,7 @@
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.27.0</problem-spring-web.version>
 		<springdoc.version>1.7.0</springdoc.version>
-		<spring-cloud.version>2021.0.5</spring-cloud.version>
+		<spring-cloud.version>2021.0.6</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>2.37.0</json-unit.version>
 		<logback-gelf.version>4.0.2</logback-gelf.version>

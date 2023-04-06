@@ -1,0 +1,26 @@
+{
+	"name": "api-petstore-pet",
+	"request": {
+		"urlPath": "/api-petstore/pets/666",
+		"method": "GET",
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 404,
+		"jsonBody": {
+			"status": {
+				"statusCode": 404,
+				"reasonPhrase": "Not found"
+			},
+			"title": "No pet found",
+			"detail": "No pet with id 666 was found!"
+		}
+	}
+}

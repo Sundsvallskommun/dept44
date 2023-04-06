@@ -1,0 +1,592 @@
+{
+	"openapi": "3.0.1",
+	"info": {
+		"title": "api-service-pet-inventory",
+		"contact": {},
+		"license": {
+			"name": "MIT License",
+			"url": "https://opensource.org/licenses/MIT"
+		},
+		"version": "${json-unit.any-string}"
+	},
+	"servers": [
+		{
+			"url": "${json-unit.any-string}",
+			"description": "Generated server url"
+		}
+	],
+	"tags": [
+		{
+			"name": "Pet inventory",
+			"description": "Pet inventory operations"
+		}
+	],
+	"paths": {
+		"/pet-inventory-items": {
+			"get": {
+				"tags": [
+					"Pet inventory"
+				],
+				"summary": "Get Pet inventory items",
+				"operationId": "getPetInventoryList",
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/PetInventoryItem"
+									}
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/pet-inventory-items/{id}": {
+			"get": {
+				"tags": [
+					"Pet inventory"
+				],
+				"summary": "Get Pet inventory item by id",
+				"operationId": "getPetInventoryItem",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "integer",
+							"format": "int64"
+						}
+					}
+				],
+				"responses": {
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
+					},
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PetInventoryItem"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api-docs": {
+			"get": {
+				"tags": [
+					"API"
+				],
+				"summary": "OpenAPI",
+				"operationId": "getApiDocs",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/yaml": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"x-auth-type": "None",
+				"x-throttling-tier": "Unlimited",
+				"x-wso2-mutual-ssl": "Optional"
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"PetInventoryItem": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "integer",
+						"description": "Pet ID",
+						"format": "int64",
+						"example": 1
+					},
+					"price": {
+						"type": "number",
+						"description": "Pet price",
+						"format": "float",
+						"example": 1.5
+					},
+					"name": {
+						"type": "string",
+						"description": "Pet name",
+						"example": "Daisy"
+					},
+					"type": {
+						"type": "string",
+						"description": "Pet type",
+						"example": "DOG"
+					}
+				},
+				"description": "Pet inventory item model"
+			},
+			"Problem": {
+				"type": "object",
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
+					"title": {
+						"type": "string"
+					},
+					"detail": {
+						"type": "string"
+					},
+					"instance": {
+						"type": "string",
+						"format": "uri"
+					},
+					"type": {
+						"type": "string",
+						"format": "uri"
+					},
+					"parameters": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "object"
+						}
+					}
+				}
+			},
+			"StatusType": {
+				"type": "object",
+				"properties": {
+					"statusCode": {
+						"type": "integer",
+						"format": "int32"
+					},
+					"reasonPhrase": {
+						"type": "string"
+					}
+				}
+			},
+			"ConstraintViolationProblem": {
+				"type": "object",
+				"properties": {
+					"cause": {
+						"$ref": "#/components/schemas/ThrowableProblem"
+					},
+					"stackTrace": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"classLoaderName": {
+									"type": "string"
+								},
+								"moduleName": {
+									"type": "string"
+								},
+								"moduleVersion": {
+									"type": "string"
+								},
+								"methodName": {
+									"type": "string"
+								},
+								"fileName": {
+									"type": "string"
+								},
+								"lineNumber": {
+									"type": "integer",
+									"format": "int32"
+								},
+								"nativeMethod": {
+									"type": "boolean"
+								},
+								"className": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"type": {
+						"type": "string",
+						"format": "uri"
+					},
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
+					"violations": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Violation"
+						}
+					},
+					"title": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
+					"detail": {
+						"type": "string"
+					},
+					"instance": {
+						"type": "string",
+						"format": "uri"
+					},
+					"parameters": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "object"
+						}
+					},
+					"suppressed": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"cause": {
+									"type": "object",
+									"properties": {
+										"stackTrace": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"classLoaderName": {
+														"type": "string"
+													},
+													"moduleName": {
+														"type": "string"
+													},
+													"moduleVersion": {
+														"type": "string"
+													},
+													"methodName": {
+														"type": "string"
+													},
+													"fileName": {
+														"type": "string"
+													},
+													"lineNumber": {
+														"type": "integer",
+														"format": "int32"
+													},
+													"nativeMethod": {
+														"type": "boolean"
+													},
+													"className": {
+														"type": "string"
+													}
+												}
+											}
+										},
+										"message": {
+											"type": "string"
+										},
+										"localizedMessage": {
+											"type": "string"
+										}
+									}
+								},
+								"stackTrace": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"classLoaderName": {
+												"type": "string"
+											},
+											"moduleName": {
+												"type": "string"
+											},
+											"moduleVersion": {
+												"type": "string"
+											},
+											"methodName": {
+												"type": "string"
+											},
+											"fileName": {
+												"type": "string"
+											},
+											"lineNumber": {
+												"type": "integer",
+												"format": "int32"
+											},
+											"nativeMethod": {
+												"type": "boolean"
+											},
+											"className": {
+												"type": "string"
+											}
+										}
+									}
+								},
+								"message": {
+									"type": "string"
+								},
+								"localizedMessage": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"localizedMessage": {
+						"type": "string"
+					}
+				}
+			},
+			"ThrowableProblem": {
+				"type": "object",
+				"properties": {
+					"cause": {
+						"$ref": "#/components/schemas/ThrowableProblem"
+					},
+					"stackTrace": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"classLoaderName": {
+									"type": "string"
+								},
+								"moduleName": {
+									"type": "string"
+								},
+								"moduleVersion": {
+									"type": "string"
+								},
+								"methodName": {
+									"type": "string"
+								},
+								"fileName": {
+									"type": "string"
+								},
+								"lineNumber": {
+									"type": "integer",
+									"format": "int32"
+								},
+								"nativeMethod": {
+									"type": "boolean"
+								},
+								"className": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"message": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
+					"title": {
+						"type": "string"
+					},
+					"detail": {
+						"type": "string"
+					},
+					"instance": {
+						"type": "string",
+						"format": "uri"
+					},
+					"type": {
+						"type": "string",
+						"format": "uri"
+					},
+					"parameters": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "object"
+						}
+					},
+					"suppressed": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"cause": {
+									"type": "object",
+									"properties": {
+										"stackTrace": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"classLoaderName": {
+														"type": "string"
+													},
+													"moduleName": {
+														"type": "string"
+													},
+													"moduleVersion": {
+														"type": "string"
+													},
+													"methodName": {
+														"type": "string"
+													},
+													"fileName": {
+														"type": "string"
+													},
+													"lineNumber": {
+														"type": "integer",
+														"format": "int32"
+													},
+													"nativeMethod": {
+														"type": "boolean"
+													},
+													"className": {
+														"type": "string"
+													}
+												}
+											}
+										},
+										"message": {
+											"type": "string"
+										},
+										"localizedMessage": {
+											"type": "string"
+										}
+									}
+								},
+								"stackTrace": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"classLoaderName": {
+												"type": "string"
+											},
+											"moduleName": {
+												"type": "string"
+											},
+											"moduleVersion": {
+												"type": "string"
+											},
+											"methodName": {
+												"type": "string"
+											},
+											"fileName": {
+												"type": "string"
+											},
+											"lineNumber": {
+												"type": "integer",
+												"format": "int32"
+											},
+											"nativeMethod": {
+												"type": "boolean"
+											},
+											"className": {
+												"type": "string"
+											}
+										}
+									}
+								},
+								"message": {
+									"type": "string"
+								},
+								"localizedMessage": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"localizedMessage": {
+						"type": "string"
+					}
+				}
+			},
+			"Violation": {
+				"type": "object",
+				"properties": {
+					"field": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"securitySchemes": {}
+	}
+}

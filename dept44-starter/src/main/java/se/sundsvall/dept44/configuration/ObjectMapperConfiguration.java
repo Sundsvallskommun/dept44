@@ -1,9 +1,10 @@
 package se.sundsvall.dept44.configuration;
 
+import org.springframework.context.annotation.Bean;
+
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-import org.springframework.context.annotation.Bean;
 
 public class ObjectMapperConfiguration {
 

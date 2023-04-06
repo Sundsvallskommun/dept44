@@ -36,11 +36,6 @@ public class PetNameEntity {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(created, id, modified, name);
-	}
-
 	public static PetNameEntity create() {
 		return new PetNameEntity();
 	}
@@ -98,14 +93,19 @@ public class PetNameEntity {
 	}
 
 	@Override
+	public int hashCode() {
+		return Objects.hash(created, id, modified, name);
+	}
+
+	@Override
 	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof final PetNameEntity other)) {
+		if (!(obj instanceof PetNameEntity other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && (id == other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override

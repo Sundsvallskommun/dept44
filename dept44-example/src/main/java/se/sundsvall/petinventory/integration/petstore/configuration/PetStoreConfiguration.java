@@ -1,7 +1,8 @@
 package se.sundsvall.petinventory.integration.petstore.configuration;
 
-import static java.util.List.of;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+
+import java.util.List;
 
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +21,7 @@ public class PetStoreConfiguration {
 	@Bean
 	FeignBuilderCustomizer feignBuilderCustomizer(final PetStoreProperties petstoreProperties, final ClientRegistrationRepository clientRegistrationRepository) {
 		return FeignMultiCustomizer.create()
-			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID, of(NOT_FOUND.value())))
+			.withErrorDecoder(new ProblemErrorDecoder(CLIENT_ID, List.of(NOT_FOUND.value())))
 			.withRequestTimeoutsInSeconds(petstoreProperties.connectTimeout(), petstoreProperties.readTimeout())
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistrationRepository.findByRegistrationId(CLIENT_ID))
 			.composeCustomizersToOne();

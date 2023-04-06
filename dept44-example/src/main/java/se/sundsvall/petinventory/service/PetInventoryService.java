@@ -24,14 +24,14 @@ public class PetInventoryService {
 
 	public PetInventoryItem getPetInventoryItem(final long id) {
 		return petStoreClient.findPetById(id)
-			.map(PetInventoryMapper::toPetInvetoryItem)
+			.map(PetInventoryMapper::toPetInventoryItem)
 			.map(this::populateWithName)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No pet found for provided ID"));
 	}
 
 	public List<PetInventoryItem> getPetInventoryList() {
 		return petStoreClient.findAllPets().stream()
-			.map(PetInventoryMapper::toPetInvetoryItem)
+			.map(PetInventoryMapper::toPetInventoryItem)
 			.map(this::populateWithName)
 			.toList();
 	}

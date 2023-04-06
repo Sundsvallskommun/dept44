@@ -11,7 +11,7 @@ public class PetInventoryMapper {
 
 	private PetInventoryMapper() {}
 
-	public static PetInventoryItem toPetInvetoryItem(final Pet pet) {
+	public static PetInventoryItem toPetInventoryItem(final Pet pet) {
 		if (isNull(pet)) {
 			return null;
 		}

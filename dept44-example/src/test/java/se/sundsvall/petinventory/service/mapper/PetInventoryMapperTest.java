@@ -10,7 +10,7 @@ import generated.swagger.io.petstore.TypeEnum;
 class PetInventoryMapperTest {
 
 	@Test
-	void toPetInvetoryItem() {
+	void toPetInventoryItem() {
 
 		// Setup
 		final var id = 1L;
@@ -22,7 +22,7 @@ class PetInventoryMapperTest {
 			.type(TypeEnum.fromValue(type));
 
 		// Call
-		final var result = PetInventoryMapper.toPetInvetoryItem(pet);
+		final var result = PetInventoryMapper.toPetInventoryItem(pet);
 
 		// Verification
 		assertThat(result).isNotNull();
@@ -33,10 +33,10 @@ class PetInventoryMapperTest {
 	}
 
 	@Test
-	void toPetInvetoryItemWhenPetIsNull() {
+	void toPetInventoryItemWhenPetIsNull() {
 
 		// Call
-		final var result = PetInventoryMapper.toPetInvetoryItem(null);
+		final var result = PetInventoryMapper.toPetInventoryItem(null);
 
 		// Verification
 		assertThat(result).isNull();

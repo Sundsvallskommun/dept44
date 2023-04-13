@@ -4,7 +4,7 @@ import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
 import java.util.function.Supplier;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import se.sundsvall.dept44.common.validators.annotation.exception.IncompatibleAnnotationException;
 

@@ -17,6 +17,8 @@
 		<openapi-generator-maven-plugin.version>6.5.0</openapi-generator-maven-plugin.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
+		<maven.source.skip>false</maven.source.skip>
+		<maven.javadoc.skip>false</maven.javadoc.skip>
 	</properties>
 	<dependencies>
 		<dependency>

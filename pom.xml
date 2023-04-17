@@ -111,7 +111,7 @@
 		<apache-commons.version>3.12.0</apache-commons.version>
 		<logbook.version>2.16.0</logbook.version>
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
-		<problem-spring-web.version>0.27.0</problem-spring-web.version>
+		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>1.7.0</springdoc.version>
 		<spring-cloud.version>2021.0.6</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>

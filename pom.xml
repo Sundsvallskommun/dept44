@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
-	<version>1.35-SNAPSHOT</version>
+	<version>1.35</version>
 	<packaging>pom</packaging>
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
@@ -43,7 +43,7 @@
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
-		<tag>HEAD</tag>
+		<tag>dept44-release-1.35</tag>
 	</scm>
 
 	<profiles>
@@ -174,27 +174,27 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-authorization</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-logback-graylog</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
@@ -204,17 +204,17 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webclient</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>1.35-SNAPSHOT</version>
+				<version>1.35</version>
 			</dependency>
 
 			<!-- Problem -->

@@ -1,6 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.zalando.logbook.Conditions.exclude;
+import static org.zalando.logbook.core.Conditions.exclude;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
@@ -20,9 +20,9 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.BodyFilter;
-import org.zalando.logbook.Conditions;
+import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.Correlation;
-import org.zalando.logbook.DefaultSink;
+import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.HttpLogWriter;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;

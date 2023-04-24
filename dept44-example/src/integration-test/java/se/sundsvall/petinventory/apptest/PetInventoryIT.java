@@ -9,7 +9,12 @@ import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
 import java.util.List;
 
+import com.github.tomakehurst.wiremock.common.ConsoleNotifier;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.cloud.contract.wiremock.WireMockConfigurationCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;

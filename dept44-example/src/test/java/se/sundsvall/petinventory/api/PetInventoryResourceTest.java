@@ -41,7 +41,7 @@ class PetInventoryResourceTest {
 		when(petInventoryServiceMock.getPetInventoryList()).thenReturn(List.of(PetInventoryItem.create()));
 
 		// Call.
-		final var response = webTestClient.get().uri("/pet-inventory-items/")
+		final var response = webTestClient.get().uri("/pet-inventory-items")
 			.exchange()
 			.expectStatus().isOk()
 			.expectHeader().contentType(APPLICATION_JSON)

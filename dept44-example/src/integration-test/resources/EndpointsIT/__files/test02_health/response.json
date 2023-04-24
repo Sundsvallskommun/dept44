@@ -49,6 +49,7 @@
 				"total": "${json-unit.any-number}",
 				"free": "${json-unit.any-number}",
 				"threshold": "${json-unit.any-number}",
+				"path": "${json-unit.any-string}",
 				"exists": true
 			}
 		},

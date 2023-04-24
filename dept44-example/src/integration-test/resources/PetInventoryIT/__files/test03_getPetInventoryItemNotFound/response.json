@@ -1,5 +1,5 @@
 {
-	"detail": "petstore error: {status=404 Not Found, title=Unknown error}",
+	"detail": "petstore error: {detail=No pet with id 666 was found!, status=404 Not Found, title=No pet found}",
 	"status": 404,
 	"title": "Not Found"
 }

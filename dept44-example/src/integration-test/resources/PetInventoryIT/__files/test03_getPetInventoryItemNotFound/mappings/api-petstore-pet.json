@@ -15,10 +15,7 @@
 		},
 		"status": 404,
 		"jsonBody": {
-			"status": {
-				"statusCode": 404,
-				"reasonPhrase": "Not found"
-			},
+			"status": 404,
 			"title": "No pet found",
 			"detail": "No pet with id 666 was found!"
 		}

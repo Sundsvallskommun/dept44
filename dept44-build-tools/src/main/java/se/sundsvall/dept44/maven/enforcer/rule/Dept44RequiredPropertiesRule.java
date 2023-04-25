@@ -21,10 +21,12 @@ import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.snakeyaml.error.MarkedYAMLException;
 
 
 public class Dept44RequiredPropertiesRule implements EnforcerRule {
@@ -113,7 +115,7 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 					}
 				}
 			} catch (IOException e) {
-				throw new EnforcerRuleException("Unable to load properties/YAML file " + propertyFile.getName(), e);
+				throw new EnforcerRuleException("Unable to load properties/YAML file " + propertyFile.getName() + ": " + e.getMessage(), e);
 			}
 
 			openApiEnabled = Optional.ofNullable(properties.getOrDefault("openapi.enabled", "true"))

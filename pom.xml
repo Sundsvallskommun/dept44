@@ -198,11 +198,6 @@
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-resttemplate</artifactId>
-				<version>1.30-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
 				<version>1.36-SNAPSHOT</version>
 			</dependency>

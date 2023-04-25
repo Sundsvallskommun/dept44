@@ -115,7 +115,8 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 					}
 				}
 			} catch (IOException e) {
-				throw new EnforcerRuleException("Unable to load properties/YAML file " + propertyFile.getName() + ": " + e.getMessage(), e);
+				throw new EnforcerRuleException(String.format(
+					"Unable to load properties/YAML file %s: %s", propertyFile.getName(), e.getMessage()), e);
 			}
 
 			openApiEnabled = Optional.ofNullable(properties.getOrDefault("openapi.enabled", "true"))

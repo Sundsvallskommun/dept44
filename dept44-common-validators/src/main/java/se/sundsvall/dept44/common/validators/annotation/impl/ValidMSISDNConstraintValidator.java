@@ -2,8 +2,8 @@ package se.sundsvall.dept44.common.validators.annotation.impl;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
 
 import static java.util.Objects.isNull;

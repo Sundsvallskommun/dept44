@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import io.swagger.v3.oas.models.Operation;
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -80,7 +80,7 @@ public class OpenApiConfiguration {
 	}
 	
 	@Bean
-	OpenApiCustomiser apiDocsOpenApiCustomizer() {
+	OpenApiCustomizer apiDocsOpenApiCustomizer() {
 		return openApi -> Optional.ofNullable(openApi.getPaths().get("/api-docs"))
 				.flatMap(openApiPath -> Optional.ofNullable(openApiPath.getGet())).ifPresent(this::extendOperation);
 	}

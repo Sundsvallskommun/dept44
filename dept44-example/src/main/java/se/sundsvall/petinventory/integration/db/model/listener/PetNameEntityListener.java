@@ -5,8 +5,8 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 
 import java.time.ZoneId;
 
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 

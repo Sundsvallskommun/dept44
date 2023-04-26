@@ -7,7 +7,7 @@ import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 import static org.apache.http.entity.ContentType.TEXT_XML;
 import static org.zalando.logbook.BodyFilter.merge;
-import static org.zalando.logbook.BodyFilters.defaultValue;
+import static org.zalando.logbook.core.BodyFilters.defaultValue;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
 
 import java.io.ByteArrayInputStream;

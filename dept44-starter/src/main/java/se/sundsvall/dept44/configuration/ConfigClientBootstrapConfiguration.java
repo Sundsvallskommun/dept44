@@ -1,7 +1,9 @@
 package se.sundsvall.dept44.configuration;
 
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.client.ConfigClientProperties;
 import org.springframework.cloud.config.client.ConfigServicePropertySourceLocator;
@@ -27,11 +29,19 @@ import se.sundsvall.dept44.security.Truststore;
 public class ConfigClientBootstrapConfiguration {
 
 	@Bean
-	ConfigServicePropertySourceLocator configServicePropertySourceLocator(Truststore truststore, @Autowired ConfigClientProperties configClientProperties) {
-
+	ConfigServicePropertySourceLocator configServicePropertySourceLocator(final Truststore truststore,
+			@Autowired final ConfigClientProperties configClientProperties) {
+		final var sslContext = truststore.getSSLContext();
+		final var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+			.setSslContext(sslContext)
+			.setHostnameVerifier(new NoopHostnameVerifier())
+			.build();
+		final var httpClientConnectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+			.setSSLSocketFactory(sslConnectionSocketFactory)
+			.build();
 		final var httpClient = HttpClients.custom()
-			.setSSLHostnameVerifier(new NoopHostnameVerifier())
-			.setSSLContext(truststore.getSSLContext())
+			.setConnectionManager(httpClientConnectionManager)
+			.evictExpiredConnections()
 			.build();
 
 		final var configServicePropertySourceLocator = new ConfigServicePropertySourceLocator(configClientProperties);

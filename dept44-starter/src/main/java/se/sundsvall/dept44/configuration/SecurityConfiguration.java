@@ -15,7 +15,7 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http
-            .authorizeRequests()
+            .authorizeHttpRequests()
                 .requestMatchers(EndpointRequest.toAnyEndpoint())
                 .permitAll()
             .and()
@@ -24,6 +24,6 @@ public class SecurityConfiguration {
 
     @Bean
     WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().antMatchers("/**");
+        return web -> web.ignoring().requestMatchers("/**");
     }
 }

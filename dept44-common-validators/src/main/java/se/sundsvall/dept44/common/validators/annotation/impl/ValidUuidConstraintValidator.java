@@ -7,8 +7,8 @@ import static org.springframework.util.ReflectionUtils.findMethod;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 

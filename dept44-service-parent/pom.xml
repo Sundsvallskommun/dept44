@@ -59,7 +59,6 @@
 				<version>${spring-boot.version}</version>
 				<configuration>
 					<addResources>true</addResources>
-					<jvmArguments>--enable-preview</jvmArguments>
 					<layers>
 						<enabled>true</enabled>
 					</layers>
@@ -89,7 +88,6 @@
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<compilerArgs>
-						<arg>--enable-preview</arg>
 						<arg>-parameters</arg>
 					</compilerArgs>
 				</configuration>

@@ -208,19 +208,25 @@ class AbstractAppTestTest {
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
-		final var instance = appTest.setupCall()
+		final var call = appTest.setupCall()
 			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(PUT)
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withMaxVerificationDelayInSeconds(5)
-			.sendRequestAndVerifyResponse()
-			.andReturnBody(TestBody.class);
+			.sendRequestAndVerifyResponse();
+
+		final var instance = call.getResponseBody(TestBody.class);
+		final var headers = call.getResponseHeaders();
 
 		// Verification
 		assertThat(instance).isNotNull();
 		assertThat(instance.getKey()).isEqualTo("this-is-key");
 		assertThat(instance.getValue()).isEqualTo("this-is-value");
+
+		assertThat(headers).isNotNull();
+		assertThat(headers.get("responseHeader")).containsOnly("responseValue");
+
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(PUT), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();

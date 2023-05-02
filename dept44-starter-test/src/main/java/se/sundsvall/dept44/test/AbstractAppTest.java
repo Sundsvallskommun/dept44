@@ -68,6 +68,7 @@ public abstract class AbstractAppTest {
 	private String mappingPath;
 	private String servicePath;
 	private String responseBody;
+	private HttpHeaders responseHeaders;
 	private HttpMethod method;
 	private HttpStatus expectedResponseStatus;
 	private HttpHeaders expectedResponseHeaders;
@@ -225,6 +226,7 @@ public abstract class AbstractAppTest {
 		// Call service and fetch response.
 		final var response = this.restTemplate.exchange(this.servicePath, this.method, restTemplateRequest(mediaType, this.requestBody), String.class);
 		this.responseBody = response.getBody();
+		this.responseHeaders = response.getHeaders();
 
 		if (nonNull(this.expectedResponseHeaders)) {
 			this.expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
@@ -265,6 +267,26 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
+	 * Returns the response body mapped to the provided class.
+	 *
+	 * @param clazz the class to map the response body to
+	 * @return the mapped response
+	 */
+	public <T> T getResponseBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+		return andReturnBody(clazz);
+	}
+
+	/**
+	 * Returns the response body mapped to the provided type reference.
+	 *
+	 * @param typeReference the type reference to map the response body to
+	 * @return the mapped response
+	 */
+	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JsonProcessingException {
+		return andReturnBody(typeReference);
+	}
+
+	/**
 	 * Method returns the received server response mapped to the sent in class
 	 *
 	 * @param clazz class to map response to
@@ -282,6 +304,15 @@ public abstract class AbstractAppTest {
 	 */
 	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
 		return JSON_MAPPER.readValue(this.responseBody, typeReference);
+	}
+
+	/**
+	 * Returns the response headers.
+	 *
+	 * @return the response headers
+	 */
+	public HttpHeaders getResponseHeaders() {
+		return responseHeaders;
 	}
 
 	public AbstractAppTest andVerifyThat(final Callable<Boolean> conditionIsMet) {

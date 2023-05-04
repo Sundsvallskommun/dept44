@@ -77,7 +77,7 @@ class ValidMSISDNConstraintValidatorTest {
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN, regular expression ^\\+[1-9][\\d]{3,14}$");
+		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$");
 
 		verifyNoInteractions(annotationMock);
 	}

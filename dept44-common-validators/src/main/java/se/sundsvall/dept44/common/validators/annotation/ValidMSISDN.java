@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.common.validators.annotation;
 
-import se.sundsvall.dept44.common.validators.annotation.impl.ValidMobileNumberConstraintValidator;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,15 +8,16 @@ import java.lang.annotation.Target;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
+import se.sundsvall.dept44.common.validators.annotation.impl.ValidMSISDNConstraintValidator;
 
 /**
- * The annotated element must be a valid MSISDN according to the regular expression ^\+[1-9]{1}[0-9]{3,14}$. Accepts
+ * The annotated element must be a valid MSISDN according to the regular expression ^\+[1-9][\d]{3,14}$. Accepts
  * CharSequence.
  */
 @Documented
-@Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE})
+@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidMobileNumberConstraintValidator.class)
+@Constraint(validatedBy = ValidMSISDNConstraintValidator.class)
 public @interface ValidMSISDN {
 
 	/**
@@ -26,7 +25,7 @@ public @interface ValidMSISDN {
 	 *
 	 * @return the message.
 	 */
-	String message() default "must be a valid MSISDN, regular expression ^\\+[1-9]{1}[0-9]{3,14}$";
+	String message() default "must be a valid MSISDN, regular expression ^\\+[1-9][\\d]{3,14}$";
 
 	/**
 	 * Controls whether the value can be null or not.

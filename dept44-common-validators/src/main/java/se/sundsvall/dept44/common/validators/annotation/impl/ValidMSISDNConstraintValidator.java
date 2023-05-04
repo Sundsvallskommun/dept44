@@ -1,22 +1,22 @@
 package se.sundsvall.dept44.common.validators.annotation.impl;
 
-import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
-
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
-import java.lang.reflect.Method;
-
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
+import java.lang.reflect.Method;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
+
 /**
- * Defines the logic to validate that a string is a valid mobile number.
+ * Defines the logic to validate that a string is a valid MSISDN.
  */
 public class ValidMSISDNConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidMSISDN, String> {
 
-	private static final String REGEX_PATTERN = "^\\+[1-9]{1}[0-9]{3,14}$";
+	private static final String REGEX_PATTERN = "^\\+[1-9][\\d]{3,14}$";
 	private boolean nullable;
 
 	@Override
@@ -41,8 +41,8 @@ public class ValidMSISDNConstraintValidator extends AbstractValidator implements
 	@Override
 	public String getMessage() {
 		return ofNullable(findMethod(ValidMSISDN.class, MESSAGE_METHOD_NAME))
-				.map(Method::getDefaultValue)
-				.map(Object::toString)
-				.orElseThrow(createException(ValidMSISDN.class.getName()));
+			.map(Method::getDefaultValue)
+			.map(Object::toString)
+			.orElseThrow(createException(ValidMSISDN.class.getName()));
 	}
 }

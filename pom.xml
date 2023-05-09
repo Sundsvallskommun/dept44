@@ -134,7 +134,7 @@
 		<jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>5.0.0</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
-		<maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
+		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
 
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>

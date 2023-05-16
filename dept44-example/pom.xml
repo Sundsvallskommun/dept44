@@ -13,7 +13,7 @@
 	<description>Example implementation</description>
 	<properties>
 		<testcontainers.version>1.18.1</testcontainers.version>
-		<openapi-generator-maven-plugin.version>6.5.0</openapi-generator-maven-plugin.version>
+		<openapi-generator-maven-plugin.version>6.6.0</openapi-generator-maven-plugin.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 		<maven.source.skip>false</maven.source.skip>

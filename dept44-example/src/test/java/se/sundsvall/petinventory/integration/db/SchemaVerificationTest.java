@@ -19,7 +19,7 @@ class SchemaVerificationTest {
 
 	private static final String STORED_SCHEMA_FILE = "db/scripts/schema.sql";
 
-	@Value("${spring.jpa.properties.javax.persistence.schema-generation.scripts.create-target}")
+	@Value("${spring.jpa.properties.jakarta.persistence.schema-generation.scripts.create-target}")
 	private String generatedSchemaFile;
 
 	@Test

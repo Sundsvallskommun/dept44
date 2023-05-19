@@ -6,7 +6,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import com.jayway.jsonpath.JsonPath;
 

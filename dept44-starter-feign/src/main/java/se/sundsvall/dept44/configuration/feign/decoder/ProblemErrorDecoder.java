@@ -3,7 +3,7 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 import java.io.IOException;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import org.zalando.problem.Problem;
 import org.zalando.problem.jackson.ProblemModule;

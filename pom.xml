@@ -109,7 +109,7 @@
 
 		<!-- Dependency versions -->
 		<apache-commons.version>3.12.0</apache-commons.version>
-		<logbook.version>3.0.0-RC.2</logbook.version>
+		<logbook.version>3.0.0</logbook.version>
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>2.1.0</springdoc.version>

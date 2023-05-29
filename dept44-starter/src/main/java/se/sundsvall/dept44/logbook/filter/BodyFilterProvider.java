@@ -39,6 +39,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -55,10 +56,11 @@ public class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(final Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
+
 		final var jsonPathConfiguration = Configuration.builder()
-			.jsonProvider(new JacksonJsonProvider())
-			.mappingProvider(new JacksonMappingProvider())
+			.jsonProvider(new JacksonJsonProvider(objectMapper))
+			.mappingProvider(new JacksonMappingProvider(objectMapper))
 			.options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
 			.build();
 

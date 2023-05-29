@@ -20,14 +20,14 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.BodyFilter;
-import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.Correlation;
-import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.HttpLogWriter;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
+import org.zalando.logbook.core.Conditions;
+import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,7 +59,7 @@ public class LogbookConfiguration {
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.bodyFilter(passwordFilter())
-			.bodyFilters(buildJsonPathFilters(exclusionFiltersJsonPath))
+			.bodyFilters(buildJsonPathFilters(objectMapper, exclusionFiltersJsonPath))
 			.bodyFilters(buildXPathFilters(exclusionFiltersXPath))
 			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
 			.condition(exclude(getExclusions()))

@@ -190,6 +190,9 @@
 							<goal>check</goal>
 						</goals>
 						<configuration>
+							<excludes>
+								<exclude>**/se/sundsvall/dept44/configuration/ObjectMapperConfiguration*</exclude>
+							</excludes>
 							<!-- Tell jacoco which file to analyze -->
 							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
 							<rules>

@@ -6,6 +6,7 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 
 import reactor.core.publisher.Mono;
+
 import se.sundsvall.dept44.requestid.RequestId;
 
 class RequestIdExchangeFilterFunction implements ExchangeFilterFunction {

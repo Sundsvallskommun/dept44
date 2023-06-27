@@ -2,10 +2,10 @@ package se.sundsvall.dept44.logbook.filter;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-import static org.apache.http.entity.ContentType.APPLICATION_XHTML_XML;
-import static org.apache.http.entity.ContentType.APPLICATION_XML;
-import static org.apache.http.entity.ContentType.TEXT_XML;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_XHTML_XML;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_XML;
+import static org.apache.hc.core5.http.ContentType.TEXT_XML;
 import static org.zalando.logbook.BodyFilter.merge;
 import static org.zalando.logbook.core.BodyFilters.defaultValue;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
@@ -32,7 +32,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.http.entity.ContentType;
+import org.apache.hc.core5.http.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

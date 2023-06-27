@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.configuration.webclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -51,7 +52,8 @@ class WebClientBuilderTest {
 			.hasAllNullFieldsOrPropertiesExcept("connectTimeout", "readTimeout", "writeTimeout", "customizers")
 			.hasFieldOrPropertyWithValue("connectTimeout", Duration.ofSeconds(10))
 			.hasFieldOrPropertyWithValue("readTimeout", Duration.ofSeconds(30))
-			.hasFieldOrPropertyWithValue("writeTimeout", Duration.ofSeconds(30));
+			.hasFieldOrPropertyWithValue("writeTimeout", Duration.ofSeconds(30))
+			.extracting("customizers").asInstanceOf(LIST).isNotNull().hasSize(1);
 	}
 
 	@Test
@@ -63,13 +65,14 @@ class WebClientBuilderTest {
 			.hasFieldOrPropertyWithValue("connectTimeout", CONNECT_TIMEOUT)
 			.hasFieldOrPropertyWithValue("readTimeout", READ_TIMEOUT)
 			.hasFieldOrPropertyWithValue("writeTimeout", WRITE_TIMEOUT)
-			.hasFieldOrPropertyWithValue("logbook", LOGBOOK_MOCK);
+			.hasFieldOrPropertyWithValue("logbook", LOGBOOK_MOCK)
+			.extracting("customizers").asInstanceOf(LIST).isNotNull().hasSize(3);
 	}
-	
+
 	@Test
 	void testValueRestrictions() {
 		var builder = createBuilder(false);
-		
+
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(null))).hasMessage("baseUrl cannot be null or blank");
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(""))).hasMessage("baseUrl cannot be null or blank");
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(" "))).hasMessage("baseUrl cannot be null or blank");
@@ -77,7 +80,7 @@ class WebClientBuilderTest {
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withReadTimeout(null))).hasMessage("readTimeout may not be null.");
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withWriteTimeout(null))).hasMessage("writeTimeout may not be null.");
 	}
-	
+
 	@Test
 	void testBuildFromMinimumValues() {
 		var webClient = createBuilder(false).withBaseUrl(BASE_URL).build();
@@ -105,9 +108,9 @@ class WebClientBuilderTest {
 	@Test
 	void testBuildFromCustomValuesWithOAuth2() {
 		when(CLIENT_REGISTRATION_MOCK.getRegistrationId()).thenReturn("registrationId");
-		
+
 		var webClient = createBuilder(true, false, true).build();
-		
+
 		assertTimeoutSetting(webClient, 54000);
 		assertThat(webClient).extracting("defaultHeaders").isNull();
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
@@ -148,7 +151,7 @@ class WebClientBuilderTest {
 		var mockHttpServiceProxyFactory = mock(HttpServiceProxyFactory.class);
 
 		try (var mockStaticWebClientAdapter = mockStatic(WebClientAdapter.class);
-			 	var mockStaticHttpServiceProxyFactory = mockStatic(HttpServiceProxyFactory.class)) {
+			 var mockStaticHttpServiceProxyFactory = mockStatic(HttpServiceProxyFactory.class)) {
 			mockStaticWebClientAdapter.when(() -> WebClientAdapter.forClient(any(WebClient.class)))
 				.thenReturn(mockWebClientAdapter);
 			mockStaticHttpServiceProxyFactory.when(() -> HttpServiceProxyFactory.builder(any(HttpClientAdapter.class)))
@@ -171,10 +174,10 @@ class WebClientBuilderTest {
 	private WebClientBuilder createBuilder(boolean populateValues) {
 		return createBuilder(populateValues, populateValues, populateValues);
 	}
-	
+
 	private WebClientBuilder createBuilder(boolean populateValues, boolean useBasicAuth, boolean useOauth2) {
 		if (!populateValues) return new WebClientBuilder();
-		
+
 		var builder = new WebClientBuilder()
 			.withBaseUrl(BASE_URL)
 			.withConnectTimeout(CONNECT_TIMEOUT)
@@ -184,7 +187,7 @@ class WebClientBuilderTest {
 
 		if (useBasicAuth) {
 			builder.withBasicAuthentication(USER_NAME, PASSWORD);
-			
+
 		}
 		if (useOauth2) {
 			var mockBuilder = mock(ClientRegistration.Builder.class);
@@ -198,7 +201,7 @@ class WebClientBuilderTest {
 				builder.withOAuth2Client(CLIENT_REGISTRATION_MOCK);
 			}
 		}
-		
+
 		return builder;
 	}
 

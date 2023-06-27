@@ -1,30 +1,49 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.netty.LogbookClientHandler;
 
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
+
 import se.sundsvall.dept44.configuration.Constants;
-import se.sundsvall.dept44.support.BasicAuthentication;
 
 public class WebClientBuilder {
 
+	@FunctionalInterface
+	public interface Customizer {
+
+		void customize(WebClient.Builder builder);
+	}
+
+	private final List<Customizer> customizers;
 	private String baseUrl;
 
 	private Duration connectTimeout = Duration.ofSeconds(Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS);
@@ -32,8 +51,11 @@ public class WebClientBuilder {
 	private Duration writeTimeout = Duration.ofSeconds(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS);
 
 	private Logbook logbook;
-	private ClientRegistration oAuth2ClientRegistration;
-	private BasicAuthentication basicAuthentication;
+
+	public WebClientBuilder() {
+		customizers = new ArrayList<>();
+		customizers.add(builder -> builder.filter(new RequestIdExchangeFilterFunction()));
+	}
 
 	/**
 	 * Sets the base URL.
@@ -42,7 +64,139 @@ public class WebClientBuilder {
 	 * @return this builder
 	 */
 	public WebClientBuilder withBaseUrl(final String baseUrl) {
-		this.baseUrl = requireNotBlank(baseUrl, "baseUrl may not be blank.");
+		this.baseUrl = requireNotBlank(baseUrl, "baseUrl cannot be null or blank");
+		return this;
+	}
+
+	/**
+	 * Sets Basic authentication details.
+	 *
+	 * @param username the Basic authentication username
+	 * @param password the Basic authentication password
+	 * @return this builder
+	 */
+	public WebClientBuilder withBasicAuthentication(final String username, final String password) {
+		requireNotBlank(username, "username cannot be null or blank");
+		requireNotBlank(password, "password cannot be null or blank");
+
+		return withCustomizer(builder ->
+			builder.defaultHeaders(headers -> headers.setBasicAuth(username, password)));
+	}
+
+	/**
+	 * Sets the OAuth2 client details.
+	 *
+	 * @param oAuth2ClientRegistration the OAuth2 client details
+	 * @return this builder
+	 *
+	 * @deprecated Use {@link WebClientBuilder#withOAuth2ClientRegistration(ClientRegistration)}
+	 */
+	@Deprecated(since = "2023-06-09", forRemoval = true)
+	public WebClientBuilder withOAuth2Client(final ClientRegistration oAuth2ClientRegistration) {
+		return withOAuth2ClientRegistration(oAuth2ClientRegistration);
+	}
+
+	/**
+	 * Sets the OAuth2 client registration.
+	 *
+	 * @param clientRegistration the OAuth2 client registration
+	 * @return this builder
+	 */
+	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration) {
+		return withOAuth2ClientRegistration(clientRegistration, Set.of());
+	}
+
+	/**
+	 * Sets the OAuth2 client registration.
+	 *
+	 * @param clientRegistration the OAuth2 client registration
+	 * @param extraScopes extra scopes for the OAuth2 client registration
+	 * @return this builder
+	 */
+	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration,
+			final Set<String> extraScopes) {
+		requireNonNull(clientRegistration, "client registration cannot be null");
+
+		var scopes = getScopes(clientRegistration);
+		ofNullable(extraScopes).ifPresent(scopes::addAll);
+
+		var clientRegistrationWithScopes = ClientRegistration.withClientRegistration(clientRegistration)
+			.scope(scopes)
+			.build();
+
+		return withCustomizer(builder ->
+			builder.filter(createOAuth2Filter(clientRegistrationWithScopes)));
+	}
+
+	private Set<String> getScopes(final ClientRegistration clientRegistration) {
+		// When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
+		return ofNullable(clientRegistration.getScopes())
+			.map(HashSet::new)
+			.orElseGet(HashSet::new);
+	}
+
+	/***
+	 * Adds a default header.
+	 *
+	 * @param name the header (name)
+	 * @param values the header values
+	 * @return this builder
+	 */
+	public WebClientBuilder withDefaultHeader(final String name, final String...values) {
+		requireNotBlank(name, "name cannot be null or blank");
+		requireNonNull(values, "values cannot be null");
+
+		return withCustomizer(builder -> builder.defaultHeader(name, values));
+	}
+
+	/**
+	 * Adds a filter (function).
+	 *
+	 * @param filter the filter (function)
+	 * @return this builder
+	 */
+	public WebClientBuilder withFilter(final ExchangeFilterFunction filter) {
+		requireNonNull(filter, "filter cannot be null");
+
+		return withCustomizer(builder -> builder.filter(filter));
+	}
+
+	/**
+	 * Adds a default HTTP status handler.
+	 *
+	 * @param statusPredicate a predicate to match HTTP status codes with
+	 * @param handlerFunction a function to map the response to an error signal
+	 * @return this builder
+	 */
+	public WebClientBuilder withStatusHandler(final Predicate<HttpStatusCode> statusPredicate,
+			final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
+		requireNonNull(statusPredicate, "status predicate cannot be null");
+		requireNonNull(handlerFunction, "handler function cannot be null");
+
+		return withCustomizer(builder -> builder.defaultStatusHandler(statusPredicate, handlerFunction));
+	}
+
+	/**
+	 * Adds a customizer.
+	 *
+	 * @param customizer the customizer
+	 * @return this builder
+	 */
+	public WebClientBuilder withCustomizer(final Customizer customizer) {
+		requireNonNull(customizer, "customizer cannot be null");
+
+		customizers.add(customizer);
+		return this;
+	}
+
+	/**
+	 * Sets the Logbook instance to use for payload logging.
+	 *
+	 * @param logbook the Logbook instance
+	 * @return this builder
+	 */
+	public WebClientBuilder withLogbook(final Logbook logbook) {
+		this.logbook = logbook;
 		return this;
 	}
 
@@ -79,74 +233,36 @@ public class WebClientBuilder {
 		return this;
 	}
 
-	/**
-	 * Sets the OAuth2 client details.
-	 *
-	 * @param oAuth2ClientRegistration the OAuth2 client details
-	 * @return this builder
-	 */
-	public WebClientBuilder withOAuth2Client(final ClientRegistration oAuth2ClientRegistration) {
-		this.oAuth2ClientRegistration = oAuth2ClientRegistration;
-		return this;
-	}
-
-	/**
-	 * Sets Basic authentication details.
-	 *
-	 * @param username the Basic authentication username
-	 * @param password the Basic authentication password
-	 * @return this builder
-	 */
-	public WebClientBuilder withBasicAuthentication(final String username, final String password) {
-		basicAuthentication = new BasicAuthentication(username, password);
-		return this;
-	}
-
-	/**
-	 * Sets the Logbook instance to use for payload logging.
-	 *
-	 * @param logbook the Logbook instance
-	 * @return this builder
-	 */
-	public WebClientBuilder withLogbook(final Logbook logbook) {
-		this.logbook = logbook;
-		return this;
-	}
-
-	/**
-	 * Builds the WebClient.
-	 *
-	 * @return a WebClient
-	 */
 	public WebClient build() {
-		if (nonNull(basicAuthentication) && nonNull(oAuth2ClientRegistration)) {
-			throw new IllegalStateException("Basic Auth and OAuth2 cannot be used simultaneously");
-		}
-
-		var builder = WebClient.builder()
-			.baseUrl(baseUrl)
-			.filter(new RequestIdExchangeFilterFunction());
-
-		if (nonNull(basicAuthentication)) {
-			builder = builder.defaultHeaders(headers -> headers.setBasicAuth(basicAuthentication.username(), basicAuthentication.password()));
-		}
-
-		if (nonNull(oAuth2ClientRegistration)) {
-			builder = builder.filter(createOAuth2Filter());
-		}
-
-		builder = builder.clientConnector(createClientConnector());
-		return builder.build();
+		return configureBuilder().build();
 	}
-	
-	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter() {
-		var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(oAuth2ClientRegistration);
+
+	public <T> T build(final Class<T> serviceType) {
+		requireNonNull(serviceType, "serviceType cannot be null");
+
+		var clientAdapter = WebClientAdapter.forClient(configureBuilder().build());
+		var httpServiceProxyFactory = HttpServiceProxyFactory.builder(clientAdapter).build();
+
+		return httpServiceProxyFactory.createClient(serviceType);
+	}
+
+	private WebClient.Builder configureBuilder() {
+		final var builder = WebClient.builder()
+			.baseUrl(baseUrl)
+			.clientConnector(createClientConnector());
+
+		customizers.forEach(customizer -> customizer.customize(builder));
+
+		return builder;
+	}
+
+	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(final ClientRegistration clientRegistration) {
+		var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
 		var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
 		var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(
 			new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService));
-		
-		oAuth2Filter.setDefaultClientRegistrationId(oAuth2ClientRegistration.getRegistrationId());
-		
+		oAuth2Filter.setDefaultClientRegistrationId(clientRegistration.getRegistrationId());
+
 		return oAuth2Filter;
 	}
 

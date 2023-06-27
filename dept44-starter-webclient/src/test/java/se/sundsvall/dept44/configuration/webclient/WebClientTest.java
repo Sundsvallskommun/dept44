@@ -22,7 +22,9 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 class WebClientTest {
+
 	private static final String JSON_RESPONSE = "{\"value\": \"mockedResponse\"}";
+
 	private MockWebServer mockServer;
 	
 	@Spy
@@ -32,7 +34,7 @@ class WebClientTest {
     public void startServer() throws Exception {
 		openMocks(this);
 
-    	mockServer  = new MockWebServer();
+    	mockServer = new MockWebServer();
         mockServer.start();
     	mockServer.enqueue(new MockResponse().setBody(JSON_RESPONSE).setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE));
     }
@@ -84,6 +86,7 @@ class WebClientTest {
     }
  	
 	private static class ServerResponse {
+
 		private String value;
 
 		@SuppressWarnings("unused")

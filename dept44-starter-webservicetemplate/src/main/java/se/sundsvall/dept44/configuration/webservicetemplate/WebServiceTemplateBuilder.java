@@ -254,15 +254,14 @@ public class WebServiceTemplateBuilder {
 				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password().toCharArray()));
 		}
 
-		// Only use SSL if we have a keystore and password
-		httpComponents5MessageSender.setHttpClient(createHttpClient(shouldUseSSL()));
+		httpComponents5MessageSender.setHttpClient(createHttpClient());
 
 		webServiceTemplate.setMessageSender(httpComponents5MessageSender);
 	}
 
-	private HttpClient createHttpClient(final boolean useSsl) {
+	private HttpClient createHttpClient() {
 		return getDefaultHttpClientBuilder()
-			.setConnectionManager(createConnectionManager(useSsl))
+			.setConnectionManager(createConnectionManager())
 			.build();
 	}
 
@@ -282,14 +281,15 @@ public class WebServiceTemplateBuilder {
 		return httpClientBuilder;
 	}
 
-	private HttpClientConnectionManager createConnectionManager(final boolean useSsl) {
+	private HttpClientConnectionManager createConnectionManager() {
 		var connectionManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create()
 			.setDefaultConnectionConfig(ConnectionConfig.custom()
 				.setSocketTimeout(Timeout.ofMilliseconds(Math.toIntExact(readTimeout.toMillis())))
 				.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
 				.build());
 
-		if (useSsl) {
+		// Set up SSL if keystore and password are set
+		if (shouldUseSSL()) {
 			SSLContext sslContext;
 			try {
 				sslContext = SSLContexts.custom()

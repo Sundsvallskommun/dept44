@@ -17,24 +17,27 @@ import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContexts;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.WebServiceMessageFactory;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.client.support.interceptor.ClientInterceptor;
 import org.springframework.ws.soap.saaj.SaajSoapMessageFactory;
-import org.springframework.ws.transport.http.HttpComponentsMessageSender;
+import org.springframework.ws.transport.http.HttpComponents5MessageSender;
 import org.zalando.logbook.Logbook;
-import org.zalando.logbook.httpclient.LogbookHttpRequestInterceptor;
-import org.zalando.logbook.httpclient.LogbookHttpResponseInterceptor;
+import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
+import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
 
 import se.sundsvall.dept44.configuration.Constants;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
@@ -67,7 +70,7 @@ public class WebServiceTemplateBuilder {
 	 * @param baseUrl url to use
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withBaseUrl(String baseUrl) {
+	public WebServiceTemplateBuilder withBaseUrl(final String baseUrl) {
 		this.baseUrl = baseUrl;
 		return this;
 	}
@@ -78,7 +81,7 @@ public class WebServiceTemplateBuilder {
 	 * @param keyStorePassword password to set
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withKeyStorePassword(String keyStorePassword) {
+	public WebServiceTemplateBuilder withKeyStorePassword(final String keyStorePassword) {
 		this.keyStorePassword = requireNotBlank(keyStorePassword, "keystore password must be set");
 		return this;
 	}
@@ -90,7 +93,7 @@ public class WebServiceTemplateBuilder {
 	 *                 src/main/resources/keystore.p12).
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withKeyStoreFileLocation(String location) {
+	public WebServiceTemplateBuilder withKeyStoreFileLocation(final String location) {
 		this.keyStoreFileLocation = location;
 		return this;
 	}
@@ -101,7 +104,7 @@ public class WebServiceTemplateBuilder {
 	 * @param packagesToScan list of strings with packages to scan.
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withPackagesToScan(List<String> packagesToScan) {
+	public WebServiceTemplateBuilder withPackagesToScan(final List<String> packagesToScan) {
 		if (this.packagesToScan == null) {
 			this.packagesToScan = new HashSet<>(packagesToScan.size());
 		}
@@ -115,7 +118,7 @@ public class WebServiceTemplateBuilder {
 	 * @param packageToScan which package to scan
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withPackageToScan(String packageToScan) {
+	public WebServiceTemplateBuilder withPackageToScan(final String packageToScan) {
 		if (this.packagesToScan == null) {
 			this.packagesToScan = new HashSet<>();
 		}
@@ -130,7 +133,7 @@ public class WebServiceTemplateBuilder {
 	 * @param webServiceMessageFactory messageFactory to override with
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withWebServiceMessageFactory(WebServiceMessageFactory webServiceMessageFactory) {
+	public WebServiceTemplateBuilder withWebServiceMessageFactory(final WebServiceMessageFactory webServiceMessageFactory) {
 		this.webServiceMessageFactory = webServiceMessageFactory;
 		return this;
 	}
@@ -141,7 +144,7 @@ public class WebServiceTemplateBuilder {
 	 * @param logbook {@link org.zalando.logbook.Logbook} to override default config with
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withLogbook(Logbook logbook) {
+	public WebServiceTemplateBuilder withLogbook(final Logbook logbook) {
 		this.logbook = logbook;
 		return this;
 	}
@@ -186,7 +189,7 @@ public class WebServiceTemplateBuilder {
 	 * @param clientInterceptor interceptor to add
 	 * @return this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withClientInterceptor(ClientInterceptor clientInterceptor) {
+	public WebServiceTemplateBuilder withClientInterceptor(final ClientInterceptor clientInterceptor) {
 		if (this.clientInterceptors == null) {
 			this.clientInterceptors = new HashSet<>();
 		}
@@ -200,7 +203,7 @@ public class WebServiceTemplateBuilder {
 	 * @return a configured WebServiceTemplate
 	 */
 	public WebServiceTemplate build() {
-		WebServiceTemplate webServiceTemplate = new WebServiceTemplate();
+		var webServiceTemplate = new WebServiceTemplate();
 		webServiceTemplate.setDefaultUri(baseUrl);
 
 		setClientInterceptors(webServiceTemplate);
@@ -220,9 +223,9 @@ public class WebServiceTemplateBuilder {
 		webServiceTemplate.setInterceptors(clientInterceptors.toArray(new ClientInterceptor[0]));
 	}
 
-	private void setPackagesToScan(WebServiceTemplate webServiceTemplate) {
+	private void setPackagesToScan(final WebServiceTemplate webServiceTemplate) {
 		if (packagesToScan != null && !packagesToScan.isEmpty()) {
-			Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+			var marshaller = new Jaxb2Marshaller();
 			marshaller.setCheckForXmlRootElement(true);
 			marshaller.setPackagesToScan(packagesToScan.toArray(new String[0]));
 
@@ -234,7 +237,7 @@ public class WebServiceTemplateBuilder {
 	private void setMessageFactory(final WebServiceTemplate webServiceTemplate) {
 		if (webServiceMessageFactory == null) {
 			try {
-				SaajSoapMessageFactory webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
+				var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
 				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
 			} catch (SOAPException e) {
@@ -244,78 +247,74 @@ public class WebServiceTemplateBuilder {
 	}
 
 	private void setHttpComponentsMessageSender(final WebServiceTemplate webServiceTemplate) {
-		HttpComponentsMessageSender httpComponentsMessageSender = new HttpComponentsMessageSender();
-
-		// Only use SSL if we have a keystore and password
-		if (shouldUseSSL()) {
-			httpComponentsMessageSender.setHttpClient(createHttpClientWithSSL());
-		} else { // Otherwise provide default
-			httpComponentsMessageSender.setHttpClient(createHttpClientWithoutSSL());
-		}
+		var httpComponents5MessageSender = new HttpComponents5MessageSender();
 
 		if (shouldUseBasicAuth()) {
-			httpComponentsMessageSender.setCredentials(
-				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password()));
+			httpComponents5MessageSender.setCredentials(
+				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password().toCharArray()));
 		}
 
-		webServiceTemplate.setMessageSender(httpComponentsMessageSender);
+		httpComponents5MessageSender.setHttpClient(createHttpClient());
+
+		webServiceTemplate.setMessageSender(httpComponents5MessageSender);
 	}
 
-	private HttpClient createHttpClientWithSSL() {
-		SSLContext sslcontext;
-		try {
-			sslcontext = SSLContexts.custom()
-				.loadTrustMaterial(getKeyStore(), (chain, authType) -> true)
-				.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
-				.build();
-		} catch (Exception e) {
-			throw new RuntimeException("Couldn't load keystore", e);
-		}
-
-		SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslcontext, NoopHostnameVerifier.INSTANCE);
-
-		final HttpClientBuilder httpClientBuilder = getDefaultHttpClientBuilder().setSSLSocketFactory(sslConnectionFactory);
-
-		return httpClientBuilder.build();
-	}
-
-	private HttpClient createHttpClientWithoutSSL() {
-		return getDefaultHttpClientBuilder().build();
+	private HttpClient createHttpClient() {
+		return getDefaultHttpClientBuilder()
+			.setConnectionManager(createConnectionManager())
+			.build();
 	}
 
 	private HttpClientBuilder getDefaultHttpClientBuilder() {
-		final HttpClientBuilder httpClientBuilder = HttpClients.custom()
-			.addInterceptorFirst(new RemoveContentLengthHeaderInterceptor()) // Remove the content-length header since it always needs to be reset.
-			.addInterceptorFirst(new RequestIdInterceptor()); // Add requestId to all requests
-			
-		addLogbookToHttpClientBuilder(httpClientBuilder);
-		setTimeouts(httpClientBuilder);
+		var httpClientBuilder = HttpClients.custom()
+			// Remove the content-length header since it always needs to be reset
+			.addRequestInterceptorFirst(new RemoveContentLengthHeaderInterceptor())
+			// Add request-id to all requests
+			.addRequestInterceptorFirst(new RequestIdInterceptor());
+
+		if (logbook != null) {
+			httpClientBuilder
+				.addRequestInterceptorFirst(new LogbookHttpRequestInterceptor(logbook))
+				.addResponseInterceptorFirst(new LogbookHttpResponseInterceptor());
+		}
 
 		return httpClientBuilder;
 	}
 
-	private void setTimeouts(final HttpClientBuilder httpClientBuilder) {
-		RequestConfig requestConfig = RequestConfig.custom()
-			.setConnectTimeout(Math.toIntExact(connectTimeout.toMillis()))
-			.setSocketTimeout(Math.toIntExact(readTimeout.toMillis()))
-			.build();
+	private HttpClientConnectionManager createConnectionManager() {
+		var connectionManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create()
+			.setDefaultConnectionConfig(ConnectionConfig.custom()
+				.setSocketTimeout(Timeout.ofMilliseconds(Math.toIntExact(readTimeout.toMillis())))
+				.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
+				.build());
 
-		httpClientBuilder.setDefaultRequestConfig(requestConfig);
+		// Set up SSL if keystore and password are set
+		if (shouldUseSSL()) {
+			SSLContext sslContext;
+			try {
+				sslContext = SSLContexts.custom()
+					.loadTrustMaterial(getKeyStore(), (chain, authType) -> true)
+					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
+					.build();
+			} catch (Exception e) {
+				throw new RuntimeException("Couldn't load keystore", e);
+			}
+
+			var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+				.setSslContext(sslContext)
+				.setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+				.build();
+
+			return connectionManagerBuilder.setSSLSocketFactory(sslConnectionSocketFactory).build();
+		}
+
+		return connectionManagerBuilder.build();
 	}
 
 	private KeyStore getKeyStore() throws Exception {
-		KeyStore store = KeyStore.getInstance(KeyStore.getDefaultType());
-		store.load(new PathMatchingResourcePatternResolver().getResource(keyStoreFileLocation).getInputStream(), keyStorePassword.toCharArray());
-
-		return store;
-	}
-
-	private void addLogbookToHttpClientBuilder(HttpClientBuilder builder) {
-		if (this.logbook != null) {
-			builder
-				.addInterceptorFirst(new LogbookHttpRequestInterceptor(this.logbook))
-				.addInterceptorFirst(new LogbookHttpResponseInterceptor());
-		}
+		var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+		keyStore.load(new PathMatchingResourcePatternResolver().getResource(keyStoreFileLocation).getInputStream(), keyStorePassword.toCharArray());
+		return keyStore;
 	}
 
 	private boolean shouldUseSSL() {

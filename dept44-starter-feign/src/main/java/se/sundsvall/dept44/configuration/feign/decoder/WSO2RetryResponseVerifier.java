@@ -5,7 +5,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHeaders;
 
 import feign.Response;
 

@@ -2,6 +2,7 @@ package se.sundsvall.dept44.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,11 +14,13 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointR
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 @SpringBootTest(classes = { SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class })
@@ -70,19 +73,24 @@ class SecurityConfigurationTest {
 
     @Test
     void test_authorizeRequests() throws Exception {
-        when(httpSecurityMock.authorizeHttpRequests()).thenReturn(requestMatcherRegistryMock);
+        when(requestMatcherRegistryMock.requestMatchers(any(RequestMatcher.class))).thenReturn(authorizedUrlMock);
+
+        doAnswer(invocation -> {
+            Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation.getArgument(0);
+            customizer.customize(requestMatcherRegistryMock);
+            return httpSecurityMock;
+        }).when(httpSecurityMock).authorizeHttpRequests(any());
+
         when(requestMatcherRegistryMock.requestMatchers(any(EndpointRequest.EndpointRequestMatcher.class)))
             .thenReturn(authorizedUrlMock);
         when(authorizedUrlMock.permitAll()).thenReturn(requestMatcherRegistryMock);
-        when(requestMatcherRegistryMock.and()).thenReturn(httpSecurityMock);
         when(httpSecurityMock.build()).thenReturn(defaultSecurityFilterChain);
 
-        final var securityFilterChain = securityConfiguration.filterChain(httpSecurityMock);
+        var securityFilterChain = securityConfiguration.filterChain(httpSecurityMock);
 
-        verify(httpSecurityMock).authorizeHttpRequests();
+        verify(httpSecurityMock).authorizeHttpRequests(any());
         verify(requestMatcherRegistryMock).requestMatchers(any(EndpointRequest.EndpointRequestMatcher.class));
         verify(authorizedUrlMock).permitAll();
-        verify(requestMatcherRegistryMock).and();
         verify(httpSecurityMock).build();
         assertThat(securityFilterChain).isEqualTo(defaultSecurityFilterChain);
     }

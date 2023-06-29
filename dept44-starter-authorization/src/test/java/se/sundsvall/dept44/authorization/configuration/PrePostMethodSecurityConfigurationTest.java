@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.ReflectionUtils;
 
@@ -23,7 +23,7 @@ class PrePostMethodSecurityConfigurationTest {
 
 	@Test
 	void verifyEnableGlobalMethodSecurityAnnotation() {
-		EnableGlobalMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class, EnableGlobalMethodSecurity.class);
+		EnableMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class, EnableMethodSecurity.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.prePostEnabled()).isTrue();

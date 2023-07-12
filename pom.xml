@@ -117,7 +117,7 @@
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>2.38.0</json-unit.version>
 		<logback-gelf.version>4.0.2</logback-gelf.version>
-		<janino.version>3.1.9</janino.version>
+		<janino.version>3.1.10</janino.version>
 		<jsonwebtoken.version>0.11.5</jsonwebtoken.version>
 
 		<!-- Spring boot admin -->

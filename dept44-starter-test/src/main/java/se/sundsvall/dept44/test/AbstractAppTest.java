@@ -220,6 +220,10 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest sendRequestAndVerifyResponse(final MediaType mediaType) {
+		return sendRequestAndVerifyResponse(mediaType, true);
+	}
+
+	public AbstractAppTest sendRequestAndVerifyResponse(final MediaType mediaType, boolean verifyStubsAndResetWiremock) {
 		logger.info(getTestMethodName());
 
 		// Call service and fetch response.
@@ -248,6 +252,14 @@ public abstract class AbstractAppTest {
 			assertThat(this.responseBody).isNull();
 		}
 
+		if (verifyStubsAndResetWiremock) {
+			verifyStubsAndResetWiremock();
+		}
+
+		return this;
+	}
+
+	public AbstractAppTest verifyStubsAndResetWiremock() {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)

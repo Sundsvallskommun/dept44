@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -40,6 +41,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 
 import net.javacrumbs.jsonunit.core.Option;
 import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
@@ -265,5 +267,21 @@ class AbstractAppTestTest {
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
+	}
+
+	@Test
+	void verifyAllStubsWhenStubNotExecuted() throws Exception {
+		// Setup
+		final var url = "http://url.address";
+
+		// Mock
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(wiremockMock.findAllUnmatchedRequests()).thenReturn(List.of(new LoggedRequest(url, null, null, null, null, null, false, null, null, null)));
+		
+		// Call
+		final var exception = assertThrows(AssertionError.class, () -> appTest.verifyAllStubs());
+		
+		// Verification
+		assertThat(exception.getMessage()).isEqualTo("The following requests was not matched: " + List.of(url));
 	}
 }

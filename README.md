@@ -1,9 +1,5 @@
 # Dept44
 
-## Leverantör
-
-Sundsvalls kommun
-
 ## Status
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Sundsvallskommun_dept44&metric=alert_status)](https://sonarcloud.io/summary/overall?id=Sundsvallskommun_dept44)
@@ -14,4 +10,4 @@ Sundsvalls kommun
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sundsvallskommun_dept44&metric=bugs)](https://sonarcloud.io/summary/overall?id=Sundsvallskommun_dept44)
 
 ## 
-Copyright (c) 2021 Sundsvalls kommun
+Copyright (c) 2023 Sundsvalls kommun

@@ -112,7 +112,7 @@
 		<logbook.version>3.3.0</logbook.version>
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
-		<springdoc.version>2.1.0</springdoc.version>
+		<springdoc.version>2.2.0</springdoc.version>
 		<spring-cloud.version>2022.0.4</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>3.0.0</json-unit.version>

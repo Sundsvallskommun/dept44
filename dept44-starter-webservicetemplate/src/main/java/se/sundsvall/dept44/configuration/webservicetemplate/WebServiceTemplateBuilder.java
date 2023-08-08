@@ -44,7 +44,7 @@ import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
 import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
 
 import se.sundsvall.dept44.configuration.Constants;
-import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebserviceTemplateException;
+import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
@@ -246,7 +246,7 @@ public class WebServiceTemplateBuilder {
 				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
 			} catch (SOAPException e) {
-				throw new WebserviceTemplateException("Error when setting message factory", e);
+				throw new WebServiceTemplateException("Error when setting message factory", e);
 			}
 		}
 	}
@@ -302,7 +302,7 @@ public class WebServiceTemplateBuilder {
 					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
 					.build();
 			} catch (Exception e) {
-				throw new WebserviceTemplateException("Couldn't load keystore", e);
+				throw new WebServiceTemplateException("Couldn't load keystore", e);
 			}
 
 			var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()

@@ -3,7 +3,11 @@ package se.sundsvall.dept44.configuration.webservicetemplate;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
+import java.io.IOException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,6 +44,7 @@ import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
 import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
 
 import se.sundsvall.dept44.configuration.Constants;
+import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebserviceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
@@ -241,7 +246,7 @@ public class WebServiceTemplateBuilder {
 				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
 			} catch (SOAPException e) {
-				throw new RuntimeException(e);
+				throw new WebserviceTemplateException("Error when setting message factory", e);
 			}
 		}
 	}
@@ -297,7 +302,7 @@ public class WebServiceTemplateBuilder {
 					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
 					.build();
 			} catch (Exception e) {
-				throw new RuntimeException("Couldn't load keystore", e);
+				throw new WebserviceTemplateException("Couldn't load keystore", e);
 			}
 
 			var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
@@ -311,7 +316,7 @@ public class WebServiceTemplateBuilder {
 		return connectionManagerBuilder.build();
 	}
 
-	private KeyStore getKeyStore() throws Exception {
+	private KeyStore getKeyStore() throws IOException, NoSuchAlgorithmException, CertificateException, KeyStoreException {
 		var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 		keyStore.load(new PathMatchingResourcePatternResolver().getResource(keyStoreFileLocation).getInputStream(), keyStorePassword.toCharArray());
 		return keyStore;

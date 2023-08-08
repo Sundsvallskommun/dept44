@@ -96,25 +96,8 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 		}
 
 		for (File propertyFile : propertyFiles) {
-			var properties = new Properties();
 
-			try {
-				if (propertyFile.getName().matches(YAML_FILE_EXTENSION_PATTERN)) {
-					// YAML file
-					var props = OBJECT_MAPPER.readValue(propertyFile,
-						new TypeReference<Map<String, Object>>() {});
-
-					properties.putAll(flatten(props));
-				} else {
-					// Properties file
-					try (var in = new FileInputStream(propertyFile)) {
-						properties.load(in);
-					}
-				}
-			} catch (IOException e) {
-				throw new EnforcerRuleException(String.format(
-					"Unable to load properties/YAML file %s: %s", propertyFile.getName(), e.getMessage()), e);
-			}
+			var properties = loadProperties(propertyFile);
 
 			openApiEnabled = Optional.ofNullable(properties.getOrDefault("openapi.enabled", "true"))
 				.map(Object::toString)
@@ -139,17 +122,7 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 
 		List<String> errors = new ArrayList<>();
 		if (openApiEnabled) {
-			if (!openApiNamePropertySet) {
-				errors.add("Property \"openapi.name\" is missing or empty in application properties/YAML");
-			}
-
-			if (!openApiTitlePropertySet) {
-				errors.add("Property \"openapi.title\" is missing or empty in application*.properties/YAML");
-			}
-
-			if (!openApiVersionPropertySet) {
-				errors.add("Property \"openapi.version\" is missing or empty in application*.properties/YAML");
-			}
+			validateOpenApiProperties(openApiNamePropertySet, openApiTitlePropertySet, openApiVersionPropertySet, errors);
 		}
 
 		return errors;
@@ -232,5 +205,43 @@ public class Dept44RequiredPropertiesRule implements EnforcerRule {
 		values.keySet().forEach(key -> flattenMap.put(prefix + "." + key, values.get(key)));
 
 		return flatten(flattenMap);
+	}
+
+	private Properties loadProperties(final File propertyFile) throws EnforcerRuleException {
+		var properties = new Properties();
+		try {
+			if (propertyFile.getName().matches(YAML_FILE_EXTENSION_PATTERN)) {
+				// YAML file
+				var props = OBJECT_MAPPER.readValue(propertyFile,
+					new TypeReference<Map<String, Object>>() {
+					});
+
+				properties.putAll(flatten(props));
+			} else {
+				// Properties file
+				try (var in = new FileInputStream(propertyFile)) {
+					properties.load(in);
+				}
+			}
+		} catch (IOException e) {
+			throw new EnforcerRuleException(String.format(
+				"Unable to load properties/YAML file %s: %s", propertyFile.getName(), e.getMessage()), e);
+		}
+		return properties;
+	}
+
+	private void validateOpenApiProperties(boolean openApiNamePropertySet, boolean openApiTitlePropertySet,
+			boolean openApiVersionPropertySet, List<String> errors) {
+			if (!openApiNamePropertySet) {
+				errors.add("Property \"openapi.name\" is missing or empty in application properties/YAML");
+			}
+
+			if (!openApiTitlePropertySet) {
+				errors.add("Property \"openapi.title\" is missing or empty in application*.properties/YAML");
+			}
+
+			if (!openApiVersionPropertySet) {
+				errors.add("Property \"openapi.version\" is missing or empty in application*.properties/YAML");
+			}
 	}
 }

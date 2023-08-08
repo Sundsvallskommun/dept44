@@ -1,3 +1,4 @@
+
 {
 	"openapi": "3.0.1",
 	"info": {
@@ -53,16 +54,6 @@
 							}
 						}
 					},
-					"500": {
-						"description": "Internal Server error",
-						"content": {
-							"application/problem+json": {
-								"schema": {
-									"$ref": "#/components/schemas/Problem"
-								}
-							}
-						}
-					},
 					"400": {
 						"description": "Bad request",
 						"content": {
@@ -76,6 +67,16 @@
 											"$ref": "#/components/schemas/ConstraintViolationProblem"
 										}
 									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
 								}
 							}
 						}
@@ -102,18 +103,18 @@
 					}
 				],
 				"responses": {
-					"502": {
-						"description": "Bad Gateway",
+					"200": {
+						"description": "Successful operation",
 						"content": {
-							"application/problem+json": {
+							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/Problem"
+									"$ref": "#/components/schemas/PetInventoryItem"
 								}
 							}
 						}
 					},
-					"500": {
-						"description": "Internal Server error",
+					"502": {
+						"description": "Bad Gateway",
 						"content": {
 							"application/problem+json": {
 								"schema": {
@@ -139,12 +140,12 @@
 							}
 						}
 					},
-					"200": {
-						"description": "Successful operation",
+					"500": {
+						"description": "Internal Server error",
 						"content": {
-							"application/json": {
+							"application/problem+json": {
 								"schema": {
-									"$ref": "#/components/schemas/PetInventoryItem"
+									"$ref": "#/components/schemas/Problem"
 								}
 							}
 						}
@@ -210,15 +211,6 @@
 			"Problem": {
 				"type": "object",
 				"properties": {
-					"status": {
-						"$ref": "#/components/schemas/StatusType"
-					},
-					"title": {
-						"type": "string"
-					},
-					"detail": {
-						"type": "string"
-					},
 					"instance": {
 						"type": "string",
 						"format": "uri"
@@ -232,6 +224,15 @@
 						"additionalProperties": {
 							"type": "object"
 						}
+					},
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
+					"title": {
+						"type": "string"
+					},
+					"detail": {
+						"type": "string"
 					}
 				}
 			},
@@ -305,9 +306,6 @@
 					"message": {
 						"type": "string"
 					},
-					"detail": {
-						"type": "string"
-					},
 					"instance": {
 						"type": "string",
 						"format": "uri"
@@ -318,55 +316,14 @@
 							"type": "object"
 						}
 					},
+					"detail": {
+						"type": "string"
+					},
 					"suppressed": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"cause": {
-									"type": "object",
-									"properties": {
-										"stackTrace": {
-											"type": "array",
-											"items": {
-												"type": "object",
-												"properties": {
-													"classLoaderName": {
-														"type": "string"
-													},
-													"moduleName": {
-														"type": "string"
-													},
-													"moduleVersion": {
-														"type": "string"
-													},
-													"methodName": {
-														"type": "string"
-													},
-													"fileName": {
-														"type": "string"
-													},
-													"lineNumber": {
-														"type": "integer",
-														"format": "int32"
-													},
-													"nativeMethod": {
-														"type": "boolean"
-													},
-													"className": {
-														"type": "string"
-													}
-												}
-											}
-										},
-										"message": {
-											"type": "string"
-										},
-										"localizedMessage": {
-											"type": "string"
-										}
-									}
-								},
 								"stackTrace": {
 									"type": "array",
 									"items": {
@@ -456,15 +413,6 @@
 					"message": {
 						"type": "string"
 					},
-					"status": {
-						"$ref": "#/components/schemas/StatusType"
-					},
-					"title": {
-						"type": "string"
-					},
-					"detail": {
-						"type": "string"
-					},
 					"instance": {
 						"type": "string",
 						"format": "uri"
@@ -479,55 +427,20 @@
 							"type": "object"
 						}
 					},
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
+					"title": {
+						"type": "string"
+					},
+					"detail": {
+						"type": "string"
+					},
 					"suppressed": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"cause": {
-									"type": "object",
-									"properties": {
-										"stackTrace": {
-											"type": "array",
-											"items": {
-												"type": "object",
-												"properties": {
-													"classLoaderName": {
-														"type": "string"
-													},
-													"moduleName": {
-														"type": "string"
-													},
-													"moduleVersion": {
-														"type": "string"
-													},
-													"methodName": {
-														"type": "string"
-													},
-													"fileName": {
-														"type": "string"
-													},
-													"lineNumber": {
-														"type": "integer",
-														"format": "int32"
-													},
-													"nativeMethod": {
-														"type": "boolean"
-													},
-													"className": {
-														"type": "string"
-													}
-												}
-											}
-										},
-										"message": {
-											"type": "string"
-										},
-										"localizedMessage": {
-											"type": "string"
-										}
-									}
-								},
 								"stackTrace": {
 									"type": "array",
 									"items": {

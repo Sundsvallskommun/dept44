@@ -1,17 +1,6 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
-
-import java.time.Duration;
-import java.util.Set;
-
+import io.netty.channel.ChannelOption;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +18,18 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-
-import io.netty.channel.ChannelOption;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class WebClientBuilderTest {
@@ -158,7 +156,7 @@ class WebClientBuilderTest {
 				.thenReturn(mockHttpServiceProxyFactoryBuilder);
 
 			when(mockHttpServiceProxyFactoryBuilder.build()).thenReturn(mockHttpServiceProxyFactory);
-			when(mockHttpServiceProxyFactory.createClient(eq(DummyClient.class))).thenReturn(() -> ResponseEntity.ok(""));
+			when(mockHttpServiceProxyFactory.createClient(DummyClient.class)).thenReturn(() -> ResponseEntity.ok(""));
 
 			var client = builder.build(DummyClient.class);
 			assertThat(client).isNotNull();
@@ -198,7 +196,7 @@ class WebClientBuilderTest {
 				when(mockBuilder.scope(ArgumentMatchers.<Set<String>>any())).thenReturn(mockBuilder);
 				when(mockBuilder.build()).thenReturn(CLIENT_REGISTRATION_MOCK);
 
-				builder.withOAuth2Client(CLIENT_REGISTRATION_MOCK);
+				builder.withOAuth2ClientRegistration(CLIENT_REGISTRATION_MOCK);
 			}
 		}
 

@@ -131,9 +131,9 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 *
 	 * @param response the response that caused the error.
 	 * @return a String that represents the error message returned in the response.
-	 * @throws Exception if something goes wrong.
+	 * @throws IOException if something goes wrong.
 	 */
-	public abstract String extractErrorMessage(Response response) throws Exception;
+	public abstract String extractErrorMessage(Response response) throws IOException;
 
 	private String extractAsNullBodyResponse(final Response response) {
 		return ErrorMessage.create(integrationName, response.status()).extractMessage();
@@ -147,7 +147,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	/**
 	 * Private record to used for calculating extracted error message information
 	 */
-	protected static record ErrorMessage(String integrationName, SortedMap<String, Object> errorInfo) {
+	protected record ErrorMessage(String integrationName, SortedMap<String, Object> errorInfo) {
 
 		private static final String KEY_DETAIL = "detail";
 		private static final String KEY_STATUS = "status";

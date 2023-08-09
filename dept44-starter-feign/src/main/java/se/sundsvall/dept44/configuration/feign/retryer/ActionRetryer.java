@@ -5,9 +5,9 @@ import feign.Retryer;
 
 public class ActionRetryer implements Retryer {
 
-	private int maxAttempts;
+	private final int maxAttempts;
 	private int attempt;
-	private Action action;
+	private final Action action;
 
 	public ActionRetryer(Action action, int maxAttempts) {
 		this.action = action;

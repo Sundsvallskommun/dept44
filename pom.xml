@@ -121,7 +121,7 @@
 		<jsonwebtoken.version>0.11.5</jsonwebtoken.version>
 
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>3.1.4</spring-boot-admin.version>
+		<spring-boot-admin.version>3.1.5</spring-boot-admin.version>
 
 		<!-- Plugin versions -->
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>

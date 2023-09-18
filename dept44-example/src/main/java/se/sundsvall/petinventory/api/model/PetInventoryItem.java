@@ -3,6 +3,7 @@ package se.sundsvall.petinventory.api.model;
 import java.util.List;
 import java.util.Objects;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Pet inventory item model")
@@ -20,7 +21,7 @@ public class PetInventoryItem {
 	@Schema(description = "Pet type", example = "DOG")
 	private String type;
 
-	@Schema(description = "Pet image")
+	@ArraySchema(schema = @Schema(implementation = PetImage.class))
 	private List<PetImage> images;
 
 	public static PetInventoryItem create() {

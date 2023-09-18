@@ -691,7 +691,6 @@
 					},
 					"images": {
 						"type": "array",
-						"description": "Pet image",
 						"items": {
 							"$ref": "#/components/schemas/PetImage"
 						}

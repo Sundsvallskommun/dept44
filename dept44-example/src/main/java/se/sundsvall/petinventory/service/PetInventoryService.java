@@ -23,6 +23,9 @@ import se.sundsvall.petinventory.service.mapper.PetInventoryMapper;
 @Service
 public class PetInventoryService {
 
+	private static final String ERROR_MESSAGE_PET_NOT_FOUND = "No pet found for provided id!";
+	private static final String ERROR_MESSAGE_IMAGE_NOT_FOUND = "No pet image found for provided petImageId!";
+
 	@Autowired
 	private PetStoreClient petStoreClient;
 
@@ -37,7 +40,7 @@ public class PetInventoryService {
 			.map(PetInventoryMapper::toPetInventoryItem)
 			.map(this::populateWithName)
 			.map(this::populateWithImages)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No pet found for provided id!"));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_PET_NOT_FOUND));
 	}
 
 	public List<PetInventoryItem> getPetInventoryList() {
@@ -51,7 +54,7 @@ public class PetInventoryService {
 	public long savePetImage(long petInventoryId, MultipartFile file) {
 
 		final var petNameEntity = petNameRepository.findById(petInventoryId)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No pet found for provided id!"));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_PET_NOT_FOUND));
 
 		try {
 			final var petImageEntity = petImageRepository.save(PetImageEntity.create()
@@ -62,7 +65,6 @@ public class PetInventoryService {
 
 			return petImageEntity.getId();
 		} catch (final Exception e) {
-			e.printStackTrace();
 			throw Problem.valueOf(Status.INTERNAL_SERVER_ERROR, "Could not store image!");
 		}
 	}
@@ -70,12 +72,12 @@ public class PetInventoryService {
 	public PetImageEntity getPetImage(long id, long petImageId) {
 
 		final var petNameEntity = petNameRepository.findById(id)
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No pet found for provided id!"));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_PET_NOT_FOUND));
 
 		return petNameEntity.getImages().stream()
 			.filter(petImage -> Objects.equals(petImageId, petImage.getId()))
 			.findFirst()
-			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, "No pet image found for provided petImageId!"));
+			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_IMAGE_NOT_FOUND));
 	}
 
 	private PetInventoryItem populateWithName(final PetInventoryItem petInventoryItem) {

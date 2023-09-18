@@ -93,12 +93,12 @@ class PetInventoryIT extends AbstractAppTest {
 		// Call
 		final var location = setupCall()
 			.withServicePath("/pet-inventory-items/5/images")
-			.withRequestFiles(classPathResource.getFile())
-
+			.withRequestFile("file", classPathResource.getFile())
+			.withContentType(MULTIPART_FORM_DATA)
 			.withHttpMethod(POST)
 			.withExpectedResponseStatus(CREATED)
 			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/pet-inventory-items/(\\d+)/images/(\\d+)$"))
-			.sendRequestAndVerifyResponse(MULTIPART_FORM_DATA).getResponseHeaders().getLocation();
+			.sendRequestAndVerifyResponse().getResponseHeaders().getLocation();
 
 		// Call
 		setupCall()

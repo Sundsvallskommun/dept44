@@ -3,7 +3,6 @@ package se.sundsvall.petinventory.apptest;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
@@ -33,7 +32,7 @@ class EndpointsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
-			.sendRequestAndVerifyResponse(APPLICATION_JSON);
+			.sendRequestAndVerifyResponse();
 	}
 
 	@Test
@@ -47,6 +46,6 @@ class EndpointsIT extends AbstractAppTest {
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
-			.sendRequestAndVerifyResponse(APPLICATION_JSON);
+			.sendRequestAndVerifyResponse();
 	}
 }

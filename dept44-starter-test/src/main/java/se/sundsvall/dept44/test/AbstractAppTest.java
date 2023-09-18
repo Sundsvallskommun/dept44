@@ -65,6 +65,7 @@ public abstract class AbstractAppTest {
 	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
+	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
@@ -80,6 +81,7 @@ public abstract class AbstractAppTest {
 	private String responseBody;
 	private HttpHeaders responseHeaders;
 	private HttpMethod method;
+	private MediaType contentType = DEFAULT_CONTENT_TYPE;
 	private HttpStatus expectedResponseStatus;
 	private HttpHeaders expectedResponseHeaders;
 	private Map<String, String> headerValues;
@@ -102,6 +104,7 @@ public abstract class AbstractAppTest {
 		this.responseBody = null;
 		this.responseHeaders = null;
 		this.method = null;
+		this.contentType = DEFAULT_CONTENT_TYPE;
 		this.expectedResponseStatus = null;
 		this.expectedResponseHeaders = null;
 		this.headerValues = null;
@@ -139,6 +142,11 @@ public abstract class AbstractAppTest {
 
 	public AbstractAppTest withHttpMethod(final HttpMethod method) {
 		this.method = method;
+		return this;
+	}
+
+	public AbstractAppTest withContentType(final MediaType contentType) {
+		this.contentType = contentType;
 		return this;
 	}
 
@@ -259,18 +267,17 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method takes an array of files.
+	 * Method takes a file that will be added to the multipart body.
 	 *
-	 * @param  files or files to be added to the request as a multipart.
+	 * @param  file to be added to the request as a multipart.
 	 * @return
 	 */
-	public AbstractAppTest withRequestFiles(final File... files) {
-
-		this.multipartBody = new LinkedMultiValueMap<>();
-
-		for (final File file : files) {
-			multipartBody.add("file", new FileSystemResource(file));
+	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
+		if (isNull(this.multipartBody)) {
+			this.multipartBody = new LinkedMultiValueMap<>();
 		}
+
+		multipartBody.add(parameterName, new FileSystemResource(file));
 
 		return this;
 	}
@@ -288,10 +295,10 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
-	public AbstractAppTest sendRequestAndVerifyResponse(final MediaType mediaType) {
+	public AbstractAppTest sendRequestAndVerifyResponse() {
 		logger.info(getTestMethodName());
 
-		final var requestEntity = nonNull(this.multipartBody) ? restTemplateRequest(mediaType, this.multipartBody) : restTemplateRequest(mediaType, this.requestBody);
+		final var requestEntity = nonNull(this.multipartBody) ? restTemplateRequest(this.contentType, this.multipartBody) : restTemplateRequest(this.contentType, this.requestBody);
 
 		// Call service and fetch response.
 		final var response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
@@ -309,8 +316,8 @@ public abstract class AbstractAppTest {
 		}
 		assertThat(response.getStatusCode()).isEqualTo(this.expectedResponseStatus);
 		if (nonNull(this.expectedResponseBody)) {
-			final var contentType = response.getHeaders().getContentType();
-			if (nonNull(contentType) && contentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
+			final var responseContentType = response.getHeaders().getContentType();
+			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
 				assertJsonEquals(this.expectedResponseBody, this.responseBody);
 			} else {
@@ -336,10 +343,6 @@ public abstract class AbstractAppTest {
 		this.wiremock.resetAll();
 
 		return this;
-	}
-
-	public AbstractAppTest sendRequestAndVerifyResponse() {
-		return sendRequestAndVerifyResponse(MediaType.APPLICATION_JSON);
 	}
 
 	/**

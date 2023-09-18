@@ -116,9 +116,10 @@ class AbstractAppTestTest {
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGETCall"));
 
-		// Verification of reset
+		// Verification of reset-method
 		assertThat(appTest.reset()).hasAllNullFieldsOrPropertiesExcept(
 			"logger",
+			"contentType",
 			"expectedResponseBodyIsNull",
 			"maxVerificationDelayInSeconds",
 			"expectedResponseType",
@@ -222,12 +223,13 @@ class AbstractAppTestTest {
 			.withServicePath("/some/path")
 			.withHeader("headerKey", "headerValue")
 			.withHttpMethod(POST)
-			.withRequestFiles(file)
+			.withContentType(MULTIPART_FORM_DATA)
+			.withRequestFile("file", file)
 			.withExpectedResponseBodyIsNull()
 			.withMaxVerificationDelayInSeconds(5)
 			.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
 			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse(MULTIPART_FORM_DATA);
+			.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();

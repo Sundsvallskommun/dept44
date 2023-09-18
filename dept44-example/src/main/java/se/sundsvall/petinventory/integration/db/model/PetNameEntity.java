@@ -1,17 +1,19 @@
 package se.sundsvall.petinventory.integration.db.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
 import se.sundsvall.petinventory.integration.db.model.listener.PetNameEntityListener;
 
 @Entity
@@ -35,6 +37,9 @@ public class PetNameEntity {
 
 	@Column(name = "modified")
 	private OffsetDateTime modified;
+
+	@OneToMany(mappedBy = "petName", fetch = FetchType.EAGER)
+	private List<PetImageEntity> images;
 
 	public static PetNameEntity create() {
 		return new PetNameEntity();
@@ -92,26 +97,35 @@ public class PetNameEntity {
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(created, id, modified, name);
+	public List<PetImageEntity> getImages() {
+		return images;
+	}
+
+	public void setImages(List<PetImageEntity> images) {
+		this.images = images;
+	}
+
+	public PetNameEntity withImages(List<PetImageEntity> images) {
+		this.images = images;
+		return this;
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof PetNameEntity other)) {
-			return false;
-		}
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+	public int hashCode() {
+		return Objects.hash(created, id, images, modified, name);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final PetNameEntity other)) { return false; }
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append("]");
+		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append(", images=").append(images).append("]");
 		return builder.toString();
 	}
 }

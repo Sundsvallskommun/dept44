@@ -2,5 +2,12 @@
 	"id": 3,
 	"price": 1337.5,
 	"name": "Boozer",
-	"type": "BIRD"
+	"type": "BIRD",
+	"images": [
+		{
+			"id": 103,
+			"fileName": "Boozer.jpg",
+			"mimeType": "image/jpeg"
+		}
+	]
 }

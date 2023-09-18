@@ -22,6 +22,7 @@ import org.zalando.problem.ThrowableProblem;
 import generated.swagger.io.petstore.Pet;
 import generated.swagger.io.petstore.TypeEnum;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
+import se.sundsvall.petinventory.integration.db.PetImageRepository;
 import se.sundsvall.petinventory.integration.db.PetNameRepository;
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 import se.sundsvall.petinventory.integration.petstore.PetStoreClient;
@@ -31,6 +32,9 @@ class PetInventoryServiceTest {
 
 	@Mock
 	private PetNameRepository petNameRepositoryMock;
+
+	@Mock
+	private PetImageRepository petImageRepositoryMock;
 
 	@Mock
 	private PetStoreClient petStoreClientMock;
@@ -83,7 +87,7 @@ class PetInventoryServiceTest {
 		// Assertions
 		assertThat(result).isNotNull();
 		assertThat(result.getStatus()).isEqualTo(NOT_FOUND);
-		assertThat(result.getMessage()).isEqualTo("Not Found: No pet found for provided ID");
+		assertThat(result.getMessage()).isEqualTo("Not Found: No pet found for provided id!");
 	}
 
 	@Test

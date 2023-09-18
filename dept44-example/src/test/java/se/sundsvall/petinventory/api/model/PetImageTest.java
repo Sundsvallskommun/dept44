@@ -9,15 +9,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
-class PetInventoryItemTest {
+class PetImageTest {
 
 	@Test
 	void testBean() {
-		assertThat(PetInventoryItem.class, allOf(
+		assertThat(PetImage.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -29,24 +27,18 @@ class PetInventoryItemTest {
 	void testBuilderMethods() {
 
 		final var id = 1L;
-		final var images = List.of(PetImage.create());
-		final var name = "name";
-		final var price = 1.0F;
-		final var type = "type";
+		final var fileName = "test.jpg";
+		final var mimeType = "image/jpeg";
 
-		final var bean = PetInventoryItem.create()
+		final var bean = PetImage.create()
 			.withId(id)
-			.withImages(images)
-			.withName(name)
-			.withPrice(price)
-			.withType(type);
+			.withFileName(fileName)
+			.withMimeType(mimeType);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
-		assertThat(bean.getImages()).isEqualTo(images);
-		assertThat(bean.getName()).isEqualTo(name);
-		assertThat(bean.getPrice()).isEqualTo(price);
-		assertThat(bean.getType()).isEqualTo(type);
+		assertThat(bean.getFileName()).isEqualTo(fileName);
+		assertThat(bean.getMimeType()).isEqualTo(mimeType);
 	}
 
 	@Test

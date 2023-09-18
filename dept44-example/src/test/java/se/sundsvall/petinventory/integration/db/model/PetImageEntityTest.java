@@ -12,13 +12,12 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-class PetNameEntityTest {
+class PetImageEntityTest {
 
 	@BeforeAll
 	static void setup() {
@@ -27,7 +26,7 @@ class PetNameEntityTest {
 
 	@Test
 	void testBean() {
-		assertThat(PetNameEntity.class, allOf(
+		assertThat(PetImageEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
 			hasValidBeanHashCode(),
@@ -39,29 +38,35 @@ class PetNameEntityTest {
 	void testBuilderMethods() {
 
 		final var id = 1L;
-		final var images = List.of(PetImageEntity.create());
-		final var name = "name";
+		final var content = new byte[6];
 		final var created = now();
+		final var fileName = "test.jpg";
+		final var mimeType = "image/jpeg";
 		final var modified = now().plusHours(5);
+		final var petNameEntity = PetNameEntity.create();
 
-		final var bean = PetNameEntity.create()
+		final var bean = PetImageEntity.create()
 			.withId(id)
-			.withImages(images)
-			.withName(name)
+			.withContent(content)
 			.withCreated(created)
-			.withModified(modified);
+			.withFileName(fileName)
+			.withMimeType(mimeType)
+			.withModified(modified)
+			.withPetName(petNameEntity);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
-		assertThat(bean.getImages()).isEqualTo(images);
-		assertThat(bean.getName()).isEqualTo(name);
+		assertThat(bean.getContent()).isEqualTo(content);
 		assertThat(bean.getCreated()).isEqualTo(created);
+		assertThat(bean.getFileName()).isEqualTo(fileName);
+		assertThat(bean.getMimeType()).isEqualTo(mimeType);
 		assertThat(bean.getModified()).isEqualTo(modified);
+		assertThat(bean.getPetName()).isEqualTo(petNameEntity);
 	}
 
 	@Test
 	void testNoDirtOnCreatedBean() {
-		assertThat(new PetNameEntity()).hasAllNullFieldsOrProperties();
-		assertThat(PetNameEntity.create()).hasAllNullFieldsOrProperties();
+		assertThat(new PetImageEntity()).hasAllNullFieldsOrProperties();
+		assertThat(PetImageEntity.create()).hasAllNullFieldsOrProperties();
 	}
 }

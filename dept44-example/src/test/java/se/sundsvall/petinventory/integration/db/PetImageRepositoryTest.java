@@ -3,6 +3,7 @@ package se.sundsvall.petinventory.integration.db;
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.Assertions.within;
 
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
+import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 
 /**
@@ -24,22 +26,33 @@ import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-junit.sql"
 })
-class PetNameRepositoryTest {
+class PetImageRepositoryTest {
 
 	@Autowired
-	private PetNameRepository repository;
+	private PetImageRepository repository;
 
 	@Test
 	void create() {
 
-		final var entity = PetNameEntity.create().withName("Rocco");
+		// Setup
+		final var fileName = "test.jpg";
+		final var mimeType = "image/jpeg";
+		final var content = new byte[] { 5, 1, 9, 2, 6 };
+		final var entity = PetImageEntity.create()
+			.withFileName(fileName)
+			.withMimeType(mimeType)
+			.withContent(content)
+			.withPetName(PetNameEntity.create().withId(1L));
 
+		// Act
 		final var result = repository.save(entity);
 
-		// Verification
+		// Assert
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isPositive();
-		assertThat(result.getName()).isEqualTo("Rocco");
+		assertThat(result.getFileName()).isEqualTo(fileName);
+		assertThat(result.getMimeType()).isEqualTo(mimeType);
+		assertThat(result.getContent()).isEqualTo(content);
 		assertThat(result.getCreated()).isCloseTo(now(), within(2, SECONDS));
 		assertThat(result.getModified()).isNull();
 	}
@@ -48,16 +61,15 @@ class PetNameRepositoryTest {
 	void findById() {
 
 		// Setup
-		final var id = 1L;
-		final var name = "Daisy";
+		final var id = 101L;
 
+		// Act
 		final var result = repository.findById(id).orElseThrow();
 
-		// Verification
+		// Assert
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getName()).isEqualTo(name);
-		assertThat(result.getImages()).hasSize(1);
+		assertThat(result.getFileName()).isEqualTo("Daisy.jpg");
 	}
 
 	@Test
@@ -66,53 +78,54 @@ class PetNameRepositoryTest {
 	}
 
 	@Test
-	void findByName() {
+	void findByPetNameId() {
 
 		// Setup
-		final var id = 2L;
-		final var name = "Beatle";
+		final var petNameId = 2L;
 
-		final var result = repository.findByName(name).orElseThrow();
+		// Act
+		final var result = repository.findByPetNameId(petNameId);
 
-		// Verification
-		assertThat(result).isNotNull();
-		assertThat(result.getId()).isEqualTo(id);
-		assertThat(result.getName()).isEqualTo(name);
-		assertThat(result.getImages()).hasSize(1);
+		// Assert
+		assertThat(result)
+			.extracting(PetImageEntity::getId, PetImageEntity::getMimeType, PetImageEntity::getFileName)
+			.containsExactly(tuple(102L, "image/jpeg", "Beatle.jpg"));
 	}
 
 	@Test
-	void findByNameNotFound() {
-		assertThat(repository.findByName("NoName")).isNotPresent();
+	void findByPetNameIdNotFOund() {
+		assertThat(repository.findByPetNameId(666)).isEmpty();
 	}
 
 	@Test
 	void update() {
 
 		// Setup
-		final var id = 3L;
+		final var id = 103L;
+		final var newContent = new byte[] { 5, 1, 9, 2, 6 };
 
 		// Fetch existing entity.
-		final var petname3 = repository.findById(id).orElseThrow();
-		assertThat(petname3.getName()).isEqualTo("Boozer");
-		assertThat(petname3.getModified()).isNull();
+		final var petImage = repository.findById(id).orElseThrow();
+		assertThat(petImage.getPetName().getName()).isEqualTo("Boozer");
+		assertThat(petImage.getContent()).hasSize(274);
+		assertThat(petImage.getModified()).isNull();
 
 		// Update entity.
-		petname3.setName("Shaggy");
-		repository.save(petname3);
+		petImage.setContent(newContent);
+		repository.save(petImage);
 
 		// Verification
 		final var result = repository.findById(id).orElseThrow();
-		assertThat(result.getName()).isEqualTo("Shaggy");
+		assertThat(petImage.getPetName().getName()).isEqualTo("Boozer");
+		assertThat(petImage.getContent()).hasSize(5);
 		assertThat(result.getModified()).isCloseTo(now(), within(2, SECONDS));
-		assertThat(result.getImages()).hasSize(1);
 	}
 
 	@Test
 	void deleteById() {
 
 		// Setup
-		final var id = 4L;
+		final var id = 104L;
 
 		assertThat(repository.findById(id)).isPresent();
 

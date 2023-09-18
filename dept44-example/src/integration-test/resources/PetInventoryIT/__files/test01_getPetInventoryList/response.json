@@ -3,18 +3,39 @@
 		"id": 1,
 		"price": 105.0,
 		"name": "Daisy",
-		"type": "DOG"
+		"type": "DOG",
+		"images": [
+			{
+				"id": 101,
+				"fileName": "Daisy.jpg",
+				"mimeType": "image/jpeg"
+			}
+		]
 	},
 	{
 		"id": 2,
 		"price": 20.75,
 		"name": "Beatle",
-		"type": "CAT"
+		"type": "CAT",
+		"images": [
+			{
+				"id": 102,
+				"fileName": "Beatle.jpg",
+				"mimeType": "image/jpeg"
+			}
+		]
 	},
 	{
 		"id": 3,
 		"price": 1337.5,
 		"name": "Boozer",
-		"type": "BIRD"
+		"type": "BIRD",
+		"images": [
+			{
+				"id": 103,
+				"fileName": "Boozer.jpg",
+				"mimeType": "image/jpeg"
+			}
+		]
 	}
 ]

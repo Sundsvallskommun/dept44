@@ -320,7 +320,7 @@ public abstract class AbstractAppTest {
 		}
 		if (nonNull(this.expectedResponseBinary)) {
 			// Compare as Binary
-			assertThat(Arrays.equals(this.expectedResponseBinary, (byte[]) response.getBody())).isTrue();
+			assertThat(this.expectedResponseBinary).isEqualTo(response.getBody());
 		}
 		if (this.expectedResponseBodyIsNull) {
 			assertThat(this.responseBody).isNull();

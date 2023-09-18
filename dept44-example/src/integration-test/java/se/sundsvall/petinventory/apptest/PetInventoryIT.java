@@ -15,14 +15,12 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.petinventory.Application;
-import se.sundsvall.petinventory.integration.db.PetImageRepository;
 
 /**
  * PetInventoryIT tests.
@@ -33,9 +31,6 @@ import se.sundsvall.petinventory.integration.db.PetImageRepository;
 	"/db/scripts/testdata-it.sql"
 })
 class PetInventoryIT extends AbstractAppTest {
-
-	@Autowired
-	private PetImageRepository petImageRepository;
 
 	@Test
 	void test01_getPetInventoryList() {

@@ -314,7 +314,7 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest sendRequestAndVerifyResponse() {
-		return sendRequest().andVerifyResponse();
+		return sendRequest().verifyStubs();
 	}
 
 	public AbstractAppTest sendRequest() {
@@ -326,11 +326,6 @@ public abstract class AbstractAppTest {
 		this.response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
 		this.responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		this.responseHeaders = response.getHeaders();
-
-		return this;
-	}
-
-	public AbstractAppTest andVerifyResponse() {
 
 		if (nonNull(this.expectedResponseHeaders)) {
 			this.expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
@@ -359,6 +354,11 @@ public abstract class AbstractAppTest {
 		if (this.expectedResponseBodyIsNull) {
 			assertThat(this.responseBody).isNull();
 		}
+
+		return this;
+	}
+
+	public AbstractAppTest verifyStubs() {
 
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)

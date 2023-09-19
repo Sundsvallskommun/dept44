@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.jdbc.Sql;
 
 import se.sundsvall.dept44.test.AbstractAppTest;
@@ -87,13 +86,10 @@ class PetInventoryIT extends AbstractAppTest {
 	@Test
 	void test05_postPetImage() throws IOException {
 
-		// Arrange
-		final var classPathResource = new ClassPathResource("files/dept44.jpg");
-
 		// Call
 		final var location = setupCall()
 			.withServicePath("/pet-inventory-items/5/images")
-			.withRequestFile("file", classPathResource.getFile())
+			.withRequestFile("file", "request/dept44.jpg")
 			.withContentType(MULTIPART_FORM_DATA)
 			.withHttpMethod(POST)
 			.withExpectedResponseStatus(CREATED)
@@ -104,7 +100,7 @@ class PetInventoryIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath(location.getPath())
 			.withHttpMethod(GET)
-			.withExpectedBinaryResponse("dept44.jpg")
+			.withExpectedBinaryResponse("response/dept44.jpg")
 			.withExpectedResponseStatus(OK)
 			.sendRequestAndVerifyResponse();
 	}

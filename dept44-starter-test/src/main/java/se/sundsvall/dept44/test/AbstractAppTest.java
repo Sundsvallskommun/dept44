@@ -19,6 +19,7 @@ import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.springframework.util.ResourceUtils.getFile;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -280,6 +281,20 @@ public abstract class AbstractAppTest {
 		multipartBody.add(parameterName, new FileSystemResource(file));
 
 		return this;
+	}
+
+	/**
+	 * Method takes a file that will be added to the multipart body.
+	 *
+	 * @param  fileName              to be added to the request as a multipart, the method will look for the file in the
+	 *                               current
+	 *                               test-case directory.
+	 * @return
+	 * @throws FileNotFoundException
+	 */
+	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
+		final var file = getFile("classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator") + fileName);
+		return withRequestFile(parameterName, file);
 	}
 
 	/**

@@ -1,18 +1,23 @@
 package se.sundsvall.petinventory.service.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import generated.swagger.io.petstore.Pet;
 import generated.swagger.io.petstore.TypeEnum;
+import se.sundsvall.petinventory.api.model.PetImage;
+import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 
 class PetInventoryMapperTest {
 
 	@Test
 	void toPetInventoryItem() {
 
-		// Setup
+		// Arrange
 		final var id = 1L;
 		final var price = 2.5F;
 		final var type = "BIRD";
@@ -21,10 +26,10 @@ class PetInventoryMapperTest {
 			.price(price)
 			.type(TypeEnum.fromValue(type));
 
-		// Call
+		// Act
 		final var result = PetInventoryMapper.toPetInventoryItem(pet);
 
-		// Verification
+		// Assert
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo(id);
 		assertThat(result.getName()).isNull(); // Not set in PetInventoryMapper
@@ -35,10 +40,31 @@ class PetInventoryMapperTest {
 	@Test
 	void toPetInventoryItemWhenPetIsNull() {
 
-		// Call
+		// Act
 		final var result = PetInventoryMapper.toPetInventoryItem(null);
 
-		// Verification
+		// Assert
 		assertThat(result).isNull();
+	}
+
+	@Test
+	void toPetImages() {
+
+		// Arrange
+		final var id = 1L;
+		final var fileName = "test.jpg";
+		final var mimeType = "image/jpeg";
+		final var petImageEntityList = List.of(PetImageEntity.create()
+			.withId(id)
+			.withFileName(fileName)
+			.withMimeType(mimeType));
+
+		// Act
+		final var result = PetInventoryMapper.toPetImages(petImageEntityList);
+
+		// Assert
+		assertThat(result)
+			.extracting(PetImage::getId, PetImage::getMimeType, PetImage::getFileName)
+			.containsExactly(tuple(1L, "image/jpeg", "test.jpg"));
 	}
 }

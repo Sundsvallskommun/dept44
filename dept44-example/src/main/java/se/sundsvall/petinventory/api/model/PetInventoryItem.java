@@ -1,7 +1,9 @@
 package se.sundsvall.petinventory.api.model;
 
+import java.util.List;
 import java.util.Objects;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Pet inventory item model")
@@ -18,6 +20,9 @@ public class PetInventoryItem {
 
 	@Schema(description = "Pet type", example = "DOG")
 	private String type;
+
+	@ArraySchema(schema = @Schema(implementation = PetImage.class))
+	private List<PetImage> images;
 
 	public static PetInventoryItem create() {
 		return new PetInventoryItem();
@@ -75,26 +80,35 @@ public class PetInventoryItem {
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(id, name, price, type);
+	public List<PetImage> getImages() {
+		return images;
+	}
+
+	public void setImages(List<PetImage> images) {
+		this.images = images;
+	}
+
+	public PetInventoryItem withImages(final List<PetImage> images) {
+		this.images = images;
+		return this;
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof final PetInventoryItem other)) {
-			return false;
-		}
-		return Objects.equals(id, other.id) && Objects.equals(name, other.name) && Objects.equals(price, other.price) && Objects.equals(type, other.type);
+	public int hashCode() {
+		return Objects.hash(id, images, name, price, type);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) { return true; }
+		if (!(obj instanceof final PetInventoryItem other)) { return false; }
+		return Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(name, other.name) && Objects.equals(price, other.price) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetInventoryItem [id=").append(id).append(", price=").append(price).append(", name=").append(name).append(", type=").append(type).append("]");
+		builder.append("PetInventoryItem [id=").append(id).append(", price=").append(price).append(", name=").append(name).append(", type=").append(type).append(", images=").append(images).append("]");
 		return builder.toString();
 	}
 }

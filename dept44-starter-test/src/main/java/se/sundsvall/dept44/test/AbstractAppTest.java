@@ -18,7 +18,10 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.springframework.util.ResourceUtils.getFile;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +33,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.ResourceUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -58,21 +66,29 @@ public abstract class AbstractAppTest {
 	private static final String MAPPING_DIRECTORY = "/mappings";
 	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
+	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
+	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
+	private MultiValueMap<String, Object> multipartBody;
 	private String requestBody;
 	private String expectedResponseBody;
+	private byte[] expectedResponseBinary;
+	private Class<?> expectedResponseType = DEFAULT_RESPONSE_TYPE;
 	private String mappingPath;
 	private String servicePath;
+	private ResponseEntity<?> response;
 	private String responseBody;
 	private HttpHeaders responseHeaders;
 	private HttpMethod method;
+	private MediaType contentType = DEFAULT_CONTENT_TYPE;
 	private HttpStatus expectedResponseStatus;
 	private HttpHeaders expectedResponseHeaders;
 	private Map<String, String> headerValues;
+	private String testDirectoryPath;
 
 	@Autowired
 	protected TestRestTemplate restTemplate;
@@ -80,8 +96,31 @@ public abstract class AbstractAppTest {
 	@Autowired
 	protected WireMockServer wiremock;
 
+	public AbstractAppTest reset() {
+		this.expectedResponseBodyIsNull = false;
+		this.multipartBody = null;
+		this.requestBody = null;
+		this.expectedResponseBody = null;
+		this.expectedResponseBinary = null;
+		this.expectedResponseType = DEFAULT_RESPONSE_TYPE;
+		this.mappingPath = null;
+		this.servicePath = null;
+		this.response = null;
+		this.responseBody = null;
+		this.responseHeaders = null;
+		this.method = null;
+		this.contentType = DEFAULT_CONTENT_TYPE;
+		this.expectedResponseStatus = null;
+		this.expectedResponseHeaders = null;
+		this.headerValues = null;
+		this.testDirectoryPath = null;
+
+		return this;
+	}
+
 	public AbstractAppTest setupCall() {
 
+		reset();
 		initializeJsonAssert();
 
 		// Fetch test case name.
@@ -99,6 +138,8 @@ public abstract class AbstractAppTest {
 				new ClasspathFileSource(this.mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
 		}
 
+		this.testDirectoryPath = "classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator");
+
 		return this;
 	}
 
@@ -112,8 +153,18 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
+	public AbstractAppTest withContentType(final MediaType contentType) {
+		this.contentType = contentType;
+		return this;
+	}
+
 	public AbstractAppTest withExpectedResponseStatus(final HttpStatus status) {
 		this.expectedResponseStatus = status;
+		return this;
+	}
+
+	public AbstractAppTest withExpectedResponseType(final Class<?> type) {
+		this.expectedResponseType = type;
 		return this;
 	}
 
@@ -157,6 +208,20 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
+	/**
+	 * Method takes a file name to a binary file.
+	 *
+	 * @param  expectedResponseFile the filename where the binary response can be read from.
+	 * @throws IOException
+	 */
+	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
+		final var file = ResourceUtils.getFile(this.testDirectoryPath + expectedResponseFile);
+		this.expectedResponseBinary = Files.readAllBytes(file.toPath());
+		this.expectedResponseType = byte[].class;
+
+		return this;
+	}
+
 	public AbstractAppTest withExpectedResponseBodyIsNull() {
 		this.expectedResponseBodyIsNull = true;
 		return this;
@@ -195,8 +260,9 @@ public abstract class AbstractAppTest {
 	 * Method takes a JSON request string or a file name where the request can be
 	 * read from.
 	 *
-	 * @param request raw JSON request string or filename where the request can be
-	 *                read from.
+	 * @param  request raw JSON request string or filename where the request can be
+	 *                 read from.
+	 * @return
 	 */
 	public AbstractAppTest withRequest(final String request) {
 		final var contentFromFile = fromTestFile(request);
@@ -209,23 +275,60 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
+	 * Method takes a file that will be added to the multipart body.
+	 *
+	 * @param  file to be added to the request as a multipart.
+	 * @return
+	 */
+	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
+		if (isNull(this.multipartBody)) {
+			this.multipartBody = new LinkedMultiValueMap<>();
+		}
+
+		multipartBody.add(parameterName, new FileSystemResource(file));
+
+		return this;
+	}
+
+	/**
+	 * Method takes a file that will be added to the multipart body.
+	 *
+	 * @param  fileName              to be added to the request as a multipart, the method will look for the file in the
+	 *                               current
+	 *                               test-case directory.
+	 * @return
+	 * @throws FileNotFoundException
+	 */
+	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
+		final var file = getFile(this.testDirectoryPath + fileName);
+		return withRequestFile(parameterName, file);
+	}
+
+	/**
 	 * Set max verification delay in seconds.
 	 *
 	 * I.e. the maximum time to spend while verifying a condition.
 	 *
-	 * @param maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
+	 * @param  maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
+	 * @return
 	 */
 	public AbstractAppTest withMaxVerificationDelayInSeconds(final int maxVerificationDelayInSeconds) {
 		this.maxVerificationDelayInSeconds = maxVerificationDelayInSeconds;
 		return this;
 	}
 
-	public AbstractAppTest sendRequestAndVerifyResponse(final MediaType mediaType) {
+	public AbstractAppTest sendRequestAndVerifyResponse() {
+		return sendRequest().verifyStubs();
+	}
+
+	public AbstractAppTest sendRequest() {
 		logger.info(getTestMethodName());
 
+		final var requestEntity = nonNull(this.multipartBody) ? restTemplateRequest(this.contentType, this.multipartBody) : restTemplateRequest(this.contentType, this.requestBody);
+
 		// Call service and fetch response.
-		final var response = this.restTemplate.exchange(this.servicePath, this.method, restTemplateRequest(mediaType, this.requestBody), String.class);
-		this.responseBody = response.getBody();
+		this.response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
+		this.responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		this.responseHeaders = response.getHeaders();
 
 		if (nonNull(this.expectedResponseHeaders)) {
@@ -239,16 +342,27 @@ public abstract class AbstractAppTest {
 		}
 		assertThat(response.getStatusCode()).isEqualTo(this.expectedResponseStatus);
 		if (nonNull(this.expectedResponseBody)) {
-			final var contentType = response.getHeaders().getContentType();
-			if (nonNull(contentType) && contentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
+			final var responseContentType = response.getHeaders().getContentType();
+			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
+				// Compare as JSON
 				assertJsonEquals(this.expectedResponseBody, this.responseBody);
 			} else {
+				// Compare as text
 				assertThat(this.expectedResponseBody).isEqualToIgnoringWhitespace(this.responseBody);
 			}
+		}
+		if (nonNull(this.expectedResponseBinary)) {
+			// Compare as Binary
+			assertThat(this.expectedResponseBinary).isEqualTo(response.getBody());
 		}
 		if (this.expectedResponseBodyIsNull) {
 			assertThat(this.responseBody).isNull();
 		}
+
+		return this;
+	}
+
+	public AbstractAppTest verifyStubs() {
 
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
@@ -262,15 +376,11 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
-	public AbstractAppTest sendRequestAndVerifyResponse() {
-		return sendRequestAndVerifyResponse(MediaType.APPLICATION_JSON);
-	}
-
 	/**
 	 * Returns the response body mapped to the provided class.
 	 *
-	 * @param clazz the class to map the response body to
-	 * @return the mapped response
+	 * @param  clazz the class to map the response body to
+	 * @return       the mapped response
 	 */
 	public <T> T getResponseBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
 		return andReturnBody(clazz);
@@ -279,8 +389,8 @@ public abstract class AbstractAppTest {
 	/**
 	 * Returns the response body mapped to the provided type reference.
 	 *
-	 * @param typeReference the type reference to map the response body to
-	 * @return the mapped response
+	 * @param  typeReference the type reference to map the response body to
+	 * @return               the mapped response
 	 */
 	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JsonProcessingException {
 		return andReturnBody(typeReference);
@@ -289,8 +399,8 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method returns the received server response mapped to the sent in class
 	 *
-	 * @param clazz class to map response to
-	 * @return response mapped to sent in class type
+	 * @param  clazz class to map response to
+	 * @return       response mapped to sent in class type
 	 */
 	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(this.responseBody, forName(clazz.getName())));
@@ -299,8 +409,8 @@ public abstract class AbstractAppTest {
 	/**
 	 * Returns the received server response mapped to the given type reference
 	 *
-	 * @param typeReference the type reference to map response to
-	 * @return response mapped to given type reference
+	 * @param  typeReference the type reference to map response to
+	 * @return               response mapped to given type reference
 	 */
 	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
 		return JSON_MAPPER.readValue(this.responseBody, typeReference);
@@ -325,7 +435,7 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
-	private HttpEntity<String> restTemplateRequest(final MediaType mediaType, final String body) {
+	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, Object body) {
 		final var httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(mediaType);
 		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());
@@ -336,12 +446,12 @@ public abstract class AbstractAppTest {
 	}
 
 	protected String fromTestFile(final String fileName) {
-		return fromFile(this.mappingPath + FILES_DIR + getTestMethodName() + "/" + fileName);
+		return fromFile(this.testDirectoryPath + fileName);
 	}
 
 	private String fromFile(final String filePath) {
 		try {
-			return readString(getFile("classpath:" + filePath).toPath());
+			return readString(getFile(filePath).toPath());
 		} catch (final IOException e) {
 			return null;
 		}

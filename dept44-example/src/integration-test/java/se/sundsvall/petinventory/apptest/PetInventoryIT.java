@@ -1,12 +1,17 @@
 package se.sundsvall.petinventory.apptest;
 
+import static org.springframework.http.HttpHeaders.LOCATION;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -75,6 +80,28 @@ class PetInventoryIT extends AbstractAppTest {
 			.withExpectedResponseStatus(BAD_GATEWAY)
 			.withExpectedResponse("response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
+			.sendRequestAndVerifyResponse();
+	}
+
+	@Test
+	void test05_postPetImage() throws IOException {
+
+		// Call
+		final var location = setupCall()
+			.withServicePath("/pet-inventory-items/5/images")
+			.withRequestFile("file", "request/dept44.jpg")
+			.withContentType(MULTIPART_FORM_DATA)
+			.withHttpMethod(POST)
+			.withExpectedResponseStatus(CREATED)
+			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/pet-inventory-items/(\\d+)/images/(\\d+)$"))
+			.sendRequestAndVerifyResponse().getResponseHeaders().getLocation();
+
+		// Call
+		setupCall()
+			.withServicePath(location.getPath())
+			.withHttpMethod(GET)
+			.withExpectedBinaryResponse("response/dept44.jpg")
+			.withExpectedResponseStatus(OK)
 			.sendRequestAndVerifyResponse();
 	}
 }

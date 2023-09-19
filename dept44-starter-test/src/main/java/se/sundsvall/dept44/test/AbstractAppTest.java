@@ -88,6 +88,7 @@ public abstract class AbstractAppTest {
 	private HttpStatus expectedResponseStatus;
 	private HttpHeaders expectedResponseHeaders;
 	private Map<String, String> headerValues;
+	private String testDirectoryPath;
 
 	@Autowired
 	protected TestRestTemplate restTemplate;
@@ -112,6 +113,7 @@ public abstract class AbstractAppTest {
 		this.expectedResponseStatus = null;
 		this.expectedResponseHeaders = null;
 		this.headerValues = null;
+		this.testDirectoryPath = null;
 
 		return this;
 	}
@@ -135,6 +137,8 @@ public abstract class AbstractAppTest {
 			this.wiremock.loadMappingsUsing(new JsonFileMappingsSource(
 				new ClasspathFileSource(this.mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
 		}
+
+		this.testDirectoryPath = "classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator");
 
 		return this;
 	}
@@ -211,7 +215,7 @@ public abstract class AbstractAppTest {
 	 * @throws IOException
 	 */
 	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
-		final var file = ResourceUtils.getFile("classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + "/" + expectedResponseFile);
+		final var file = ResourceUtils.getFile(this.testDirectoryPath + expectedResponseFile);
 		this.expectedResponseBinary = Files.readAllBytes(file.toPath());
 		this.expectedResponseType = byte[].class;
 
@@ -296,7 +300,7 @@ public abstract class AbstractAppTest {
 	 * @throws FileNotFoundException
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
-		final var file = getFile("classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator") + fileName);
+		final var file = getFile(this.testDirectoryPath + fileName);
 		return withRequestFile(parameterName, file);
 	}
 
@@ -442,12 +446,12 @@ public abstract class AbstractAppTest {
 	}
 
 	protected String fromTestFile(final String fileName) {
-		return fromFile(this.mappingPath + FILES_DIR + getTestMethodName() + "/" + fileName);
+		return fromFile(this.testDirectoryPath + fileName);
 	}
 
 	private String fromFile(final String filePath) {
 		try {
-			return readString(getFile("classpath:" + filePath).toPath());
+			return readString(getFile(filePath).toPath());
 		} catch (final IOException e) {
 			return null;
 		}

@@ -39,6 +39,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
@@ -79,6 +80,7 @@ public abstract class AbstractAppTest {
 	private Class<?> expectedResponseType = DEFAULT_RESPONSE_TYPE;
 	private String mappingPath;
 	private String servicePath;
+	private ResponseEntity<?> response;
 	private String responseBody;
 	private HttpHeaders responseHeaders;
 	private HttpMethod method;
@@ -102,6 +104,7 @@ public abstract class AbstractAppTest {
 		this.expectedResponseType = DEFAULT_RESPONSE_TYPE;
 		this.mappingPath = null;
 		this.servicePath = null;
+		this.response = null;
 		this.responseBody = null;
 		this.responseHeaders = null;
 		this.method = null;
@@ -311,14 +314,23 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest sendRequestAndVerifyResponse() {
+		return sendRequest().andVerifyResponse();
+	}
+
+	public AbstractAppTest sendRequest() {
 		logger.info(getTestMethodName());
 
 		final var requestEntity = nonNull(this.multipartBody) ? restTemplateRequest(this.contentType, this.multipartBody) : restTemplateRequest(this.contentType, this.requestBody);
 
 		// Call service and fetch response.
-		final var response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
+		this.response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
 		this.responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		this.responseHeaders = response.getHeaders();
+
+		return this;
+	}
+
+	public AbstractAppTest andVerifyResponse() {
 
 		if (nonNull(this.expectedResponseHeaders)) {
 			this.expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {

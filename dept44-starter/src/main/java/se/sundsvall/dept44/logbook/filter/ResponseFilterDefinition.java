@@ -8,6 +8,9 @@ import static org.zalando.logbook.core.ResponseFilters.*;
 
 public class ResponseFilterDefinition {
 
+	private ResponseFilterDefinition() {
+	}
+
 	public static ResponseFilter fileAttachmentFilter() {
 		return replaceBody(response -> {
 			var contentDisposition = response.getHeaders().get(CONTENT_DISPOSITION);

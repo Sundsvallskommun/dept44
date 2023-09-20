@@ -24,7 +24,7 @@ class ResponseFilterDefinitionTest {
 		response.withBody();
 
 		assertThat(response.getContentType()).isEqualTo("application/x-rar-compressed");
-		assertThat(response.getHeaders().get(CONTENT_DISPOSITION)).isEqualTo(Arrays.asList("attachment; filename=test.zip"));
+		assertThat(response.getHeaders()).containsEntry(CONTENT_DISPOSITION, Arrays.asList("attachment; filename=test.zip"));
 		assertThat(response.getBodyAsString()).isEqualTo("<binary>");
 	}
 

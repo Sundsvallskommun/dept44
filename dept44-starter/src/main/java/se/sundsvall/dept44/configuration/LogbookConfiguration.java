@@ -4,6 +4,7 @@ import static org.zalando.logbook.core.Conditions.exclude;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
+import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
 import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
 
 import java.util.List;
@@ -58,6 +59,7 @@ public class LogbookConfiguration {
 			.sink(new DefaultSink(
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
+			.responseFilter(fileAttachmentFilter())
 			.bodyFilter(passwordFilter())
 			.bodyFilters(buildJsonPathFilters(objectMapper, exclusionFiltersJsonPath))
 			.bodyFilters(buildXPathFilters(exclusionFiltersXPath))

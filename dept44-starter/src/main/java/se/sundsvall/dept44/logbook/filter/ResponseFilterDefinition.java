@@ -4,7 +4,7 @@ import org.zalando.logbook.ResponseFilter;
 
 import static java.util.Objects.nonNull;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
-import static org.zalando.logbook.core.ResponseFilters.*;
+import static org.zalando.logbook.core.ResponseFilters.replaceBody;
 
 public class ResponseFilterDefinition {
 

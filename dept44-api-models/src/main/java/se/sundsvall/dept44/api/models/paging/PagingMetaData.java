@@ -4,6 +4,7 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,7 +43,7 @@ public class PagingMetaData {
 	@Schema(description = "The properties to sort by", example = "property", accessMode = READ_ONLY)
 	private List<String> sortBy;
 
-	@Schema(description = "The sort order direction", example = "ASC", enumAsRef = true)
+	@ArraySchema(schema = @Schema(description = "The sort order direction", example = "ASC", enumAsRef = true))
 	private Direction sortDirection;
 
 	public static PagingMetaData create() {

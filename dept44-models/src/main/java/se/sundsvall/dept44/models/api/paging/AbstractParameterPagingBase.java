@@ -17,9 +17,9 @@ import static java.lang.Integer.parseInt;
 import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
 
 /**
- * Model class to extend when requesting paged result. Should be used as query parameters. *
+ * Model class to extend when requesting paged result. Should be used as query parameters.
  * See {@link PagingMetaData} for response.
- *
+ * <p>
  * Use property 'dept44.models.api.paging.max.limit' to change default max allowed page size.
  */
 @EqualsAndHashCode
@@ -31,7 +31,7 @@ public abstract class AbstractParameterPagingBase {
 	private static final String DEFAULT_LIMIT = "100";
 
 
-	@Schema(description = "Page number", example = "1")
+	@Schema(description = "Page number", example = "1", minimum = "1")
 	@Min(1)
 	protected int page = parseInt(DEFAULT_PAGE);
 

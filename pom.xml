@@ -189,6 +189,11 @@
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-models</artifactId>
+				<version>3.1-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
 				<version>3.1-SNAPSHOT</version>
 			</dependency>

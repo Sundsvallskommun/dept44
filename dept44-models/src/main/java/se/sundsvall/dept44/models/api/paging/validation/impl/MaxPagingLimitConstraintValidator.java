@@ -9,7 +9,7 @@ public class MaxPagingLimitConstraintValidator implements ConstraintValidator<Ma
 
 	private static final String MSG = "Page limit cannot be greater than %s";
 
-	@Value("${dept44.models.api.paging.max.limit:100}")
+	@Value("${dept44.models.api.paging.max.limit:1000}")
 	private int maxLimit;
 
 	@Override

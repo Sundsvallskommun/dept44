@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,5 +50,17 @@ public class PagingMetaData {
 
 	public static PagingMetaData create() {
 		return new PagingMetaData();
+	}
+
+	public PagingMetaData withPageData(Page<?> page) {
+		setPage(page.getNumber() + 1);
+		setLimit(page.getSize());
+		setCount(page.getNumberOfElements());
+		setTotalRecords(page.getTotalElements());
+		setTotalPages(page.getTotalPages());
+		setSortBy(page.getSort().get().map(Sort.Order::getProperty).toList());
+		setSortDirection(page.getSort().stream().findFirst().map(Sort.Order::getDirection).orElse(null));
+
+		return this;
 	}
 }

@@ -27,18 +27,22 @@ import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
 @Setter
 public abstract class AbstractParameterPagingBase {
 
-	private static final String DEFAULT_PAGE = "1";
-	private static final String DEFAULT_LIMIT = "100";
+	protected AbstractParameterPagingBase(int defaultLimit) {
+		this.limit = defaultLimit;
+	}
 
+	protected AbstractParameterPagingBase() {
+		this.limit = 100;
+	}
 
-	@Schema(description = "Page number", example = "1", minimum = "1")
+	@Schema(description = "Page number", example = "1", minimum = "1", defaultValue = "1")
 	@Min(1)
-	protected int page = parseInt(DEFAULT_PAGE);
+	protected int page = 1;
 
-	@Schema(description = "Result size per page", example = "15")
+	@Schema(description = "Result size per page. Maximum allowed value is dynamically configured", minimum = "1", example = "15")
 	@Min(1)
 	@MaxPagingLimit
-	protected int limit = parseInt(DEFAULT_LIMIT);
+	protected int limit;
 
 	@ArraySchema(schema = @Schema(description = "The properties to sort on", example = "propertyName"))
 	protected List<String> sortBy;

@@ -59,6 +59,14 @@ class AbstractParameterPagingBaseTest {
 
 	}
 
-	private static class TestParameter extends AbstractParameterPagingBase{
+	@Test
+	void hasCustomDefaultLimit() {
+		assertThat(new TestParameter().limit).isEqualTo(200);
+	}
+
+	private static class TestParameter extends AbstractParameterPagingBase {
+		public TestParameter() {
+			super(200);
+		}
 	}
 }

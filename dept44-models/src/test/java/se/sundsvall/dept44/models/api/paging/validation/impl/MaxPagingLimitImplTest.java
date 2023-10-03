@@ -38,10 +38,10 @@ class MaxPagingLimitImplTest {
 
 	@Test
 	void isNotValid() {
-		assertThat(validator.validate(new TestModel().withLimit(101)))
+		assertThat(validator.validate(new TestModel().withLimit(1001)))
 			.first()
 			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("Page limit cannot be greater than 100");
+			.isEqualTo("Page limit cannot be greater than 1000");
 	}
 
 	@Nested

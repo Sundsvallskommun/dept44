@@ -65,9 +65,12 @@ class ValidSortByPropertyConstraintValidatorTest {
 
 		private String notASortableField;
 
+		@Column(name = "exclude_field")
+		private String excludeField;
+
 	}
 
-	@ValidSortByProperty(TestEntity.class)
+	@ValidSortByProperty(value = TestEntity.class, exclude = {"excludeField"})
 	public static class TestParameters extends AbstractParameterPagingBase {
 	}
 

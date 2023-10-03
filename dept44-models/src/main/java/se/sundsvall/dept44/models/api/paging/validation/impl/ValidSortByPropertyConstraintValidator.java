@@ -10,6 +10,7 @@ import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingBase;
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 		entityProperties.addAll(Stream.of(constraintAnnotation.value().getDeclaredFields())
 			.filter(field -> field.isAnnotationPresent(Column.class))
 			.map(Field::getName)
+			.filter(name -> Arrays.stream(constraintAnnotation.exclude()).noneMatch(name::equals))
 			.toList());
 	}
 

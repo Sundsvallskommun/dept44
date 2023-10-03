@@ -26,4 +26,6 @@ public @interface ValidSortByProperty {
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
+
+	String[] exclude() default {};
 }

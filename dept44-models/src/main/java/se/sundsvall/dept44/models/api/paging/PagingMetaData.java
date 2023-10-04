@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.models.api.paging;
 
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 
@@ -58,7 +60,9 @@ public class PagingMetaData {
 		setCount(page.getNumberOfElements());
 		setTotalRecords(page.getTotalElements());
 		setTotalPages(page.getTotalPages());
-		setSortBy(page.getSort().get().map(Sort.Order::getProperty).toList());
+		setSortBy(page.getSort().get()
+			.map(Sort.Order::getProperty)
+			.collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list)));
 		setSortDirection(page.getSort().stream().findFirst().map(Sort.Order::getDirection).orElse(null));
 
 		return this;

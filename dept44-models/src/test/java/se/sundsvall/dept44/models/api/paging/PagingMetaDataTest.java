@@ -82,6 +82,29 @@ class PagingMetaDataTest {
 	}
 
 	@Test
+	void testPopulationWithPageNoSorting() {
+
+		var pageMock = Mockito.mock(Page.class);
+
+		when(pageMock.getNumber()).thenReturn(10);
+		when(pageMock.getSize()).thenReturn(20);
+		when(pageMock.getNumberOfElements()).thenReturn(30);
+		when(pageMock.getTotalElements()).thenReturn(40L);
+		when(pageMock.getTotalPages()).thenReturn(50);
+		when(pageMock.getSort()).thenReturn(Sort.unsorted());
+
+		final var meta = PagingMetaData.create().withPageData(pageMock);
+
+		assertThat(meta.getPage()).isEqualTo(11);
+		assertThat(meta.getLimit()).isEqualTo(20);
+		assertThat(meta.getCount()).isEqualTo(30);
+		assertThat(meta.getTotalRecords()).isEqualTo(40L);
+		assertThat(meta.getTotalPages()).isEqualTo(50);
+		assertThat(meta.getSortBy()).isNull();
+		assertThat(meta.getSortDirection()).isNull();
+	}
+
+	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(PagingMetaData.create())
 			.hasFieldOrPropertyWithValue("count", 0)

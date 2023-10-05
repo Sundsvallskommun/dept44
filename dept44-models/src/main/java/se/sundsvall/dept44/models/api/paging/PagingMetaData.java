@@ -1,21 +1,9 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
-
-import java.util.List;
-
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.With;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
  * Model class to use when returning paged result. Should be added in root of response under attribute "_meta".
@@ -23,9 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * See {@link AbstractParameterPagingBase} for request.
  */
 @Data
-@With
-@NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "PagingMetaData model")
 public class PagingMetaData {
 
@@ -44,27 +29,32 @@ public class PagingMetaData {
 	@Schema(description = "Total amount of pages based on provided search parameters", example = "23", accessMode = READ_ONLY)
 	private int totalPages;
 
-	@ArraySchema(schema = @Schema(description = "The properties to sort by", example = "property", accessMode = READ_ONLY))
-	private List<String> sortBy;
-
-	@Schema(description = "The sort order direction", example = "ASC", enumAsRef = true)
-	private Direction sortDirection;
-
 	public static PagingMetaData create() {
 		return new PagingMetaData();
 	}
 
-	public PagingMetaData withPageData(Page<?> page) {
-		setPage(page.getNumber() + 1);
-		setLimit(page.getSize());
-		setCount(page.getNumberOfElements());
-		setTotalRecords(page.getTotalElements());
-		setTotalPages(page.getTotalPages());
-		setSortBy(page.getSort().get()
-			.map(Sort.Order::getProperty)
-			.collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list)));
-		setSortDirection(page.getSort().stream().findFirst().map(Sort.Order::getDirection).orElse(null));
+	public PagingMetaData withPage(int page) {
+		this.page = page;
+		return this;
+	}
 
+	public PagingMetaData withLimit(int limit) {
+		this.limit = limit;
+		return this;
+	}
+
+	public PagingMetaData withCount(int count) {
+		this.count = count;
+		return this;
+	}
+
+	public PagingMetaData withTotalRecords(long totalRecords) {
+		this.totalRecords = totalRecords;
+		return this;
+	}
+
+	public PagingMetaData withTotalPages(int totalPages) {
+		this.totalPages = totalPages;
 		return this;
 	}
 }

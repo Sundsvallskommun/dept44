@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingBase;
+import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingAndSortingBase;
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
 
 import java.util.List;
@@ -33,8 +33,21 @@ class ValidSortByPropertyConstraintValidatorTest {
 	}
 
 	@Test
+	void isValidWithFieldsWithNoEntity() {
+		final var parameters = new TestParametersWithNoBackedEntity();
+		parameters.setSortBy(List.of("includeField"));
+		assertThat(validator.validate(parameters)).isEmpty();
+	}
+
+	@Test
 	void isValidWithoutFields() {
 		final var parameters = new TestParameters();
+		assertThat(validator.validate(parameters)).isEmpty();
+	}
+
+	@Test
+	void isValidWithoutFieldsWithNoEntity() {
+		final var parameters = new TestParametersWithNoBackedEntity();
 		assertThat(validator.validate(parameters)).isEmpty();
 	}
 
@@ -48,7 +61,17 @@ class ValidSortByPropertyConstraintValidatorTest {
 			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
 	}
 
-	private Set<ConstraintViolation<Object>> validate(Validator validator, AbstractParameterPagingBase dataClass) {
+	@Test
+	void isNotValidWithNoEntity() {
+		final var parameters = new TestParametersWithNoBackedEntity();
+		parameters.setSortBy(List.of("notASortableField"));
+		assertThat(validator.validate(parameters))
+			.first()
+			.extracting(ConstraintViolation::getMessage)
+			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
+	}
+
+	private Set<ConstraintViolation<Object>> validate(Validator validator, AbstractParameterPagingAndSortingBase dataClass) {
 		return validator.validate(dataClass);
 	}
 
@@ -70,8 +93,12 @@ class ValidSortByPropertyConstraintValidatorTest {
 
 	}
 
-	@ValidSortByProperty(value = TestEntity.class, exclude = {"excludeField"})
-	public static class TestParameters extends AbstractParameterPagingBase {
+	@ValidSortByProperty(value = TestEntity.class, exclude = "excludeField")
+	public static class TestParameters extends AbstractParameterPagingAndSortingBase {
+	}
+
+	@ValidSortByProperty(include = "includeField")
+	public static class TestParametersWithNoBackedEntity extends AbstractParameterPagingAndSortingBase {
 	}
 
 }

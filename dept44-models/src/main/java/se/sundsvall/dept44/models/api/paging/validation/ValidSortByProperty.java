@@ -3,6 +3,7 @@ package se.sundsvall.dept44.models.api.paging.validation;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import se.sundsvall.dept44.models.api.paging.validation.impl.ValidSortByPropertyConstraintValidator;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,11 +22,13 @@ public @interface ValidSortByProperty {
 
 	String message() default "one or more of properties in list are not present in entity.";
 
-	Class<?> value();
+	Class<?> value() default Void.class;
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
 
 	String[] exclude() default {};
+
+	String[] include() default {};
 }

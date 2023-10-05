@@ -1,20 +1,11 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.domain.Sort;
 import se.sundsvall.dept44.models.api.paging.validation.MaxPagingLimit;
-
-import java.util.List;
-import java.util.Optional;
-
-import static java.lang.Integer.parseInt;
-import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
 
 /**
  * Model class to extend when requesting paged result. Should be used as query parameters.
@@ -44,16 +35,4 @@ public abstract class AbstractParameterPagingBase {
 	@MaxPagingLimit
 	protected int limit;
 
-	@ArraySchema(schema = @Schema(description = "The properties to sort on", example = "propertyName"))
-	protected List<String> sortBy;
-
-	@Schema(description = "The sort order direction", example = "ASC", enumAsRef = true)
-	protected Sort.Direction sortDirection = DEFAULT_DIRECTION;
-
-	@JsonIgnore
-	public Sort sort() {
-		return Optional.ofNullable(this.sortBy)
-			.map(sortByList -> Sort.by(Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION), sortByList.toArray(new String[0])))
-			.orElseGet(Sort::unsorted);
-	}
 }

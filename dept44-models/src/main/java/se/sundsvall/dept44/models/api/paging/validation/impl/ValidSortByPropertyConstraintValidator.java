@@ -38,7 +38,7 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 
 	@Override
 	public boolean isValid(final AbstractParameterPagingAndSortingBase parameters, final ConstraintValidatorContext context) {
-		final boolean isValid = isEmpty(parameters.getSortBy()) ||	entityProperties.containsAll(parameters.getSortBy());
+		final boolean isValid = isEmpty(parameters.getSortBy()) || entityProperties.containsAll(parameters.getSortBy());
 
 		if (!isValid) {
 			useCustomMessageForValidation(context, parameters.getSortBy());

@@ -25,6 +25,7 @@
 	</developers>
 
 	<modules>
+		<module>dept44-models</module>
 		<module>dept44-build-tools</module>
 		<module>dept44-service-parent</module>
 		<module>dept44-starter-parent</module>
@@ -184,6 +185,11 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
+				<version>3.1-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-models</artifactId>
 				<version>3.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>

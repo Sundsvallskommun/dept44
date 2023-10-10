@@ -1,17 +1,20 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.InstanceOfAssertFactories.ARRAY;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.WebServiceMessageFactory;
 import org.springframework.ws.client.core.WebServiceTemplate;
@@ -19,9 +22,11 @@ import org.springframework.ws.client.support.interceptor.ClientInterceptor;
 import org.springframework.ws.transport.http.HttpComponents5ClientFactory;
 import org.zalando.logbook.Logbook;
 
+import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.support.BasicAuthentication;
 
+@ExtendWith(MockitoExtension.class)
 class WebServiceTemplateBuilderTest {
 
 	@Mock
@@ -33,14 +38,19 @@ class WebServiceTemplateBuilderTest {
 	@Mock
 	private WebServiceMessageFactory webServiceMessageFactoryMock;
 
-	@BeforeEach
-	public void initMocks() {
-		MockitoAnnotations.openMocks(this);
-	}
-
 	@Test
 	void testCreate() {
 		assertThat(WebServiceTemplateBuilder.create()).isNotNull();
+	}
+
+	@Test
+	void testCreateWithBothKeyStoreFileLocationAndKeyStoreDataSet() {
+		assertThatExceptionOfType(WebServiceTemplateException.class)
+			.isThrownBy(() -> WebServiceTemplateBuilder.create()
+				.withKeyStoreFileLocation("dummyLocation")
+				.withKeyStoreData("dummy".getBytes())
+				.build())
+			.withMessage("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
 	}
 
 	@Test
@@ -51,6 +61,7 @@ class WebServiceTemplateBuilderTest {
 		var password = "password";
 		var connectTimeout = Duration.ofSeconds(5);
 		var keyStoreFileLocation = "keyStoreFileLocation";
+		var keyStoreData = "keyStoreData".getBytes(UTF_8);
 		var keyStorePassword = "keyStorePassword";
 		var package1 = "package1";
 		var package2 = "package2";
@@ -64,6 +75,7 @@ class WebServiceTemplateBuilderTest {
 			.withClientInterceptor(clientInterceptorMock)
 			.withConnectTimeout(connectTimeout)
 			.withKeyStoreFileLocation(keyStoreFileLocation)
+			.withKeyStoreData(keyStoreData)
 			.withKeyStorePassword(keyStorePassword)
 			.withLogbook(logbookMock)
 			.withPackagesToScan(List.of(package1, package2))
@@ -78,6 +90,7 @@ class WebServiceTemplateBuilderTest {
 			.hasFieldOrPropertyWithValue("clientInterceptors", Set.of(clientInterceptorMock))
 			.hasFieldOrPropertyWithValue("connectTimeout", connectTimeout)
 			.hasFieldOrPropertyWithValue("keyStoreFileLocation", keyStoreFileLocation)
+			.hasFieldOrPropertyWithValue("keyStoreData", keyStoreData)
 			.hasFieldOrPropertyWithValue("keyStorePassword", keyStorePassword)
 			.hasFieldOrPropertyWithValue("logbook", logbookMock)
 			.hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2, package3))
@@ -189,15 +202,38 @@ class WebServiceTemplateBuilderTest {
 	}
 
 	@Test
-	void testSSLClient() {
+	void testSSLClientWithKeyStoreFileLocation() {
 		// Setup variables
 		var keyStoreFileLocation = "classpath:dummy-keystore.jks";
 		var keyStorePassword = "password";
 
 		// Create instance
-		WebServiceTemplate template = WebServiceTemplateBuilder.create().withKeyStoreFileLocation(keyStoreFileLocation).withKeyStorePassword(keyStorePassword).build();
+		var template = WebServiceTemplateBuilder.create()
+			.withKeyStoreFileLocation(keyStoreFileLocation)
+			.withKeyStorePassword(keyStorePassword)
+			.build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
+	}
+
+	@Test
+	void testSSLClientWithKeyStoreFileContent() throws IOException {
+		// Setup variables
+		try (var in = getClass().getResourceAsStream("/dummy-keystore.jks")) {
+			assert in != null;
+
+			var keyStoreFileContent = in.readAllBytes();
+			var keyStorePassword = "password";
+
+			// Create instance
+			var template = WebServiceTemplateBuilder.create()
+				.withKeyStoreData(keyStoreFileContent)
+				.withKeyStorePassword(keyStorePassword)
+				.build();
+
+			// Do assertions
+			assertThat(template).isNotNull();
+		}
 	}
 }

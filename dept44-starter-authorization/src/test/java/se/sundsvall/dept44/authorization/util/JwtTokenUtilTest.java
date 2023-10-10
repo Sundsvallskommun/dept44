@@ -29,20 +29,26 @@ class JwtTokenUtilTest {
 	 * 'df6b9fb15cfdbb7527be5a8a6e39f39e572c8ddb943fbc79a943438e9d3d85ebfc2ccf9e0eccd9346026c0b6876e0e01556fe56f135582c05fbdbb505d46755a'
 	 *
 	 * Header:
+	 *
+	 * <pre>
 	 * {
-	 * "alg": "HS512",
-	 * "typ": "JWT"
+	 * 		"alg": "HS512",
+	 * 		"typ": "JWT"
 	 * }
+	 * </pre>
 	 *
 	 * Body:
+	 *
+	 * <pre>
 	 * {
-	 * "sub": "userName",
-	 * "exp": "<date in Epoch format>",
-	 * "roles": {
-	 * "READ": ["CATEGORY_1"],
-	 * "WRITE": ["CATEGORY_1", "CATEGORY_2"]
+	 * 		"sub": "userName",
+	 * 		"exp": "<date in Epoch format>",
+	 * 		"roles": {
+	 * 			"READ": ["CATEGORY_1"],
+	 * 			"WRITE": ["CATEGORY_1", "CATEGORY_2"]
+	 * 		}
 	 * }
-	 * }
+	 * </pre>
 	 */
 
 	@Test

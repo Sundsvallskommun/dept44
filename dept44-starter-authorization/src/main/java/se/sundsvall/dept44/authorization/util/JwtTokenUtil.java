@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 
 @Component
@@ -33,8 +34,8 @@ public class JwtTokenUtil implements Serializable {
 	/**
 	 * Retrieves username from jwt-token
 	 *
-	 * @param token jwt-token containing authorization information
-	 * @return string with data mapped from tag with name 'sub' in token, or null if data is missing
+	 * @param  token jwt-token containing authorization information
+	 * @return       string with data mapped from tag with name 'sub' in token, or null if data is missing
 	 */
 	public String getUsernameFromToken(final String token) {
 		return getClaimFromToken(token, Claims::getSubject);
@@ -43,8 +44,9 @@ public class JwtTokenUtil implements Serializable {
 	/**
 	 * Retrieves roles from jwt-token
 	 *
-	 * @param token containing authorization information
-	 * @return a collection with data mapped from tag with name 'roles' in token, or empty collection if data is missing
+	 * @param  token containing authorization information
+	 * @return       a collection with data mapped from tag with name 'roles' in token, or empty collection if data is
+	 *               missing
 	 */
 	public Collection<GenericGrantedAuthority> getRolesFromToken(final String token) {
 		final Map<?, ?> roles = getAllClaimsFromToken(token).get("roles", Map.class);
@@ -56,8 +58,8 @@ public class JwtTokenUtil implements Serializable {
 	/**
 	 * Retrieves expiration date from jwt-token
 	 *
-	 * @param token containing authorization information
-	 * @return date with data mapped from tag with name 'exp' in token, or null if data is missing
+	 * @param  token containing authorization information
+	 * @return       date with data mapped from tag with name 'exp' in token, or null if data is missing
 	 */
 	public Date getExpirationDateFromToken(final String token) {
 		return getClaimFromToken(token, Claims::getExpiration);
@@ -66,9 +68,9 @@ public class JwtTokenUtil implements Serializable {
 	/**
 	 * Retrieves claim from jwt-token
 	 *
-	 * @param token          containing authorization information
-	 * @param claimsResolver to use to fetch and return claim
-	 * @return claim of type defined in sent in claimsResolver, or null if data is missing in token
+	 * @param  token          containing authorization information
+	 * @param  claimsResolver to use to fetch and return claim
+	 * @return                claim of type defined in sent in claimsResolver, or null if data is missing in token
 	 */
 	public <T> T getClaimFromToken(final String token, final Function<Claims, T> claimsResolver) {
 		final Claims claims = getAllClaimsFromToken(token);
@@ -76,10 +78,10 @@ public class JwtTokenUtil implements Serializable {
 	}
 
 	private Claims getAllClaimsFromToken(final String token) {
-		return Jwts.parserBuilder()
-			.setSigningKey(secret)
+		return Jwts.parser()
+			.verifyWith(Keys.hmacShaKeyFor(secret))
 			.build()
-			.parseClaimsJws(token)
-			.getBody();
+			.parseSignedClaims(token)
+			.getPayload();
 	}
 }

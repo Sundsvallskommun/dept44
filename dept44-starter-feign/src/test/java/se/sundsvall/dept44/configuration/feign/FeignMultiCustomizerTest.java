@@ -1,11 +1,15 @@
 package se.sundsvall.dept44.configuration.feign;
 
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
+
+import java.util.Collections;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -91,6 +95,40 @@ class FeignMultiCustomizerTest {
 	}
 
 	@Test
+	void testWithRetryableOauth2InterceptorForClientRegistrationWithEmptyExtraScopes() {
+		final var clientRegistration = createClientRegistration();
+
+		final var customizer = FeignMultiCustomizer.create()
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of()).composeCustomizersToOne();
+
+		customizer.customize(builderMock);
+
+		verify(builderMock, atLeastOnce()).requestInterceptor(oAuth2RequestInterceptorCaptor.capture());
+		verify(builderMock).retryer(any(ActionRetryer.class));
+
+		assertThat(oAuth2RequestInterceptorCaptor.getValue())
+			.extracting("clientRegistration").extracting("scopes")
+			.isNull();
+	}
+
+	@Test
+	void testWithRetryableOauth2InterceptorForClientRegistrationWithDefaultAndExtraScope() {
+		final var clientRegistration = createClientRegistration(Set.of("some_scope"));
+
+		final var customizer = FeignMultiCustomizer.create()
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration).composeCustomizersToOne();
+
+		customizer.customize(builderMock);
+
+		verify(builderMock, atLeastOnce()).requestInterceptor(oAuth2RequestInterceptorCaptor.capture());
+		verify(builderMock).retryer(any(ActionRetryer.class));
+
+		assertThat(oAuth2RequestInterceptorCaptor.getValue())
+			.extracting("clientRegistration").extracting("scopes")
+			.asInstanceOf(collection(String.class)).hasSize(2);
+	}
+
+	@Test
 	void testWithDecoder() {
 		final var decoderMock = Mockito.mock(Decoder.class);
 		final var customizer = FeignMultiCustomizer.create()
@@ -170,11 +208,17 @@ class FeignMultiCustomizerTest {
 	}
 
 	private static ClientRegistration createClientRegistration() {
+		return createClientRegistration(emptySet());
+	}
+
+	private static ClientRegistration createClientRegistration(final Set<String> scope) {
 		return ClientRegistration
 			.withRegistrationId("test")
 			.clientId("id")
 			.tokenUri("uri")
 			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+			.scope(scope)
 			.build();
 	}
+
 }

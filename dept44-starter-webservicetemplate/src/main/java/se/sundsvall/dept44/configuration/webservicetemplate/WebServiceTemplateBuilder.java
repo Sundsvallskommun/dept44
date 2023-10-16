@@ -1,13 +1,12 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
-import java.io.IOException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,12 +14,12 @@ import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
+
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.ConnectionConfig;
@@ -32,7 +31,6 @@ import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.hc.core5.util.Timeout;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.WebServiceMessageFactory;
 import org.springframework.ws.client.core.WebServiceTemplate;
@@ -54,6 +52,7 @@ public class WebServiceTemplateBuilder {
 
 	private String baseUrl;
 	private String keyStoreFileLocation;
+	private byte[] keyStoreData;
 	private String keyStorePassword;
 
 	private Duration connectTimeout = Duration.ofSeconds(Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS);
@@ -100,6 +99,17 @@ public class WebServiceTemplateBuilder {
 	 */
 	public WebServiceTemplateBuilder withKeyStoreFileLocation(final String location) {
 		this.keyStoreFileLocation = location;
+		return this;
+	}
+
+	/**
+	 * The keystore as a byte array
+	 *
+	 * @param keyStoreData the keyStore as a byte array
+	 * @return this builder {@link WebServiceTemplateBuilder}
+	 */
+	public WebServiceTemplateBuilder withKeyStoreData(final byte[] keyStoreData) {
+		this.keyStoreData = keyStoreData;
 		return this;
 	}
 
@@ -208,6 +218,10 @@ public class WebServiceTemplateBuilder {
 	 * @return a configured WebServiceTemplate
 	 */
 	public WebServiceTemplate build() {
+		if (isNotBlank(keyStoreFileLocation) && isNotEmpty(keyStoreData)) {
+			throw new WebServiceTemplateException("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
+		}
+
 		var webServiceTemplate = new WebServiceTemplate();
 		webServiceTemplate.setDefaultUri(baseUrl);
 
@@ -316,14 +330,16 @@ public class WebServiceTemplateBuilder {
 		return connectionManagerBuilder.build();
 	}
 
-	private KeyStore getKeyStore() throws IOException, NoSuchAlgorithmException, CertificateException, KeyStoreException {
-		var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-		keyStore.load(new PathMatchingResourcePatternResolver().getResource(keyStoreFileLocation).getInputStream(), keyStorePassword.toCharArray());
-		return keyStore;
+	private KeyStore getKeyStore() {
+		if (isNotBlank(keyStoreFileLocation)) {
+			return loadKeyStore(keyStoreFileLocation, keyStorePassword);
+		} else {
+			return loadKeyStore(keyStoreData, keyStorePassword);
+		}
 	}
 
 	private boolean shouldUseSSL() {
-		return StringUtils.isNotBlank(keyStoreFileLocation) && StringUtils.isNotBlank(keyStorePassword);
+		return (isNotBlank(keyStoreFileLocation) || isNotEmpty(keyStoreData)) && isNotBlank(keyStorePassword);
 	}
 
 	private boolean shouldUseBasicAuth() {

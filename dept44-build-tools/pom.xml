@@ -11,7 +11,7 @@
 	<properties>
 		<enforcer-api.version>3.4.1</enforcer-api.version>
 		<maven-api.version>3.9.5</maven-api.version>
-		<spotbugs-annotations.version>4.7.3</spotbugs-annotations.version>
+		<spotbugs-annotations.version>4.8.0</spotbugs-annotations.version>
 	</properties>
 
 	<dependencies>

@@ -7,7 +7,7 @@
 		<version>3.3-SNAPSHOT</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
-	<artifactId>dept44-starter-logback-graylog</artifactId>
+	<artifactId>dept44-starter-logback-logserver</artifactId>
 
 	<dependencies>
 		<!-- Framework -->

@@ -27,10 +27,10 @@
 			<groupId>se.sundsvall.dept44</groupId>
 			<artifactId>dept44-starter</artifactId>
 		</dependency>
-		<!-- Automatically adds the graylog/logback dependency, disable via properties. -->
+		<!-- Automatically adds the logback dependency, disable via properties. -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
-			<artifactId>dept44-starter-logback-graylog</artifactId>
+			<artifactId>dept44-starter-logback-logserver</artifactId>
 		</dependency>
 	</dependencies>
 

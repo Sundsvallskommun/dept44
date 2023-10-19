@@ -6,17 +6,16 @@
     <property name="CONSOLE_LOG_PATTERN" value="%date{ISO8601} [%t] %12X{x-request-id} %5p %-40.40logger{39} %m%n%xEx" />
 
     <springProperty scope="context" name="applicationName" source="spring.application.name" defaultValue="name-not-set"/>
-    <springProperty scope="context" name="maxChunkSize" source="dept44.logback.graylog.maxchunksize" defaultValue="508"/>
+    <springProperty scope="context" name="maxChunkSize" source="dept44.logback.logserver.maxchunksize" defaultValue="508"/>
 
-    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
         <then>
             <appender name="GELF" class="de.siegmar.logbackgelf.GelfUdpAppender">
-                <graylogHost>${GRAYLOG_HOST}</graylogHost>  <!-- Defined as environment variable -->
-                <graylogPort>${GRAYLOG_PORT}</graylogPort>  <!-- Defined as environment variable -->
+                <graylogHost>${LOGSERVER_HOST}</graylogHost>  <!-- Defined as environment variable -->
+                <graylogPort>${LOGSERVER_PORT}</graylogPort>  <!-- Defined as environment variable -->
                 <maxChunkSize>${maxChunkSize}</maxChunkSize>
                 <useCompression>true</useCompression>
                 <encoder class="de.siegmar.logbackgelf.GelfEncoder">
-                    <originHost>${hostname}</originHost>
                     <includeMarker>true</includeMarker>
                     <includeMdcData>true</includeMdcData>
                     <includeCallerData>true</includeCallerData>
@@ -31,6 +30,7 @@
                     </fullPatternLayout>
                     <staticField>application_name:${applicationName}</staticField>
                     <staticField>spring_profile:${SPRING_PROFILES_ACTIVE}</staticField> <!-- Defined as environment variable -->
+                    <staticField>container_hash:${hostname}</staticField>
                 </encoder>
             </appender>
         </then>
@@ -49,7 +49,7 @@
     <logger name="se.sundsvall" additivity="false" level="INFO">
         <appender-ref ref="CONSOLE" />
     </logger>
-    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
         <then>
             <logger name="se.sundsvall">
                 <appender-ref ref="GELF"/>
@@ -60,7 +60,7 @@
     <logger name="se.sundsvall.dept44.payload" additivity="false" level="TRACE">
         <appender-ref ref="CONSOLE" />
     </logger>
-    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
         <then>
             <logger name="se.sundsvall.dept44.payload">
                 <appender-ref ref="GELF"/>
@@ -71,7 +71,7 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
     </root>
-    <if condition='isDefined("GRAYLOG_HOST") &amp;&amp; !property("dept44.logback.graylog.disabled").contains("true")'>
+    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
         <then>
             <root>
                 <appender-ref ref="GELF"/>

@@ -32,7 +32,7 @@
 		<module>dept44-starter</module>
 		<module>dept44-starter-authorization</module>
 		<module>dept44-starter-feign</module>
-		<module>dept44-starter-logback-graylog</module>
+		<module>dept44-starter-logback-logserver</module>
 		<module>dept44-starter-test</module>
 		<module>dept44-starter-webclient</module>
 		<module>dept44-starter-webservicetemplate</module>
@@ -199,7 +199,7 @@
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-starter-logback-graylog</artifactId>
+				<artifactId>dept44-starter-logback-logserver</artifactId>
 				<version>3.3-SNAPSHOT</version>
 			</dependency>
 			<dependency>

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -24,6 +23,7 @@ class OneOfConstraintValidatorTest {
 
 	@Mock
 	private OneOf mockAnnotation;
+
 	@Mock
 	private ConstraintValidatorContextImpl mockContext;
 
@@ -32,7 +32,7 @@ class OneOfConstraintValidatorTest {
 
 	@BeforeEach
 	void setUp() {
-		var value = List.of("ABC", "DEF");
+		final var value = List.of("ABC", "DEF");
 		when(mockAnnotation.value()).thenReturn(value.toArray(new String[0]));
 	}
 

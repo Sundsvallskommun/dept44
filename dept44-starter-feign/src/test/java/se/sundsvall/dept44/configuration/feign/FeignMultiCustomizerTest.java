@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
-import java.util.Collections;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -220,5 +219,4 @@ class FeignMultiCustomizerTest {
 			.scope(scope)
 			.build();
 	}
-
 }

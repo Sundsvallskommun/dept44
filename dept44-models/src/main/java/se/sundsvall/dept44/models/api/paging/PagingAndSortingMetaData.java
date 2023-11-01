@@ -1,26 +1,26 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.With;
-import lombok.experimental.SuperBuilder;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-
-import java.util.List;
-
 import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
 /**
- * Model class to use when returning paged result with sorting. Should be added in root of response under attribute "_meta".
- * In compliance with <a href="https://dev.dataportal.se/rest-api-profil/filtrering-paginering-och-sokparametrar#paginering">DIGG Paginering</a>
+ * Model class to use when returning paged result with sorting. Should be added in root of response under attribute
+ * "_meta".
+ * In compliance with
+ * <a href="https://dev.dataportal.se/rest-api-profil/filtrering-paginering-och-sokparametrar#paginering">DIGG
+ * Paginering</a>
  * See {@link AbstractParameterPagingAndSortingBase} for request.
  */
 @Data
@@ -93,4 +93,3 @@ public class PagingAndSortingMetaData extends PagingMetaData {
 		return this;
 	}
 }
-

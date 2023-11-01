@@ -196,7 +196,7 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco-maven-plugin.version}</version>
 				<executions>
-					<!-- Tell jacoco where to generate the unit applyRulesToGoodiesList file -->
+					<!-- Tell jacoco where to generate the unit test file -->
 					<execution>
 						<id>pre-unit-test</id>
 						<goals>
@@ -207,7 +207,7 @@
 							<destFile>${project.build.directory}/jacoco-ut.exec</destFile>
 						</configuration>
 					</execution>
-					<!-- Tell jacoco where to find the unit applyRulesToGoodiesList file and where to generate the report -->
+					<!-- Tell jacoco where to find the unit test file and where to generate the report -->
 					<execution>
 						<id>post-unit-test</id>
 						<phase>test</phase>
@@ -219,7 +219,7 @@
 							<outputDirectory>${project.build.directory}/jacoco-ut-report/</outputDirectory>
 						</configuration>
 					</execution>
-					<!-- Tell jacoco where to generate the integration applyRulesToGoodiesList file -->
+					<!-- Tell jacoco where to generate the integration test file -->
 					<execution>
 						<id>pre-integration-test</id>
 						<phase>pre-integration-test</phase>
@@ -231,7 +231,7 @@
 							<propertyName>failsafeArgLine</propertyName>
 						</configuration>
 					</execution>
-					<!-- Tell jacoco where to find the integration applyRulesToGoodiesList file and where to generate the report -->
+					<!-- Tell jacoco where to find the integration test file and where to generate the report -->
 					<execution>
 						<id>post-integration-test</id>
 						<!-- Cannot bind it to a phase before this since the tests haven't been collected yet. -->
@@ -263,7 +263,7 @@
 							<destFile>${project.build.directory}/jacoco-merge.exec</destFile>
 						</configuration>
 					</execution>
-					<!-- Tell jacoco where to find the merge applyRulesToGoodiesList file and where to generate the report -->
+					<!-- Tell jacoco where to find the merge file and where to generate the report -->
 					<execution>
 						<id>merge-report</id>
 						<phase>verify</phase>

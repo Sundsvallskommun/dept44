@@ -1,25 +1,24 @@
 package se.sundsvall.dept44.models.api.paging.validation.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 
-import jakarta.persistence.Column;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+
+import jakarta.persistence.Column;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingAndSortingBase;
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
 
-import java.util.List;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest(classes = {MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class})
+@SpringBootTest(classes = { MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class })
 class ValidSortByPropertyConstraintValidatorTest {
 
 	@Autowired
@@ -71,13 +70,9 @@ class ValidSortByPropertyConstraintValidatorTest {
 			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
 	}
 
-	private Set<ConstraintViolation<Object>> validate(Validator validator, AbstractParameterPagingAndSortingBase dataClass) {
-		return validator.validate(dataClass);
-	}
-
 	private static class TestEntity {
 
-		@Column(name= " id" )
+		@Column(name = " id")
 		private Integer id;
 
 		@Column(name = "my_field")
@@ -85,8 +80,6 @@ class ValidSortByPropertyConstraintValidatorTest {
 
 		@Column(name = "my_second_field")
 		private String mySecondField;
-
-		private String notASortableField;
 
 		@Column(name = "exclude_field")
 		private String excludeField;

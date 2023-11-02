@@ -302,12 +302,13 @@ public abstract class AbstractAppTest {
 	 * @return
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
+		if (isNull(this.multipartBody)) {
+			this.multipartBody = new LinkedMultiValueMap<>();
+		}
 
-		final var multipart = new LinkedMultiValueMap<String, Object>();
+		this.multipartBody.add(parameterName, new FileSystemResource(file));
 
-		multipart.add(parameterName, new FileSystemResource(file));
-
-		return withRequest(multipart);
+		return this;
 	}
 
 	/**

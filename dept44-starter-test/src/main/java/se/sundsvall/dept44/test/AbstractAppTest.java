@@ -89,6 +89,7 @@ public abstract class AbstractAppTest {
 	private HttpHeaders expectedResponseHeaders;
 	private Map<String, String> headerValues;
 	private String testDirectoryPath;
+	private String testCaseName;
 
 	@Autowired
 	protected TestRestTemplate restTemplate;
@@ -114,6 +115,22 @@ public abstract class AbstractAppTest {
 		this.expectedResponseHeaders = null;
 		this.headerValues = null;
 		this.testDirectoryPath = null;
+		this.testCaseName = null;
+
+		return this;
+	}
+
+	public AbstractAppTest setupPaths() {
+
+		// Fetch test case name.
+		this.testCaseName = getTestMethodName();
+
+		this.mappingPath = wiremock.getOptions().filesRoot().getPath();
+		if (!this.mappingPath.endsWith("/")) {
+			this.mappingPath += "/";
+		}
+
+		this.testDirectoryPath = "classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator");
 
 		return this;
 	}
@@ -122,23 +139,14 @@ public abstract class AbstractAppTest {
 
 		reset();
 		initializeJsonAssert();
-
-		// Fetch test case name.
-		final var testCaseName = getTestMethodName();
-
-		this.mappingPath = wiremock.getOptions().filesRoot().getPath();
-		if (!this.mappingPath.endsWith("/")) {
-			this.mappingPath += "/";
-		}
+		setupPaths();
 
 		this.wiremock.loadMappingsUsing(new JsonFileMappingsSource(
 			new ClasspathFileSource(this.mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
-		if (nonNull(testCaseName)) {
+		if (nonNull(this.testCaseName)) {
 			this.wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(this.mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
+				new ClasspathFileSource(this.mappingPath + FILES_DIR + this.testCaseName + MAPPING_DIRECTORY)));
 		}
-
-		this.testDirectoryPath = "classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator");
 
 		return this;
 	}
@@ -277,22 +285,6 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method takes a file that will be added to the multipart body.
 	 *
-	 * @param  file to be added to the request as a multipart.
-	 * @return
-	 */
-	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
-		if (isNull(this.multipartBody)) {
-			this.multipartBody = new LinkedMultiValueMap<>();
-		}
-
-		multipartBody.add(parameterName, new FileSystemResource(file));
-
-		return this;
-	}
-
-	/**
-	 * Method takes a file that will be added to the multipart body.
-	 *
 	 * @param  fileName              to be added to the request as a multipart, the method will look for the file in the
 	 *                               current
 	 *                               test-case directory.
@@ -300,8 +292,38 @@ public abstract class AbstractAppTest {
 	 * @throws FileNotFoundException
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
-		final var file = getFile(this.testDirectoryPath + fileName);
-		return withRequestFile(parameterName, file);
+		return withRequestFile(parameterName, getFile(this.testDirectoryPath + fileName));
+	}
+
+	/**
+	 * Method takes a file that will be added to the multipart body.
+	 *
+	 * @param  file to be added to the request as a multipart.
+	 * @return
+	 */
+	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
+
+		final var multipart = new LinkedMultiValueMap<String, Object>();
+
+		multipart.add(parameterName, new FileSystemResource(file));
+
+		return withRequest(multipart);
+	}
+
+	/**
+	 * Method takes a MultiValueMap that will set the multipart body.
+	 * If you have added any parts to the multipartbody before a call to this method, these parts will be lost.
+	 *
+	 * @see                  org.springframework.http.client.MultipartBodyBuilder for instruction on how to create a
+	 *                       suitable MultiValueMap.
+	 *
+	 * @param  multiPartBody the multipartbody (as a MultiValueMap).
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public AbstractAppTest withRequest(final MultiValueMap<?, ?> multiPartBody) {
+		this.multipartBody = (MultiValueMap<String, Object>) multiPartBody;
+		return this;
 	}
 
 	/**
@@ -433,6 +455,10 @@ public abstract class AbstractAppTest {
 			.until(conditionIsMet);
 
 		return this;
+	}
+
+	public String getTestDirectoryPath() {
+		return this.testDirectoryPath;
 	}
 
 	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, Object body) {

@@ -7,6 +7,9 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,28 +35,20 @@ class ValidBase64ConstraintValidatorTest {
 		verify(mockAnnotation).nullable();
 	}
 
-	@Test
-	void invalidBase64() {
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {"not-base64-encoded", ""})
+	void invalidBase64(final String value) {
 		validator.initialize(mockAnnotation);
 
-		assertThat(validator.isValid("not-base64-encoded")).isFalse();
-		assertThat(validator.isValid("not-base64-encoded", null)).isFalse();
+		assertThat(validator.isValid(value)).isFalse();
+		assertThat(validator.isValid(value, null)).isFalse();
 
 		verify(mockAnnotation).nullable();
 	}
 
 	@Test
-	void nullBase64WnenNullableIsFalse() {
-		validator.initialize(mockAnnotation);
-
-		assertThat(validator.isValid(null)).isFalse();
-		assertThat(validator.isValid(null, null)).isFalse();
-
-		verify(mockAnnotation).nullable();
-	}
-
-	@Test
-	void nullablenullBase64WnenNullableIsTrue() {
+	void nullBase64WhenNullableIsTrue() {
 		when(mockAnnotation.nullable()).thenReturn(true);
 
 		validator.initialize(mockAnnotation);

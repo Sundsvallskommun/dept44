@@ -2,6 +2,7 @@ package se.sundsvall.dept44.common.validators.annotation.impl;
 
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
 import java.lang.reflect.Method;
@@ -13,7 +14,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 
 /**
- * Defines the logic to validate that a string is a valid base64-string.
+ * Defines the logic to validate that a string is a valid non-blank base64-string.
  */
 public class ValidBase64ConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidBase64, String> {
 
@@ -30,6 +31,9 @@ public class ValidBase64ConstraintValidator extends AbstractValidator implements
 	public boolean isValid(final String value, final ConstraintValidatorContext context) {
 		if (isNull(value) && nullable) {
 			return true;
+		}
+		if (isBlank(value)) {
+			return false;
 		}
 		return isValidBase64(value);
 	}

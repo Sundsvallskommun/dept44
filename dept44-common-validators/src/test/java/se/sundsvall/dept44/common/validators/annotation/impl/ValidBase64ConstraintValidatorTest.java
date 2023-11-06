@@ -43,7 +43,7 @@ class ValidBase64ConstraintValidatorTest {
 	}
 
 	@Test
-	void nullBase64WnenNullableIsFalse() {
+	void nullBase64WhenNullableIsFalse() {
 		validator.initialize(mockAnnotation);
 
 		assertThat(validator.isValid(null)).isFalse();
@@ -53,7 +53,7 @@ class ValidBase64ConstraintValidatorTest {
 	}
 
 	@Test
-	void nullablenullBase64WnenNullableIsTrue() {
+	void nullBase64WhenNullableIsTrue() {
 		when(mockAnnotation.nullable()).thenReturn(true);
 
 		validator.initialize(mockAnnotation);
@@ -62,6 +62,16 @@ class ValidBase64ConstraintValidatorTest {
 		assertThat(validator.isValid(null, null)).isTrue(); // null is treated as valid.
 		assertThat(validator.isValid("not-base64-encoded")).isFalse(); // non-null and invalid values are still treated as invalid.
 		assertThat(validator.isValid("not-base64-encoded", null)).isFalse(); // non-null and invalid values are still treated as invalid.
+
+		verify(mockAnnotation).nullable();
+	}
+
+	@Test
+	void blankBase64() {
+		validator.initialize(mockAnnotation);
+
+		assertThat(validator.isValid("")).isFalse();
+		assertThat(validator.isValid("", null)).isFalse();
 
 		verify(mockAnnotation).nullable();
 	}

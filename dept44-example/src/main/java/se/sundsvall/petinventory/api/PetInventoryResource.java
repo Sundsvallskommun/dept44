@@ -1,5 +1,6 @@
 package se.sundsvall.petinventory.api;
 
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -38,6 +39,8 @@ import se.sundsvall.petinventory.service.PetInventoryService;
 @RequestMapping("/pet-inventory-items")
 @Tag(name = "Pet inventory", description = "Pet inventory operations")
 public class PetInventoryResource {
+
+	private static final String CONTENT_DISPOSITION_HEADER_VALUE = "attachment; filename=\"%s\"";
 
 	@Autowired
 	private PetInventoryService petInventoryService;
@@ -85,6 +88,7 @@ public class PetInventoryResource {
 	ResponseEntity<byte[]> getPetImage(@PathVariable(name = "id") final long id, @PathVariable(name = "imageId") final long imageId) {
 		final var petImage = petInventoryService.getPetImage(id, imageId);
 		return ok()
+			.header(CONTENT_DISPOSITION, CONTENT_DISPOSITION_HEADER_VALUE.formatted(petImage.getFileName()))
 			.contentLength(petImage.getContent().length)
 			.contentType(MediaType.parseMediaType(petImage.getMimeType()))
 			.body(petImage.getContent());

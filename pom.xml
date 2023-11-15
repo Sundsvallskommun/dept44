@@ -8,14 +8,12 @@
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>
-
 	<licenses>
 		<license>
 			<name>MIT License</name>
 			<url>https://opensource.org/licenses/MIT</url>
 		</license>
 	</licenses>
-
 	<developers>
 		<developer>
 			<name>Utvecklingsfabriken Sundsvall kommun</name>
@@ -23,7 +21,6 @@
 			<url>https://github.com/orgs/Sundsvallskommun/people</url>
 		</developer>
 	</developers>
-
 	<modules>
 		<module>dept44-models</module>
 		<module>dept44-build-tools</module>
@@ -39,14 +36,12 @@
 		<module>dept44-common-validators</module>
 		<module>dept44-example</module>
 	</modules>
-	
 	<scm>
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
 		<tag>HEAD</tag>
 	</scm>
-
 	<profiles>
 		<profile>
 			<id>maven-central</id>
@@ -97,7 +92,6 @@
 			</build>
 		</profile>
 	</profiles>
-
 	<properties>
 		<java.version>17</java.version>
 		<spring-boot.version>3.1.5</spring-boot.version>
@@ -127,15 +121,17 @@
 		<!-- Plugin versions -->
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-		<build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+		<maven-release-plugin.version>3.0.1</maven-release-plugin.version>
 		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
 		<maven-javadoc-plugin.version>3.6.2</maven-javadoc-plugin.version>
 		<maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
 		<maven-failsafe-plugin.version>3.2.2</maven-failsafe-plugin.version>
+		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+		<build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
-		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+		<openapi-generator-maven-plugin.version>7.1.0</openapi-generator-maven-plugin.version>
 
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
@@ -246,7 +242,7 @@
 				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 				<version>${springdoc.version}</version>
 			</dependency>
-
+			
 			<!-- Other -->
 			<dependency>
 				<groupId>com.google.code.bean-matchers</groupId>
@@ -281,9 +277,13 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>${openapi-generator-maven-plugin.version}</version>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -292,7 +292,6 @@
 					<argLine>-Dspring.main.banner-mode=off</argLine>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -306,7 +305,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
@@ -323,7 +321,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>${maven-release-plugin.version}</version>
 				<configuration>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
 					<useReleaseProfile>false</useReleaseProfile>
@@ -334,5 +332,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

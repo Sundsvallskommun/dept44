@@ -86,7 +86,6 @@
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>${openapi-generator-maven-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>petstore-api</id>
@@ -96,7 +95,7 @@
 						<configuration>
 							<inputSpec>${basedir}/src/main/resources/integrations/petstore-api.yaml</inputSpec>
 							<output>${generated-sources-path}</output>
-							<generatorName>jaxrs-spec</generatorName>
+							<generatorName>spring</generatorName>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
@@ -108,6 +107,7 @@
 								<useBeanValidation>false</useBeanValidation>
 								<useSwaggerAnnotations>false</useSwaggerAnnotations>
 								<interfaceOnly>true</interfaceOnly>
+								<useSpringBoot3>true</useSpringBoot3>
 							</configOptions>
 						</configuration>
 					</execution>

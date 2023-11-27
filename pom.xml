@@ -127,7 +127,7 @@
 		<maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
 		<maven-failsafe-plugin.version>3.2.2</maven-failsafe-plugin.version>
 		<maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
-		<build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>

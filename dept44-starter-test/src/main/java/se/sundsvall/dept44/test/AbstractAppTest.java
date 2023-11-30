@@ -187,8 +187,9 @@ public abstract class AbstractAppTest {
 	/**
 	 * Set expected response header.
 	 *
-	 * @param expectedHeaderKey   the expected header key.
-	 * @param expectedHeaderValue the list of expected header values, as regular expressions.
+	 * @param  expectedHeaderKey   the expected header key.
+	 * @param  expectedHeaderValue the list of expected header values, as regular expressions.
+	 * @return                     AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponseHeader(final String expectedHeaderKey, final List<String> expectedHeaderValue) {
 		if (isNull(this.expectedResponseHeaders)) {
@@ -200,10 +201,11 @@ public abstract class AbstractAppTest {
 
 	/**
 	 * Method takes a JSON response string or a file name where the response can be
-	 * read from
+	 * read from.
 	 *
-	 * @param expectedResponse raw json response string or filename where the response can be
-	 *                         read from
+	 * @param  expectedResponse raw json response string or filename where the response can be
+	 *                          read from
+	 * @return                  AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponse(final String expectedResponse) {
 		final var contentFromFile = fromTestFile(expectedResponse);
@@ -220,7 +222,8 @@ public abstract class AbstractAppTest {
 	 * Method takes a file name to a binary file.
 	 *
 	 * @param  expectedResponseFile the filename where the binary response can be read from.
-	 * @throws IOException
+	 * @return                      AbstractAppTest
+	 * @throws IOException          if file can't be read.
 	 */
 	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
 		final var file = ResourceUtils.getFile(this.testDirectoryPath + expectedResponseFile);
@@ -246,8 +249,9 @@ public abstract class AbstractAppTest {
 	 * maximum strictness in JsonAssert - send in null or an empty list to just reset options to
 	 * JsonAsserts default ones.
 	 *
-	 * @param options list of options to use when doing the json assertion or null/empty list for resetting
-	 *                to JsonAssert defaults (strict comparison)
+	 * @param  options list of options to use when doing the json assertion or null/empty list for resetting
+	 *                 to JsonAssert defaults (strict comparison)
+	 * @return         AbstractAppTest
 	 */
 	public AbstractAppTest withJsonAssertOptions(final List<Option> options) {
 		// Reset to JsonAssert strict assertion options (removing option IGNORING_ARRAY_ORDER)
@@ -270,7 +274,7 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  request raw JSON request string or filename where the request can be
 	 *                 read from.
-	 * @return
+	 * @return         AbstractAppTest
 	 */
 	public AbstractAppTest withRequest(final String request) {
 		final var contentFromFile = fromTestFile(request);
@@ -285,11 +289,12 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method takes a file that will be added to the multipart body.
 	 *
+	 * @param  parameterName         the name of the multipart parameter.
 	 * @param  fileName              to be added to the request as a multipart, the method will look for the file in the
 	 *                               current
 	 *                               test-case directory.
-	 * @return
-	 * @throws FileNotFoundException
+	 * @return                       AbstractAppTest
+	 * @throws FileNotFoundException if the file doesn't exist
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
 		return withRequestFile(parameterName, getFile(this.testDirectoryPath + fileName));
@@ -298,8 +303,9 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method takes a file that will be added to the multipart body.
 	 *
-	 * @param  file to be added to the request as a multipart.
-	 * @return
+	 * @param  parameterName the name of the multipart parameter.
+	 * @param  file          to be added to the request as a multipart.
+	 * @return               AbstractAppTest
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
 		if (isNull(this.multipartBody)) {
@@ -315,11 +321,10 @@ public abstract class AbstractAppTest {
 	 * Method takes a MultiValueMap that will set the multipart body.
 	 * If you have added any parts to the multipartbody before a call to this method, these parts will be lost.
 	 *
+	 * @param  multiPartBody the multipartbody (as a MultiValueMap).
+	 * @return               AbstractAppTest
 	 * @see                  org.springframework.http.client.MultipartBodyBuilder for instruction on how to create a
 	 *                       suitable MultiValueMap.
-	 *
-	 * @param  multiPartBody the multipartbody (as a MultiValueMap).
-	 * @return
 	 */
 	@SuppressWarnings("unchecked")
 	public AbstractAppTest withRequest(final MultiValueMap<?, ?> multiPartBody) {
@@ -333,7 +338,7 @@ public abstract class AbstractAppTest {
 	 * I.e. the maximum time to spend while verifying a condition.
 	 *
 	 * @param  maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
-	 * @return
+	 * @return                               AbstractAppTest
 	 */
 	public AbstractAppTest withMaxVerificationDelayInSeconds(final int maxVerificationDelayInSeconds) {
 		this.maxVerificationDelayInSeconds = maxVerificationDelayInSeconds;
@@ -402,6 +407,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Returns the response body mapped to the provided class.
 	 *
+	 * @param  <T>   Response type.
 	 * @param  clazz the class to map the response body to
 	 * @return       the mapped response
 	 */
@@ -412,6 +418,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Returns the response body mapped to the provided type reference.
 	 *
+	 * @param  <T>           Response type.
 	 * @param  typeReference the type reference to map the response body to
 	 * @return               the mapped response
 	 */
@@ -420,18 +427,22 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method returns the received server response mapped to the sent in class
+	 * Method returns the received server response mapped to the sent in class.
 	 *
-	 * @param  clazz class to map response to
-	 * @return       response mapped to sent in class type
+	 * @param  <T>                     Response type.
+	 * @param  clazz                   class to map response to
+	 * @return                         response mapped to sent in class type
+	 * @throws JsonProcessingException if JSON-processing fails
+	 * @throws ClassNotFoundException  if class is not found
 	 */
 	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(this.responseBody, forName(clazz.getName())));
 	}
 
 	/**
-	 * Returns the received server response mapped to the given type reference
+	 * Returns the received server response mapped to the given type reference.
 	 *
+	 * @param  <T>           Response type.
 	 * @param  typeReference the type reference to map response to
 	 * @return               response mapped to given type reference
 	 */
@@ -500,6 +511,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Verifies that all setup stubs setup have been called.
 	 *
+	 * @return                       true if verification succeeds.
 	 * @throws VerificationException if verification fails
 	 */
 	public boolean verifyAllStubs() {

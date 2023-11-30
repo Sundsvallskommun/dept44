@@ -32,7 +32,7 @@ public class JwtTokenUtil implements Serializable {
 	}
 
 	/**
-	 * Retrieves username from jwt-token
+	 * Retrieves username from jwt-token.
 	 *
 	 * @param  token jwt-token containing authorization information
 	 * @return       string with data mapped from tag with name 'sub' in token, or null if data is missing
@@ -42,7 +42,7 @@ public class JwtTokenUtil implements Serializable {
 	}
 
 	/**
-	 * Retrieves roles from jwt-token
+	 * Retrieves roles from jwt-token.
 	 *
 	 * @param  token containing authorization information
 	 * @return       a collection with data mapped from tag with name 'roles' in token, or empty collection if data is
@@ -56,7 +56,7 @@ public class JwtTokenUtil implements Serializable {
 	}
 
 	/**
-	 * Retrieves expiration date from jwt-token
+	 * Retrieves expiration date from jwt-token.
 	 *
 	 * @param  token containing authorization information
 	 * @return       date with data mapped from tag with name 'exp' in token, or null if data is missing
@@ -66,8 +66,9 @@ public class JwtTokenUtil implements Serializable {
 	}
 
 	/**
-	 * Retrieves claim from jwt-token
+	 * Retrieves claim from jwt-token.
 	 *
+	 * @param  <T>            the type of claim
 	 * @param  token          containing authorization information
 	 * @param  claimsResolver to use to fetch and return claim
 	 * @return                claim of type defined in sent in claimsResolver, or null if data is missing in token

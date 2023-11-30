@@ -29,6 +29,8 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * <code>UsernameAuthenticationToken</code>, as the {@link #isAuthenticated()}
 	 * will return <code>false</code>.
 	 *
+	 * @param principal   the principal to set.
+	 * @param credentials the credentials to set.
 	 */
 	public UsernameAuthenticationToken(Object principal, Object credentials) {
 		super(null);
@@ -43,6 +45,9 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * producing a trusted (i.e. {@link #isAuthenticated()} = <code>true</code>)
 	 * authentication token.
 	 *
+	 * @param principal   the principal to set.
+	 * @param credentials the credentials to set.
+	 * @param authorities the authorities to set.
 	 */
 	public UsernameAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
 		super(authorities);
@@ -55,7 +60,9 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * This factory method can be safely used by any code that wishes to create a
 	 * unauthenticated <code>UsernameAuthenticationToken</code>.
 	 *
-	 * @return UsernameAuthenticationToken with false isAuthenticated() result
+	 * @param  principal   the principal to set.
+	 * @param  credentials the credentials to set.
+	 * @return             UsernameAuthenticationToken with false isAuthenticated() result
 	 */
 	public static UsernameAuthenticationToken unauthenticated(Object principal, Object credentials) {
 		return new UsernameAuthenticationToken(principal, credentials);
@@ -65,7 +72,9 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * This factory method can be safely used by any code that wishes to create a
 	 * authenticated <code>UsernameAuthenticationToken</code>.
 	 *
-	 * @return UsernameAuthenticationToken with true isAuthenticated() result
+	 * @param  principal   the principal to set.
+	 * @param  authorities the authorities to set.
+	 * @return             UsernameAuthenticationToken with true isAuthenticated() result
 	 */
 	public static UsernameAuthenticationToken authenticated(Object principal, Collection<? extends GrantedAuthority> authorities) {
 		return new UsernameAuthenticationToken(principal, null, authorities);
@@ -97,19 +106,22 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(credentials, principal);
+		result = (prime * result) + Objects.hash(credentials, principal);
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
+		}
+		if (!super.equals(obj)) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
-		UsernameAuthenticationToken other = (UsernameAuthenticationToken) obj;
+		}
+		final UsernameAuthenticationToken other = (UsernameAuthenticationToken) obj;
 		return Objects.equals(credentials, other.credentials) && Objects.equals(principal, other.principal);
 	}
 }

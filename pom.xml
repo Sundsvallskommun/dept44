@@ -308,6 +308,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>
+				<configuration>
+					<additionalJOption>-Xdoclint:none</additionalJOption>
+					<detectOfflineLinks>false</detectOfflineLinks>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -329,6 +333,28 @@
 					<goals>deploy</goals>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.3.1</version>
+				<inherited>false</inherited>
+				<configuration>
+					<configLocation>checkstyle.xml</configLocation>
+					<consoleOutput>true</consoleOutput>
+					<failsOnError>true</failsOnError>
+					<linkXRef>false</linkXRef>
+					<excludes>**/generated-sources/**/*,**/generated/**/*</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>validate</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			 </plugin>
 		</plugins>
 	</build>
 </project>

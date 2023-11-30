@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import jakarta.annotation.Nonnull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus.Series;
@@ -27,6 +25,7 @@ import org.zalando.problem.Status;
 import feign.Response;
 import feign.RetryableException;
 import feign.codec.ErrorDecoder;
+import jakarta.annotation.Nonnull;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 
@@ -80,7 +79,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	@Override
 	public Exception decode(final String methodKey, final Response response) {
-		if (retryResponseVerifier != null && retryResponseVerifier.shouldReturnRetryableException(response)) {
+		if ((retryResponseVerifier != null) && retryResponseVerifier.shouldReturnRetryableException(response)) {
 			return new RetryableException(
 				response.status(),
 				retryResponseVerifier.getMessage(),
@@ -129,8 +128,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	/**
 	 * Implement this method in order to create an String that represents the error.
 	 *
-	 * @param response the response that caused the error.
-	 * @return a String that represents the error message returned in the response.
+	 * @param  response    the response that caused the error.
+	 * @return             a String that represents the error message returned in the response.
 	 * @throws IOException if something goes wrong.
 	 */
 	public abstract String extractErrorMessage(Response response) throws IOException;
@@ -145,7 +144,10 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	}
 
 	/**
-	 * Private record to used for calculating extracted error message information
+	 * Private record to used for calculating extracted error message information.
+	 *
+	 * @param integrationName the name of the integration (clientId)
+	 * @param errorInfo       the set of error detail information
 	 */
 	protected record ErrorMessage(String integrationName, SortedMap<String, Object> errorInfo) {
 

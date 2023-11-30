@@ -7,6 +7,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Configuration;
 
 import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
+
 /**
  * The purpose with this class is to set circuitbreaker baseConfig to "default"
  * for all circuitbreaker-configs where baseconfig is null.

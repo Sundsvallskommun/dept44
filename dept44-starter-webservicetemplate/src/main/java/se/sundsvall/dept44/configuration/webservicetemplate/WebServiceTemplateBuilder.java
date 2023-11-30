@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
+import static java.util.HashSet.newHashSet;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
@@ -120,7 +121,7 @@ public class WebServiceTemplateBuilder {
 	 */
 	public WebServiceTemplateBuilder withPackagesToScan(final List<String> packagesToScan) {
 		if (this.packagesToScan == null) {
-			this.packagesToScan = new HashSet<>(packagesToScan.size());
+			this.packagesToScan = newHashSet(packagesToScan.size());
 		}
 		this.packagesToScan.addAll(packagesToScan);
 		return this;

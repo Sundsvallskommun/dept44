@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.ResourceUtils;
 
+// TODO: Remove this when the certificates are replaced.
 @Disabled
 class CertificateTest {
 

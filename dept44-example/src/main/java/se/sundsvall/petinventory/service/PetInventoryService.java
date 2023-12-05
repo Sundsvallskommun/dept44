@@ -7,7 +7,6 @@ import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetI
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
@@ -26,14 +25,15 @@ public class PetInventoryService {
 	private static final String ERROR_MESSAGE_PET_NOT_FOUND = "No pet found for provided id!";
 	private static final String ERROR_MESSAGE_IMAGE_NOT_FOUND = "No pet image found for provided petImageId!";
 
-	@Autowired
-	private PetStoreClient petStoreClient;
+	private final PetStoreClient petStoreClient;
+	private final PetNameRepository petNameRepository;
+	private final PetImageRepository petImageRepository;
 
-	@Autowired
-	private PetNameRepository petNameRepository;
-
-	@Autowired
-	private PetImageRepository petImageRepository;
+	public PetInventoryService(PetStoreClient petStoreClient, PetNameRepository petNameRepository, PetImageRepository petImageRepository) {
+		this.petStoreClient = petStoreClient;
+		this.petNameRepository = petNameRepository;
+		this.petImageRepository = petImageRepository;
+	}
 
 	public PetInventoryItem getPetInventoryItem(final long id) {
 		return petStoreClient.findPetById(id)

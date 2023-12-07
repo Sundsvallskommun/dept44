@@ -1,0 +1,8 @@
+logbook:
+  exclusionfilters:
+    jsonPath:
+      yml_path_1: jsonpath_yml_replacement_1
+      yml_path_2: jsonpath_yml_replacement_2
+    xPath:
+      yml_path_1: xpath_yml_replacement_1
+      yml_path_2: xpath_yml_replacement_2

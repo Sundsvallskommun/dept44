@@ -85,7 +85,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 				retryResponseVerifier.getMessage(),
 				response.request().httpMethod(),
 				mapToProblem(response),
-				null,
+				(Long) null,
 				response.request());
 		}
 		return mapToProblem(response);

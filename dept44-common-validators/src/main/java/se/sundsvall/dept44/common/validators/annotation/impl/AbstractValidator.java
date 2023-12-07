@@ -5,7 +5,6 @@ import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import java.util.function.Supplier;
 
 import jakarta.validation.constraints.NotNull;
-
 import se.sundsvall.dept44.common.validators.annotation.exception.IncompatibleAnnotationException;
 
 abstract class AbstractValidator {
@@ -22,9 +21,10 @@ abstract class AbstractValidator {
 	abstract String getMessage();
 
 	/**
-	 * Returns if the validation evaluates to 'valid' or not.
+	 * Verify if the provided string validates.
 	 *
-	 * @return true if valid, false otherwise.
+	 * @param  value the value to validate.
+	 * @return       true if valid, false otherwise.
 	 */
 	abstract boolean isValid(final String value);
 

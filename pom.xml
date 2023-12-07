@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
-	<version>3.5-SNAPSHOT</version>
+	<version>4.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
@@ -93,7 +93,7 @@
 		</profile>
 	</profiles>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<spring-boot.version>3.2.0</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
@@ -108,7 +108,7 @@
 		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>2.3.0</springdoc.version>
-		<spring-cloud.version>2022.0.4</spring-cloud.version>
+		<spring-cloud.version>2023.0.0</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>3.2.2</json-unit.version>
 		<logback-gelf.version>5.0.0</logback-gelf.version>
@@ -137,7 +137,6 @@
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
 	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<!-- Spring Boot dependencies BOM -->
@@ -171,47 +170,47 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-authorization</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-models</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-logback-logserver</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webclient</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>3.5-SNAPSHOT</version>
+				<version>4.0-SNAPSHOT</version>
 			</dependency>
 
 			<!-- Problem -->
@@ -309,6 +308,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>
+				<configuration>
+					<additionalJOption>-Xdoclint:none</additionalJOption>
+					<detectOfflineLinks>false</detectOfflineLinks>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -330,6 +333,28 @@
 					<goals>deploy</goals>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.3.1</version>
+				<inherited>false</inherited>
+				<configuration>
+					<configLocation>checkstyle.xml</configLocation>
+					<consoleOutput>true</consoleOutput>
+					<failsOnError>true</failsOnError>
+					<linkXRef>false</linkXRef>
+					<excludes>**/generated-sources/**/*,**/generated/**/*</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>validate</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			 </plugin>
 		</plugins>
 	</build>
 </project>

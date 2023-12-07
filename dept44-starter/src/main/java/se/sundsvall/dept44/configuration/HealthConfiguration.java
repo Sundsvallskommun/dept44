@@ -46,7 +46,9 @@ public class HealthConfiguration {
 	/**
 	 * Returns true if any of the sent in statuses matches any of the statuses in the match-set.
 	 *
-	 * @return true if match, false otherwise.
+	 * @param  statuses the statuses to check.
+	 * @param  matchSet the set to match the provided statuses against.
+	 * @return          true if match, false otherwise.
 	 */
 	private boolean matches(Set<Status> statuses, Set<Status> matchSet) {
 		return statuses.stream().anyMatch(status -> matchSet.stream().anyMatch(s -> s.equals(status)));

@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
+import static java.util.HashSet.newHashSet;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
@@ -14,11 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-
-import jakarta.xml.soap.MessageFactory;
-import jakarta.xml.soap.SOAPConstants;
-import jakarta.xml.soap.SOAPException;
-import jakarta.xml.soap.SOAPMessage;
 
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -41,6 +37,10 @@ import org.zalando.logbook.Logbook;
 import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
 import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
 
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPConstants;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 import se.sundsvall.dept44.configuration.Constants;
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
@@ -70,9 +70,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Url..
-	 * 
-	 * @param baseUrl url to use
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  baseUrl url to use
+	 * @return         this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withBaseUrl(final String baseUrl) {
 		this.baseUrl = baseUrl;
@@ -80,10 +80,10 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * Password for the keystore
-	 * 
-	 * @param keyStorePassword password to set
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * Password for the keystore.
+	 *
+	 * @param  keyStorePassword password to set
+	 * @return                  this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withKeyStorePassword(final String keyStorePassword) {
 		this.keyStorePassword = requireNotBlank(keyStorePassword, "keystore password must be set");
@@ -91,11 +91,11 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * The file location of the keystore
-	 * 
-	 * @param location can be a classpath (e.g. classpath:keystore.p12) or a file location (e.g.
-	 *                 src/main/resources/keystore.p12).
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * The file location of the keystore.
+	 *
+	 * @param  location can be a classpath (e.g. classpath:keystore.p12) or a file location (e.g.
+	 *                  src/main/resources/keystore.p12).
+	 * @return          this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withKeyStoreFileLocation(final String location) {
 		this.keyStoreFileLocation = location;
@@ -103,10 +103,10 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * The keystore as a byte array
+	 * The keystore as a byte array.
 	 *
-	 * @param keyStoreData the keyStore as a byte array
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * @param  keyStoreData the keyStore as a byte array
+	 * @return              this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withKeyStoreData(final byte[] keyStoreData) {
 		this.keyStoreData = keyStoreData;
@@ -115,13 +115,13 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Adds an array of Strings/packages to scan.
-	 * 
-	 * @param packagesToScan list of strings with packages to scan.
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  packagesToScan list of strings with packages to scan.
+	 * @return                this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withPackagesToScan(final List<String> packagesToScan) {
 		if (this.packagesToScan == null) {
-			this.packagesToScan = new HashSet<>(packagesToScan.size());
+			this.packagesToScan = newHashSet(packagesToScan.size());
 		}
 		this.packagesToScan.addAll(packagesToScan);
 		return this;
@@ -129,9 +129,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Adds a package to be scanned. Package will be added to a list of packages which will all be scanned during build.
-	 * 
-	 * @param packageToScan which package to scan
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  packageToScan which package to scan
+	 * @return               this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withPackageToScan(final String packageToScan) {
 		if (this.packagesToScan == null) {
@@ -144,9 +144,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Optional, if not set a default will be created.
-	 * 
-	 * @param webServiceMessageFactory messageFactory to override with
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  webServiceMessageFactory messageFactory to override with
+	 * @return                          this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withWebServiceMessageFactory(final WebServiceMessageFactory webServiceMessageFactory) {
 		this.webServiceMessageFactory = webServiceMessageFactory;
@@ -155,9 +155,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * For payload logging.
-	 * 
-	 * @param logbook {@link org.zalando.logbook.Logbook} to override default config with
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  logbook {@link org.zalando.logbook.Logbook} to override default config with
+	 * @return         this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withLogbook(final Logbook logbook) {
 		this.logbook = logbook;
@@ -167,8 +167,8 @@ public class WebServiceTemplateBuilder {
 	/**
 	 * Sets the connect timeout.
 	 *
-	 * @param connectTimeout the connect timeout
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * @param  connectTimeout the connect timeout
+	 * @return                this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withConnectTimeout(final Duration connectTimeout) {
 		this.connectTimeout = requireNonNull(connectTimeout, "connectTimeout may not be null");
@@ -178,8 +178,8 @@ public class WebServiceTemplateBuilder {
 	/**
 	 * Sets the read timeout.
 	 *
-	 * @param readTimeout the read timeout
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * @param  readTimeout the read timeout
+	 * @return             this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withReadTimeout(final Duration readTimeout) {
 		this.readTimeout = requireNonNull(readTimeout, "readTimeout may not be null");
@@ -189,9 +189,9 @@ public class WebServiceTemplateBuilder {
 	/**
 	 * Sets basic authentication.
 	 *
-	 * @param username the Basic authentication username
-	 * @param password the Basic authentication password
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 * @param  username the Basic authentication username
+	 * @param  password the Basic authentication password
+	 * @return          this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withBasicAuthentication(final String username, final String password) {
 		basicAuthentication = new BasicAuthentication(username, password);
@@ -200,9 +200,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Adds an interceptor.
-	 * 
-	 * @param clientInterceptor interceptor to add
-	 * @return this builder {@link WebServiceTemplateBuilder}
+	 *
+	 * @param  clientInterceptor interceptor to add
+	 * @return                   this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withClientInterceptor(final ClientInterceptor clientInterceptor) {
 		if (this.clientInterceptors == null) {
@@ -213,8 +213,8 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * Build the WebServiceTemplate
-	 * 
+	 * Build the WebServiceTemplate.
+	 *
 	 * @return a configured WebServiceTemplate
 	 */
 	public WebServiceTemplate build() {
@@ -222,7 +222,7 @@ public class WebServiceTemplateBuilder {
 			throw new WebServiceTemplateException("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
 		}
 
-		var webServiceTemplate = new WebServiceTemplate();
+		final var webServiceTemplate = new WebServiceTemplate();
 		webServiceTemplate.setDefaultUri(baseUrl);
 
 		setClientInterceptors(webServiceTemplate);
@@ -238,13 +238,13 @@ public class WebServiceTemplateBuilder {
 			// Create a default interceptors.
 			withClientInterceptor(new DefaultFaultInterceptor());
 		}
-		
+
 		webServiceTemplate.setInterceptors(clientInterceptors.toArray(new ClientInterceptor[0]));
 	}
 
 	private void setPackagesToScan(final WebServiceTemplate webServiceTemplate) {
-		if (packagesToScan != null && !packagesToScan.isEmpty()) {
-			var marshaller = new Jaxb2Marshaller();
+		if ((packagesToScan != null) && !packagesToScan.isEmpty()) {
+			final var marshaller = new Jaxb2Marshaller();
 			marshaller.setCheckForXmlRootElement(true);
 			marshaller.setPackagesToScan(packagesToScan.toArray(new String[0]));
 
@@ -256,17 +256,17 @@ public class WebServiceTemplateBuilder {
 	private void setMessageFactory(final WebServiceTemplate webServiceTemplate) {
 		if (webServiceMessageFactory == null) {
 			try {
-				var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
+				final var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
 				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
-			} catch (SOAPException e) {
+			} catch (final SOAPException e) {
 				throw new WebServiceTemplateException("Error when setting message factory", e);
 			}
 		}
 	}
 
 	private void setHttpComponentsMessageSender(final WebServiceTemplate webServiceTemplate) {
-		var httpComponents5MessageSender = new HttpComponents5MessageSender();
+		final var httpComponents5MessageSender = new HttpComponents5MessageSender();
 
 		if (shouldUseBasicAuth()) {
 			httpComponents5MessageSender.setCredentials(
@@ -285,7 +285,7 @@ public class WebServiceTemplateBuilder {
 	}
 
 	private HttpClientBuilder getDefaultHttpClientBuilder() {
-		var httpClientBuilder = HttpClients.custom()
+		final var httpClientBuilder = HttpClients.custom()
 			// Remove the content-length header since it always needs to be reset
 			.addRequestInterceptorFirst(new RemoveContentLengthHeaderInterceptor())
 			// Add request-id to all requests
@@ -301,7 +301,7 @@ public class WebServiceTemplateBuilder {
 	}
 
 	private HttpClientConnectionManager createConnectionManager() {
-		var connectionManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create()
+		final var connectionManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create()
 			.setDefaultConnectionConfig(ConnectionConfig.custom()
 				.setSocketTimeout(Timeout.ofMilliseconds(Math.toIntExact(readTimeout.toMillis())))
 				.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
@@ -315,11 +315,11 @@ public class WebServiceTemplateBuilder {
 					.loadTrustMaterial(getKeyStore(), (chain, authType) -> true)
 					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
 					.build();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				throw new WebServiceTemplateException("Couldn't load keystore", e);
 			}
 
-			var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+			final var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
 				.setSslContext(sslContext)
 				.setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
 				.build();
@@ -333,9 +333,8 @@ public class WebServiceTemplateBuilder {
 	private KeyStore getKeyStore() {
 		if (isNotBlank(keyStoreFileLocation)) {
 			return loadKeyStore(keyStoreFileLocation, keyStorePassword);
-		} else {
-			return loadKeyStore(keyStoreData, keyStorePassword);
 		}
+		return loadKeyStore(keyStoreData, keyStorePassword);
 	}
 
 	private boolean shouldUseSSL() {

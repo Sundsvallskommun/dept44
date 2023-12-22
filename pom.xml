@@ -94,14 +94,13 @@
 	</profiles>
 	<properties>
 		<java.version>21</java.version>
-		<spring-boot.version>3.2.0</spring-boot.version>
+		<spring-boot.version>3.2.1</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<downloadSources>true</downloadSources>
 		<downloadJavadocs>true</downloadJavadocs>
-
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.14.0</commons-lang3.version>
 		<logbook.version>3.7.2</logbook.version>
@@ -114,10 +113,8 @@
 		<logback-gelf.version>5.0.1</logback-gelf.version>
 		<janino.version>3.1.11</janino.version>
 		<jsonwebtoken.version>0.12.3</jsonwebtoken.version>
-
 		<!-- Spring boot admin -->
 		<spring-boot-admin.version>3.1.8</spring-boot-admin.version>
-
 		<!-- Plugin versions -->
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
@@ -132,7 +129,6 @@
 		<git-commit-id-maven-plugin.version>7.0.0</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.1.0</openapi-generator-maven-plugin.version>
-
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
@@ -147,7 +143,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			
 			<!-- Spring Cloud BOM -->
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -156,7 +151,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-
 			<!-- Logbook BOM -->
 			<dependency>
 				<groupId>org.zalando</groupId>
@@ -165,7 +159,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-
 			<!-- Framework -->
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
@@ -212,7 +205,6 @@
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
 				<version>4.1-SNAPSHOT</version>
 			</dependency>
-
 			<!-- Problem -->
 			<dependency>
 				<groupId>org.zalando</groupId>
@@ -234,14 +226,12 @@
 				<artifactId>problem-spring-web-starter</artifactId>
 				<version>${problem-spring-web.version}</version>
 			</dependency>
-
 			<!-- SpringDoc -->
 			<dependency>
 				<groupId>org.springdoc</groupId>
 				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 				<version>${springdoc.version}</version>
 			</dependency>
-			
 			<!-- Other -->
 			<dependency>
 				<groupId>com.google.code.bean-matchers</groupId>

@@ -8,7 +8,6 @@
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter</artifactId>
-
 	<dependencies>
 		<!-- Spring Boot and Spring -->
 		<dependency>
@@ -43,7 +42,6 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-kubernetes-client-config</artifactId>
 		</dependency>
-
 		<!-- Jackson -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.module</groupId>
@@ -61,7 +59,6 @@
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
 		</dependency>
-
 		<!-- Logbook -->
 		<dependency>
 			<groupId>org.zalando</groupId>
@@ -71,12 +68,6 @@
 			<groupId>org.zalando</groupId>
 			<artifactId>logbook-spring-boot-webflux-autoconfigure</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>logbook-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
 		<!-- Problem -->
 		<dependency>
 			<groupId>org.zalando</groupId>
@@ -94,13 +85,11 @@
 			<groupId>org.zalando</groupId>
 			<artifactId>problem-spring-web-starter</artifactId>
 		</dependency>
-
 		<!-- SpringDoc -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
-
 		<!-- Centralized config client -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -110,33 +99,33 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
 		</dependency>
-		
 		<!-- Resilience4j Circuitbreaker (health-indicators) -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
 		</dependency>
-
 		<!-- Commons lang 3 -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
-
 		<!-- Spring boot admin -->
 		<dependency>
 			<groupId>de.codecentric</groupId>
 			<artifactId>spring-boot-admin-starter-client</artifactId>
 			<version>${spring-boot-admin.version}</version>
 		</dependency>
-
 		<!-- Test -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
 			<artifactId>dept44-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>logbook-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- Other -->
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
@@ -144,7 +133,6 @@
 			<version>2.3.1</version>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<resources>
 			<resource>
@@ -220,6 +208,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
-

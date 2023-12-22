@@ -7,13 +7,11 @@
 		<version>4.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>dept44-build-tools</artifactId>
-
 	<properties>
 		<enforcer-api.version>3.4.1</enforcer-api.version>
 		<maven-api.version>3.9.6</maven-api.version>
 		<spotbugs-annotations.version>4.8.2</spotbugs-annotations.version>
 	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.maven.enforcer</groupId>
@@ -25,7 +23,6 @@
 			<artifactId>spotbugs-annotations</artifactId>
 			<scope>provided</scope>
 		</dependency>
-
 		<!-- Maven API -->
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -37,13 +34,11 @@
 			<artifactId>maven-plugin-api</artifactId>
 			<version>${maven-api.version}</version>
 		</dependency>
-
 		<!-- Jackson -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
 		</dependency>
-
 		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -51,7 +46,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>

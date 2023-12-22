@@ -16,7 +16,6 @@
 			<artifactId>dept44-starter</artifactId>
 			<scope>provided</scope>
 		</dependency>
-
 		<!-- Module dependencies -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -42,7 +41,6 @@
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
 		</dependency>
-		
 		<!-- Test -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
@@ -50,7 +48,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -59,7 +56,6 @@
 					<argLine>${argLine}</argLine>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
 				<groupId>org.jacoco</groupId>
@@ -110,6 +106,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
-

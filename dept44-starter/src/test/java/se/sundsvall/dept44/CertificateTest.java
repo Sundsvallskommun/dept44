@@ -11,19 +11,16 @@ import java.util.Calendar;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.ResourceUtils;
 
-// TODO: Remove this when the certificates are replaced.
-@Disabled
 class CertificateTest {
 
 	private static final String PATH = "internal-truststore/";
-	private static final String CERTIFICATE_SUFFIX = ".cer";
+	private static final String CERTIFICATE_SUFFIX_PATTERN = "^.*(\\.cer|\\.crt)$";
 	private static final String FAIL_MESSAGE = "Certificate '%s' expiration date is less than %s months from now (%s) and needs to be replaced";
 	private static final int MONTHS_UNTIL_EXPIRATION = 1;
 
@@ -51,7 +48,7 @@ class CertificateTest {
 
 	private static Stream<Arguments> certificateProvider() throws IOException {
 		return Stream.of(ResourceUtils.getFile("classpath:" + PATH).listFiles())
-			.filter(file -> file.getName().endsWith(CERTIFICATE_SUFFIX))
+			.filter(file -> file.getName().matches(CERTIFICATE_SUFFIX_PATTERN))
 			.map(File::getName)
 			.map(Arguments::of);
 	}

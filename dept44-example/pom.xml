@@ -12,9 +12,7 @@
 	<name>dept44-example</name>
 	<description>Example implementation</description>
 	<properties>
-		<openapi-generator-maven-plugin.version>7.1.0</openapi-generator-maven-plugin.version>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
-		<generated-sources-java-path>src/main/java</generated-sources-java-path>
 		<maven.source.skip>false</maven.source.skip>
 		<maven.javadoc.skip>false</maven.javadoc.skip>
 	</properties>
@@ -33,13 +31,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-mysql</artifactId>
 		</dependency>
-		
 		<!-- Test -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>
@@ -67,7 +60,7 @@
 						</goals>
 						<configuration>
 							<sources>
-								<source>${generated-sources-path}/${generated-sources-java-path}</source>
+								<source>${generated-sources-path}/models</source>
 							</sources>
 						</configuration>
 					</execution>
@@ -99,7 +92,7 @@
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>
 							<configOptions>
-								<sourceFolder>${generated-sources-java-path}</sourceFolder>
+								<sourceFolder>models</sourceFolder>
 								<dateLibrary>java8</dateLibrary>
 								<modelPackage>generated.swagger.io.petstore</modelPackage>
 								<openApiNullable>false</openApiNullable>

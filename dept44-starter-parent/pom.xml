@@ -9,7 +9,6 @@
 	<artifactId>dept44-starter-parent</artifactId>
 	<packaging>pom</packaging>
 	<name>dept44-starter-parent</name>
-	
 	<build>
 		<plugins>
 			<plugin>
@@ -20,7 +19,6 @@
 					<argLine>-Dspring.main.banner-mode=off</argLine>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -34,7 +32,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
@@ -51,4 +48,3 @@
 		</plugins>
 	</build>
 </project>
-

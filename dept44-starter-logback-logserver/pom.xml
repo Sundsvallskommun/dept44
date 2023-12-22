@@ -8,7 +8,6 @@
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-logback-logserver</artifactId>
-
 	<dependencies>
 		<!-- Framework -->
 		<dependency>
@@ -21,12 +20,10 @@
 			<groupId>de.siegmar</groupId>
 			<artifactId>logback-gelf</artifactId>
 		</dependency>
-		<!-- Needed for conditionals in logback-spring.xml -->
 		<dependency>
+			<!-- Needed for conditionals in logback-spring.xml -->
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
 		</dependency>
 	</dependencies>
-
 </project>
-

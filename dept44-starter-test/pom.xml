@@ -8,7 +8,6 @@
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-test</artifactId>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -27,20 +26,12 @@
 			<artifactId>jsonassert</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>net.javacrumbs.json-unit</groupId>
 			<artifactId>json-unit</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>net.javacrumbs.json-unit</groupId>
 			<artifactId>json-unit-assertj</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.awaitility</groupId>
-			<artifactId>awaitility</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -57,7 +48,6 @@
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -66,7 +56,6 @@
 					<argLine>${argLine}</argLine>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<!-- This instance checks coverage for this dept44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
 				<groupId>org.jacoco</groupId>
@@ -117,6 +106,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>
-

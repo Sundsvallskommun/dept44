@@ -116,7 +116,7 @@
 		<!-- Spring boot admin -->
 		<spring-boot-admin.version>3.1.8</spring-boot-admin.version>
 		<!-- Plugin versions -->
-		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
 		<maven-release-plugin.version>3.0.1</maven-release-plugin.version>
 		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>

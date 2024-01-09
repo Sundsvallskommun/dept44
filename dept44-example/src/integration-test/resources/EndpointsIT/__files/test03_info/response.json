@@ -1,0 +1,17 @@
+{
+	"git": {
+		"commit": {
+			"id": {
+				"full": "${json-unit.any-string}"
+			},
+			"time": "${json-unit.any-string}"
+		}
+	},
+	"build": {
+		"artifact": "dept44-example",
+		"name": "dept44-example",
+		"time": "${json-unit.any-string}",
+		"version": "${json-unit.any-string}",
+		"group": "se.sundsvall"
+	}
+}

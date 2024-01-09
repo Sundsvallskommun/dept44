@@ -7,17 +7,13 @@
 		<version>4.2.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>dept44-build-tools</artifactId>
+	<packaging>maven-plugin</packaging>
 	<properties>
-		<enforcer-api.version>3.4.1</enforcer-api.version>
 		<maven-api.version>3.9.6</maven-api.version>
+		<maven-plugin-annotations.version>3.9.0</maven-plugin-annotations.version>
 		<spotbugs-annotations.version>4.8.2</spotbugs-annotations.version>
 	</properties>
 	<dependencies>
-		<dependency>
-			<groupId>org.apache.maven.enforcer</groupId>
-			<artifactId>enforcer-api</artifactId>
-			<version>${enforcer-api.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>com.github.spotbugs</groupId>
 			<artifactId>spotbugs-annotations</artifactId>
@@ -25,14 +21,22 @@
 		</dependency>
 		<!-- Maven API -->
 		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<version>${maven-plugin-annotations.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-core</artifactId>
 			<version>${maven-api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
 			<version>${maven-api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<!-- Jackson -->
 		<dependency>
@@ -48,6 +52,11 @@
 	</dependencies>
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>${maven-plugin-annotations.version}</version>
+			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>

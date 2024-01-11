@@ -1,0 +1,15 @@
+{
+	"type": "https://zalando.github.io/problem/constraint-violation",
+	"status": 400,
+	"violations": [
+		{
+			"field": "property1",
+			"message": "property1 must be valid!"
+		},
+		{
+			"field": "property2",
+			"message": "property2 is also invalid!!"
+		}
+	],
+	"title": "Constraint Violation"
+}

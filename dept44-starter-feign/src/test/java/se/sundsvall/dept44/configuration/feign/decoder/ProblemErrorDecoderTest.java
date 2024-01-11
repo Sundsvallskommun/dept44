@@ -48,67 +48,87 @@ class ProblemErrorDecoderTest {
 	@Test
 	void decodeMinimalProblem(@Load("minimalProblem.json") String errorBody) {
 
-		// Setup
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var response = buildErrorResponse(errorBody, 418, null);
+		final var response = buildErrorResponse(errorBody, 402, null);
 
-		// Execute
+		// Act
 		final var exception = errorDecoder.decode("test", response);
 
-		// Verify
-		assertThat(exception).hasMessage(
-			"Bad Gateway: XXX error: {status=418 I'm a teapot, title=You do not have enough credit.}");
+		// Assert
+		assertThat(exception)
+			.isExactlyInstanceOf(ClientProblem.class)
+			.hasMessage("Bad Gateway: XXX error: {status=402 Payment Required, title=You do not have enough credit.}");
 	}
 
 	@Test
 	void decodeProblem(@Load("problem.json") String errorBody) {
 
-		// Setup
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var response = buildErrorResponse(errorBody, 418, null);
+		final var response = buildErrorResponse(errorBody, 402, null);
 
-		// Execute
+		// Act
 		final var exception = errorDecoder.decode("test", response);
 
-		// Verify
-		assertThat(exception).hasMessage(
-			"Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=418 I'm a teapot, title=You do not have enough credit.}");
+		// Assert
+		assertThat(exception)
+			.isExactlyInstanceOf(ClientProblem.class)
+			.hasMessage("Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=402 Payment Required, title=You do not have enough credit.}");
+	}
+
+	@Test
+	void decodeConstraintViolationProblem(@Load("constraintViolationProblem.json") String errorBody) {
+
+		// Arrange
+		final var errorDecoder = new ProblemErrorDecoder("XXX");
+		final var response = buildErrorResponse(errorBody, 400, null);
+
+		// Act
+		final var exception = errorDecoder.decode("test", response);
+
+		// Assert
+		assertThat(exception)
+			.isExactlyInstanceOf(ClientProblem.class)
+			.hasMessage("Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}");
 	}
 
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderForErrorMessages")
 	void errorDecoderForErrorMessages(String body, int httpStatus, String expectedMessage) {
 
-		// Setup
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
 		final var response = buildErrorResponse(body, httpStatus, null);
 
-		// Execute
+		// Act
 		final var exception = errorDecoder.decode("test", response);
 
-		// Verify
+		// Assert
 		assertThat(exception).hasMessage(expectedMessage);
 	}
 
 	@Test
 	void errorDecoderWhenBypassResponseCodesAreSet() {
 
-		// Setup
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX", List.of(400, 401, 404, 418));
 		final var response = buildErrorResponse(null, 404, null); // statusCode exists in bypassList.
 
-		// Execute
+		// Act
 		final var exception = errorDecoder.decode("test", response);
 
-		// Verify
-		assertThat(exception).hasMessage("Not Found: XXX error: {status=404 Not Found, title=Not Found}");
+		// Assert
+		assertThat(exception)
+			.isExactlyInstanceOf(ClientProblem.class)
+			.hasMessage("Not Found: XXX error: {status=404 Not Found, title=Not Found}");
 	}
 
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderReturnsCorrectThrowableType")
 	void errorDecoderReturnsCorrectThrowableType(int httpStatus, Class<ThrowableProblem> type) {
 
-		// Setup
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
 		final var errorResponse = buildErrorResponse("""
 			{
@@ -117,26 +137,31 @@ class ProblemErrorDecoderTest {
 			}
 			""", httpStatus, null);
 
-		// Execute
+		// Act
 		final var exception = errorDecoder.decode("test", errorResponse);
 
-		// Verify
+		// Assert
 		assertThat(exception).isInstanceOf(type);
 	}
 
 	@Test
 	void errorDecoderReturnsRetryableExceptionOnWSO2TokenExpire() {
+
+		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
 		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
 
+		// Act
 		final var exception = errorDecoder.decode("test", errorResponse);
 
+		// Assert
 		assertThat(exception).isInstanceOf(RetryableException.class);
-
 	}
 
 	@Test
 	void errorDecoderReturnRetryableException() {
+
+		// Arrange
 		final var retryResponseVerifierMock = Mockito.mock(RetryResponseVerifier.class);
 		final var errorDecoder = new ProblemErrorDecoder("XXX", emptyList(), retryResponseVerifierMock);
 		final var errorResponse = buildErrorResponse("Error", 500, null);
@@ -144,11 +169,13 @@ class ProblemErrorDecoderTest {
 		when(retryResponseVerifierMock.shouldReturnRetryableException(any())).thenReturn(true);
 		when(retryResponseVerifierMock.getMessage()).thenReturn("Special message");
 
+		// Act
 		final var exception = errorDecoder.decode("test", errorResponse);
 
+		// Assert
 		verify(retryResponseVerifierMock).shouldReturnRetryableException(same(errorResponse));
 		verify(retryResponseVerifierMock).getMessage();
-		assertThat(exception).isInstanceOf(RetryableException.class);
+		assertThat(exception).isExactlyInstanceOf(RetryableException.class);
 		assertThat(exception.getMessage()).isEqualTo("Special message");
 		assertThat(exception.getCause()).isInstanceOf(ServerProblem.class);
 	}

@@ -84,7 +84,7 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
 	private boolean isConstraintViolationProblem(final Response response) {
 		try {
-			return isNotEmpty(OBJECT_MAPPER.readValue(bodyAsString(response), ConstraintViolationProblem.class).getViolations());
+			return isNotEmpty(deserialize(response, ConstraintViolationProblem.class).getViolations());
 		} catch (final Exception e) {
 			return false;
 		}

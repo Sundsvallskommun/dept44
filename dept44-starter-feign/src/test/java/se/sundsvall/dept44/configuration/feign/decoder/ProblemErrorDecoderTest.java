@@ -75,6 +75,21 @@ class ProblemErrorDecoderTest {
 			"Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=418 I'm a teapot, title=You do not have enough credit.}");
 	}
 
+	@Test
+	void decodeConstraintViolationProblem(@Load("constraintViolationProblem.json") String errorBody) {
+
+		// Setup
+		final var errorDecoder = new ProblemErrorDecoder("XXX");
+		final var response = buildErrorResponse(errorBody, 400, null);
+
+		// Execute
+		final var exception = errorDecoder.decode("test", response);
+
+		// Verify
+		assertThat(exception).hasMessage(
+			"Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}");
+	}
+
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderForErrorMessages")
 	void errorDecoderForErrorMessages(String body, int httpStatus, String expectedMessage) {

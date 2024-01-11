@@ -1,17 +1,21 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static se.sundsvall.dept44.configuration.feign.decoder.util.ProblemUtils.toProblem;
+
 import java.io.IOException;
 import java.util.List;
 
-import jakarta.annotation.Nonnull;
-
 import org.zalando.problem.Problem;
 import org.zalando.problem.jackson.ProblemModule;
+import org.zalando.problem.violations.ConstraintViolationProblem;
+import org.zalando.problem.violations.ConstraintViolationProblemModule;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import feign.Response;
 import feign.RetryableException;
+import jakarta.annotation.Nonnull;
 
 /**
  * A Problem ErrorDecoder that allows you to process an Problem-based error response.
@@ -20,7 +24,10 @@ import feign.RetryableException;
  */
 public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
-	private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().addModule(new ProblemModule()).build();
+	private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
+		.addModule(new ProblemModule())
+		.addModule(new ConstraintViolationProblemModule())
+		.build();
 
 	/**
 	 * Creates a new ProblemErrorDecoder with an integration name and bypass response codes.
@@ -70,7 +77,20 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
 	@Override
 	public String extractErrorMessage(final Response response) throws IOException {
-		final var problem = OBJECT_MAPPER.readValue(bodyAsString(response), Problem.class);
+		final var problem = isConstraintViolationProblem(response) ? toProblem(deserialize(response, ConstraintViolationProblem.class)) : deserialize(response, Problem.class);
+
 		return ErrorMessage.create(integrationName, response.status(), problem).extractMessage();
+	}
+
+	private boolean isConstraintViolationProblem(final Response response) {
+		try {
+			return isNotEmpty(OBJECT_MAPPER.readValue(bodyAsString(response), ConstraintViolationProblem.class).getViolations());
+		} catch (final Exception e) {
+			return false;
+		}
+	}
+
+	private <T> T deserialize(final Response response, Class<T> valueType) throws IOException {
+		return OBJECT_MAPPER.readValue(bodyAsString(response), valueType);
 	}
 }

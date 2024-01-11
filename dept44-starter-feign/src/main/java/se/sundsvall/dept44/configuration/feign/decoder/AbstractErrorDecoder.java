@@ -3,7 +3,6 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -174,9 +173,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		private static ErrorMessage create(final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
 			final SortedMap<String, Object> map = new TreeMap<>();
 			map.put(KEY_STATUS, Status.valueOf(httpStatus));
-			if (nonNull(errorInfo)) {
-				map.putAll(errorInfo);
-			}
+
+			ofNullable(errorInfo).ifPresent(map::putAll);
 
 			return new ErrorMessage(integrationName, map);
 		}
@@ -187,7 +185,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		 * @return a string containing the calculated error message
 		 */
 		String extractMessage() {
-			return String.format(ERROR_TEMPLATE, integrationName, errorInfo);
+			return ERROR_TEMPLATE.formatted(integrationName, errorInfo);
 		}
 	}
 }

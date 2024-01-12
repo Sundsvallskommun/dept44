@@ -31,7 +31,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 /**
  * A class that will scan the provided path for certificates and add them in an in-memory trust store.
  * The certificates should be in X.509 (PEM) format.
- * 
+ *
  * The 'trustStorePath' may be a simple path which has a one-to-one mapping to a target
  * {@link org.springframework.core.io.Resource}, or alternatively may contain the special
  * "{@code classpath*:}" prefix and/or internal Ant-style regular expressions (matched using
@@ -55,14 +55,14 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
  *
  * <p>
  * When the path location contains an Ant-style pattern, e.g.:
- * 
+ *
  * <pre class="code">
  * /WEB-INF/*-context.xml
  * com/mycompany/**&#47;applicationContext.xml
  * file:C:/some/path/*-context.xml
  * classpath:com/mycompany/**&#47;applicationContext.xml
  * </pre>
- * 
+ *
  * the resolver follows a more complex but defined procedure to try to resolve the wildcard. It
  * produces a {@code Resource} for the path up to the last non-wildcard segment and obtains a
  * {@code URL} from it. If this URL is not a "{@code jar:}" URL or container-specific variant
@@ -94,10 +94,10 @@ public class Truststore {
 
 	/**
 	 * Creates and initializes the SSLContext.
-	 * 
+	 *
 	 * If certificates are found in the path defined by 'trustStorePath' they will be added to an
 	 * internal in-memory truststore.
-	 * 
+	 *
 	 * @param trustStorePath path that will be scanned for certificates (see class javadoc)
 	 */
 	public Truststore(final String trustStorePath) {
@@ -136,13 +136,13 @@ public class Truststore {
 			LOG.info(MESSAGE_USAGE_INFO, trustStorePath);
 			initializedSSLContext = initializeTruststore();
 
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			LOG.error(MESSAGE_SSL_CONTEXT_INITIALIZATION_ERROR, e);
 		} finally {
 			if (isNull(initializedSSLContext)) {
 				try {
 					initializedSSLContext = SSLContext.getDefault();
-				} catch (NoSuchAlgorithmException e) {
+				} catch (final NoSuchAlgorithmException e) {
 					LOG.error(MESSAGE_SSL_CONTEXT_INITIALIZATION_ERROR, e);
 				}
 			}
@@ -171,13 +171,13 @@ public class Truststore {
 
 		certificates.forEach(certificate -> {
 			try {
-				var certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
-				var x509Certificate = (X509Certificate) certificateFactory.generateCertificate(certificate.getInputStream());
+				final var certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
+				final var x509Certificate = (X509Certificate) certificateFactory.generateCertificate(certificate.getInputStream());
 				x509Certificate.checkValidity(); // Will prevent adding of invalid certificates.
 				keyStore.setCertificateEntry(certificate.getFilename(), x509Certificate);
 				LOG.info(MESSAGE_ADD_CERTIFICATE_CONFIRMATION, certificate.getFilename());
-			} catch (Exception e) {
-				LOG.error(MESSAGE_ADD_CERTIFICATE_ERROR, certificate.getFilename(), e);
+			} catch (final Exception e) {
+				LOG.warn(MESSAGE_ADD_CERTIFICATE_ERROR, certificate.getFilename(), e);
 			}
 		});
 
@@ -199,7 +199,7 @@ public class Truststore {
 	private List<Resource> fetchResources(String path) {
 		try {
 			return asList(new PathMatchingResourcePatternResolver().getResources(path));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			LOG.debug(MESSAGE_NO_RESOURCES_FOUND, path);
 			return emptyList();
 		}

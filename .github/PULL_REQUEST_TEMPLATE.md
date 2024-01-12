@@ -4,7 +4,7 @@
 
 - [ ] Bug fix
 - [ ] New feature
-- [ ] Code style update (formatting, local variables)
+- [ ] Code style update (formatting etc.)
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes
 - [ ] Documentation content changes
@@ -20,4 +20,4 @@
 
 - [ ] My code follows the code style of this project.
 - [ ] I have updated the documentation accordingly (if applicable).
-- [ ] I have added/updated tests to cover my changes.
+- [ ] I have added/updated tests to cover my changes (if applicable).

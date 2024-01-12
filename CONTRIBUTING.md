@@ -28,7 +28,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[Dept44 Code of Conduct](https://github.com/Sundsvallskommun/dept44blob/master/CODE_OF_CONDUCT.md).
+[Dept44 Code of Conduct](https://github.com/Sundsvallskommun/dept44/blob/master/CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to .
 

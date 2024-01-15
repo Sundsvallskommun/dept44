@@ -56,7 +56,7 @@ class CheckDockerImageNameMojoTest {
     @ParameterizedTest
     @NullAndEmptySource
     void executeWithBlankDockerImageName(final String value) {
-        when(mockProperties.getProperty(eq("docker.image.name"), eq(""))).thenReturn(value);
+        when(mockProperties.getProperty("docker.image.name", "")).thenReturn(value);
         when(mockMavenProject.getProperties()).thenReturn(mockProperties);
 
         assertThatExceptionOfType(MojoFailureException.class)
@@ -66,7 +66,7 @@ class CheckDockerImageNameMojoTest {
 
     @Test
     void executeWithInvalidDockerImageName() {
-        when(mockProperties.getProperty(eq("docker.image.name"), eq(""))).thenReturn("invalid-docker-image-name");
+        when(mockProperties.getProperty("docker.image.name", "")).thenReturn("invalid-docker-image-name");
         when(mockMavenProject.getProperties()).thenReturn(mockProperties);
 
         assertThatExceptionOfType(MojoFailureException.class)
@@ -76,7 +76,7 @@ class CheckDockerImageNameMojoTest {
 
     @Test
     void executeWithValidDockerImageName() {
-        when(mockProperties.getProperty(eq("docker.image.name"), eq(""))).thenReturn("ms-some-service");
+        when(mockProperties.getProperty("docker.image.name", "")).thenReturn("ms-some-service");
         when(mockMavenProject.getProperties()).thenReturn(mockProperties);
 
         assertThatNoException().isThrownBy(mojo::execute);

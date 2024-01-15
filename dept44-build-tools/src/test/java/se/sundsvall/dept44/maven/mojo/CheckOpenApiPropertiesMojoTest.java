@@ -11,6 +11,8 @@ import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -48,10 +50,11 @@ class CheckOpenApiPropertiesMojoTest {
         assertThatNoException().isThrownBy(mojo::execute);
     }
 
-    @Test
-    void executeWhenOpenApiIsNotEnabled() {
+    @ParameterizedTest
+    @ValueSource(strings = {"openapi-not-enabled", "using-properties-file", "using-yaml-file"})
+    void execute(final String testdir) {
         when(mockMavenProject.getBasedir())
-            .thenReturn(new File("src/test/resources/openapi-properties/openapi-not-enabled"));
+            .thenReturn(new File("src/test/resources/openapi-properties/" + testdir));
 
         assertThatNoException().isThrownBy(mojo::execute);
     }
@@ -67,21 +70,5 @@ class CheckOpenApiPropertiesMojoTest {
                 "Property \"openapi.name\" is missing or empty in application properties/YAML",
                 "Property \"openapi.title\" is missing or empty in application*.properties/YAML",
                 "Property \"openapi.version\" is missing or empty in application*.properties/YAML");
-    }
-
-    @Test
-    void executeWithPropertiesSetUsingPropertiesFile() {
-        when(mockMavenProject.getBasedir())
-            .thenReturn(new File("src/test/resources/openapi-properties/using-properties-file"));
-
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
-
-    @Test
-    void executeWithPropertiesSetUsingYamlFile() {
-        when(mockMavenProject.getBasedir())
-            .thenReturn(new File("src/test/resources/openapi-properties/using-yaml-file"));
-
-        assertThatNoException().isThrownBy(mojo::execute);
     }
 }

@@ -153,7 +153,7 @@ class CheckTruststoreValidityMojoTest {
      */
     private static KeyPair generateKeyPair() throws Exception {
         var keyPairGenerator = KeyPairGenerator.getInstance("RSA", BC_PROVIDER);
-        keyPairGenerator.initialize(1024, SECURE_RANDOM);
+        keyPairGenerator.initialize(2048, SECURE_RANDOM);
         return keyPairGenerator.generateKeyPair();
     }
 

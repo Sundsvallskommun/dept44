@@ -13,12 +13,8 @@ import org.apache.maven.project.MavenProject;
 
 abstract class AbstractDept44CheckMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
-
-    @Parameter(property = "dept44.check.skipAll", defaultValue = "false")
     private boolean skipAllChecks;
-
     private final List<String> errors = new ArrayList<>();
 
     abstract void doExecute() throws MojoFailureException;
@@ -42,7 +38,17 @@ abstract class AbstractDept44CheckMojo extends AbstractMojo {
         return project;
     }
 
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
+    public void setProject(final MavenProject project) {
+        this.project = project;
+    }
+
     protected boolean isSkipAllChecks() {
         return skipAllChecks;
+    }
+
+    @Parameter(property = "dept44.check.skipAll", defaultValue = "false")
+    public void setSkipAllChecks(final boolean skipAllChecks) {
+        this.skipAllChecks = skipAllChecks;
     }
 }

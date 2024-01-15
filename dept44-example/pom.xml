@@ -12,6 +12,7 @@
 	<name>dept44-example</name>
 	<description>Example implementation</description>
 	<properties>
+		<dept44.check.docker-image-name.skip>true</dept44.check.docker-image-name.skip>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<maven.source.skip>false</maven.source.skip>
 		<maven.javadoc.skip>false</maven.javadoc.skip>

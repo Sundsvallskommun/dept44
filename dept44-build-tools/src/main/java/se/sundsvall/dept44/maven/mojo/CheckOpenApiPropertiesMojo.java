@@ -27,7 +27,6 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
     private static final String PROPERTY_FILE_PATTERN = "^application(.yaml|.yml|.properties)$";
     private static final String YAML_FILE_EXTENSION_PATTERN = ".*(.yaml|.yml)$";
 
-    @Parameter(property = "dept44.check.openapi-properties.skip", defaultValue = "false")
     private boolean skip;
 
     @Override
@@ -43,6 +42,11 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
         getLog().info("Validating OpenAPI properties");
 
         validateOpenApiProperties();
+    }
+
+    @Parameter(property = "dept44.check.openapi-properties.skip", defaultValue = "false")
+    public void setSkip(final boolean skip) {
+        this.skip = skip;
     }
 
     @SuppressFBWarnings("PATH_TRAVERSAL_IN")

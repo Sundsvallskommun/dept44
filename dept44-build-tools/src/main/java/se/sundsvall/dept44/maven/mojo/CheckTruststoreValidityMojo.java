@@ -21,16 +21,11 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 
     private static final String FAILURE_MESSAGE = "Certificate '%s' expiration date (%s) is before or less than %d months from now (%s) and needs to be updated";
 
-    @Parameter(property = "dept44.check.truststore.skip", defaultValue = "false")
-    private boolean skip;
-
-    @Parameter(property = "dept44.check.truststore.path", defaultValue = "truststore/")
-    private String truststorePath;
-
-    @Parameter(property = "dept44.check.truststore.months-until-expiration", defaultValue = "1")
-    private int monthsUntilExpiration;
-
     private final CertificateFactory certificateFactory;
+
+    private boolean skip;
+    private String truststorePath;
+    private int monthsUntilExpiration;
 
     public CheckTruststoreValidityMojo() throws MojoFailureException {
         try {
@@ -71,5 +66,20 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
         } catch (IOException|CertificateException e) {
             throw new MojoFailureException("Unable to check certificates " + e.getLocalizedMessage(), e);
         }
+    }
+
+    @Parameter(property = "dept44.check.truststore.skip", defaultValue = "false")
+    public void setSkip(final boolean skip) {
+        this.skip = skip;
+    }
+
+    @Parameter(property = "dept44.check.truststore.path", defaultValue = "truststore/")
+    public void setTruststorePath(final String truststorePath) {
+        this.truststorePath = truststorePath;
+    }
+
+    @Parameter(property = "dept44.check.truststore.months-until-expiration", defaultValue = "1")
+    public void setMonthsUntilExpiration(final int monthsUntilExpiration) {
+        this.monthsUntilExpiration = monthsUntilExpiration;
     }
 }

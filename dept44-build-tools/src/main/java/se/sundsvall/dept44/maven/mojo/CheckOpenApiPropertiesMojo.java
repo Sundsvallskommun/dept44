@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.maven.mojo;
 
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,7 +61,7 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
             .listFiles((dir, name) -> name.matches(PROPERTY_FILE_PATTERN));
 
         // We should have some files to work with...
-        if (propertyFiles == null || propertyFiles.length == 0) {
+        if (isEmpty(propertyFiles)) {
             throw new MojoFailureException("No application properties/YAML files exist");
         }
 

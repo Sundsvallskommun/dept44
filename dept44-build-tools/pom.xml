@@ -12,8 +12,13 @@
 		<maven-api.version>3.9.6</maven-api.version>
 		<maven-plugin-annotations.version>3.9.0</maven-plugin-annotations.version>
 		<spotbugs-annotations.version>4.8.2</spotbugs-annotations.version>
+		<bcpkix-jdk18on.version>1.77</bcpkix-jdk18on.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.github.spotbugs</groupId>
 			<artifactId>spotbugs-annotations</artifactId>
@@ -23,7 +28,6 @@
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>
 			<artifactId>maven-plugin-annotations</artifactId>
-			<version>${maven-plugin-annotations.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -52,7 +56,7 @@
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpkix-jdk18on</artifactId>
-			<version>1.77</version>
+			<version>${bcpkix-jdk18on.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

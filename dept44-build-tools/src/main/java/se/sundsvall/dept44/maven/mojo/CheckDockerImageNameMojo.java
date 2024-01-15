@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.maven.mojo;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -22,7 +24,7 @@ public class CheckDockerImageNameMojo extends AbstractDept44CheckMojo {
         getLog().info("Validating Docker image name");
 
         var dockerImageName = getProject().getProperties().getProperty("docker.image.name", "");
-        if (dockerImageName == null || dockerImageName.isBlank()) {
+        if (isBlank(dockerImageName)) {
             addError("Build property \"docker.image.name\" is missing or empty");
         } else if (!dockerImageName.matches(DOCKER_IMAGE_NAME_REGEX)) {
             addError("Build property \"docker.image.name\" must match regex \"" + DOCKER_IMAGE_NAME_REGEX + "\", e.g. \"ms-service-123\"");

@@ -10,7 +10,7 @@
 - [ ] Documentation content changes
 
 ## Does this PR introduce a breaking change?
-- [ ] Yes
+- [ ] Yes (I have stepped the version number accordingly)
 - [ ] No
       
 ## Checklist:

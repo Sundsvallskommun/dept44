@@ -1,0 +1,4 @@
+openapi:
+  name: name
+  title: title
+  version: version

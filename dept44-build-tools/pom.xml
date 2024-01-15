@@ -7,16 +7,17 @@
 		<version>4.2.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>dept44-build-tools</artifactId>
+	<packaging>maven-plugin</packaging>
 	<properties>
-		<enforcer-api.version>3.4.1</enforcer-api.version>
 		<maven-api.version>3.9.6</maven-api.version>
+		<maven-plugin-annotations.version>3.9.0</maven-plugin-annotations.version>
 		<spotbugs-annotations.version>4.8.2</spotbugs-annotations.version>
+		<bcpkix-jdk18on.version>1.77</bcpkix-jdk18on.version>
 	</properties>
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.maven.enforcer</groupId>
-			<artifactId>enforcer-api</artifactId>
-			<version>${enforcer-api.version}</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.github.spotbugs</groupId>
@@ -25,14 +26,21 @@
 		</dependency>
 		<!-- Maven API -->
 		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-core</artifactId>
 			<version>${maven-api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
 			<version>${maven-api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<!-- Jackson -->
 		<dependency>
@@ -45,9 +53,20 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk18on</artifactId>
+			<version>${bcpkix-jdk18on.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>${maven-plugin-annotations.version}</version>
+			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>

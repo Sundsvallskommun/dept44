@@ -307,35 +307,10 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.4.1</version>
-				<dependencies>
-					<dependency>
-						<groupId>se.sundsvall.dept44</groupId>
-						<artifactId>dept44-build-tools</artifactId>
-						<version>4.2.0-SNAPSHOT</version>
-					</dependency>
-				</dependencies>
-				<executions>
-					<execution>
-						<id>enforce-build-rules</id>
-						<goals>
-							<goal>enforce</goal>
-						</goals>
-						<configuration>
-							<rules>
-								<dept44RequiredBuildProperties implementation="se.sundsvall.dept44.maven.enforcer.rule.Dept44RequiredPropertiesRule">
-									<requireDockerImageName>false</requireDockerImageName>
-								</dept44RequiredBuildProperties>
-							</rules>
-						</configuration>
-					</execution>
-				</executions>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-build-tools</artifactId>
 			</plugin>
-
 			<plugin>
 				<groupId>io.github.git-commit-id</groupId>
 				<artifactId>git-commit-id-maven-plugin</artifactId>

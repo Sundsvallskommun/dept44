@@ -1,8 +1,0 @@
-##############################################
-# Test settings - success
-##############################################
-# OpenAPI
-openapi:
-  name: name
-  title: title
-  version: version

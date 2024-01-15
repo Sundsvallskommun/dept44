@@ -267,6 +267,25 @@
 		</dependencies>
 	</dependencyManagement>
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>se.sundsvall.dept44</groupId>
+					<artifactId>dept44-build-tools</artifactId>
+					<version>4.2.0-SNAPSHOT</version>
+					<executions>
+						<execution>
+							<phase>initialize</phase>
+							<goals>
+								<goal>check-truststore-validity</goal>
+								<goal>check-docker-image-name</goal>
+								<goal>check-openapi-properties</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.openapitools</groupId>

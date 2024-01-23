@@ -9,11 +9,16 @@
 name: Java CI with Maven
 
 on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
   push:
+    branches:
+      - main
   schedule:
     # At 03:00 on Sunday (Please note: Github actions schedule is in UTC time).
     - cron: '0 3 * * 0'
-    
+
 jobs:
   build:
     name: Run CI
@@ -30,4 +35,3 @@ jobs:
       env:
         TZ: 'Europe/Stockholm'
       run: mvn -B verify --file pom.xml
- 

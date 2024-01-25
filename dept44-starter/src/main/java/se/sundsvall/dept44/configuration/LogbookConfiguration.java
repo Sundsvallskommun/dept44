@@ -7,12 +7,15 @@ import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilt
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
 import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +45,14 @@ public class LogbookConfiguration {
 	private final Set<String> excludedPaths;
 
 	LogbookConfiguration(
-		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
-		@Value("#{'${logbook.excluded.paths:${logbook.default.excluded.paths:}}'}") Set<String> excludedPaths) {
+			@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
+			@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
+			@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
 		this.loggerName = loggerName;
-		this.excludedPaths = excludedPaths;
+
+		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)
+			.flatMap(Collection::stream)
+			.collect(Collectors.toSet());
 	}
 
 	@Bean

@@ -6,3 +6,14 @@ logbook:
     xPath:
       yml_path_1: xpath_yml_replacement_1
       yml_path_2: xpath_yml_replacement_2
+  body-filters:
+    jsonPath:
+      - key: 'some_yml_jsonpath_key_1'
+        value: 'some_yml_jsonpath_value_1'
+      - key: 'some_yml_jsonpath_key_2'
+        value: 'some_yml_jsonpath_value_2'
+    xPath:
+      - key: 'some_yml_xpath_key_1'
+        value: 'some_yml_xpath_value_1'
+      - key: 'some_yml_xpath_key_2'
+        value: 'some_yml_xpath_value_2'

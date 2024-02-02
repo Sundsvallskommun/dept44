@@ -8,6 +8,8 @@ import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAt
 import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,8 +39,10 @@ import org.zalando.logbook.json.JsonHttpLogFormatter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
+
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
-@EnableConfigurationProperties(ExclusionFilterProperties.class)
+@EnableConfigurationProperties({ExclusionFilterProperties.class, BodyFilterProperties.class})
 public class LogbookConfiguration {
 
 	private final String loggerName;
@@ -57,15 +61,33 @@ public class LogbookConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, ExclusionFilterProperties exclusionFilterProperties) {
+	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, ExclusionFilterProperties exclusionFilterProperties, BodyFilterProperties bodyFilterProperties) {
 		return Logbook.builder()
 			.sink(new DefaultSink(
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilter(fileAttachmentFilter())
 			.bodyFilter(passwordFilter())
+			// Old deprecated way
 			.bodyFilters(buildJsonPathFilters(objectMapper, Objects.requireNonNullElseGet(exclusionFilterProperties.getJsonPath(), Map::of)))
 			.bodyFilters(buildXPathFilters(Objects.requireNonNullElseGet(exclusionFilterProperties.getXPath(), Map::of)))
+			// New way
+			.bodyFilters(buildJsonPathFilters(objectMapper,
+				Optional.ofNullable(bodyFilterProperties.getJsonPath())
+					.orElseGet(Collections::emptyList)
+					.stream()
+					.reduce(new HashMap<>(), (acc, map) -> {
+						acc.put(map.get("key"), map.get("value"));
+						return acc;
+					})))
+			.bodyFilters(buildXPathFilters(
+				Optional.ofNullable(bodyFilterProperties.getxPath())
+					.orElseGet(Collections::emptyList)
+					.stream()
+					.reduce(new HashMap<>(), (acc, map) -> {
+						acc.put(map.get("key"), map.get("value"));
+						return acc;
+					})))
 			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
 			.condition(exclude(getExclusions()))
 			.build();

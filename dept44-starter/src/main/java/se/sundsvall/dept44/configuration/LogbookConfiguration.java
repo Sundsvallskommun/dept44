@@ -39,19 +39,17 @@ import org.zalando.logbook.json.JsonHttpLogFormatter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
-
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
-@EnableConfigurationProperties({ExclusionFilterProperties.class, BodyFilterProperties.class})
+@EnableConfigurationProperties({ ExclusionFilterProperties.class, BodyFilterProperties.class })
 public class LogbookConfiguration {
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
 
 	LogbookConfiguration(
-			@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
-			@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
-			@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
+		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
+		@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
+		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
 		this.loggerName = loggerName;
 
 		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)

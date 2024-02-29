@@ -61,17 +61,17 @@ class SecurityConfigurationTest {
 	private SecurityConfiguration securityConfiguration;
 
 	@Test
-	void test_securityFilterChain() {
+	void securityFilterChain() {
 		assertThat(securityFilterChain).isNotNull();
 	}
 
 	@Test
-	void test_webSecurityCustomizer() {
+	void webSecurityCustomizer() {
 		assertThat(webSecurityCustomizer).isNotNull();
 	}
 
 	@Test
-	void test_authorizeRequests() throws Exception {
+	void authorizeRequests() throws Exception {
 		when(requestMatcherRegistryMock.anyRequest()).thenReturn(authorizedUrlMock);
 
 		doAnswer(invocation -> {
@@ -85,12 +85,12 @@ class SecurityConfigurationTest {
 		when(authorizedUrlMock.permitAll()).thenReturn(requestMatcherRegistryMock);
 		when(httpSecurityMock.build()).thenReturn(defaultSecurityFilterChain);
 
-		final var securityFilterChain = securityConfiguration.filterChain(httpSecurityMock);
+		final var chain = securityConfiguration.filterChain(httpSecurityMock);
 
 		verify(httpSecurityMock).authorizeHttpRequests(any());
 		verify(requestMatcherRegistryMock).anyRequest();
 		verify(authorizedUrlMock).permitAll();
 		verify(httpSecurityMock).build();
-		assertThat(securityFilterChain).isEqualTo(defaultSecurityFilterChain);
+		assertThat(chain).isEqualTo(defaultSecurityFilterChain);
 	}
 }

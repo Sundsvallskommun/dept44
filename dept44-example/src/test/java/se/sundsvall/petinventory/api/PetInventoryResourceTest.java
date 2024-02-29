@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -32,7 +32,7 @@ import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 import se.sundsvall.petinventory.service.PetInventoryService;
 
-@SpringBootTest(classes = Application.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
 @ActiveProfiles("junit")
 class PetInventoryResourceTest {
 
@@ -41,9 +41,6 @@ class PetInventoryResourceTest {
 
 	@MockBean
 	private PetInventoryService petInventoryServiceMock;
-
-	@LocalServerPort
-	private int port;
 
 	@Test
 	void getPetInventoryList() {
@@ -95,13 +92,14 @@ class PetInventoryResourceTest {
 
 		// Arrange
 		final var id = 1L;
+		final var imageId = 666L;
 
 		final MultipartBodyBuilder multipartBodyBuilder = new MultipartBodyBuilder();
 		multipartBodyBuilder
 			.part("file", new ClassPathResource("files/dept44.jpg"))
 			.contentType(MediaType.MULTIPART_FORM_DATA);
 
-		when(petInventoryServiceMock.savePetImage(anyLong(), any(MultipartFile.class))).thenReturn(666L);
+		when(petInventoryServiceMock.savePetImage(anyLong(), any(MultipartFile.class))).thenReturn(imageId);
 
 		// Act
 		webTestClient.post().uri("/pet-inventory-items/{id}/images", id)
@@ -109,7 +107,8 @@ class PetInventoryResourceTest {
 			.body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
 			.exchange()
 			.expectStatus().isCreated()
-			.expectHeader().contentType(ALL);
+			.expectHeader().contentType(ALL)
+			.expectHeader().location("/pet-inventory-items/" + id + "/images/" + imageId);
 
 		// Assert
 		verify(petInventoryServiceMock).savePetImage(eq(id), any(MultipartFile.class));

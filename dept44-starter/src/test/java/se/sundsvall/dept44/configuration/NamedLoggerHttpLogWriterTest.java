@@ -28,7 +28,7 @@ class NamedLoggerHttpLogWriterTest {
 	private Precorrelation precorrelationMock;
 
 	@Test
-	void test_writerWithCorrelation() {
+	void writerWithCorrelation() {
 		try (MockedStatic<LoggerFactory> loggerFactoryMock = Mockito.mockStatic(LoggerFactory.class)) {
 
 			loggerFactoryMock.when(() -> LoggerFactory.getLogger(anyString())).thenReturn(loggerMock);
@@ -41,7 +41,7 @@ class NamedLoggerHttpLogWriterTest {
 	}
 
 	@Test
-	void test_writerWithPreCorrelation() {
+	void writerWithPreCorrelation() {
 		try (MockedStatic<LoggerFactory> loggerFactoryMock = Mockito.mockStatic(LoggerFactory.class)) {
 
 			loggerFactoryMock.when(() -> LoggerFactory.getLogger(anyString())).thenReturn(loggerMock);
@@ -55,7 +55,7 @@ class NamedLoggerHttpLogWriterTest {
 	}
 
 	@Test
-	void test_isActive() {
+	void isActive() {
 		final var namedLoggerHttpLogWriter = new LogbookConfiguration.NamedLoggerHttpLogWriter("testName");
 		assertThat(namedLoggerHttpLogWriter.isActive()).isFalse();
 	}

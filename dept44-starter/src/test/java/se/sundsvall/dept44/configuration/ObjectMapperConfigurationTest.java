@@ -27,22 +27,22 @@ class ObjectMapperConfigurationTest {
 	private Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer;
 
 	@Test
-	void yamlMapper_isAutowired() {
+	void yamlMapperIsAutowired() {
 		assertThat(yamlMapper).isNotNull();
 	}
 
 	@Test
-	void jaxbAnnotationModule_isAutowired() {
+	void jaxbAnnotationModuleIsAutowired() {
 		assertThat(jaxbAnnotationModule).isNotNull();
 	}
 
 	@Test
-	void javaTimeModule_isAutowired() {
+	void javaTimeModuleIsAutowired() {
 		assertThat(javaTimeModule).isNotNull();
 	}
 
 	@Test
-	void jackson2ObjectMapperBuilderCustomizer_isAutowired() {
+	void jackson2ObjectMapperBuilderCustomizerIsAutowired() {
 		assertThat(jackson2ObjectMapperBuilderCustomizer).isNotNull();
 	}
 }

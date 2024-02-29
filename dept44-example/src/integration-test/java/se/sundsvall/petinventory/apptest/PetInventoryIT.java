@@ -93,7 +93,7 @@ class PetInventoryIT extends AbstractAppTest {
 			.withContentType(MULTIPART_FORM_DATA)
 			.withHttpMethod(POST)
 			.withExpectedResponseStatus(CREATED)
-			.withExpectedResponseHeader(LOCATION, List.of("^http://(.*)/pet-inventory-items/(\\d+)/images/(\\d+)$"))
+			.withExpectedResponseHeader(LOCATION, List.of("^/pet-inventory-items/(\\d+)/images/(\\d+)$"))
 			.sendRequestAndVerifyResponse().getResponseHeaders().getLocation();
 
 		// Call

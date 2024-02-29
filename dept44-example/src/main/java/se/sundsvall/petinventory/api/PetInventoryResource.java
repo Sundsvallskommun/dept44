@@ -8,10 +8,10 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static org.springframework.http.ResponseEntity.created;
 import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.zalando.problem.Problem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 
@@ -42,8 +41,11 @@ public class PetInventoryResource {
 
 	private static final String CONTENT_DISPOSITION_HEADER_VALUE = "attachment; filename=\"%s\"";
 
-	@Autowired
-	private PetInventoryService petInventoryService;
+	private final PetInventoryService petInventoryService;
+
+	public PetInventoryResource(PetInventoryService petInventoryService) {
+		this.petInventoryService = petInventoryService;
+	}
 
 	@GetMapping(produces = { APPLICATION_JSON_VALUE, APPLICATION_PROBLEM_JSON_VALUE })
 	@Operation(summary = "Get Pet inventory items")
@@ -71,12 +73,11 @@ public class PetInventoryResource {
 	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = { Problem.class, ConstraintViolationProblem.class })))
 	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	ResponseEntity<Void> addPetImage(final UriComponentsBuilder uriComponentsBuilder, @PathVariable(name = "id") final long id, @RequestPart("file") MultipartFile multipartFile) {
-
+	ResponseEntity<Void> addPetImage(@PathVariable(name = "id") final long id, @RequestPart("file") MultipartFile multipartFile) {
 		final var petImageId = petInventoryService.savePetImage(id, multipartFile);
-
-		return created(uriComponentsBuilder.path("/pet-inventory-items/{id}/images/{pictureId}").buildAndExpand(id, petImageId).toUri())
-			.header(CONTENT_TYPE, ALL_VALUE).build();
+		return created(fromPath("/pet-inventory-items/{id}/images/{pictureId}").buildAndExpand(id, petImageId).toUri())
+			.header(CONTENT_TYPE, ALL_VALUE)
+			.build();
 	}
 
 	@GetMapping(path = "/{id}/images/{imageId}", produces = { MediaType.ALL_VALUE })

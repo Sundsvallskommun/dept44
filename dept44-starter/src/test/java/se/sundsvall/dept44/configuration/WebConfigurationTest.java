@@ -11,11 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +26,10 @@ import org.springframework.web.servlet.config.annotation.ContentNegotiationConfi
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.dept44.requestid.RequestId;
 
 class WebConfigurationTest {
@@ -55,17 +54,17 @@ class WebConfigurationTest {
 		private WebConfiguration webConfiguration;
 
 		@Test
-		void test_requestIdFilterRegistration_isAutowired() {
+		void requestIdFilterRegistrationIsAutowired() {
 			assertThat(requestIdFilterRegistration).isNotNull();
 		}
 
 		@Test
-		void test_indexPageController_isAutowired() {
+		void indexPageControllerIsAutowired() {
 			assertThat(indexPageController).isNotNull();
 		}
 
 		@Test
-		void test_configureContentNegotiation() {
+		void configureContentNegotiation() {
 			final var contentNegotiationConfigurer = new ContentNegotiationConfigurer(null);
 			webConfiguration.configureContentNegotiation(contentNegotiationConfigurer);
 
@@ -77,7 +76,7 @@ class WebConfigurationTest {
 		}
 
 		@Test
-		void test_extendMessageConverters() {
+		void extendMessageConverters() {
 			final List<HttpMessageConverter<?>> converterList = new ArrayList<>();
 			webConfiguration.extendMessageConverters(converterList);
 
@@ -102,12 +101,12 @@ class WebConfigurationTest {
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Test
-		void test_requestIdFilterRegistration_isAutowired() {
+		void requestIdFilterRegistrationIsAutowired() {
 			assertThat(requestIdFilterRegistration).isNotNull();
 		}
 
 		@Test
-		void test_indexPageController_isNotAutowired() {
+		void indexPageControllerIsNotAutowired() {
 			assertThat(indexPageController).isNull();
 		}
 	}
@@ -129,12 +128,12 @@ class WebConfigurationTest {
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Test
-		void test_requestIdFilterRegistration_isNotAutowired() {
+		void requestIdFilterRegistrationIsNotAutowired() {
 			assertThat(requestIdFilterRegistration).isNull();
 		}
 
 		@Test
-		void test_indexPageController_isNotAutowired() {
+		void indexPageControllerIsNotAutowired() {
 			assertThat(indexPageController).isNull();
 		}
 	}
@@ -156,12 +155,12 @@ class WebConfigurationTest {
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Test
-		void test_showIndexPage() {
+		void showIndexPage() {
 			assertThat(indexPageController.showIndexPage()).isNotNull();
 		}
 
 		@Test
-		void test_getApiDocs() throws Exception {
+		void getApiDocs() throws Exception {
 			final var yamlString = "yamlString";
 			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlString.getBytes());
 			final var apiDocs = indexPageController.getApiDocs(httpServletRequestMock);
@@ -192,7 +191,7 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Test
-		void test_requestIdHandlerFilterFunctionFilter() throws IOException, ServletException {
+		void requestIdHandlerFilterFunctionFilter() throws IOException, ServletException {
 			final var requestId = "requestId";
 			final var requestIdFilter = requestIdFilterRegistration.getFilter();
 

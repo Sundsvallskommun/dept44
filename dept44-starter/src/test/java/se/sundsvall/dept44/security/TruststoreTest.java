@@ -17,7 +17,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 class TruststoreTest {
 
 	@Test
-	void test_createWithWrongPath() {
+	void createWithWrongPath() {
 		final var truststore = new Truststore("dummy");
 		assertThat(truststore).isNotNull();
 		assertThat(truststore.getSSLContext()).isNotNull();
@@ -25,7 +25,7 @@ class TruststoreTest {
 	}
 
 	@Test
-	void test_createWithWorkingPath() throws NoSuchAlgorithmException {
+	void createWithWorkingPath() throws NoSuchAlgorithmException {
 		final var defaultSSLContext = SSLContext.getDefault();
 		final var truststore = new Truststore("internal-truststore/*", "");
 
@@ -36,11 +36,9 @@ class TruststoreTest {
 	}
 
 	@Test
-	void test_createWhenNoCertificatesFoundInPaths() {
+	void createWhenNoCertificatesFoundInPaths() {
 		try (MockedConstruction<PathMatchingResourcePatternResolver> pathMatchingResourcePatternResolverConstructionMock = Mockito.mockConstruction(PathMatchingResourcePatternResolver.class,
-			(mock, context) -> {
-				when(mock.getResources(anyString())).thenThrow(new IOException());
-			})) {
+			(mock, context) -> when(mock.getResources(anyString())).thenThrow(new IOException()))) {
 			final var truststore = new Truststore("dummy");
 
 			assertThat(truststore).isNotNull();

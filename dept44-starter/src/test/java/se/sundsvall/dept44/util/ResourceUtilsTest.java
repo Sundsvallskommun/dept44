@@ -11,7 +11,7 @@ import org.springframework.core.io.ClassPathResource;
 class ResourceUtilsTest {
 
 	@Test
-	void test_requireNonNullWhenNull() {
+	void requireNonNullWhenNull() {
 		final var exceptionMessage = "testMessage";
 		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNonNull(null, exceptionMessage));
 
@@ -19,7 +19,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_requireNonNullWhenNotNull() {
+	void requireNonNullWhenNotNull() {
 		final var exceptionMessage = "testMessage";
 		final var objectToCheck = "objectToCheck";
 		final var returnObject = ResourceUtils.requireNonNull(objectToCheck, exceptionMessage);
@@ -28,7 +28,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_requireNotBlankWhenNull() {
+	void requireNotBlankWhenNull() {
 		final var exceptionMessage = "testMessage";
 		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(null, exceptionMessage));
 
@@ -36,7 +36,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_requireNotBlankWhenBlank() {
+	void requireNotBlankWhenBlank() {
 		final var exceptionMessage = "testMessage";
 		final var blankString = " ";
 		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(blankString, exceptionMessage));
@@ -45,7 +45,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_requireNotBlankWhenEmpty() {
+	void requireNotBlankWhenEmpty() {
 		final var exceptionMessage = "testMessage";
 		final var emptyString = "";
 		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(emptyString, exceptionMessage));
@@ -54,7 +54,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_requireNotBlankWhenNotBlank() {
+	void requireNotBlankWhenNotBlank() {
 		final var exceptionMessage = "testMessage";
 		final var stringToCheck = "stringToCheck";
 		final var returnString = ResourceUtils.requireNonNull(stringToCheck, exceptionMessage);
@@ -63,7 +63,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_resourceAsString() {
+	void resourceAsString() {
 		final var resource = new ClassPathResource("test-resource");
 		final var expectedString = "This is a test-resource";
 		final var returnString = ResourceUtils.asString(resource);
@@ -72,7 +72,7 @@ class ResourceUtilsTest {
 	}
 
 	@Test
-	void test_resourceAsStringNonExistingResource() {
+	void resourceAsStringNonExistingResource() {
 		final var resource = new ClassPathResource("non-existing");
 		final var exception = assertThrows(UncheckedIOException.class, () -> ResourceUtils.asString(resource));
 

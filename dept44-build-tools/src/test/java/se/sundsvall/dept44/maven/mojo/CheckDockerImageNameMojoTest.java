@@ -2,7 +2,6 @@ package se.sundsvall.dept44.maven.mojo;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Properties;
@@ -20,65 +19,66 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CheckDockerImageNameMojoTest {
 
-    @Mock
-    private MavenProject mockMavenProject;
-    @Mock
-    private Properties mockProperties;
+	@Mock
+	private MavenProject mockMavenProject;
 
-    private final CheckDockerImageNameMojo mojo = new CheckDockerImageNameMojo();
+	@Mock
+	private Properties mockProperties;
 
-    @BeforeEach
-    void setUp() {
-        mojo.setProject(mockMavenProject);
-    }
+	private final CheckDockerImageNameMojo mojo = new CheckDockerImageNameMojo();
 
-    @Test
-    void executeWhenPomPackagingIsUsed() {
-        when(mockMavenProject.getPackaging()).thenReturn("pom");
+	@BeforeEach
+	void setUp() {
+		mojo.setProject(mockMavenProject);
+	}
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+	@Test
+	void executeWhenPomPackagingIsUsed() {
+		when(mockMavenProject.getPackaging()).thenReturn("pom");
 
-    @Test
-    void executeWhenSkipAllChecksIsSet() {
-        mojo.setSkipAllChecks(true);
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+	@Test
+	void executeWhenSkipAllChecksIsSet() {
+		mojo.setSkipAllChecks(true);
 
-    @Test
-    void executeWhenSkipIsSet() {
-        mojo.setSkip(true);
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+	@Test
+	void executeWhenSkipIsSet() {
+		mojo.setSkip(true);
 
-    @ParameterizedTest
-    @NullAndEmptySource
-    void executeWithBlankDockerImageName(final String value) {
-        when(mockProperties.getProperty("docker.image.name", "")).thenReturn(value);
-        when(mockMavenProject.getProperties()).thenReturn(mockProperties);
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-        assertThatExceptionOfType(MojoFailureException.class)
-            .isThrownBy(mojo::execute)
-            .withMessageContaining("Build property \"docker.image.name\" is missing or empty");
-    }
+	@ParameterizedTest
+	@NullAndEmptySource
+	void executeWithBlankDockerImageName(final String value) {
+		when(mockProperties.getProperty("docker.image.name", "")).thenReturn(value);
+		when(mockMavenProject.getProperties()).thenReturn(mockProperties);
 
-    @Test
-    void executeWithInvalidDockerImageName() {
-        when(mockProperties.getProperty("docker.image.name", "")).thenReturn("invalid-docker-image-name");
-        when(mockMavenProject.getProperties()).thenReturn(mockProperties);
+		assertThatExceptionOfType(MojoFailureException.class)
+			.isThrownBy(mojo::execute)
+			.withMessageContaining("Build property \"docker.image.name\" is missing or empty");
+	}
 
-        assertThatExceptionOfType(MojoFailureException.class)
-            .isThrownBy(mojo::execute)
-            .withMessageContaining("Build property \"docker.image.name\" must match regex");
-    }
+	@Test
+	void executeWithInvalidDockerImageName() {
+		when(mockProperties.getProperty("docker.image.name", "")).thenReturn("invalid-docker-image-name");
+		when(mockMavenProject.getProperties()).thenReturn(mockProperties);
 
-    @Test
-    void executeWithValidDockerImageName() {
-        when(mockProperties.getProperty("docker.image.name", "")).thenReturn("ms-some-service");
-        when(mockMavenProject.getProperties()).thenReturn(mockProperties);
+		assertThatExceptionOfType(MojoFailureException.class)
+			.isThrownBy(mojo::execute)
+			.withMessageContaining("Build property \"docker.image.name\" must match regex");
+	}
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+	@Test
+	void executeWithValidDockerImageName() {
+		when(mockProperties.getProperty("docker.image.name", "")).thenReturn("ms-some-service");
+		when(mockMavenProject.getProperties()).thenReturn(mockProperties);
+
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 }

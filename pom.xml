@@ -123,7 +123,7 @@
 		<maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
 		<maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
 		<maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
-		<maven-gpg-plugin.version>3.2.1</maven-gpg-plugin.version>
+		<maven-gpg-plugin.version>3.2.2</maven-gpg-plugin.version>
 		<build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>8.0.2</git-commit-id-maven-plugin.version>

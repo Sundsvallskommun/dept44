@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zalando.logbook.Logbook;
 
-@SpringBootTest(classes = { LogbookConfiguration.class, ExclusionFilterProperties.class, ObjectMapperConfiguration.class, BodyFilterProperties.class})
+@SpringBootTest(classes = { LogbookConfiguration.class, ObjectMapperConfiguration.class, BodyFilterProperties.class })
 class LogbookConfigurationTest {
 
 	@Autowired

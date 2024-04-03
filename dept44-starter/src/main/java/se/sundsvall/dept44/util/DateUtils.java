@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.util;
 
-import static java.util.Objects.isNull;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -43,16 +41,12 @@ public final class DateUtils {
 	 * @throws IllegalArgumentException if a temporal type is not OffsetDateTime or LocalDateTime.
 	 */
 	public static OffsetDateTime toOffsetDateTimeWithLocalOffset(final Temporal temporal) {
-		if (isNull(temporal)) {
-			return null;
-		}
-		if (temporal instanceof final OffsetDateTime offsetDateTime) {
-			return toOffsetDateTimeWithLocalOffset(offsetDateTime);
-		}
-		if (temporal instanceof final LocalDateTime localDateTime) {
-			return toOffsetDateTimeWithLocalOffset(localDateTime);
-		}
-		throw new IllegalArgumentException("Method has no support for type " + temporal.getClass().getName());
+		return switch (temporal) {
+			case null -> null;
+			case final OffsetDateTime offsetDateTime -> toOffsetDateTimeWithLocalOffset(offsetDateTime);
+			case final LocalDateTime localDateTime -> toOffsetDateTimeWithLocalOffset(localDateTime);
+			default -> throw new IllegalArgumentException("Method has no support for type " + temporal.getClass().getName());
+		};
 	}
 
 	/**

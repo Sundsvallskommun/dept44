@@ -1,6 +1,16 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import io.netty.channel.ChannelOption;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.Set;
+
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,23 +23,14 @@ import org.springframework.security.oauth2.client.web.reactive.function.client.S
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
 import org.springframework.web.service.annotation.GetExchange;
-import org.springframework.web.service.invoker.HttpClientAdapter;
+import org.springframework.web.service.invoker.HttpExchangeAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
+
+import io.netty.channel.ChannelOption;
 import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class WebClientBuilderTest {
@@ -56,7 +57,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testCreatePatterns() {
-		var builder = createBuilder(true);
+		final var builder = createBuilder(true);
 
 		assertThat(builder)
 			.hasFieldOrPropertyWithValue("baseUrl", BASE_URL)
@@ -69,7 +70,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testValueRestrictions() {
-		var builder = createBuilder(false);
+		final var builder = createBuilder(false);
 
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(null))).hasMessage("baseUrl cannot be null or blank");
 		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(""))).hasMessage("baseUrl cannot be null or blank");
@@ -81,7 +82,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testBuildFromMinimumValues() {
-		var webClient = createBuilder(false).withBaseUrl(BASE_URL).build();
+		final var webClient = createBuilder(false).withBaseUrl(BASE_URL).build();
 
 		assertTimeoutSetting(webClient, 10000);
 		assertThat(webClient).extracting("defaultHeaders").isNull();
@@ -93,7 +94,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testBuildFromCustomValuesWithBasicAuth() {
-		var webClient = createBuilder(true, true, false).build();
+		final var webClient = createBuilder(true, true, false).build();
 
 		assertTimeoutSetting(webClient, 54000);
 		assertThat(webClient).extracting("defaultHeaders").asString().isEqualTo("[Authorization:\"Basic dXNlck5hbWU6cGFzc3dvcmQ=\"]");
@@ -107,7 +108,7 @@ class WebClientBuilderTest {
 	void testBuildFromCustomValuesWithOAuth2() {
 		when(CLIENT_REGISTRATION_MOCK.getRegistrationId()).thenReturn("registrationId");
 
-		var webClient = createBuilder(true, false, true).build();
+		final var webClient = createBuilder(true, false, true).build();
 
 		assertTimeoutSetting(webClient, 54000);
 		assertThat(webClient).extracting("defaultHeaders").isNull();
@@ -120,7 +121,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testBuildWithDefaultHeader() {
-		var webClient = createBuilder(false)
+		final var webClient = createBuilder(false)
 			.withDefaultHeader("someHeader", "someValue")
 			.build();
 
@@ -142,23 +143,23 @@ class WebClientBuilderTest {
 
 	@Test
 	void testBuildWithServiceType() {
-		var builder = createBuilder(false);
+		final var builder = createBuilder(false);
 
-		var mockWebClientAdapter = mock(WebClientAdapter.class);
-		var mockHttpServiceProxyFactoryBuilder = mock(HttpServiceProxyFactory.Builder.class);
-		var mockHttpServiceProxyFactory = mock(HttpServiceProxyFactory.class);
+		final var mockWebClientAdapter = mock(WebClientAdapter.class);
+		final var mockHttpServiceProxyFactoryBuilder = mock(HttpServiceProxyFactory.Builder.class);
+		final var mockHttpServiceProxyFactory = mock(HttpServiceProxyFactory.class);
 
 		try (var mockStaticWebClientAdapter = mockStatic(WebClientAdapter.class);
-			 var mockStaticHttpServiceProxyFactory = mockStatic(HttpServiceProxyFactory.class)) {
-			mockStaticWebClientAdapter.when(() -> WebClientAdapter.forClient(any(WebClient.class)))
+			var mockStaticHttpServiceProxyFactory = mockStatic(HttpServiceProxyFactory.class)) {
+			mockStaticWebClientAdapter.when(() -> WebClientAdapter.create(any(WebClient.class)))
 				.thenReturn(mockWebClientAdapter);
-			mockStaticHttpServiceProxyFactory.when(() -> HttpServiceProxyFactory.builder(any(HttpClientAdapter.class)))
+			mockStaticHttpServiceProxyFactory.when(() -> HttpServiceProxyFactory.builderFor(any(HttpExchangeAdapter.class)))
 				.thenReturn(mockHttpServiceProxyFactoryBuilder);
 
 			when(mockHttpServiceProxyFactoryBuilder.build()).thenReturn(mockHttpServiceProxyFactory);
 			when(mockHttpServiceProxyFactory.createClient(DummyClient.class)).thenReturn(() -> ResponseEntity.ok(""));
 
-			var client = builder.build(DummyClient.class);
+			final var client = builder.build(DummyClient.class);
 			assertThat(client).isNotNull();
 		}
 	}
@@ -174,9 +175,11 @@ class WebClientBuilderTest {
 	}
 
 	private WebClientBuilder createBuilder(boolean populateValues, boolean useBasicAuth, boolean useOauth2) {
-		if (!populateValues) return new WebClientBuilder();
+		if (!populateValues) {
+			return new WebClientBuilder();
+		}
 
-		var builder = new WebClientBuilder()
+		final var builder = new WebClientBuilder()
 			.withBaseUrl(BASE_URL)
 			.withConnectTimeout(CONNECT_TIMEOUT)
 			.withLogbook(LOGBOOK_MOCK)
@@ -188,7 +191,7 @@ class WebClientBuilderTest {
 
 		}
 		if (useOauth2) {
-			var mockBuilder = mock(ClientRegistration.Builder.class);
+			final var mockBuilder = mock(ClientRegistration.Builder.class);
 			try (var mock = mockStatic(ClientRegistration.class)) {
 				mock.when(() -> ClientRegistration.withClientRegistration(any(ClientRegistration.class)))
 					.thenReturn(mockBuilder);

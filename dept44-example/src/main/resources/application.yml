@@ -1,0 +1,25 @@
+integration:
+  petstore:
+    connectTimeout: 10
+    readTimeout: 20
+openapi:
+  name: ${spring.application.name}
+  title: ${spring.application.name}
+  version: '@project.version@'
+resilience4j:
+  circuitbreaker:
+    instances:
+      petstore:
+        ignoreExceptions: se.sundsvall.dept44.exception.ClientProblem
+spring:
+  application:
+    name: api-service-pet-inventory
+  flyway:
+    enabled: false
+  security:
+    oauth2:
+      client:
+        registration:
+          petstore:
+            authorization-grant-type: client_credentials
+            provider: petstore

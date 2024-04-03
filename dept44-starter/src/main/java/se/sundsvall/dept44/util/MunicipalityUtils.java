@@ -12,18 +12,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 public final class MunicipalityUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MunicipalityUtils.class);
-	private static final String MUNICIPALITY_DEFINITION_PATH = "classpath:data/municipality.json";
+	private static final String MUNICIPALITY_DEFINITION_PATH = "classpath:data/municipality.yml";
 	private static final Map<String, Municipality> MUNICIPALITY_BY_ID_MAP = new HashMap<>();
 	private static final Map<String, Municipality> MUNICIPALITY_BY_NAME_MAP = new HashMap<>();
 
 	static {
 		try {
-			new ObjectMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {}).stream()
+			new YAMLMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {}).stream()
 				.forEach(municipality -> {
 					MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
 					MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);
@@ -38,8 +38,8 @@ public final class MunicipalityUtils {
 	/**
 	 * Find municipality by ID.
 	 *
-	 * @param id the municipality ID.
-	 * @return The municipality object if found, otherwise null.
+	 * @param  id the municipality ID.
+	 * @return    The municipality object if found, otherwise null.
 	 */
 	public static Municipality findById(final String id) {
 		return MUNICIPALITY_BY_ID_MAP.get(id);
@@ -48,8 +48,8 @@ public final class MunicipalityUtils {
 	/**
 	 * Find municipality by name.
 	 *
-	 * @param name the municipality name (case insensitive).
-	 * @return The municipality object if found, otherwise null.
+	 * @param  name the municipality name (case insensitive).
+	 * @return      The municipality object if found, otherwise null.
 	 */
 	public static Municipality findByName(final String name) {
 		return MUNICIPALITY_BY_NAME_MAP.get(upperCase(name));
@@ -58,8 +58,8 @@ public final class MunicipalityUtils {
 	/**
 	 * Returns true if a municipality exists by the provided key.
 	 *
-	 * @param id the municipality ID.
-	 * @return true if the municipality exists, otherwise false.
+	 * @param  id the municipality ID.
+	 * @return    true if the municipality exists, otherwise false.
 	 */
 	public static boolean existsById(final String id) {
 		return MUNICIPALITY_BY_ID_MAP.containsKey(id);
@@ -68,8 +68,8 @@ public final class MunicipalityUtils {
 	/**
 	 * Returns true if a municipality exists by the provided name (case insensitive).
 	 *
-	 * @param name the municipality name.
-	 * @return true if the municipality exists, otherwise false.
+	 * @param  name the municipality name.
+	 * @return      true if the municipality exists, otherwise false.
 	 */
 	public static boolean existsByName(final String name) {
 		return MUNICIPALITY_BY_NAME_MAP.containsKey(upperCase(name));

@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class HealthConfiguration {
 
-	// Statuses returned by resilience4j circuitbreakers
+	// Statuses returned by resilience4j circuit breakers.
 	static final Status CIRCUIT_OPEN = new Status("CIRCUIT_OPEN");
 	static final Status CIRCUIT_HALF_OPEN = new Status("CIRCUIT_HALF_OPEN");
 	static final Status RESTRICTED = new Status("RESTRICTED");

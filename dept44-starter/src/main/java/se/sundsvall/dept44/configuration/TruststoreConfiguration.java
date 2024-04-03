@@ -4,10 +4,12 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 import se.sundsvall.dept44.security.Truststore;
 
+@Configuration
 public class TruststoreConfiguration {
 
 	@Value("${dept44.truststore.path:truststore/*}")

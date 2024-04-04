@@ -32,14 +32,12 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
-
 import se.sundsvall.dept44.configuration.Constants;
 
 public class WebClientBuilder {
 
 	@FunctionalInterface
 	public interface Customizer {
-
 		void customize(WebClient.Builder builder);
 	}
 
@@ -60,8 +58,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the base URL.
 	 *
-	 * @param baseUrl the base URL
-	 * @return this builder
+	 * @param  baseUrl the base URL
+	 * @return         this builder
 	 */
 	public WebClientBuilder withBaseUrl(final String baseUrl) {
 		this.baseUrl = requireNotBlank(baseUrl, "baseUrl cannot be null or blank");
@@ -71,36 +69,22 @@ public class WebClientBuilder {
 	/**
 	 * Sets Basic authentication details.
 	 *
-	 * @param username the Basic authentication username
-	 * @param password the Basic authentication password
-	 * @return this builder
+	 * @param  username the Basic authentication username
+	 * @param  password the Basic authentication password
+	 * @return          this builder
 	 */
 	public WebClientBuilder withBasicAuthentication(final String username, final String password) {
 		requireNotBlank(username, "username cannot be null or blank");
 		requireNotBlank(password, "password cannot be null or blank");
 
-		return withCustomizer(builder ->
-			builder.defaultHeaders(headers -> headers.setBasicAuth(username, password)));
-	}
-
-	/**
-	 * Sets the OAuth2 client details.
-	 *
-	 * @param oAuth2ClientRegistration the OAuth2 client details
-	 * @return this builder
-	 *
-	 * @deprecated Use {@link WebClientBuilder#withOAuth2ClientRegistration(ClientRegistration)}
-	 */
-	@Deprecated(since = "2023-06-09", forRemoval = true)
-	public WebClientBuilder withOAuth2Client(final ClientRegistration oAuth2ClientRegistration) {
-		return withOAuth2ClientRegistration(oAuth2ClientRegistration);
+		return withCustomizer(builder -> builder.defaultHeaders(headers -> headers.setBasicAuth(username, password)));
 	}
 
 	/**
 	 * Sets the OAuth2 client registration.
 	 *
-	 * @param clientRegistration the OAuth2 client registration
-	 * @return this builder
+	 * @param  clientRegistration the OAuth2 client registration
+	 * @return                    this builder
 	 */
 	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration) {
 		return withOAuth2ClientRegistration(clientRegistration, Set.of());
@@ -109,23 +93,22 @@ public class WebClientBuilder {
 	/**
 	 * Sets the OAuth2 client registration.
 	 *
-	 * @param clientRegistration the OAuth2 client registration
-	 * @param extraScopes extra scopes for the OAuth2 client registration
-	 * @return this builder
+	 * @param  clientRegistration the OAuth2 client registration
+	 * @param  extraScopes        extra scopes for the OAuth2 client registration
+	 * @return                    this builder
 	 */
 	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration,
-			final Set<String> extraScopes) {
+		final Set<String> extraScopes) {
 		requireNonNull(clientRegistration, "client registration cannot be null");
 
-		var scopes = getScopes(clientRegistration);
+		final var scopes = getScopes(clientRegistration);
 		ofNullable(extraScopes).ifPresent(scopes::addAll);
 
-		var clientRegistrationWithScopes = ClientRegistration.withClientRegistration(clientRegistration)
+		final var clientRegistrationWithScopes = ClientRegistration.withClientRegistration(clientRegistration)
 			.scope(scopes)
 			.build();
 
-		return withCustomizer(builder ->
-			builder.filter(createOAuth2Filter(clientRegistrationWithScopes)));
+		return withCustomizer(builder -> builder.filter(createOAuth2Filter(clientRegistrationWithScopes)));
 	}
 
 	private Set<String> getScopes(final ClientRegistration clientRegistration) {
@@ -138,11 +121,11 @@ public class WebClientBuilder {
 	/***
 	 * Adds a default header.
 	 *
-	 * @param name the header (name)
-	 * @param values the header values
-	 * @return this builder
+	 * @param  name   the header (name)
+	 * @param  values the header values
+	 * @return        this builder
 	 */
-	public WebClientBuilder withDefaultHeader(final String name, final String...values) {
+	public WebClientBuilder withDefaultHeader(final String name, final String... values) {
 		requireNotBlank(name, "name cannot be null or blank");
 		requireNonNull(values, "values cannot be null");
 
@@ -152,8 +135,8 @@ public class WebClientBuilder {
 	/**
 	 * Adds a filter (function).
 	 *
-	 * @param filter the filter (function)
-	 * @return this builder
+	 * @param  filter the filter (function)
+	 * @return        this builder
 	 */
 	public WebClientBuilder withFilter(final ExchangeFilterFunction filter) {
 		requireNonNull(filter, "filter cannot be null");
@@ -164,12 +147,12 @@ public class WebClientBuilder {
 	/**
 	 * Adds a default HTTP status handler.
 	 *
-	 * @param statusPredicate a predicate to match HTTP status codes with
-	 * @param handlerFunction a function to map the response to an error signal
-	 * @return this builder
+	 * @param  statusPredicate a predicate to match HTTP status codes with
+	 * @param  handlerFunction a function to map the response to an error signal
+	 * @return                 this builder
 	 */
 	public WebClientBuilder withStatusHandler(final Predicate<HttpStatusCode> statusPredicate,
-			final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
+		final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
 		requireNonNull(statusPredicate, "status predicate cannot be null");
 		requireNonNull(handlerFunction, "handler function cannot be null");
 
@@ -179,8 +162,8 @@ public class WebClientBuilder {
 	/**
 	 * Adds a customizer.
 	 *
-	 * @param customizer the customizer
-	 * @return this builder
+	 * @param  customizer the customizer
+	 * @return            this builder
 	 */
 	public WebClientBuilder withCustomizer(final Customizer customizer) {
 		requireNonNull(customizer, "customizer cannot be null");
@@ -192,8 +175,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the Logbook instance to use for payload logging.
 	 *
-	 * @param logbook the Logbook instance
-	 * @return this builder
+	 * @param  logbook the Logbook instance
+	 * @return         this builder
 	 */
 	public WebClientBuilder withLogbook(final Logbook logbook) {
 		this.logbook = logbook;
@@ -203,8 +186,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the connect timeout (defaults to 10 seconds).
 	 *
-	 * @param connectTimeout the connect timeout
-	 * @return this builder
+	 * @param  connectTimeout the connect timeout
+	 * @return                this builder
 	 */
 	public WebClientBuilder withConnectTimeout(final Duration connectTimeout) {
 		this.connectTimeout = requireNonNull(connectTimeout, "connectTimeout may not be null.");
@@ -214,8 +197,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the read timeout (defaults to 60 seconds).
 	 *
-	 * @param readTimeout the read timeout
-	 * @return this builder
+	 * @param  readTimeout the read timeout
+	 * @return             this builder
 	 */
 	public WebClientBuilder withReadTimeout(final Duration readTimeout) {
 		this.readTimeout = requireNonNull(readTimeout, "readTimeout may not be null.");
@@ -225,8 +208,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the write timeout (defaults to 60 seconds).
 	 *
-	 * @param writeTimeout the write timeout
-	 * @return this builder
+	 * @param  writeTimeout the write timeout
+	 * @return              this builder
 	 */
 	public WebClientBuilder withWriteTimeout(final Duration writeTimeout) {
 		this.writeTimeout = requireNonNull(writeTimeout, "writeTimeout may not be null.");
@@ -240,8 +223,8 @@ public class WebClientBuilder {
 	public <T> T build(final Class<T> serviceType) {
 		requireNonNull(serviceType, "serviceType cannot be null");
 
-		var clientAdapter = WebClientAdapter.forClient(configureBuilder().build());
-		var httpServiceProxyFactory = HttpServiceProxyFactory.builder(clientAdapter).build();
+		final var clientAdapter = WebClientAdapter.create(configureBuilder().build());
+		final var httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(clientAdapter).build();
 
 		return httpServiceProxyFactory.createClient(serviceType);
 	}
@@ -257,9 +240,9 @@ public class WebClientBuilder {
 	}
 
 	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(final ClientRegistration clientRegistration) {
-		var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
-		var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
-		var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(
+		final var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
+		final var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
+		final var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(
 			new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService));
 		oAuth2Filter.setDefaultClientRegistrationId(clientRegistration.getRegistrationId());
 
@@ -277,7 +260,6 @@ public class WebClientBuilder {
 				if (logbook != null) {
 					connection.addHandlerLast(new LogbookClientHandler(logbook));
 				}
-			}
-		));
+			}));
 	}
 }

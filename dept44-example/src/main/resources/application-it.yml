@@ -1,0 +1,26 @@
+integration:
+  petstore:
+    url: http://localhost:${wiremock.server.port}/api-petstore
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6.4:///
+  flyway:
+    enabled: true
+  jpa:
+    properties:
+      jakarta:
+        persistence:
+          schema-generation:
+            database:
+              action: validate
+  security:
+    oauth2:
+      client:
+        provider:
+          petstore:
+            token-uri: http://localhost:${wiremock.server.port:}/api-gateway/token
+        registration:
+          petstore:
+            client-id: the-client-id
+            client-secret: the-client-secret

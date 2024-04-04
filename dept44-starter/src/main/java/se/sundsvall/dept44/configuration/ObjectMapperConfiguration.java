@@ -2,6 +2,7 @@ package se.sundsvall.dept44.configuration;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
 import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
 
+@Configuration
 @ExcludeFromJacocoGeneratedCoverageReport
 public class ObjectMapperConfiguration {
 

@@ -11,8 +11,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -26,6 +24,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.zalando.logbook.BodyFilter;
 import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpLogWriter;
@@ -39,8 +38,9 @@ import org.zalando.logbook.json.JsonHttpLogFormatter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Configuration
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
-@EnableConfigurationProperties({ ExclusionFilterProperties.class, BodyFilterProperties.class })
+@EnableConfigurationProperties({ BodyFilterProperties.class })
 public class LogbookConfiguration {
 
 	private final String loggerName;
@@ -59,17 +59,13 @@ public class LogbookConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, ExclusionFilterProperties exclusionFilterProperties, BodyFilterProperties bodyFilterProperties) {
+	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
 		return Logbook.builder()
 			.sink(new DefaultSink(
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilter(fileAttachmentFilter())
 			.bodyFilter(passwordFilter())
-			// Old deprecated way
-			.bodyFilters(buildJsonPathFilters(objectMapper, Objects.requireNonNullElseGet(exclusionFilterProperties.getJsonPath(), Map::of)))
-			.bodyFilters(buildXPathFilters(Objects.requireNonNullElseGet(exclusionFilterProperties.getXPath(), Map::of)))
-			// New way
 			.bodyFilters(buildJsonPathFilters(objectMapper,
 				Optional.ofNullable(bodyFilterProperties.getJsonPath())
 					.orElseGet(Collections::emptyList)

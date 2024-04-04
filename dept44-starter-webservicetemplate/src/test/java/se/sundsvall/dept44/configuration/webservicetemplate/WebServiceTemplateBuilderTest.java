@@ -45,31 +45,32 @@ class WebServiceTemplateBuilderTest {
 
 	@Test
 	void testCreateWithBothKeyStoreFileLocationAndKeyStoreDataSet() {
+		final var webServiceTemplateBuilder = WebServiceTemplateBuilder.create()
+			.withKeyStoreFileLocation("dummyLocation")
+			.withKeyStoreData("dummy".getBytes());
+
 		assertThatExceptionOfType(WebServiceTemplateException.class)
-			.isThrownBy(() -> WebServiceTemplateBuilder.create()
-				.withKeyStoreFileLocation("dummyLocation")
-				.withKeyStoreData("dummy".getBytes())
-				.build())
+			.isThrownBy(() -> webServiceTemplateBuilder.build())
 			.withMessage("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
 	}
 
 	@Test
 	void testWithPattern() {
 		// Setup variables
-		var baseUrl = "baseUrl";
-		var userName = "userName";
-		var password = "password";
-		var connectTimeout = Duration.ofSeconds(5);
-		var keyStoreFileLocation = "keyStoreFileLocation";
-		var keyStoreData = "keyStoreData".getBytes(UTF_8);
-		var keyStorePassword = "keyStorePassword";
-		var package1 = "package1";
-		var package2 = "package2";
-		var package3 = "package3";
-		var readTimeout = Duration.ofSeconds(10);
+		final var baseUrl = "baseUrl";
+		final var userName = "userName";
+		final var password = "password";
+		final var connectTimeout = Duration.ofSeconds(5);
+		final var keyStoreFileLocation = "keyStoreFileLocation";
+		final var keyStoreData = "keyStoreData".getBytes(UTF_8);
+		final var keyStorePassword = "keyStorePassword";
+		final var package1 = "package1";
+		final var package2 = "package2";
+		final var package3 = "package3";
+		final var readTimeout = Duration.ofSeconds(10);
 
 		// Create instance
-		WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
+		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
 			.withBaseUrl(baseUrl)
 			.withBasicAuthentication(userName, password)
 			.withClientInterceptor(clientInterceptorMock)
@@ -101,7 +102,7 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testClientInterceptorLogic() {
 		// Create instance
-		WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
+		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
 			.withClientInterceptor(clientInterceptorMock)
 			.withClientInterceptor(clientInterceptorMock);
 
@@ -113,12 +114,12 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testPackagesToScanLogic() {
 		// Setup variables
-		var package1 = "package1";
-		var package2 = "package2";
-		var package3 = "package3";
+		final var package1 = "package1";
+		final var package2 = "package2";
+		final var package3 = "package3";
 
 		// Create instance
-		WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
+		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
 			.withPackagesToScan(List.of(package1, package2))
 			.withPackagesToScan(List.of(package1, package3));
 
@@ -130,11 +131,11 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testPackageToScanLogic() {
 		// Setup variables
-		var package1 = "package1";
-		var package2 = "package2";
+		final var package1 = "package1";
+		final var package2 = "package2";
 
 		// Create instance
-		WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
+		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
 			.withPackageToScan(package1)
 			.withPackageToScan(package1)
 			.withPackageToScan(package2);
@@ -147,7 +148,7 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testEmptyWebServiceTemplate() {
 		// Create instance
-		WebServiceTemplate template = WebServiceTemplateBuilder.create().build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create().build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
@@ -157,7 +158,7 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testWebServiceTemplateWithInterceptor() {
 		// Create instance
-		WebServiceTemplate template = WebServiceTemplateBuilder.create()
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create()
 			.withClientInterceptor(clientInterceptorMock)
 			.withLogbook(logbookMock)
 			.build();
@@ -170,12 +171,12 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testWebServiceTemplateWithPackagesToScan() {
 		// Setup variables
-		var package1 = "package1";
-		var package2 = "package2";
-		var package3 = "package3";
+		final var package1 = "package1";
+		final var package2 = "package2";
+		final var package3 = "package3";
 
 		// Create instance
-		WebServiceTemplate template = WebServiceTemplateBuilder.create().withPackagesToScan(List.of(package1, package2)).withPackageToScan(package3).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withPackagesToScan(List.of(package1, package2)).withPackageToScan(package3).build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
@@ -188,11 +189,11 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testWebserviceTemplateWithBasicAuth() {
 		// Setup variables
-		var userName = "userName";
-		var password = "password";
+		final var userName = "userName";
+		final var password = "password";
 
 		// Create instance
-		WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName, password).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName, password).build();
 
 		// Do assertions
 		assertThat(template).isNotNull()
@@ -204,11 +205,11 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testSSLClientWithKeyStoreFileLocation() {
 		// Setup variables
-		var keyStoreFileLocation = "classpath:dummy-keystore.jks";
-		var keyStorePassword = "password";
+		final var keyStoreFileLocation = "classpath:dummy-keystore.jks";
+		final var keyStorePassword = "password";
 
 		// Create instance
-		var template = WebServiceTemplateBuilder.create()
+		final var template = WebServiceTemplateBuilder.create()
 			.withKeyStoreFileLocation(keyStoreFileLocation)
 			.withKeyStorePassword(keyStorePassword)
 			.build();
@@ -223,11 +224,11 @@ class WebServiceTemplateBuilderTest {
 		try (var in = getClass().getResourceAsStream("/dummy-keystore.jks")) {
 			assert in != null;
 
-			var keyStoreFileContent = in.readAllBytes();
-			var keyStorePassword = "password";
+			final var keyStoreFileContent = in.readAllBytes();
+			final var keyStorePassword = "password";
 
 			// Create instance
-			var template = WebServiceTemplateBuilder.create()
+			final var template = WebServiceTemplateBuilder.create()
 				.withKeyStoreData(keyStoreFileContent)
 				.withKeyStorePassword(keyStorePassword)
 				.build();

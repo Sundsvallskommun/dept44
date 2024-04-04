@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -29,5 +28,4 @@ public class BodyFilterProperties {
 	public void setxPath(final List<Map<String, String>> xPath) {
 		this.xPath = xPath;
 	}
-
 }

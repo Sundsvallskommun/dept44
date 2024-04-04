@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
@@ -22,12 +22,12 @@ import se.sundsvall.dept44.util.MunicipalityUtils.Municipality;
 @ExtendWith(ResourceLoaderExtension.class)
 class MunicipalityUtilsTest {
 
-	private static final String TEST_JSON_FILE = "data/municipality.json";
+	private static final String TEST_JSON_FILE = "data/municipality.yml";
 	private static final Integer EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS = 311;
 
 	@Test
 	void validFileContent(@Load(value = TEST_JSON_FILE, as = STRING) final String json) throws Exception {
-		assertThat(new ObjectMapper().readValue(json, new TypeReference<List<Municipality>>() {}))
+		assertThat(new YAMLMapper().readValue(json, new TypeReference<List<Municipality>>() {}))
 			.hasSize(EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS)
 			.allMatch(municipality -> isNotBlank(municipality.id()))
 			.allMatch(municipality -> isNotBlank(municipality.name()))

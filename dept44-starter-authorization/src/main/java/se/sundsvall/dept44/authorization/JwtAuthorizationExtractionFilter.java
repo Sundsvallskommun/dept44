@@ -10,14 +10,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map.Entry;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,9 +25,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import io.jsonwebtoken.security.WeakKeyException;
-import io.jsonwebtoken.UnsupportedJwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
@@ -42,6 +40,7 @@ import se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 
 public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthorizationExtractionFilter.class);
 	private static final String EXCEPTION_UNREADABLE_CREDENTIALS = "Credentials could not be read";
 	private static final String EXCEPTION_INVALID_SIGNATURE = "Invalid signature detected for credentials";
@@ -49,20 +48,25 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private static final String EXCEPTION_WEAK_KEY = "The verification key's size is not secure enough for the selected algorithm";
 	private static final String EXCEPTION_UNHANDLED = "Exception occurred when reading credentials";
 
-	@Autowired
-	private JwtAuthorizationProperties properties;
+	private final JwtAuthorizationProperties properties;
+	private final JwtTokenUtil jwtTokenUtil;
+	private final WebAuthenticationDetailsSource webAuthenticationDetailsSource;
+	private final ApplicationContext applicationContext;
+	private final ObjectMapper objectMapper;
 
-	@Autowired
-	private JwtTokenUtil jwtTokenUtil;
+	public JwtAuthorizationExtractionFilter(
+		JwtAuthorizationProperties properties,
+		JwtTokenUtil jwtTokenUtil,
+		WebAuthenticationDetailsSource webAuthenticationDetailsSource,
+		ApplicationContext applicationContext,
+		ObjectMapper objectMapper) {
 
-	@Autowired
-	private WebAuthenticationDetailsSource webAuthenticationDetailsSource;
-
-	@Autowired
-	private ApplicationContext applicationContext;
-
-	@Autowired
-	private ObjectMapper objectMapper;
+		this.properties = properties;
+		this.jwtTokenUtil = jwtTokenUtil;
+		this.webAuthenticationDetailsSource = webAuthenticationDetailsSource;
+		this.applicationContext = applicationContext;
+		this.objectMapper = objectMapper;
+	}
 
 	/**
 	 * Method checks if filter should be applied or not by finding the class
@@ -92,7 +96,7 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	 */
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-		String jwtToken = request.getHeader(properties.getHeaderName());
+		final String jwtToken = request.getHeader(properties.getHeaderName());
 
 		if (nonNull(jwtToken)) {
 			LOGGER.debug("Token present, continuing with extraction of jwt token");
@@ -106,13 +110,13 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private void extractToken(HttpServletRequest request, HttpServletResponse response, FilterChain chain, String jwtToken) throws IOException {
 		try {
 			// Read JWT-token and fetch user name and accesses from it
-			String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
-			Collection<GenericGrantedAuthority> authorities = jwtTokenUtil.getRolesFromToken(jwtToken);
+			final String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
+			final Collection<GenericGrantedAuthority> authorities = jwtTokenUtil.getRolesFromToken(jwtToken);
 
 			// Validate and store token in SecurityContext if it isn't stored already
 			if (nonNull(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
-				UserDetails userDetails = createUserDetails(username, authorities);
-				UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(userDetails, authorities);
+				final UserDetails userDetails = createUserDetails(username, authorities);
+				final UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(userDetails, authorities);
 				authenticationToken.setDetails(webAuthenticationDetailsSource.buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 			}
@@ -122,13 +126,13 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 
 		} catch (IllegalArgumentException | MalformedJwtException | UnsupportedJwtException e) {
 			handleException(response, e, EXCEPTION_UNREADABLE_CREDENTIALS);
-		} catch (SignatureException e) {
+		} catch (final SignatureException e) {
 			handleException(response, e, EXCEPTION_INVALID_SIGNATURE);
-		} catch (ExpiredJwtException e) {
+		} catch (final ExpiredJwtException e) {
 			handleException(response, e, EXCEPTION_CREDENTIALS_EXPIRED);
-		} catch (WeakKeyException e) {
+		} catch (final WeakKeyException e) {
 			handleException(response, e, EXCEPTION_WEAK_KEY);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			handleException(response, e, EXCEPTION_UNHANDLED);
 		}
 	}

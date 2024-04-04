@@ -4,7 +4,6 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.client.ConfigClientProperties;
 import org.springframework.cloud.config.client.ConfigServicePropertySourceLocator;
 import org.springframework.context.annotation.Bean;
@@ -16,21 +15,21 @@ import se.sundsvall.dept44.security.Truststore;
 
 /**
  * Configuration class necessary for configuration of config client bootstrap loading.
- * 
+ *
  * A custom RestTemplate is used with:
  * - Truststore SSL-context activated.
  * - Hostname verification disabled
- * 
+ *
  * Note: This class must be added to org.springframework.cloud.bootstrap.BootstrapConfiguration in spring.factories
- * 
+ *
  * @see se.sundsvall.dept44.security.Truststore
  */
 @Configuration
 public class ConfigClientBootstrapConfiguration {
 
 	@Bean
-	ConfigServicePropertySourceLocator configServicePropertySourceLocator(final Truststore truststore,
-			@Autowired final ConfigClientProperties configClientProperties) {
+	ConfigServicePropertySourceLocator configServicePropertySourceLocator(final Truststore truststore, final ConfigClientProperties configClientProperties) {
+
 		final var sslContext = truststore.getSSLContext();
 		final var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
 			.setSslContext(sslContext)

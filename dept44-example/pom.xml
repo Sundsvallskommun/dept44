@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>4.3.2-SNAPSHOT</version>
+		<version>5.0.0-SNAPSHOT</version>
 		<relativePath>../dept44-service-parent</relativePath>
 	</parent>
 	<groupId>se.sundsvall</groupId>
@@ -72,7 +72,6 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<configuration>
 					<excludes>
-						<exclude>**/se/sundsvall/petinventory/Application*</exclude>
 						<exclude>**/generated/**</exclude>
 					</excludes>
 				</configuration>

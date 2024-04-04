@@ -6,14 +6,22 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.ReflectionUtils;
 
-import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
+import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+
+@ExtendWith(MockitoExtension.class)
 class PrePostMethodSecurityConfigurationTest {
 
 	@Test
@@ -23,7 +31,7 @@ class PrePostMethodSecurityConfigurationTest {
 
 	@Test
 	void verifyEnableGlobalMethodSecurityAnnotation() {
-		EnableMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class, EnableMethodSecurity.class);
+		final EnableMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class, EnableMethodSecurity.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.prePostEnabled()).isTrue();
@@ -39,15 +47,22 @@ class PrePostMethodSecurityConfigurationTest {
 	}
 
 	@Test
-	void verifyBeanCreation() {
+	void verifyBeanCreation(
+		@Mock JwtAuthorizationProperties properties,
+		@Mock JwtTokenUtil jwtTokenUtil,
+		@Mock WebAuthenticationDetailsSource webAuthenticationDetailsSource,
+		@Mock ApplicationContext applicationContext,
+		@Mock ObjectMapper objectMapper) {
+
 		final var secret = "secret";
-		JwtAuthorizationProperties properties = new JwtAuthorizationProperties();
-		properties.setSecret(secret);
+		final JwtAuthorizationProperties jwtAuthorizationProperties = new JwtAuthorizationProperties();
+		jwtAuthorizationProperties.setSecret(secret);
 
-		PrePostMethodSecurityConfiguration configuration = new PrePostMethodSecurityConfiguration();
+		final PrePostMethodSecurityConfiguration configuration = new PrePostMethodSecurityConfiguration();
 
-		assertThat(configuration.jwtAuthorizationExtractionFilter()).isNotNull().isInstanceOf(JwtAuthorizationExtractionFilter.class);
+		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, objectMapper))
+			.isNotNull().isInstanceOf(JwtAuthorizationExtractionFilter.class);
 		assertThat(configuration.webAuthenticationDetailsSource()).isNotNull().isInstanceOf(WebAuthenticationDetailsSource.class);
-		assertThat(configuration.jwtTokenUtil(properties)).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());
+		assertThat(configuration.jwtTokenUtil(jwtAuthorizationProperties)).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());
 	}
 }

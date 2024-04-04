@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 class BodyFilterPropertiesTest {
 
 	@Autowired
-	BodyFilterProperties properties;
+	private BodyFilterProperties properties;
 
 	@Test
 	void testProperties() {

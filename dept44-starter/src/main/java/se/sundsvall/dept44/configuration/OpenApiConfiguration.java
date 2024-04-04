@@ -3,7 +3,6 @@ package se.sundsvall.dept44.configuration;
 import java.util.Collections;
 import java.util.Optional;
 
-import io.swagger.v3.oas.models.Operation;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -37,9 +37,9 @@ public class OpenApiConfiguration {
 		this.properties = properties;
 	}
 
-	@Bean("dept44.openapi")
+	@Bean("dept44OpenApi")
 	OpenAPI customOpenAPI(
-		@Autowired(required = false) @Qualifier("dept44.oauth2.security-scheme") final SecurityScheme oauth2SecurityScheme) {
+		@Autowired(required = false) @Qualifier("dept44Oauth2SecurityScheme") final SecurityScheme oauth2SecurityScheme) {
 		return new OpenAPI()
 			.servers(properties.getServers().stream()
 				.map(server -> new Server()
@@ -64,25 +64,25 @@ public class OpenApiConfiguration {
 					.email(properties.getContact().getEmail())));
 	}
 
-	@Bean("dept44.oauth2.security-scheme")
+	@Bean("dept44Oauth2SecurityScheme")
 	@ConditionalOnProperty(prefix = "openapi.security-scheme.oauth2.flow", name = "tokenUrl")
-	SecurityScheme oauth2SecurityScheme(@Qualifier("dept44.oauth-flow") final OAuthFlow oauthFlow) {
+	SecurityScheme oauth2SecurityScheme(@Qualifier("dept44OauthFlow") final OAuthFlow oauthFlow) {
 		return new SecurityScheme()
 			.type(SecurityScheme.Type.OAUTH2)
 			.flows(new OAuthFlows().clientCredentials(oauthFlow));
 	}
 
-	@Bean("dept44.oauth-flow")
-	@ConditionalOnBean(name = "dept44.oauth2.security-scheme")
+	@Bean("dept44OauthFlow")
+	@ConditionalOnBean(name = "dept44Oauth2SecurityScheme")
 	@ConfigurationProperties(value = "openapi.security-scheme.oauth2.flow")
 	OAuthFlow oauthFlow() {
 		return new OAuthFlow();
 	}
-	
+
 	@Bean
 	OpenApiCustomizer apiDocsOpenApiCustomizer() {
 		return openApi -> Optional.ofNullable(openApi.getPaths().get("/api-docs"))
-				.flatMap(openApiPath -> Optional.ofNullable(openApiPath.getGet())).ifPresent(this::extendOperation);
+			.flatMap(openApiPath -> Optional.ofNullable(openApiPath.getGet())).ifPresent(this::extendOperation);
 	}
 
 	void extendOperation(Operation operation) {

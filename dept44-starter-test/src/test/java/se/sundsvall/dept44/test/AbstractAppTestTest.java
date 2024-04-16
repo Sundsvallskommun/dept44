@@ -88,13 +88,16 @@ class AbstractAppTestTest {
 		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
+		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
 			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
+			.withServicePath(uriBuilder -> uriBuilder.path("/some/path/{value}")
+				.queryParam("someParam", "someValue")
+				.build(123))
+			//.withServicePath("/some/path")
 			.withHttpMethod(GET)
 			.withHeader("headerKey", "headerValue")
 			.withExpectedResponse("{}")
@@ -106,7 +109,7 @@ class AbstractAppTestTest {
 
 		// Verification
 		assertThat(instance).isNotNull();
-		verify(restTemplateMock).exchange(eq("/some/path"), eq(GET), httpEntityCaptor.capture(), eq(String.class));
+		verify(restTemplateMock).exchange(eq("/some/path/123?someParam=someValue"), eq(GET), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
 		verify(wiremockMock).verify(any());

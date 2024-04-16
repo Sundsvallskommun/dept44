@@ -27,6 +27,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -60,6 +61,14 @@ public class WebConfiguration implements WebMvcConfigurer {
 		final var registration = new FilterRegistrationBean<>(new RequestIdFilter());
 		registration.addUrlPatterns("/*");
 		registration.setOrder(1);
+		return registration;
+	}
+
+	@Bean
+	FilterRegistrationBean<DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration() {
+		final var registration = new FilterRegistrationBean<>(new DisableBrowserCacheFilter());
+		registration.addUrlPatterns("/*");
+		registration.setOrder(2);
 		return registration;
 	}
 
@@ -139,6 +148,19 @@ public class WebConfiguration implements WebMvcConfigurer {
 			} finally {
 				RequestId.reset();
 			}
+		}
+	}
+
+	static class DisableBrowserCacheFilter extends OncePerRequestFilter {
+
+		@Override
+		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
+				final FilterChain chain) throws ServletException, IOException {
+			response.addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+			response.addIntHeader(HttpHeaders.EXPIRES, 0);
+			response.addHeader(HttpHeaders.PRAGMA, "no-cache");
+
+			chain.doFilter(request, response);
 		}
 	}
 }

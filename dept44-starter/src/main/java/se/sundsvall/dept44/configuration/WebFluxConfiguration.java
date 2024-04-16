@@ -3,6 +3,7 @@ package se.sundsvall.dept44.configuration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.server.ServerWebExchange;
@@ -24,6 +25,11 @@ public class WebFluxConfiguration {
 		RequestIdHandlerFilterFunction requestIdHandlerFilterFunction() {
 			return new RequestIdHandlerFilterFunction();
 		}
+
+		@Bean
+		DisableBrowserCacheFilterFunction disableBrowserCacheFilterFunction() {
+			return new DisableBrowserCacheFilterFunction();
+		}
 	}
 
 	static class RequestIdHandlerFilterFunction implements WebFilter {
@@ -39,6 +45,20 @@ public class WebFluxConfiguration {
 			return chain.filter(exchange)
 				.then()
 				.doFinally(ignoredSignalType -> RequestId.reset());
+		}
+	}
+
+	static class DisableBrowserCacheFilterFunction implements WebFilter {
+
+		@Override
+		public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
+			var headers = exchange.getResponse().getHeaders();
+
+			headers.setCacheControl("no-store");
+			headers.setExpires(0L);
+			headers.setPragma("no-cache");
+
+			return chain.filter(exchange);
 		}
 	}
 }

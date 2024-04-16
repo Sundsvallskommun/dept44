@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
@@ -48,6 +50,9 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Autowired
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+
+		@Autowired
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Autowired
@@ -56,6 +61,11 @@ class WebConfigurationTest {
 		@Test
 		void requestIdFilterRegistrationIsAutowired() {
 			assertThat(requestIdFilterRegistration).isNotNull();
+		}
+
+		@Test
+		void disableBrowserCacheFilterRegistrationIsAutowired() {
+			assertThat(disableBrowserCacheFilterRegistration).isNotNull();
 		}
 
 		@Test
@@ -97,12 +107,20 @@ class WebConfigurationTest {
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
+		@Autowired
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+
 		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Test
 		void requestIdFilterRegistrationIsAutowired() {
 			assertThat(requestIdFilterRegistration).isNotNull();
+		}
+
+		@Test
+		void disableBrowserCacheFilterRegistrationIsAutowired() {
+			assertThat(disableBrowserCacheFilterRegistration).isNotNull();
 		}
 
 		@Test
@@ -125,11 +143,19 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Autowired(required = false)
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+
+		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Test
 		void requestIdFilterRegistrationIsNotAutowired() {
 			assertThat(requestIdFilterRegistration).isNull();
+		}
+
+		@Test
+		void disableBrowserCacheFilterRegistrationIsNotAutowired() {
+			assertThat(disableBrowserCacheFilterRegistration).isNull();
 		}
 
 		@Test
@@ -191,7 +217,7 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Test
-		void requestIdHandlerFilterFunctionFilter() throws IOException, ServletException {
+		void doFilterInternal() throws IOException, ServletException {
 			final var requestId = "requestId";
 			final var requestIdFilter = requestIdFilterRegistration.getFilter();
 
@@ -202,6 +228,44 @@ class WebConfigurationTest {
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(RequestId.HEADER_NAME);
+		}
+	}
+
+	@Nested
+	@SpringBootTest(classes = WebConfiguration.class)
+	class DisableBrowserCacheFilterTest {
+
+		@MockBean
+		private YAMLMapper mockYamlMapper;
+
+		@MockBean
+		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
+
+		@Mock
+		private HttpServletRequest httpServletRequestMock;
+
+		@Mock
+		private HttpServletResponse httpServletResponseMock;
+
+		@Mock
+		private FilterChain filterChainMock;
+
+		@Autowired
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+
+		@Test
+		void doFilterInternal() throws IOException, ServletException {
+			final var disableBrowserCacheFilter = disableBrowserCacheFilterRegistration.getFilter();
+
+			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+
+			disableBrowserCacheFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
+
+			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+			verify(httpServletResponseMock).addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+			verify(httpServletResponseMock).addIntHeader(HttpHeaders.EXPIRES, 0);
+			verify(httpServletResponseMock).addHeader(HttpHeaders.PRAGMA, "no-cache");
+			verifyNoMoreInteractions(filterChainMock, httpServletResponseMock);
 		}
 	}
 }

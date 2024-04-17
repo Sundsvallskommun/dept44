@@ -21,12 +21,15 @@ import static org.springframework.util.ResourceUtils.getFile;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -43,6 +46,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -65,11 +70,12 @@ public abstract class AbstractAppTest {
 	private static final String COMMON_MAPPING_DIR = "/common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
 	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 
-	private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
@@ -98,54 +104,52 @@ public abstract class AbstractAppTest {
 	protected WireMockServer wiremock;
 
 	public AbstractAppTest reset() {
-		this.expectedResponseBodyIsNull = false;
-		this.multipartBody = null;
-		this.requestBody = null;
-		this.expectedResponseBody = null;
-		this.expectedResponseBinary = null;
-		this.expectedResponseType = DEFAULT_RESPONSE_TYPE;
-		this.mappingPath = null;
-		this.servicePath = null;
-		this.response = null;
-		this.responseBody = null;
-		this.responseHeaders = null;
-		this.method = null;
-		this.contentType = DEFAULT_CONTENT_TYPE;
-		this.expectedResponseStatus = null;
-		this.expectedResponseHeaders = null;
-		this.headerValues = null;
-		this.testDirectoryPath = null;
-		this.testCaseName = null;
+		expectedResponseBodyIsNull = false;
+		multipartBody = null;
+		requestBody = null;
+		expectedResponseBody = null;
+		expectedResponseBinary = null;
+		expectedResponseType = DEFAULT_RESPONSE_TYPE;
+		mappingPath = null;
+		servicePath = null;
+		response = null;
+		responseBody = null;
+		responseHeaders = null;
+		method = null;
+		contentType = DEFAULT_CONTENT_TYPE;
+		expectedResponseStatus = null;
+		expectedResponseHeaders = null;
+		headerValues = null;
+		testDirectoryPath = null;
+		testCaseName = null;
 
 		return this;
 	}
 
 	public AbstractAppTest setupPaths() {
-
 		// Fetch test case name.
-		this.testCaseName = getTestMethodName();
+		testCaseName = getTestMethodName();
 
-		this.mappingPath = wiremock.getOptions().filesRoot().getPath();
-		if (!this.mappingPath.endsWith("/")) {
-			this.mappingPath += "/";
+		mappingPath = wiremock.getOptions().filesRoot().getPath();
+		if (!mappingPath.endsWith("/")) {
+			mappingPath += "/";
 		}
 
-		this.testDirectoryPath = "classpath:" + this.mappingPath + FILES_DIR + getTestMethodName() + System.getProperty("file.separator");
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault().getSeparator();
 
 		return this;
 	}
 
 	public AbstractAppTest setupCall() {
-
 		reset();
 		initializeJsonAssert();
 		setupPaths();
 
-		this.wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(this.mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
-		if (nonNull(this.testCaseName)) {
-			this.wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(this.mappingPath + FILES_DIR + this.testCaseName + MAPPING_DIRECTORY)));
+		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
+			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
+		if (nonNull(testCaseName)) {
+			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
+				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
 		}
 
 		return this;
@@ -177,10 +181,10 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest withHeader(final String key, final String value) {
-		if (isNull(this.headerValues)) {
-			this.headerValues = new HashMap<>();
+		if (isNull(headerValues)) {
+			headerValues = new HashMap<>();
 		}
-		this.headerValues.put(key, value);
+		headerValues.put(key, value);
 		return this;
 	}
 
@@ -192,10 +196,10 @@ public abstract class AbstractAppTest {
 	 * @return                     AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponseHeader(final String expectedHeaderKey, final List<String> expectedHeaderValue) {
-		if (isNull(this.expectedResponseHeaders)) {
-			this.expectedResponseHeaders = new HttpHeaders();
+		if (isNull(expectedResponseHeaders)) {
+			expectedResponseHeaders = new HttpHeaders();
 		}
-		this.expectedResponseHeaders.put(expectedHeaderKey, expectedHeaderValue);
+		expectedResponseHeaders.put(expectedHeaderKey, expectedHeaderValue);
 		return this;
 	}
 
@@ -210,9 +214,9 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest withExpectedResponse(final String expectedResponse) {
 		final var contentFromFile = fromTestFile(expectedResponse);
 		if (nonNull(contentFromFile)) {
-			this.expectedResponseBody = contentFromFile;
+			expectedResponseBody = contentFromFile;
 		} else {
-			this.expectedResponseBody = expectedResponse;
+			expectedResponseBody = expectedResponse;
 		}
 
 		return this;
@@ -226,9 +230,9 @@ public abstract class AbstractAppTest {
 	 * @throws IOException          if file can't be read.
 	 */
 	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
-		final var file = ResourceUtils.getFile(this.testDirectoryPath + expectedResponseFile);
-		this.expectedResponseBinary = Files.readAllBytes(file.toPath());
-		this.expectedResponseType = byte[].class;
+		final var file = ResourceUtils.getFile(testDirectoryPath + expectedResponseFile);
+		expectedResponseBinary = Files.readAllBytes(file.toPath());
+		expectedResponseType = byte[].class;
 
 		return this;
 	}
@@ -240,6 +244,11 @@ public abstract class AbstractAppTest {
 
 	public AbstractAppTest withServicePath(final String servicePath) {
 		this.servicePath = servicePath;
+		return this;
+	}
+
+	public AbstractAppTest withServicePath(final Function<UriBuilder, URI> servicePathFunction) {
+		servicePath = servicePathFunction.apply(URI_BUILDER).toString();
 		return this;
 	}
 
@@ -260,9 +269,9 @@ public abstract class AbstractAppTest {
 		if (nonNull(options)) {
 			// Set sent in assertion options
 			if (options.size() == 1) {
-				setOptions(options.get(0));
+				setOptions(options.getFirst());
 			} else {
-				setOptions(options.get(0), options.subList(1, options.size()).toArray(new Option[0]));
+				setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
 			}
 		}
 		return this;
@@ -279,9 +288,9 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest withRequest(final String request) {
 		final var contentFromFile = fromTestFile(request);
 		if (nonNull(contentFromFile)) {
-			this.requestBody = contentFromFile;
+			requestBody = contentFromFile;
 		} else {
-			this.requestBody = request;
+			requestBody = request;
 		}
 		return this;
 	}
@@ -297,7 +306,7 @@ public abstract class AbstractAppTest {
 	 * @throws FileNotFoundException if the file doesn't exist
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
-		return withRequestFile(parameterName, getFile(this.testDirectoryPath + fileName));
+		return withRequestFile(parameterName, getFile(testDirectoryPath + fileName));
 	}
 
 	/**
@@ -308,11 +317,11 @@ public abstract class AbstractAppTest {
 	 * @return               AbstractAppTest
 	 */
 	public AbstractAppTest withRequestFile(final String parameterName, final File file) {
-		if (isNull(this.multipartBody)) {
-			this.multipartBody = new LinkedMultiValueMap<>();
+		if (isNull(multipartBody)) {
+			multipartBody = new LinkedMultiValueMap<>();
 		}
 
-		this.multipartBody.add(parameterName, new FileSystemResource(file));
+		multipartBody.add(parameterName, new FileSystemResource(file));
 
 		return this;
 	}
@@ -352,15 +361,15 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest sendRequest() {
 		logger.info(getTestMethodName());
 
-		final var requestEntity = nonNull(this.multipartBody) ? restTemplateRequest(this.contentType, this.multipartBody) : restTemplateRequest(this.contentType, this.requestBody);
+		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
 
 		// Call service and fetch response.
-		this.response = this.restTemplate.exchange(this.servicePath, this.method, requestEntity, expectedResponseType);
-		this.responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
-		this.responseHeaders = response.getHeaders();
+		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
+		responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
+		responseHeaders = response.getHeaders();
 
-		if (nonNull(this.expectedResponseHeaders)) {
-			this.expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
+		if (nonNull(expectedResponseHeaders)) {
+			expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
 				assertThat(response.getHeaders()).containsKey(expectedHeader.getKey());
 				assertThat(response.getHeaders().getValuesAsList(expectedHeader.getKey()))
 					.allMatch(actualHeaderValue -> expectedHeader.getValue().stream()
@@ -368,30 +377,29 @@ public abstract class AbstractAppTest {
 							Pattern.matches(expectedHeaderValue, actualHeaderValue)));
 			});
 		}
-		assertThat(response.getStatusCode()).isEqualTo(this.expectedResponseStatus);
-		if (nonNull(this.expectedResponseBody)) {
+		assertThat(response.getStatusCode()).isEqualTo(expectedResponseStatus);
+		if (nonNull(expectedResponseBody)) {
 			final var responseContentType = response.getHeaders().getContentType();
 			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
-				assertJsonEquals(this.expectedResponseBody, this.responseBody);
+				assertJsonEquals(expectedResponseBody, responseBody);
 			} else {
 				// Compare as text
-				assertThat(this.expectedResponseBody).isEqualToIgnoringWhitespace(this.responseBody);
+				assertThat(expectedResponseBody).isEqualToIgnoringWhitespace(responseBody);
 			}
 		}
-		if (nonNull(this.expectedResponseBinary)) {
+		if (nonNull(expectedResponseBinary)) {
 			// Compare as Binary
-			assertThat(this.expectedResponseBinary).isEqualTo(response.getBody());
+			assertThat(expectedResponseBinary).isEqualTo(response.getBody());
 		}
-		if (this.expectedResponseBodyIsNull) {
-			assertThat(this.responseBody).isNull();
+		if (expectedResponseBodyIsNull) {
+			assertThat(responseBody).isNull();
 		}
 
 		return this;
 	}
 
 	public AbstractAppTest verifyStubs() {
-
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)
@@ -399,7 +407,7 @@ public abstract class AbstractAppTest {
 			.ignoreExceptions()
 			.until(this::verifyAllStubs);
 
-		this.wiremock.resetAll();
+		wiremock.resetAll();
 
 		return this;
 	}
@@ -436,7 +444,7 @@ public abstract class AbstractAppTest {
 	 * @throws ClassNotFoundException  if class is not found
 	 */
 	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
-		return clazz.cast(JSON_MAPPER.readValue(this.responseBody, forName(clazz.getName())));
+		return clazz.cast(JSON_MAPPER.readValue(responseBody, forName(clazz.getName())));
 	}
 
 	/**
@@ -447,7 +455,7 @@ public abstract class AbstractAppTest {
 	 * @return               response mapped to given type reference
 	 */
 	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
-		return JSON_MAPPER.readValue(this.responseBody, typeReference);
+		return JSON_MAPPER.readValue(responseBody, typeReference);
 	}
 
 	/**
@@ -477,14 +485,14 @@ public abstract class AbstractAppTest {
 		final var httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(mediaType);
 		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());
-		if (!isEmpty(this.headerValues)) {
-			this.headerValues.forEach(httpHeaders::add);
+		if (!isEmpty(headerValues)) {
+			headerValues.forEach(httpHeaders::add);
 		}
 		return new HttpEntity<>(body, httpHeaders);
 	}
 
 	protected String fromTestFile(final String fileName) {
-		return fromFile(this.testDirectoryPath + fileName);
+		return fromFile(testDirectoryPath + fileName);
 	}
 
 	private String fromFile(final String filePath) {
@@ -515,15 +523,14 @@ public abstract class AbstractAppTest {
 	 * @throws VerificationException if verification fails
 	 */
 	public boolean verifyAllStubs() {
-
 		// Verify all stubs by URL.
-		this.wiremock.listAllStubMappings().getMappings().forEach(stub -> {
+		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
 			final var requestPattern = stub.getRequest();
-			this.wiremock.verify(
+			wiremock.verify(
 				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
 		});
 
-		final var unmatchedRequests = this.wiremock.findAllUnmatchedRequests();
+		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();
 		if (!isEmpty(unmatchedRequests)) {
 			final var unmatchedUrls = unmatchedRequests
 				.stream()

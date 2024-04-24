@@ -1,11 +1,16 @@
 package se.sundsvall.dept44.configuration.feign.interceptor;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.unauthorized;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,6 +26,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import feign.Feign;
+import feign.RequestLine;
+import feign.okhttp.OkHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +39,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -44,6 +53,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
+import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
 
 @WireMockTest
 class OAuth2RequestInterceptorTest {
@@ -83,6 +94,7 @@ class OAuth2RequestInterceptorTest {
 	void testImplements() {
 		assertThat(RequestInterceptor.class).isAssignableFrom(OAuth2RequestInterceptor.class);
 	}
+
 
 	@Test
 	void testConstructorWithDeviceScope() {
@@ -281,5 +293,97 @@ class OAuth2RequestInterceptorTest {
 
 		com.github.tomakehurst.wiremock.client.WireMock.verify(postRequestedFor(urlPathEqualTo("/token"))
 			.withRequestBody(matching("^grant_type=client_credentials&scope=scope1$")));
+	}
+
+
+
+	@Test
+	void testVerifyTokenRenewal(WireMockRuntimeInfo wmRuntimeInfo) {
+
+		// ===== Setup token server stubs =====
+		var token1 = "firstToken";
+		var token2 = "secondToken";
+		var tokenBody = """
+					{
+						"access_token": "%s",
+						"expires_in": 3600,
+						"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
+						"scope": "whatever",
+						"token_type": "bearer"
+					}
+					""";
+
+		stubFor(post("/token")
+			.inScenario("Retry")
+			.whenScenarioStateIs(STARTED)
+			.willReturn(ok()
+				.withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.withBody(String.format(tokenBody, token1)))
+			.willSetStateTo("second call"));
+
+		stubFor(post("/token")
+			.inScenario("Retry")
+			.whenScenarioStateIs("second call")
+			.willReturn(ok()
+				.withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.withBody(String.format(tokenBody, token2))));
+
+		//===== Setup API stubs =====
+		stubFor(get("/test")
+			.inScenario("get")
+			.whenScenarioStateIs(STARTED)
+			.willReturn(unauthorized()
+				.withHeader("Content-Type", "text/plain")
+				.withHeader("www-authenticate", "\"OAuth2 realm=\"WSO2 API Manager\", error=\"invalid_token\", error_description=\"The access token expired\"")
+				.withBody("ERROR!"))
+			.willSetStateTo("second call"));
+
+		stubFor(get("/test")
+			.inScenario("get")
+			.whenScenarioStateIs("second call")
+			.willReturn(ok()
+				.withHeader("Content-Type", "text/plain")
+				.withBody("successful")));
+
+		//===== Create feign client =====
+		int port = wmRuntimeInfo.getHttpPort();
+		var clientRegistration = ClientRegistration.withRegistrationId("test")
+			.tokenUri("http://localhost:" + port + "/token")
+			.clientSecret("secret")
+			.clientName("name")
+			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+			.clientId("clientId")
+			.build();
+
+		var customizer = FeignMultiCustomizer.create()
+			.withErrorDecoder(new ProblemErrorDecoder("name"))
+			.withRequestTimeoutsInSeconds(5, 5)
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration)
+			.composeCustomizersToOne();
+
+		var builder = Feign.builder()
+			.client(new OkHttpClient());
+		customizer.customize(builder);
+
+		var target = builder.target(TestApi.class, "http://localhost:" + port + "/");
+
+		//===== Make call =====
+		var result = target.get();
+
+		//===== Assertions =====
+		assertThat(result).isEqualTo("successful");
+
+		com.github.tomakehurst.wiremock.client.WireMock.verify(2, postRequestedFor(urlPathEqualTo("/token"))
+			.withRequestBody(matching("^grant_type=client_credentials&scope=device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")));
+
+		com.github.tomakehurst.wiremock.client.WireMock.verify(2, getRequestedFor(urlPathEqualTo("/test")));
+		var requests = findAll(getRequestedFor(urlPathEqualTo("/test")));
+		assertThat(requests.get(0).header("Authorization").values()).containsExactly("Bearer " + token1);
+		assertThat(requests.get(1).header("Authorization").values()).containsExactly("Bearer " + token2);
+	}
+
+	public interface TestApi {
+		@RequestLine("GET /test")
+		String get();
 	}
 }

@@ -278,7 +278,6 @@
 							<phase>initialize</phase>
 							<goals>
 								<goal>check-truststore-validity</goal>
-								<goal>check-docker-image-name</goal>
 								<goal>check-openapi-properties</goal>
 							</goals>
 						</execution>

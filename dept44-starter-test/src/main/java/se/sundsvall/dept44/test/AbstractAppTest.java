@@ -10,6 +10,7 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
 import static net.javacrumbs.jsonunit.JsonAssert.setOptions;
+import static org.apache.commons.lang3.ObjectUtils.allNotNull;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -32,6 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -291,6 +293,21 @@ public abstract class AbstractAppTest {
 			requestBody = contentFromFile;
 		} else {
 			requestBody = request;
+		}
+		return this;
+	}
+
+	/**
+	 * Method replaces sections in request matching sent in string with sent in replacement string.
+	 * Observe that the withRequest method must be called before for this method to have any effect.
+	 * 
+	 * @param matchingString    the string to match in request body
+	 * @param replacementString the string to replace with
+	 * @return AbstractAppTest
+	 */
+	public AbstractAppTest withRequestReplacement(final String matchingString, final String replacementString) {
+		if (allNotNull(requestBody, matchingString, replacementString)) {
+			requestBody = StringUtils.replace(requestBody, matchingString, replacementString);
 		}
 		return this;
 	}

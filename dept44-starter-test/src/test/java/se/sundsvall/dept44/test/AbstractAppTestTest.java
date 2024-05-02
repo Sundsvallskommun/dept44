@@ -369,4 +369,40 @@ class AbstractAppTestTest {
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
 	}
+
+	@Test
+	void testBodyReplacement() {
+		// Setup
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
+		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+
+		// Call
+		final var instance = appTest.setupCall()
+			.withExtensions(extensionMock)
+			.withServicePath("/some/path")
+			.withHttpMethod(POST)
+			.withHeader("headerKey", "headerValue")
+			.withRequest("{\"someKey\": \"[replaceme]\"}")
+			.withRequestReplacement("[replaceme]", "someValue")
+			.withExpectedResponseBodyIsNull()
+			.withMaxVerificationDelayInSeconds(5)
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		// Verification
+		assertThat(instance).isNotNull();
+		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
+		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
+		verify(wiremockMock).findAllUnmatchedRequests();
+		verify(wiremockMock).verify(any());
+		verify(wiremockMock).resetAll();
+		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
+
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBodyReplacement"));
+		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
+	}
 }

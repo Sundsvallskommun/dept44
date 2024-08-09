@@ -52,11 +52,11 @@ import se.sundsvall.dept44.util.ResourceUtils;
 public class WebConfiguration implements WebMvcConfigurer {
 
 	private final YAMLMapper yamlMapper;
-	private final Integer municipalityIdLocation;
+	private final int municipalityIdUriIndex;
 
-	WebConfiguration(final YAMLMapper yamlMapper, @Value("${mdc.municipalityId.location:1}")Integer municipalityIdLocation) {
+	WebConfiguration(final YAMLMapper yamlMapper, @Value("${mdc.municipalityId.uriIndex:1}")int municipalityIdUriIndex) {
 		this.yamlMapper = yamlMapper;
-		this.municipalityIdLocation = municipalityIdLocation;
+		this.municipalityIdUriIndex = municipalityIdUriIndex;
 	}
 
 	@Bean
@@ -78,7 +78,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 	@Bean
 	@ConditionalOnProperty(name = "mdc.municipalityId.enabled", havingValue = "true")
 	FilterRegistrationBean<MunicipalityIdFilter> municipalityIdFilterRegistration() {
-		final var registration = new FilterRegistrationBean<>(new MunicipalityIdFilter(municipalityIdLocation));
+		final var registration = new FilterRegistrationBean<>(new MunicipalityIdFilter(municipalityIdUriIndex));
 		registration.addUrlPatterns("/*");
 		registration.setOrder(1);
 		return registration;
@@ -178,18 +178,18 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 	static class MunicipalityIdFilter extends OncePerRequestFilter {
 
-		private final int municipalityIdLocation;
+		private final int municipalityIdUriIndex;
 
-		public MunicipalityIdFilter(int municipalityIdLocation) {
-				this.municipalityIdLocation = municipalityIdLocation;
+		public MunicipalityIdFilter(int municipalityIdUriIndex) {
+				this.municipalityIdUriIndex = municipalityIdUriIndex;
 		}
 
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
 										final FilterChain chain) throws ServletException, IOException {
 			var pathParams = request.getRequestURI().split("/");
-			if(pathParams.length > municipalityIdLocation) {
-				MDC.put("municipalityId", pathParams[municipalityIdLocation]);
+			if(pathParams.length > municipalityIdUriIndex) {
+				MDC.put("municipalityId", pathParams[municipalityIdUriIndex]);
 			}
 
 			try {

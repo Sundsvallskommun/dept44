@@ -3,7 +3,9 @@ package se.sundsvall.dept44.configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -16,6 +18,9 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,7 +42,7 @@ import se.sundsvall.dept44.requestid.RequestId;
 class WebConfigurationTest {
 
 	@Nested
-	@SpringBootTest(classes = WebConfiguration.class)
+	@SpringBootTest(classes = WebConfiguration.class, properties = "mdc.municipalityId.enabled=true")
 	class WebConfigurationEnabledTest {
 
 		@MockBean
@@ -53,6 +58,9 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
 
 		@Autowired
+		private FilterRegistrationBean<WebConfiguration.MunicipalityIdFilter> municipalityIdFilterRegistration;
+
+		@Autowired
 		private WebConfiguration.IndexPageController indexPageController;
 
 		@Autowired
@@ -66,6 +74,11 @@ class WebConfigurationTest {
 		@Test
 		void disableBrowserCacheFilterRegistrationIsAutowired() {
 			assertThat(disableBrowserCacheFilterRegistration).isNotNull();
+		}
+
+		@Test
+		void municipalityIdFilterRegistrationIsAutowired() {
+			assertThat(municipalityIdFilterRegistration).isNotNull();
 		}
 
 		@Test
@@ -266,6 +279,48 @@ class WebConfigurationTest {
 			verify(httpServletResponseMock).addIntHeader(HttpHeaders.EXPIRES, 0);
 			verify(httpServletResponseMock).addHeader(HttpHeaders.PRAGMA, "no-cache");
 			verifyNoMoreInteractions(filterChainMock, httpServletResponseMock);
+		}
+	}
+
+	@Nested
+	@SpringBootTest(classes = WebConfiguration.class, properties = {"mdc.municipalityId.enabled=true"})
+	class MunicipalityIdFilterTest {
+
+		@MockBean
+		private YAMLMapper mockYamlMapper;
+
+		@MockBean
+		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
+
+		@Mock
+		private HttpServletRequest httpServletRequestMock;
+
+		@Mock
+		private HttpServletResponse httpServletResponseMock;
+
+		@Mock
+		private FilterChain filterChainMock;
+
+		@Autowired
+		private FilterRegistrationBean<WebConfiguration.MunicipalityIdFilter> municipalityIdFilterRegistration;
+
+		@Test
+		void doFilterInternal() throws IOException, ServletException {
+
+			final var municipalityIdFilter = municipalityIdFilterRegistration.getFilter();
+			final var uri = "/2281/somepath/123";
+
+			when(httpServletRequestMock.getRequestURI()).thenReturn(uri);
+			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+
+			try (MockedStatic<MDC> mdc = Mockito.mockStatic(MDC.class)) {
+				municipalityIdFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
+				mdc.verify(() -> MDC.put("municipalityId", "2281"));
+				mdc.verify(() -> MDC.remove("municipalityId"));
+			}
+
+			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+			verify(httpServletRequestMock).getRequestURI();
 		}
 	}
 }

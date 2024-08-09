@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -51,9 +52,11 @@ import se.sundsvall.dept44.util.ResourceUtils;
 public class WebConfiguration implements WebMvcConfigurer {
 
 	private final YAMLMapper yamlMapper;
+	private final Integer municipalityIdLocation;
 
-	WebConfiguration(final YAMLMapper yamlMapper) {
+	WebConfiguration(final YAMLMapper yamlMapper, @Value("${mdc.municipalityId.location:1}")Integer municipalityIdLocation) {
 		this.yamlMapper = yamlMapper;
+		this.municipalityIdLocation = municipalityIdLocation;
 	}
 
 	@Bean
@@ -69,6 +72,15 @@ public class WebConfiguration implements WebMvcConfigurer {
 		final var registration = new FilterRegistrationBean<>(new DisableBrowserCacheFilter());
 		registration.addUrlPatterns("/*");
 		registration.setOrder(2);
+		return registration;
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = "mdc.municipalityId.enabled", havingValue = "true")
+	FilterRegistrationBean<MunicipalityIdFilter> municipalityIdFilterRegistration() {
+		final var registration = new FilterRegistrationBean<>(new MunicipalityIdFilter(municipalityIdLocation));
+		registration.addUrlPatterns("/*");
+		registration.setOrder(1);
 		return registration;
 	}
 
@@ -161,6 +173,30 @@ public class WebConfiguration implements WebMvcConfigurer {
 			response.addHeader(HttpHeaders.PRAGMA, "no-cache");
 
 			chain.doFilter(request, response);
+		}
+	}
+
+	static class MunicipalityIdFilter extends OncePerRequestFilter {
+
+		private final int municipalityIdLocation;
+
+		public MunicipalityIdFilter(int municipalityIdLocation) {
+				this.municipalityIdLocation = municipalityIdLocation;
+		}
+
+		@Override
+		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
+										final FilterChain chain) throws ServletException, IOException {
+			var pathParams = request.getRequestURI().split("/");
+			if(pathParams.length > municipalityIdLocation) {
+				MDC.put("municipalityId", pathParams[municipalityIdLocation]);
+			}
+
+			try {
+				chain.doFilter(request, response);
+			} finally {
+				MDC.remove("municipalityId");
+			}
 		}
 	}
 }

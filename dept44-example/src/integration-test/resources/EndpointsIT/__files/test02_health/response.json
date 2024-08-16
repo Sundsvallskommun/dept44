@@ -21,12 +21,6 @@
 				}
 			}
 		},
-		"clientConfigServer": {
-			"status": "UNKNOWN",
-			"details": {
-				"error": "no property sources located"
-			}
-		},
 		"db": {
 			"status": "UP",
 			"details": {

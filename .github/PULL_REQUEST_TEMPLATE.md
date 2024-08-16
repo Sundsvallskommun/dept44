@@ -4,6 +4,7 @@
 
 - [ ] Bug fix
 - [ ] New feature
+- [ ] Removed feature
 - [ ] Code style update (formatting etc.)
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes

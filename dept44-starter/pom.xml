@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>5.1.1-SNAPSHOT</version>
+		<version>6.0.0-SNAPSHOT</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter</artifactId>
@@ -90,15 +90,6 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		</dependency>
-		<!-- Centralized config client -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-config</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-bootstrap</artifactId>
-		</dependency>
 		<!-- Resilience4j Circuitbreaker (health-indicators) -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -131,6 +122,10 @@
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
 			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.httpcomponents.core5</groupId>
+		    <artifactId>httpcore5</artifactId>
 		</dependency>
 	</dependencies>
 	<build>

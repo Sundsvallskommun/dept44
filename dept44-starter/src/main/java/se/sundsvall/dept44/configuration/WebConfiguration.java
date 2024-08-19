@@ -6,6 +6,7 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.http.MediaType.TEXT_HTML;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
+import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
@@ -19,6 +20,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,16 +40,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.zalando.problem.Problem;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-import io.swagger.v3.oas.annotations.Operation;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.util.ResourceUtils;
+
+import io.swagger.v3.oas.annotations.Operation;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -53,10 +57,14 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 	private final YAMLMapper yamlMapper;
 	private final int municipalityIdUriIndex;
+	private final List<String> allowedIds;
 
-	WebConfiguration(final YAMLMapper yamlMapper, @Value("${mdc.municipalityId.uriIndex:1}")int municipalityIdUriIndex) {
+	WebConfiguration(final YAMLMapper yamlMapper,
+		@Value("${mdc.municipalityId.uriIndex:1}") int municipalityIdUriIndex,
+		@Value("${municipality.allowed-ids:}") List<String> allowedIds) {
 		this.yamlMapper = yamlMapper;
 		this.municipalityIdUriIndex = municipalityIdUriIndex;
+		this.allowedIds = allowedIds;
 	}
 
 	@Bean
@@ -113,6 +121,47 @@ public class WebConfiguration implements WebMvcConfigurer {
 			.forEach(c -> c.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL));
 	}
 
+	@Override
+	public void addInterceptors(final InterceptorRegistry registry) {
+		var municipalityIdInterceptor = new MunicipalityIdInterceptor(allowedIds, municipalityIdUriIndex);
+
+		//  Add interceptor to check if the municipality ID is allowed.
+		// "/{municipalityId}" - Matches all paths where the municipality placeholder is the whole path.
+		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part oft the path.
+		// "/{municipalityId}/**" - Matches all paths where the municipality placeholder is the beginning of the path.
+		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the path.
+		registry.addInterceptor(municipalityIdInterceptor)
+			.addPathPatterns("/{municipalityId}", "/{municipalityId}/**", "/**/{municipalityId}", "/**/{municipalityId}/**");
+	}
+
+	static class MunicipalityIdInterceptor implements HandlerInterceptor {
+
+		private final List<String> allowedIds;
+		private final Integer municipalityIdUriIndex;
+
+		public MunicipalityIdInterceptor(final List<String> allowedIds, final int municipalityIdUriIndex) {
+			this.allowedIds = allowedIds;
+			this.municipalityIdUriIndex = municipalityIdUriIndex;
+		}
+
+		@Override
+		public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object notUsed) {
+			if (allowedIds.isEmpty()) {
+				return true;
+			}
+
+			// Extracts the request URI.
+			final String path = request.getRequestURI();
+			// Split the path into parts
+			final String[] pathArray = path.split("/");
+
+			if (allowedIds.contains(pathArray[municipalityIdUriIndex])) {
+				return true;
+			}
+			throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex]).build();
+		}
+	}
+
 	@RestController
 	@RequestMapping("/")
 	@ConditionalOnProperty(name = "openapi.enabled", havingValue = "true", matchIfMissing = true)
@@ -167,7 +216,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-				final FilterChain chain) throws ServletException, IOException {
+			final FilterChain chain) throws ServletException, IOException {
 			response.addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
 			response.addIntHeader(HttpHeaders.EXPIRES, 0);
 			response.addHeader(HttpHeaders.PRAGMA, "no-cache");
@@ -181,14 +230,14 @@ public class WebConfiguration implements WebMvcConfigurer {
 		private final int municipalityIdUriIndex;
 
 		public MunicipalityIdFilter(int municipalityIdUriIndex) {
-				this.municipalityIdUriIndex = municipalityIdUriIndex;
+			this.municipalityIdUriIndex = municipalityIdUriIndex;
 		}
 
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-										final FilterChain chain) throws ServletException, IOException {
+			final FilterChain chain) throws ServletException, IOException {
 			var pathParams = request.getRequestURI().split("/");
-			if(pathParams.length > municipalityIdUriIndex) {
+			if (pathParams.length > municipalityIdUriIndex) {
 				MDC.put("municipalityId", pathParams[municipalityIdUriIndex]);
 			}
 

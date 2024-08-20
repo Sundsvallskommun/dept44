@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -11,10 +13,20 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -28,13 +40,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.zalando.problem.ThrowableProblem;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.dept44.requestid.RequestId;
 
 class WebConfigurationTest {
@@ -102,6 +111,15 @@ class WebConfigurationTest {
 			webConfiguration.extendMessageConverters(converterList);
 
 			assertThat(converterList).isNotNull().hasSize(1);
+		}
+
+		@Test
+		void addInterceptors() {
+			final var interceptorRegistry = new InterceptorRegistry();
+			webConfiguration.addInterceptors(interceptorRegistry);
+
+			assertThat(interceptorRegistry).isNotNull();
+			assertThat(interceptorRegistry).extracting("registrations").asInstanceOf(InstanceOfAssertFactories.list(InterceptorRegistration.class)).hasSize(1);
 		}
 	}
 
@@ -281,7 +299,7 @@ class WebConfigurationTest {
 	}
 
 	@Nested
-	@SpringBootTest(classes = WebConfiguration.class, properties = { "mdc.municipalityId.enabled=true" })
+	@SpringBootTest(classes = WebConfiguration.class, properties = {"mdc.municipalityId.enabled=true"})
 	class MunicipalityIdFilterTest {
 
 		@MockBean
@@ -319,6 +337,77 @@ class WebConfigurationTest {
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getRequestURI();
+		}
+	}
+
+	@Nested
+	@SpringBootTest(classes = WebConfiguration.class)
+	class MunicipalityIdInterceptorTest {
+
+		@MockBean
+		private YAMLMapper mockYamlMapper;
+
+		@MockBean
+		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
+
+		@Mock
+		private HttpServletRequest httpServletRequestMock;
+
+		@Mock
+		private HttpServletResponse httpServletResponseMock;
+
+		private WebConfiguration.MunicipalityIdInterceptor municipalityIdInterceptor;
+
+		static Stream<Arguments> argumentsProvider() {
+			return Stream.of(
+				Arguments.of("/%s/any/service", "2281", 1),
+				Arguments.of("/any/%s/service", "2281", 2),
+				Arguments.of("/any/service/%s", "2281", 3),
+				Arguments.of("/%s/any/service", "2260", 1),
+				Arguments.of("/any/%s/service", "2260", 2),
+				Arguments.of("/any/service/%s", "2260", 3)
+			);
+		}
+
+		@ParameterizedTest
+		@MethodSource("argumentsProvider")
+		void preHandleWithAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
+			final var object = new Object();
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
+
+			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
+
+			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+
+			assertThat(result).isTrue();
+			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
+		}
+
+		@ParameterizedTest
+		@MethodSource("argumentsProvider")
+		void preHandleWithNotAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
+			final var object = new Object();
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
+
+			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
+
+			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object))
+				.isInstanceOf(ThrowableProblem.class)
+				.hasMessage("Not implemented for municipalityId: " + municipalityId);
+		}
+
+		@ParameterizedTest
+		@MethodSource("argumentsProvider")
+		void preHandleWithNoConfiguredMunicipalityIds(String path, String municipalityId, int municipalityIdUriIndex) {
+			final var object = new Object();
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
+
+			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
+
+			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+
+			assertThat(result).isTrue();
+			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
 		}
 	}
 }

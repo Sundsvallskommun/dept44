@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>6.0.0-SNAPSHOT</version>
+		<version>6.0.0</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-test</artifactId>

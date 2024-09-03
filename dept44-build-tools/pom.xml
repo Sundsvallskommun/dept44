@@ -10,7 +10,7 @@
 	<packaging>maven-plugin</packaging>
 	<properties>
 		<maven-api.version>3.9.9</maven-api.version>
-		<maven-plugin-annotations.version>3.14.0</maven-plugin-annotations.version>
+		<maven-plugin-annotations.version>3.15.0</maven-plugin-annotations.version>
 		<spotbugs-annotations.version>4.8.2</spotbugs-annotations.version>
 		<bcpkix-jdk18on.version>1.78.1</bcpkix-jdk18on.version>
 	</properties>

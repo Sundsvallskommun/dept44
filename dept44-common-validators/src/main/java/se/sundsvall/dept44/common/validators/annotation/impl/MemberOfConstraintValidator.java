@@ -2,16 +2,13 @@ package se.sundsvall.dept44.common.validators.annotation.impl;
 
 import static java.util.Comparator.nullsLast;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toCollection;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
@@ -21,13 +18,13 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
 
-import se.sundsvall.dept44.common.validators.annotation.BackedByEnum;
+import se.sundsvall.dept44.common.validators.annotation.MemberOf;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
 
 /**
- * Defines the logic to validate that a string matches a type of a given enum class.
+ * Defines the logic to validate that a string matches a member of a given enum class.
  */
-public class BackedByEnumConstraintValidator extends AbstractValidator implements ConstraintValidator<BackedByEnum, String> {
+public class MemberOfConstraintValidator extends AbstractValidator implements ConstraintValidator<MemberOf, String> {
 
 	private static final Supplier<Set<String>> CASE_SENSITIVE = HashSet::new;
 	private static final Supplier<Set<String>> CASE_INSENSITIVE = () -> new TreeSet<>(nullsLast(String.CASE_INSENSITIVE_ORDER));
@@ -37,7 +34,7 @@ public class BackedByEnumConstraintValidator extends AbstractValidator implement
 	private Set<String> allowedValues;
 
 	@Override
-	public void initialize(final BackedByEnum annotation) {
+	public void initialize(final MemberOf annotation) {
 		nullable = annotation.nullable();
 		caseSensitive = annotation.caseSensitive();
 		allowedValues = Arrays.stream(annotation.value().getEnumConstants())

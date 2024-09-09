@@ -20,10 +20,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import se.sundsvall.dept44.common.validators.annotation.BackedByEnum;
+import se.sundsvall.dept44.common.validators.annotation.MemberOf;
 
 @ExtendWith(MockitoExtension.class)
-class BackedByEnumConstraintValidatorTest {
+class MemberOfConstraintValidatorTest {
 
 	enum AddressType {
 		HOME,
@@ -31,13 +31,13 @@ class BackedByEnumConstraintValidatorTest {
 	}
 
 	@Mock
-	private BackedByEnum mockAnnotation;
+	private MemberOf mockAnnotation;
 
 	@Mock
 	private HibernateConstraintValidatorContext mockContext;
 
 	@InjectMocks
-	private BackedByEnumConstraintValidator validator;
+	private MemberOfConstraintValidator validator;
 
 	@BeforeEach
 	void setUp() {

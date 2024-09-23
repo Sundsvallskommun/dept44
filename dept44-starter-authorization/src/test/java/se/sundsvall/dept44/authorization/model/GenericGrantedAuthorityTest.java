@@ -77,32 +77,32 @@ class GenericGrantedAuthorityTest {
 
 	@Test
 	void testHashCodeWithRole() {
-		GenericGrantedAuthority bean_1 = GenericGrantedAuthority.create("ROLE_1");
-		GenericGrantedAuthority bean_2 = GenericGrantedAuthority.create("ROLE_2");
+		GenericGrantedAuthority bean1 = GenericGrantedAuthority.create("ROLE_1");
+		GenericGrantedAuthority bean2 = GenericGrantedAuthority.create("ROLE_2");
 
-		assertThat(bean_1).hasSameHashCodeAs(bean_1).doesNotHaveSameHashCodeAs(bean_2);
-		assertThat(bean_2).hasSameHashCodeAs(bean_2).doesNotHaveSameHashCodeAs(bean_1);
+		assertThat(bean1).hasSameHashCodeAs(bean1).doesNotHaveSameHashCodeAs(bean2);
+		assertThat(bean2).hasSameHashCodeAs(bean2).doesNotHaveSameHashCodeAs(bean1);
 	}
 
 	@Test
 	void testHashCodeWithRoleAndAccesses() {
-		GenericGrantedAuthority bean_1 = GenericGrantedAuthority.create("ROLE_1", ACCESS_JSON);
-		GenericGrantedAuthority bean_2 = GenericGrantedAuthority.create("ROLE_2", ACCESS_JSON);
+		GenericGrantedAuthority bean1 = GenericGrantedAuthority.create("ROLE_1", ACCESS_JSON);
+		GenericGrantedAuthority bean2 = GenericGrantedAuthority.create("ROLE_2", ACCESS_JSON);
 
-		assertThat(bean_1).hasSameHashCodeAs(bean_1).doesNotHaveSameHashCodeAs(bean_2);
-		assertThat(bean_2).hasSameHashCodeAs(bean_2).doesNotHaveSameHashCodeAs(bean_1);
+		assertThat(bean1).hasSameHashCodeAs(bean1).doesNotHaveSameHashCodeAs(bean2);
+		assertThat(bean2).hasSameHashCodeAs(bean2).doesNotHaveSameHashCodeAs(bean1);
 	}
 
 	@Test
 	void testEquals() {
-		GenericGrantedAuthority original_bean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
-		GenericGrantedAuthority equal_content_bean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
-		GenericGrantedAuthority not_equal_bean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
+		GenericGrantedAuthority originalBean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
+		GenericGrantedAuthority equalContentBean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
+		GenericGrantedAuthority notEqualBean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
 
-		assertThat(original_bean.equals(original_bean)).isTrue();
-		assertThat(original_bean.equals(null)).isFalse();
-		assertThat(original_bean.equals(new Object())).isFalse();
-		assertThat(original_bean.equals(equal_content_bean)).isFalse();
-		assertThat(original_bean.equals(not_equal_bean)).isFalse();
+		assertThat(originalBean.equals(originalBean)).isTrue();
+		assertThat(originalBean.equals(null)).isFalse();
+		assertThat(originalBean.equals(new Object())).isFalse();
+		assertThat(originalBean.equals(equalContentBean)).isFalse();
+		assertThat(originalBean.equals(notEqualBean)).isFalse();
 	}
 }

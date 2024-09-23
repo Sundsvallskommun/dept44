@@ -13,4 +13,4 @@ on:
 
 jobs:
   shared-workflows:
-    uses: Sundsvallskommun/shared-workflows/.github/workflows/java-maven-ci.yml@main
+    uses: Sundsvallskommun/.github/.github/workflows/java-maven-ci.yml@main

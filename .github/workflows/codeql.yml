@@ -10,7 +10,7 @@ on:
 
 jobs:
   shared-workflows:
-    uses: Sundsvallskommun/shared-workflows/.github/workflows/java-codeql.yml@main
+    uses: Sundsvallskommun/.github/.github/workflows/java-codeql.yml@main
     permissions:
       actions: read
       contents: read

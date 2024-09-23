@@ -31,12 +31,12 @@ class UserTest {
 	@Test
 	void testBuildPatterns() {
 		final var userName = "userName";
-		final var authority_1 = GenericGrantedAuthority.create("ROLE_1");
-		final var authority_2 = GenericGrantedAuthority.create("ROLE_2", "[\"ACCESS\"]");
+		final var authority1 = GenericGrantedAuthority.create("ROLE_1");
+		final var authority2 = GenericGrantedAuthority.create("ROLE_2", "[\"ACCESS\"]");
 
-		User bean = User.create().withAuthorities(List.of(authority_1, authority_2)).withUsername(userName);
+		User bean = User.create().withAuthorities(List.of(authority1, authority2)).withUsername(userName);
 
-		assertThat(bean.getAuthorities()).containsExactly(authority_1, authority_2);
+		assertThat(bean.getAuthorities()).containsExactly(authority1, authority2);
 		assertThat(bean.getUsername()).isEqualTo(userName);
 		assertThat(bean.getPassword()).isNull();
 		assertThat(bean.isAccountNonExpired()).isTrue();

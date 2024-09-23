@@ -9,5 +9,5 @@ permissions:
 
 jobs:
   shared-workflows:
-    uses: Sundsvallskommun/shared-workflows/.github/workflows/common-dependabot-reviewer.yml@main
+    uses: Sundsvallskommun/.github/.github/workflows/common-dependabot-reviewer.yml@main
     secrets: inherit

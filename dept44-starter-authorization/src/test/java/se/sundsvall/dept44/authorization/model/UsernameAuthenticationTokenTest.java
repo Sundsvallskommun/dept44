@@ -94,11 +94,11 @@ class UsernameAuthenticationTokenTest {
 	void testHashCode() {
 		final var authorities = List.of(GenericGrantedAuthority.create("ROLE"));
 
-		UsernameAuthenticationToken bean_1 = authenticated(User.create().withUsername("USER"), authorities);
-		UsernameAuthenticationToken bean_2 = authenticated(User.create().withUsername("USER"), authorities);
+		UsernameAuthenticationToken bean1 = authenticated(User.create().withUsername("USER"), authorities);
+		UsernameAuthenticationToken bean2 = authenticated(User.create().withUsername("USER"), authorities);
 
-		assertThat(bean_1).hasSameHashCodeAs(bean_1).doesNotHaveSameHashCodeAs(bean_2);
-		assertThat(bean_2).hasSameHashCodeAs(bean_2).doesNotHaveSameHashCodeAs(bean_1);
+		assertThat(bean1).hasSameHashCodeAs(bean1).doesNotHaveSameHashCodeAs(bean2);
+		assertThat(bean2).hasSameHashCodeAs(bean2).doesNotHaveSameHashCodeAs(bean1);
 	}
 
 	@Test
@@ -106,16 +106,16 @@ class UsernameAuthenticationTokenTest {
 		final var principal = User.create().withUsername("USER");
 		final var authorities = List.of(GenericGrantedAuthority.create("ROLE"));
 
-		UsernameAuthenticationToken original_bean = authenticated(principal, authorities);
-		UsernameAuthenticationToken equal_bean = authenticated(principal, authorities);
-		UsernameAuthenticationToken equal_content_bean = authenticated(User.create().withUsername("USER"), authorities);
-		UsernameAuthenticationToken not_equal_bean = authenticated(User.create().withUsername("OTHER_USER"), authorities);
+		UsernameAuthenticationToken originalBean = authenticated(principal, authorities);
+		UsernameAuthenticationToken equalBean = authenticated(principal, authorities);
+		UsernameAuthenticationToken equalContentBean = authenticated(User.create().withUsername("USER"), authorities);
+		UsernameAuthenticationToken notEqualBean = authenticated(User.create().withUsername("OTHER_USER"), authorities);
 
-		assertThat(original_bean.equals(original_bean)).isTrue();
-		assertThat(original_bean.equals(equal_bean)).isTrue();
-		assertThat(original_bean.equals(null)).isFalse();
-		assertThat(original_bean.equals(new Object())).isFalse();
-		assertThat(original_bean.equals(equal_content_bean)).isFalse();
-		assertThat(original_bean.equals(not_equal_bean)).isFalse();
+		assertThat(originalBean.equals(originalBean)).isTrue();
+		assertThat(originalBean.equals(equalBean)).isTrue();
+		assertThat(originalBean.equals(null)).isFalse();
+		assertThat(originalBean.equals(new Object())).isFalse();
+		assertThat(originalBean.equals(equalContentBean)).isFalse();
+		assertThat(originalBean.equals(notEqualBean)).isFalse();
 	}
 }

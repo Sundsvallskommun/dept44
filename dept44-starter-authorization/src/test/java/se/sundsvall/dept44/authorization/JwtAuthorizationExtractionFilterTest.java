@@ -53,7 +53,7 @@ import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationExtractionFilterTest {
 
-	private final String DEFAULT_JWT_HEADER_NAME = "x-authorization-info";
+	private static final String DEFAULT_JWT_HEADER_NAME = "x-authorization-info";
 
 	@Mock
 	private JwtAuthorizationProperties propertiesMock;

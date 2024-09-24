@@ -4,6 +4,7 @@ import static feign.Logger.Level.FULL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -52,6 +53,7 @@ class FeignConfigurationTest {
 				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));
 				assertThat(method.getAnnotation(ConditionalOnBean.class).value()).containsExactly(Truststore.class);
 			}
+			default -> fail();
 		}
 	}
 

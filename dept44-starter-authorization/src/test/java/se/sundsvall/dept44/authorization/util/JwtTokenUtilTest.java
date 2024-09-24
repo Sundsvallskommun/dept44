@@ -22,7 +22,7 @@ import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 class JwtTokenUtilTest {
 
 	private final String secret = "df6b9fb15cfdbb7527be5a8a6e39f39e572c8ddb943fbc79a943438e9d3d85ebfc2ccf9e0eccd9346026c0b6876e0e01556fe56f135582c05fbdbb505d46755a";
-	private final String expired_message_regex_match = "^JWT expired (\\d+) milliseconds ago at 1971-01-01T00:00:00.000Z. Current time: (\\d{4}-\\d{2}-\\d{1,2}T\\d{1,2}:\\d{1,2}:\\d{1,2}.\\d{0,3})Z. Allowed clock skew: 0 milliseconds.$";
+	private final String expiredMessageRegexMatch = "^JWT expired (\\d+) milliseconds ago at 1971-01-01T00:00:00.000Z. Current time: (\\d{4}-\\d{2}-\\d{1,2}T\\d{1,2}:\\d{1,2}:\\d{1,2}.\\d{0,3})Z. Allowed clock skew: 0 milliseconds.$";
 
 	/**
 	 * Token with the following content, verified with secret
@@ -65,7 +65,6 @@ class JwtTokenUtilTest {
 
 	@Test
 	void constructorWithSecret() {
-		final var secret = "secretKey";
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
 
 		assertThat(util).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());
@@ -104,7 +103,7 @@ class JwtTokenUtilTest {
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
 		final ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> util.getUsernameFromToken(jwt));
 
-		assertThat(exception.getMessage()).matches(expired_message_regex_match);
+		assertThat(exception.getMessage()).matches(expiredMessageRegexMatch);
 	}
 
 	@Test

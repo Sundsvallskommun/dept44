@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
@@ -83,9 +84,9 @@
 						<version>${nexus-staging-maven-plugin.version}</version>
 						<extensions>true</extensions>
 						<configuration>
-						        <serverId>ossrh</serverId>
-						        <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-						        <autoReleaseAfterClose>false</autoReleaseAfterClose>
+							<serverId>ossrh</serverId>
+							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+							<autoReleaseAfterClose>false</autoReleaseAfterClose>
 						</configuration>
 					</plugin>
 				</plugins>
@@ -104,7 +105,8 @@
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.17.0</commons-lang3.version>
 		<logbook.version>3.9.0</logbook.version>
-		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
+		<problem.version>0.27.1
+		</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>2.6.0</springdoc.version>
 		<spring-cloud.version>2023.0.3</spring-cloud.version>
@@ -129,6 +131,7 @@
 		<git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.8.0</openapi-generator-maven-plugin.version>
+		<spotless-maven-plugin-version>2.44.0.BETA2</spotless-maven-plugin-version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
@@ -362,7 +365,67 @@
 						</goals>
 					</execution>
 				</executions>
-			 </plugin>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless-maven-plugin-version}</version>
+				<configuration>
+					<java>
+						<palantirJavaFormat>
+							<version>2.39.0</version>
+							<style>PALANTIR</style>
+							<formatJavadoc>false</formatJavadoc>
+						</palantirJavaFormat>
+						<indent>
+							<tabs>true</tabs>
+							<spacesPerTab>4</spacesPerTab>
+						</indent>
+					</java>
+					<json>
+						<includes>
+							<include>src/**/*.json</include>
+						</includes>
+						<simple/>
+						<indent>
+							<tabs>true</tabs>
+							<spacesPerTab>4</spacesPerTab>
+						</indent>
+					</json>
+					<sql>
+						<includes>
+							<include>src/main/resources/**/*.sql</include>
+						</includes>
+						<excludes>
+							<exclude>**/migration/**</exclude>
+							<exclude>**/schema.sql</exclude>
+						</excludes>
+						<dbeaver/>
+					</sql>
+					<markdown>
+						<includes>
+							<include>**/*.md</include>
+						</includes>
+						<flexmark/>
+					</markdown>
+					<pom>
+						<includes>
+							<include>pom.xml</include>
+						</includes>
+						<sortPom>
+							<expandEmptyElements>false</expandEmptyElements>
+						</sortPom>
+					</pom>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>apply</goal>
+						</goals>
+						<phase>validate</phase>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>

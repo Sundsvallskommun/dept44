@@ -15,12 +15,14 @@ class PetImageTest {
 
 	@Test
 	void testBean() {
-		assertThat(PetImage.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+		assertThat(
+				PetImage.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals(),
+						hasValidBeanToString()));
 	}
 
 	@Test
@@ -30,10 +32,7 @@ class PetImageTest {
 		final var fileName = "test.jpg";
 		final var mimeType = "image/jpeg";
 
-		final var bean = PetImage.create()
-			.withId(id)
-			.withFileName(fileName)
-			.withMimeType(mimeType);
+		final var bean = PetImage.create().withId(id).withFileName(fileName).withMimeType(mimeType);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
-
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 
@@ -22,10 +21,7 @@ import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
  */
 @SpringBootTest
 @ActiveProfiles("junit")
-@Sql(scripts = {
-	"/db/scripts/truncate.sql",
-	"/db/scripts/testdata-junit.sql"
-})
+@Sql(scripts = {"/db/scripts/truncate.sql", "/db/scripts/testdata-junit.sql"})
 class PetImageRepositoryTest {
 
 	@Autowired
@@ -37,12 +33,12 @@ class PetImageRepositoryTest {
 		// Setup
 		final var fileName = "test.jpg";
 		final var mimeType = "image/jpeg";
-		final var content = new byte[] { 5, 1, 9, 2, 6 };
+		final var content = new byte[] {5, 1, 9, 2, 6};
 		final var entity = PetImageEntity.create()
-			.withFileName(fileName)
-			.withMimeType(mimeType)
-			.withContent(content)
-			.withPetName(PetNameEntity.create().withId(1L));
+				.withFileName(fileName)
+				.withMimeType(mimeType)
+				.withContent(content)
+				.withPetName(PetNameEntity.create().withId(1L));
 
 		// Act
 		final var result = repository.save(entity);
@@ -88,8 +84,8 @@ class PetImageRepositoryTest {
 
 		// Assert
 		assertThat(result)
-			.extracting(PetImageEntity::getId, PetImageEntity::getMimeType, PetImageEntity::getFileName)
-			.containsExactly(tuple(102L, "image/jpeg", "Beatle.jpg"));
+				.extracting(PetImageEntity::getId, PetImageEntity::getMimeType, PetImageEntity::getFileName)
+				.containsExactly(tuple(102L, "image/jpeg", "Beatle.jpg"));
 	}
 
 	@Test
@@ -102,7 +98,7 @@ class PetImageRepositoryTest {
 
 		// Setup
 		final var id = 103L;
-		final var newContent = new byte[] { 5, 1, 9, 2, 6 };
+		final var newContent = new byte[] {5, 1, 9, 2, 6};
 
 		// Fetch existing entity.
 		final var petImage = repository.findById(id).orElseThrow();

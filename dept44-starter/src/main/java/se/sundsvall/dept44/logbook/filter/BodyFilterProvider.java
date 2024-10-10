@@ -10,6 +10,12 @@ import static org.zalando.logbook.BodyFilter.merge;
 import static org.zalando.logbook.core.BodyFilters.defaultValue;
 import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
@@ -17,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,20 +36,12 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-
 import org.apache.hc.core5.http.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
 public final class BodyFilterProvider {
 
@@ -56,48 +53,47 @@ public final class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(
+			ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
 
 		final var jsonPathConfiguration = Configuration.builder()
-			.jsonProvider(new JacksonJsonProvider(objectMapper))
-			.mappingProvider(new JacksonMappingProvider(objectMapper))
-			.options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
-			.build();
+				.jsonProvider(new JacksonJsonProvider(objectMapper))
+				.mappingProvider(new JacksonMappingProvider(objectMapper))
+				.options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
+				.build();
 
-		return jsonPathFilters.entrySet()
-			.stream()
-			.map(filter -> merge(defaultValue(), (contentType, body) -> {
-
-				if (anyNull(contentType, body)) {
-					return body;
-				}
-
-				if ("".equals(body.trim())) {
-					return "";
-				}
-
-				if (ContentType.parse(contentType).getMimeType().equals(APPLICATION_JSON.getMimeType())) {
-					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-					final var value = documentContext.read(filter.getKey());
-					if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-						documentContext.set(filter.getKey(), filter.getValue());
+		return jsonPathFilters.entrySet().stream()
+				.map(filter -> merge(defaultValue(), (contentType, body) -> {
+					if (anyNull(contentType, body)) {
+						return body;
 					}
 
-					return documentContext.jsonString();
-				}
+					if ("".equals(body.trim())) {
+						return "";
+					}
 
-				return body;
-			}))
-			.toList();
+					if (ContentType.parse(contentType).getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+						final var documentContext =
+								JsonPath.using(jsonPathConfiguration).parse(body);
+						final var value = documentContext.read(filter.getKey());
+						if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+							documentContext.set(filter.getKey(), filter.getValue());
+						}
+
+						return documentContext.jsonString();
+					}
+
+					return body;
+				}))
+				.toList();
 	}
 
 	public static List<BodyFilter> buildXPathFilters(final Map<String, String> xPathFilters) {
 		final TransformerFactory transformerFactory = createTransformerFactory();
 
-		return xPathFilters.entrySet()
-			.stream()
-			.map(filter -> xPath(filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))
-			.toList();
+		return xPathFilters.entrySet().stream()
+				.map(filter -> xPath(filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))
+				.toList();
 	}
 
 	static DocumentBuilder createDocumentBuilder(final DocumentBuilderFactory factory) {
@@ -125,7 +121,6 @@ public final class BodyFilterProvider {
 		} catch (final ParserConfigurationException e) {
 			throw new InvalidConfigurationException(e);
 		}
-
 	}
 
 	static TransformerFactory createTransformerFactory() {
@@ -140,7 +135,8 @@ public final class BodyFilterProvider {
 	}
 
 	static BodyFilter xPath(final String xPath, final String replacement, final Transformer transformer) {
-		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
+		final List<String> xmlContentTypes =
+				List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
 
 		return (contentTypeString, body) -> {
 			if (anyNull(contentTypeString, body)) {
@@ -177,14 +173,17 @@ public final class BodyFilterProvider {
 				return body;
 
 			} catch (final Exception e) {
-				LOGGER.warn("An exception occured while filtering content from incoming xml request body ({}).", e.getMessage());
+				LOGGER.warn(
+						"An exception occured while filtering content from incoming xml request body ({}).",
+						e.getMessage());
 				return body;
 			}
 		};
 	}
 
 	private static Charset evaluateCharset(final ContentType contentType) {
-		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is returned
+		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is
+		// returned
 		return isNull(contentType.getCharset()) ? StandardCharsets.UTF_8 : contentType.getCharset();
 	}
 }

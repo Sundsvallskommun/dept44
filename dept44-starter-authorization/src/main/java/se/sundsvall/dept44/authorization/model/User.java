@@ -4,7 +4,6 @@ import static org.springframework.util.CollectionUtils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class User implements UserDetails {
@@ -17,8 +16,7 @@ public class User implements UserDetails {
 		return new User();
 	}
 
-	private User() {
-	}
+	private User() {}
 
 	public User withUsername(String username) {
 		this.username = username;

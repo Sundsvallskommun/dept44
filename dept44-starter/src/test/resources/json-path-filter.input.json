@@ -1,11 +1,9 @@
 {
-  "name": "Andy",
-  "pin": 3456,
-  "social_accounts": [
-    {
-      "platform": "Twitter",
-      "username": "andy12345",
-      "password": "s3cr3tp4ssw0rd"
-    }
-  ]
+	"social_accounts": [{
+		"password": "s3cr3tp4ssw0rd",
+		"platform": "Twitter",
+		"username": "andy12345"
+	}],
+	"pin": 3456,
+	"name": "Andy"
 }

@@ -21,10 +21,18 @@ import static org.springframework.http.MediaType.IMAGE_JPEG;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
+import com.github.tomakehurst.wiremock.common.FileSource;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
+import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
-
+import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -37,17 +45,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ResourceUtils;
-
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
-import com.github.tomakehurst.wiremock.common.FileSource;
-import com.github.tomakehurst.wiremock.core.Options;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
-import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-
-import net.javacrumbs.jsonunit.core.Option;
 import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
 import se.sundsvall.dept44.test.supportfiles.TestBody;
 
@@ -85,49 +82,62 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath(uriBuilder -> uriBuilder.path("/some/path/{value}")
-				.queryParam("someParam", "someValue")
-				.build(123))
-			//.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withHeader("headerKey", "headerValue")
-			.withExpectedResponse("{}")
-			.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath(uriBuilder -> uriBuilder
+						.path("/some/path/{value}")
+						.queryParam("someParam", "someValue")
+						.build(123))
+				// .withServicePath("/some/path")
+				.withHttpMethod(GET)
+				.withHeader("headerKey", "headerValue")
+				.withExpectedResponse("{}")
+				.withJsonAssertOptions(List.of(Option.IGNORING_ARRAY_ORDER))
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseHeader(CONTENT_TYPE, List.of(APPLICATION_PROBLEM_JSON_VALUE))
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
-		verify(restTemplateMock).exchange(eq("/some/path/123?someParam=someValue"), eq(GET), httpEntityCaptor.capture(), eq(String.class));
+		verify(restTemplateMock)
+				.exchange(
+						eq("/some/path/123?someParam=someValue"),
+						eq(GET),
+						httpEntityCaptor.capture(),
+						eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
 		verify(wiremockMock).verify(any());
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGETCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testGETCall"));
 
 		// Verification of reset-method
-		assertThat(appTest.reset()).hasAllNullFieldsOrPropertiesExcept(
-			"logger",
-			"contentType",
-			"expectedResponseBodyIsNull",
-			"maxVerificationDelayInSeconds",
-			"expectedResponseType",
-			"restTemplate",
-			"wiremock");
+		assertThat(appTest.reset())
+				.hasAllNullFieldsOrPropertiesExcept(
+						"logger",
+						"contentType",
+						"expectedResponseBodyIsNull",
+						"maxVerificationDelayInSeconds",
+						"expectedResponseType",
+						"restTemplate",
+						"wiremock");
 	}
 
 	@Test
@@ -139,20 +149,24 @@ class AbstractAppTestTest {
 		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
 		final var contentBytes = Files.readAllBytes(file.toPath());
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn(".");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class))).thenReturn(new ResponseEntity<>(contentBytes, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class)))
+				.thenReturn(new ResponseEntity<>(contentBytes, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedBinaryResponse("dept44.jpg")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(GET)
+				.withExpectedBinaryResponse("dept44.jpg")
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -163,8 +177,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBinaryCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testBinaryCall"));
 	}
 
 	@Test
@@ -174,24 +190,28 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(POST)
-			.withHeader("headerKey", "headerValue")
-			.withRequest("{}")
-			.withExpectedResponseBodyIsNull()
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(POST)
+				.withHeader("headerKey", "headerValue")
+				.withRequest("{}")
+				.withExpectedResponseBodyIsNull()
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -202,8 +222,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCall"));
 	}
 
 	@Test
@@ -214,25 +236,29 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHeader("headerKey", "headerValue")
-			.withHttpMethod(POST)
-			.withContentType(MULTIPART_FORM_DATA)
-			.withRequestFile("file", file)
-			.withExpectedResponseBodyIsNull()
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHeader("headerKey", "headerValue")
+				.withHttpMethod(POST)
+				.withContentType(MULTIPART_FORM_DATA)
+				.withRequestFile("file", file)
+				.withExpectedResponseBodyIsNull()
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -243,8 +269,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(MULTIPART_FORM_DATA_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallWithMultiPart"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(MULTIPART_FORM_DATA_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallWithMultiPart"));
 	}
 
 	@Test
@@ -254,24 +282,28 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("http://someurl:111222/aaa"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(POST)
-			.withHeader("headerKey", "headerValue")
-			.withRequest("{}")
-			.withExpectedResponseBodyIsNull()
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseHeader("responseHeader", List.of("^http://(.*)/(.*)$"))
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(POST)
+				.withHeader("headerKey", "headerValue")
+				.withRequest("{}")
+				.withExpectedResponseBodyIsNull()
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseHeader("responseHeader", List.of("^http://(.*)/(.*)$"))
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -282,8 +314,12 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallMatchesExpectedHeaderValueWithReqexp"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(
+						"x-test-case",
+						List.of("AppTestImplementation.testPOSTCallMatchesExpectedHeaderValueWithReqexp"));
 	}
 
 	@Test
@@ -293,25 +329,32 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
+		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(
+						"""
 			{
-			  "key": "this-is-key",
-			  "value": "this-is-value"
+			"key": "this-is-key",
+			"value": "this-is-value"
 			}
-			""", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+			""",
+						responseHeaders,
+						NO_CONTENT));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var call = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(PUT)
-			.withExpectedResponseStatus(NO_CONTENT)
-			.withMaxVerificationDelayInSeconds(5)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(PUT)
+				.withExpectedResponseStatus(NO_CONTENT)
+				.withMaxVerificationDelayInSeconds(5)
+				.sendRequestAndVerifyResponse();
 
 		final var instance = call.getResponseBody(TestBody.class);
 		final var headers = call.getResponseHeaders();
@@ -331,8 +374,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPUTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testPUTCall"));
 	}
 
 	@Test
@@ -342,20 +387,24 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(DELETE)
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseStatus(NO_CONTENT)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(DELETE)
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseStatus(NO_CONTENT)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -366,31 +415,37 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
 	}
 
 	@Test
 	void testBodyReplacement() {
 		// Setup
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions())
+				.thenReturn(optionsMock)
+				.thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(OK));
+		when(wiremockMock.listAllStubMappings())
+				.thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
-			.withServicePath("/some/path")
-			.withHttpMethod(POST)
-			.withHeader("headerKey", "headerValue")
-			.withRequest("{\"someKey\": \"[replaceme]\"}")
-			.withRequestReplacement("[replaceme]", "someValue")
-			.withExpectedResponseBodyIsNull()
-			.withMaxVerificationDelayInSeconds(5)
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
+				.withExtensions(extensionMock)
+				.withServicePath("/some/path")
+				.withHttpMethod(POST)
+				.withHeader("headerKey", "headerValue")
+				.withRequest("{\"someKey\": \"[replaceme]\"}")
+				.withRequestReplacement("[replaceme]", "someValue")
+				.withExpectedResponseBodyIsNull()
+				.withMaxVerificationDelayInSeconds(5)
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
 
 		// Verification
 		assertThat(instance).isNotNull();
@@ -401,8 +456,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBodyReplacement"));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders())
+				.containsEntry("x-test-case", List.of("AppTestImplementation.testBodyReplacement"));
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
 	}
 }

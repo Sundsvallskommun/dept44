@@ -3,6 +3,9 @@ package se.sundsvall.dept44.authorization.util;
 import static java.util.Collections.emptyMap;
 import static org.springframework.util.Assert.hasText;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -11,12 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.springframework.stereotype.Component;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 
 @Component
@@ -51,8 +49,9 @@ public class JwtTokenUtil implements Serializable {
 	public Collection<GenericGrantedAuthority> getRolesFromToken(final String token) {
 		final Map<?, ?> roles = getAllClaimsFromToken(token).get("roles", Map.class);
 		return Optional.ofNullable(roles).orElse(emptyMap()).entrySet().stream()
-			.map(entry -> GenericGrantedAuthority.create(String.valueOf(entry.getKey()), Objects.toString(entry.getValue(), null)))
-			.toList();
+				.map(entry -> GenericGrantedAuthority.create(
+						String.valueOf(entry.getKey()), Objects.toString(entry.getValue(), null)))
+				.toList();
 	}
 
 	/**
@@ -80,9 +79,9 @@ public class JwtTokenUtil implements Serializable {
 
 	private Claims getAllClaimsFromToken(final String token) {
 		return Jwts.parser()
-			.verifyWith(Keys.hmacShaKeyFor(secret))
-			.build()
-			.parseSignedClaims(token)
-			.getPayload();
+				.verifyWith(Keys.hmacShaKeyFor(secret))
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 }

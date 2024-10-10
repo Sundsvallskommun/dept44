@@ -1,17 +1,16 @@
 package se.sundsvall.petinventory.integration.db;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -29,11 +28,12 @@ class SchemaVerificationTest {
 		final var generatedSchema = Files.readString(Path.of(generatedSchemaFile));
 
 		assertThat(storedSchema)
-			.as(String.format("Please reflect modifications to entities in file: %s", STORED_SCHEMA_FILE))
-			.isEqualToNormalizingWhitespace(generatedSchema);
+				.as(String.format("Please reflect modifications to entities in file: %s", STORED_SCHEMA_FILE))
+				.isEqualToNormalizingWhitespace(generatedSchema);
 	}
 
 	private String getResourceString(final String fileName) throws IOException, URISyntaxException {
-		return Files.readString(Paths.get(getClass().getClassLoader().getResource(fileName).toURI()));
+		return Files.readString(
+				Paths.get(getClass().getClassLoader().getResource(fileName).toURI()));
 	}
 }

@@ -1,14 +1,12 @@
 package se.sundsvall.dept44.common.validators.annotation;
 
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
-
 import se.sundsvall.dept44.common.validators.annotation.impl.ValidUuidConstraintValidator;
 
 /**
@@ -17,7 +15,7 @@ import se.sundsvall.dept44.common.validators.annotation.impl.ValidUuidConstraint
  * @see <a href="http://www.ietf.org/rfc/rfc4122.txt">RFC 4122</a>
  */
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidUuidConstraintValidator.class)
 public @interface ValidUuid {

@@ -2,6 +2,9 @@ package se.sundsvall.dept44.test.extension;
 
 import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,17 +12,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import se.sundsvall.dept44.test.annotation.resource.Load;
 
 /**
@@ -47,7 +44,7 @@ public class ResourceLoaderExtension implements ParameterResolver {
 
 	@Override
 	public boolean supportsParameter(final ParameterContext parameterContext, final ExtensionContext extensionContext)
-		throws ParameterResolutionException {
+			throws ParameterResolutionException {
 		var parameter = parameterContext.getParameter();
 
 		return AnnotationUtils.isAnnotated(parameter, Load.class);
@@ -55,24 +52,26 @@ public class ResourceLoaderExtension implements ParameterResolver {
 
 	@Override
 	public Object resolveParameter(final ParameterContext parameterContext, final ExtensionContext extensionContext)
-		throws ParameterResolutionException {
+			throws ParameterResolutionException {
 		var parameter = parameterContext.getParameter();
 		var parameterClass = parameter.getType();
 
 		return findAnnotation(parameter, Load.class)
-			.map(annotation -> {
-				var path = annotation.value();
+				.map(annotation -> {
+					var path = annotation.value();
 
-				return switch (annotation.as()) {
-					case JSON -> fromJson(fromClasspath(path), parameterClass);
-					case XML -> fromXml(fromClasspath(path), parameterClass);
-					case STRING -> Optional.of(parameterClass)
-						.filter(String.class::isAssignableFrom)
-						.map(ignored -> fromClasspath(path))
-						.orElseThrow(() -> new IllegalStateException("Unable to load resource into parameter of type " + parameterClass.getName()));
-				};
-			})
-			.orElseThrow(() -> new IllegalStateException("No @Load annotation on parameter " + parameter.getName()));
+					return switch (annotation.as()) {
+						case JSON -> fromJson(fromClasspath(path), parameterClass);
+						case XML -> fromXml(fromClasspath(path), parameterClass);
+						case STRING -> Optional.of(parameterClass)
+								.filter(String.class::isAssignableFrom)
+								.map(ignored -> fromClasspath(path))
+								.orElseThrow(() -> new IllegalStateException(
+										"Unable to load resource into parameter of type " + parameterClass.getName()));
+					};
+				})
+				.orElseThrow(
+						() -> new IllegalStateException("No @Load annotation on parameter " + parameter.getName()));
 	}
 
 	private <T> T fromXml(final String value, final Class<T> clazz) {
@@ -103,12 +102,12 @@ public class ResourceLoaderExtension implements ParameterResolver {
 		var classLoader = Thread.currentThread().getContextClassLoader();
 
 		return Optional.ofNullable(classLoader.getResourceAsStream(resourceName))
-			.orElseThrow(() -> new IllegalArgumentException("Resource not found with name: " + resourceName));
+				.orElseThrow(() -> new IllegalArgumentException("Resource not found with name: " + resourceName));
 	}
 
 	private String convertStreamToString(final InputStream is) {
 		return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-			.lines()
-			.collect(Collectors.joining("\n"));
+				.lines()
+				.collect(Collectors.joining("\n"));
 	}
 }

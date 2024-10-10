@@ -5,9 +5,10 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -21,13 +22,10 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.util.Assert;
 
-import feign.RequestInterceptor;
-import feign.RequestTemplate;
-
 public class OAuth2RequestInterceptor implements RequestInterceptor {
 
 	private static final Authentication ANONYMOUS_AUTHENTICATION = new AnonymousAuthenticationToken(
-		"anonymous", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
+			"anonymous", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
 
 	private final OAuth2AuthorizedClientManager authorizedClientManager;
 	private final ClientRegistration clientRegistration;
@@ -38,27 +36,31 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 
 		Set<String> scope = getScopeSet(clientRegistration);
 		ofNullable(extraScopes).ifPresent(scope::addAll);
-		this.clientRegistration = ClientRegistration.withClientRegistration(clientRegistration).scope(scope).build();
+		this.clientRegistration = ClientRegistration.withClientRegistration(clientRegistration)
+				.scope(scope)
+				.build();
 
 		var clientRegistrations = new InMemoryClientRegistrationRepository(this.clientRegistration);
 		oAuth2AuthorizedClientService = new InMemoryOAuth2AuthorizedClientService(clientRegistrations);
 
-		this.authorizedClientManager = createAuthorizedClientManager(clientRegistrations, oAuth2AuthorizedClientService);
+		this.authorizedClientManager =
+				createAuthorizedClientManager(clientRegistrations, oAuth2AuthorizedClientService);
 	}
 
 	private Set<String> getScopeSet(final ClientRegistration clientRegistration) {
-		//When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
-		return ofNullable(clientRegistration.getScopes())
-			.map(HashSet::new)
-			.orElseGet(HashSet::new);
+		// When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
+		return ofNullable(clientRegistration.getScopes()).map(HashSet::new).orElseGet(HashSet::new);
 	}
 
 	private AuthorizedClientServiceOAuth2AuthorizedClientManager createAuthorizedClientManager(
-		InMemoryClientRegistrationRepository clientRegistrationRepository,
-		InMemoryOAuth2AuthorizedClientService clientService) {
+			InMemoryClientRegistrationRepository clientRegistrationRepository,
+			InMemoryOAuth2AuthorizedClientService clientService) {
 
-		var manager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, clientService);
-		var clientProvider = OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build();
+		var manager =
+				new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, clientService);
+		var clientProvider = OAuth2AuthorizedClientProviderBuilder.builder()
+				.clientCredentials()
+				.build();
 
 		manager.setAuthorizedClientProvider(clientProvider);
 		return manager;
@@ -70,23 +72,24 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 			return;
 		}
 
-		var request = OAuth2AuthorizeRequest
-			.withClientRegistrationId(clientRegistration.getRegistrationId())
-			.principal(ANONYMOUS_AUTHENTICATION)
-			.build();
+		var request = OAuth2AuthorizeRequest.withClientRegistrationId(clientRegistration.getRegistrationId())
+				.principal(ANONYMOUS_AUTHENTICATION)
+				.build();
 
 		OAuth2AuthorizedClient authorizedClient;
 		synchronized (this) {
 			authorizedClient = authorizedClientManager.authorize(request);
 		}
-		var accessToken = requireNonNull(authorizedClient, "authorizedClient cannot be null").getAccessToken();
+		var accessToken = requireNonNull(authorizedClient, "authorizedClient cannot be null")
+				.getAccessToken();
 		requestTemplate.removeHeader(AUTHORIZATION);
 		requestTemplate.header(AUTHORIZATION, String.format("Bearer %s", accessToken.getTokenValue()));
 	}
 
 	public void removeToken() {
 		synchronized (this) {
-			oAuth2AuthorizedClientService.removeAuthorizedClient(clientRegistration.getRegistrationId(), ANONYMOUS_AUTHENTICATION.getName());
+			oAuth2AuthorizedClientService.removeAuthorizedClient(
+					clientRegistration.getRegistrationId(), ANONYMOUS_AUTHENTICATION.getName());
 		}
 	}
 }

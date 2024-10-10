@@ -1,10 +1,9 @@
 package se.sundsvall.petinventory.api.model;
 
-import java.util.List;
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Objects;
 
 @Schema(description = "Pet inventory item model")
 public class PetInventoryItem {
@@ -100,15 +99,33 @@ public class PetInventoryItem {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final PetInventoryItem other)) { return false; }
-		return Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(name, other.name) && Objects.equals(price, other.price) && Objects.equals(type, other.type);
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final PetInventoryItem other)) {
+			return false;
+		}
+		return Objects.equals(id, other.id)
+				&& Objects.equals(images, other.images)
+				&& Objects.equals(name, other.name)
+				&& Objects.equals(price, other.price)
+				&& Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetInventoryItem [id=").append(id).append(", price=").append(price).append(", name=").append(name).append(", type=").append(type).append(", images=").append(images).append("]");
+		builder.append("PetInventoryItem [id=")
+				.append(id)
+				.append(", price=")
+				.append(price)
+				.append(", name=")
+				.append(name)
+				.append(", type=")
+				.append(type)
+				.append(", images=")
+				.append(images)
+				.append("]");
 		return builder.toString();
 	}
 }

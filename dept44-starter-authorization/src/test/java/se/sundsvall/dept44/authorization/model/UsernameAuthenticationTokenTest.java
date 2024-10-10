@@ -6,7 +6,6 @@ import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToke
 import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken.unauthenticated;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
@@ -77,7 +76,9 @@ class UsernameAuthenticationTokenTest {
 		UsernameAuthenticationToken bean = unauthenticated(null, null);
 
 		final var exception = assertThrows(IllegalArgumentException.class, () -> bean.setAuthenticated(true));
-		assertThat(exception.getMessage()).isEqualTo("Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
+		assertThat(exception.getMessage())
+				.isEqualTo(
+						"Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
 	}
 
 	@Test
@@ -87,9 +88,10 @@ class UsernameAuthenticationTokenTest {
 
 		UsernameAuthenticationToken bean = unauthenticated(principal, credentials);
 		bean.eraseCredentials();
-		
+
 		assertThat(bean.getCredentials()).isNull();
 	}
+
 	@Test
 	void testHashCode() {
 		final var authorities = List.of(GenericGrantedAuthority.create("ROLE"));
@@ -108,7 +110,8 @@ class UsernameAuthenticationTokenTest {
 
 		UsernameAuthenticationToken originalBean = authenticated(principal, authorities);
 		UsernameAuthenticationToken equalBean = authenticated(principal, authorities);
-		UsernameAuthenticationToken equalContentBean = authenticated(User.create().withUsername("USER"), authorities);
+		UsernameAuthenticationToken equalContentBean =
+				authenticated(User.create().withUsername("USER"), authorities);
 		UsernameAuthenticationToken notEqualBean = authenticated(User.create().withUsername("OTHER_USER"), authorities);
 
 		assertThat(originalBean.equals(originalBean)).isTrue();

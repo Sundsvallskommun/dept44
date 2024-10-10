@@ -1,6 +1,4 @@
 {
-	"type": "https://zalando.github.io/problem/constraint-violation",
-	"status": 400,
 	"violations": [
 		{
 			"field": "property1",
@@ -11,5 +9,7 @@
 			"message": "property2 is also invalid!!"
 		}
 	],
-	"title": "Constraint Violation"
+	"type": "https://zalando.github.io/problem/constraint-violation",
+	"title": "Constraint Violation",
+	"status": 400
 }

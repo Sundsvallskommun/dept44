@@ -3,16 +3,13 @@ package se.sundsvall.dept44.authorization.model;
 import static java.util.Objects.isNull;
 import static org.springframework.util.Assert.hasText;
 
-import java.util.Objects;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.SpringSecurityCoreVersion;
-
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
-
+import java.util.Objects;
 import net.minidev.json.JSONArray;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.SpringSecurityCoreVersion;
 
 public class GenericGrantedAuthority implements GrantedAuthority {
 
@@ -91,8 +88,11 @@ public class GenericGrantedAuthority implements GrantedAuthority {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("GenericGrantedAuthority [role=").append(role).append(", accesses=")
-			.append(isNull(accesses) ? null : accesses.jsonString()).append("]");
+		builder.append("GenericGrantedAuthority [role=")
+				.append(role)
+				.append(", accesses=")
+				.append(isNull(accesses) ? null : accesses.jsonString())
+				.append("]");
 		return builder.toString();
 	}
 }

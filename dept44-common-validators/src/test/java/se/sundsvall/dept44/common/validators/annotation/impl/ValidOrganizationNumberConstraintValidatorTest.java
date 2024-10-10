@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import se.sundsvall.dept44.common.validators.annotation.ValidOrganizationNumber;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,7 +24,9 @@ class ValidOrganizationNumberConstraintValidatorTest {
 	private ValidOrganizationNumberConstraintValidator validator;
 
 	@ParameterizedTest
-	@ValueSource(strings = {"1026112233", "2120122334", "3154812233", "5566112233", "7021112233", "8921112233", "9351112233"})
+	@ValueSource(
+			strings = {"1026112233", "2120122334", "3154812233", "5566112233", "7021112233", "8921112233", "9351112233"
+			})
 	void validOrganizationNumber(String orgNbr) {
 
 		// Mock
@@ -70,8 +71,10 @@ class ValidOrganizationNumberConstraintValidatorTest {
 
 		assertThat(validator.isValid(null)).isTrue(); // null is treated as valid.
 		assertThat(validator.isValid(null, null)).isTrue(); // null is treated as valid.
-		assertThat(validator.isValid("not-valid")).isFalse(); // non-null and invalid values are still treated as invalid.
-		assertThat(validator.isValid("not-valid", null)).isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid"))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid", null))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
 
 		verify(annotationMock).nullable();
 	}

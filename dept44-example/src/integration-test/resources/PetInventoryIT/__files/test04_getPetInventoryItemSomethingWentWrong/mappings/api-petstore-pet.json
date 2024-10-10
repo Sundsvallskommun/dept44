@@ -1,23 +1,17 @@
 {
-	"name": "api-petstore-pet",
 	"request": {
-		"urlPath": "/api-petstore/pets/777",
+		"headers": {"Authorization": {"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"}},
 		"method": "GET",
-		"headers": {
-			"Authorization": {
-				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
-			}
-		}
+		"urlPath": "/api-petstore/pets/777"
 	},
 	"response": {
-		"headers": {
-			"Content-Type": "application/json"
-		},
-		"status": 500,
+		"headers": {"Content-Type": "application/json"},
 		"jsonBody": {
-			"status": 500,
+			"detail": "Something went wrong here in Petstore!",
 			"title": "Something went wrong!",
-			"detail": "Something went wrong here in Petstore!"
-		}
-	}
+			"status": 500
+		},
+		"status": 500
+	},
+	"name": "api-petstore-pet"
 }

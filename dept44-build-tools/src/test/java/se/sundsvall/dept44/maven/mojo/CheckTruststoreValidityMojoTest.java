@@ -15,7 +15,6 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -85,8 +84,8 @@ class CheckTruststoreValidityMojoTest {
 		mojo.setMonthsUntilExpiration(1);
 
 		assertThatExceptionOfType(MojoFailureException.class)
-			.isThrownBy(mojo::execute)
-			.withMessageContaining("Certificate 'test.cer' expiration date");
+				.isThrownBy(mojo::execute)
+				.withMessageContaining("Certificate 'test.cer' expiration date");
 	}
 
 	@Test
@@ -117,22 +116,28 @@ class CheckTruststoreValidityMojoTest {
 		final var encodedPublicKey = publicKey.getEncoded();
 		final var publicKeyInfo = SubjectPublicKeyInfo.getInstance(encodedPublicKey);
 
-		try (var bais = new ByteArrayInputStream(encodedPublicKey); var ais = new ASN1InputStream(bais)) {
+		try (var bais = new ByteArrayInputStream(encodedPublicKey);
+				var ais = new ASN1InputStream(bais)) {
 			final var asn1Sequence = (ASN1Sequence) ais.readObject();
 			final var subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(asn1Sequence);
 			final var subjectPublicKeyId = new BcX509ExtensionUtils().createSubjectKeyIdentifier(subjectPublicKeyInfo);
 
-			final var certBuilder = new X509v3CertificateBuilder(issuerAndSubject, serial,
-				Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()),
-				Date.from(notAfter.atStartOfDay(ZoneId.systemDefault()).toInstant()),
-				issuerAndSubject, publicKeyInfo);
+			final var certBuilder = new X509v3CertificateBuilder(
+					issuerAndSubject,
+					serial,
+					Date.from(
+							LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()),
+					Date.from(notAfter.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+					issuerAndSubject,
+					publicKeyInfo);
 			final var contentSigner = new JcaContentSignerBuilder("SHA256WithRSA").build(keyPair.getPrivate());
 			final var certHolder = certBuilder
-				.addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
-				.addExtension(Extension.subjectKeyIdentifier, false, subjectPublicKeyId)
-				.build(contentSigner);
+					.addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
+					.addExtension(Extension.subjectKeyIdentifier, false, subjectPublicKeyId)
+					.build(contentSigner);
 
-			final var cert = new JcaX509CertificateConverter().setProvider(BC_PROVIDER).getCertificate(certHolder);
+			final var cert =
+					new JcaX509CertificateConverter().setProvider(BC_PROVIDER).getCertificate(certHolder);
 
 			final var outDir = new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath);
 			if (!outDir.exists()) {

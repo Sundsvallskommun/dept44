@@ -5,17 +5,16 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.lang.reflect.Method;
 import se.sundsvall.dept44.common.validators.annotation.ValidOrganizationNumber;
 
 /**
  * Defines the logic to validate that a string is a valid organization number.
  */
-public class ValidOrganizationNumberConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidOrganizationNumber, String> {
+public class ValidOrganizationNumberConstraintValidator extends AbstractValidator
+		implements ConstraintValidator<ValidOrganizationNumber, String> {
 
 	private static final String REGEX_PATTERN = "^([1235789][\\d][2-9]\\d{7})$";
 	private boolean nullable;
@@ -42,8 +41,8 @@ public class ValidOrganizationNumberConstraintValidator extends AbstractValidato
 	@Override
 	public String getMessage() {
 		return ofNullable(findMethod(ValidOrganizationNumber.class, MESSAGE_METHOD_NAME))
-			.map(Method::getDefaultValue)
-			.map(Object::toString)
-			.orElseThrow(createException(ValidOrganizationNumber.class.getName()));
+				.map(Method::getDefaultValue)
+				.map(Object::toString)
+				.orElseThrow(createException(ValidOrganizationNumber.class.getName()));
 	}
 }

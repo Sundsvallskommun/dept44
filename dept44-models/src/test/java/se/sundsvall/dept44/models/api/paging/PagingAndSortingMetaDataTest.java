@@ -1,12 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
-
-import java.util.List;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -17,16 +10,24 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+
 class PagingAndSortingMetaDataTest {
 
 	@Test
 	void testBean() {
-		assertThat(PagingAndSortingMetaData.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+		assertThat(
+				PagingAndSortingMetaData.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals(),
+						hasValidBeanToString()));
 	}
 
 	@Test
@@ -40,15 +41,14 @@ class PagingAndSortingMetaDataTest {
 		final var totalPages = 404;
 		final var totalRecords = 505;
 
-
 		final var meta = PagingAndSortingMetaData.create()
-			.withCount(count)
-			.withLimit(limit)
-			.withPage(page)
-			.withSortBy(sortBy)
-			.withSortDirection(sortDirection)
-			.withTotalPages(totalPages)
-			.withTotalRecords(totalRecords);
+				.withCount(count)
+				.withLimit(limit)
+				.withPage(page)
+				.withSortBy(sortBy)
+				.withSortDirection(sortDirection)
+				.withTotalPages(totalPages)
+				.withTotalRecords(totalRecords);
 
 		assertThat(meta.getCount()).isEqualTo(count);
 		assertThat(meta.getLimit()).isEqualTo(limit);
@@ -108,20 +108,19 @@ class PagingAndSortingMetaDataTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(PagingAndSortingMetaData.create())
-			.hasFieldOrPropertyWithValue("count", 0)
-			.hasFieldOrPropertyWithValue("limit", 0)
-			.hasFieldOrPropertyWithValue("page", 0)
-			.hasFieldOrPropertyWithValue("totalRecords", 0L)
-			.hasFieldOrPropertyWithValue("totalPages", 0);
+				.hasFieldOrPropertyWithValue("count", 0)
+				.hasFieldOrPropertyWithValue("limit", 0)
+				.hasFieldOrPropertyWithValue("page", 0)
+				.hasFieldOrPropertyWithValue("totalRecords", 0L)
+				.hasFieldOrPropertyWithValue("totalPages", 0);
 
 		assertThat(new PagingAndSortingMetaData())
-			.hasFieldOrPropertyWithValue("count", 0)
-			.hasFieldOrPropertyWithValue("limit", 0)
-			.hasFieldOrPropertyWithValue("page", 0)
-			.hasFieldOrPropertyWithValue("totalRecords", 0L)
-			.hasFieldOrPropertyWithValue("totalPages", 0)
-			.hasFieldOrPropertyWithValue("sortBy", null)
-			.hasFieldOrPropertyWithValue("sortDirection", null);
+				.hasFieldOrPropertyWithValue("count", 0)
+				.hasFieldOrPropertyWithValue("limit", 0)
+				.hasFieldOrPropertyWithValue("page", 0)
+				.hasFieldOrPropertyWithValue("totalRecords", 0L)
+				.hasFieldOrPropertyWithValue("totalPages", 0)
+				.hasFieldOrPropertyWithValue("sortBy", null)
+				.hasFieldOrPropertyWithValue("sortDirection", null);
 	}
-
 }

@@ -4,7 +4,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -26,7 +25,8 @@ class BasicAuthenticationTest {
 	@MethodSource("toBlankErrorArguments")
 	void argumentIsBlank(String userName, String password, String expectedMessage) {
 
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> new BasicAuthentication(userName, password));
+		final var illegalArgumentException =
+				assertThrows(IllegalArgumentException.class, () -> new BasicAuthentication(userName, password));
 
 		assertThat(illegalArgumentException).isNotNull();
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(expectedMessage);
@@ -34,12 +34,11 @@ class BasicAuthenticationTest {
 
 	private static Stream<Arguments> toBlankErrorArguments() {
 		return Stream.of(
-			Arguments.of("userName", "", "Password must be set"),
-			Arguments.of("", "password", "Username must be set"),
-			Arguments.of("", "", "Username must be set"),
-			Arguments.of("userName", null, "Password must be set"),
-			Arguments.of(null, "password", "Username must be set"),
-			Arguments.of(null, null, "Username must be set"));
+				Arguments.of("userName", "", "Password must be set"),
+				Arguments.of("", "password", "Username must be set"),
+				Arguments.of("", "", "Username must be set"),
+				Arguments.of("userName", null, "Password must be set"),
+				Arguments.of(null, "password", "Username must be set"),
+				Arguments.of(null, null, "Username must be set"));
 	}
-
 }

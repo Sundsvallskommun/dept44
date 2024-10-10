@@ -9,18 +9,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.zalando.problem.Status.NOT_FOUND;
 
+import generated.swagger.io.petstore.Pet;
+import generated.swagger.io.petstore.TypeEnum;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.problem.ThrowableProblem;
-
-import generated.swagger.io.petstore.Pet;
-import generated.swagger.io.petstore.TypeEnum;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.PetImageRepository;
 import se.sundsvall.petinventory.integration.db.PetNameRepository;
@@ -51,8 +49,10 @@ class PetInventoryServiceTest {
 		final var price = 50.75f;
 		final var type = "DOG";
 
-		when(petNameRepositoryMock.findById(id)).thenReturn(Optional.of(PetNameEntity.create().withName(name)));
-		when(petStoreClientMock.findPetById(id)).thenReturn(Optional.of(new Pet().id(id).price(price).type(TypeEnum.fromValue(type))));
+		when(petNameRepositoryMock.findById(id))
+				.thenReturn(Optional.of(PetNameEntity.create().withName(name)));
+		when(petStoreClientMock.findPetById(id))
+				.thenReturn(Optional.of(new Pet().id(id).price(price).type(TypeEnum.fromValue(type))));
 
 		// Call
 		final var result = service.getPetInventoryItem(id);
@@ -107,13 +107,17 @@ class PetInventoryServiceTest {
 		final var type2 = "CAT";
 		final var type3 = "BIRD";
 
-		when(petNameRepositoryMock.findById(id1)).thenReturn(Optional.of(PetNameEntity.create().withName(name1)));
-		when(petNameRepositoryMock.findById(id2)).thenReturn(Optional.of(PetNameEntity.create().withName(name2)));
-		when(petNameRepositoryMock.findById(id3)).thenReturn(Optional.of(PetNameEntity.create().withName(name3)));
-		when(petStoreClientMock.findAllPets()).thenReturn(List.of(
-			new Pet().id(id1).price(price1).type(TypeEnum.fromValue(type1)),
-			new Pet().id(id2).price(price2).type(TypeEnum.fromValue(type2)),
-			new Pet().id(id3).price(price3).type(TypeEnum.fromValue(type3))));
+		when(petNameRepositoryMock.findById(id1))
+				.thenReturn(Optional.of(PetNameEntity.create().withName(name1)));
+		when(petNameRepositoryMock.findById(id2))
+				.thenReturn(Optional.of(PetNameEntity.create().withName(name2)));
+		when(petNameRepositoryMock.findById(id3))
+				.thenReturn(Optional.of(PetNameEntity.create().withName(name3)));
+		when(petStoreClientMock.findAllPets())
+				.thenReturn(List.of(
+						new Pet().id(id1).price(price1).type(TypeEnum.fromValue(type1)),
+						new Pet().id(id2).price(price2).type(TypeEnum.fromValue(type2)),
+						new Pet().id(id3).price(price3).type(TypeEnum.fromValue(type3))));
 
 		// Call
 		final var result = service.getPetInventoryList();
@@ -126,10 +130,14 @@ class PetInventoryServiceTest {
 
 		// Assertions
 		assertThat(result)
-			.extracting(PetInventoryItem::getId, PetInventoryItem::getName, PetInventoryItem::getPrice, PetInventoryItem::getType)
-			.containsExactlyInAnyOrder(
-				tuple(id1, name1, price1, type1),
-				tuple(id2, name2, price2, type2),
-				tuple(id3, name3, price3, type3));
+				.extracting(
+						PetInventoryItem::getId,
+						PetInventoryItem::getName,
+						PetInventoryItem::getPrice,
+						PetInventoryItem::getType)
+				.containsExactlyInAnyOrder(
+						tuple(id1, name1, price1, type1),
+						tuple(id2, name2, price2, type2),
+						tuple(id3, name3, price3, type3));
 	}
 }

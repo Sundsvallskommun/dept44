@@ -2,7 +2,6 @@ package se.sundsvall.dept44.util;
 
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
-
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -59,8 +58,8 @@ public final class KeyStoreUtils {
 	public static KeyStore loadKeyStore(final String keyStoreLocation, final String keyStorePassword) {
 		try {
 			final var keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-			keyStore.load(RESOURCE_LOADER.getResource(keyStoreLocation).getInputStream(),
-				keyStorePassword.toCharArray());
+			keyStore.load(
+					RESOURCE_LOADER.getResource(keyStoreLocation).getInputStream(), keyStorePassword.toCharArray());
 			return keyStore;
 		} catch (final Exception e) {
 			throw new IllegalStateException(ERROR_MESSAGE, e);

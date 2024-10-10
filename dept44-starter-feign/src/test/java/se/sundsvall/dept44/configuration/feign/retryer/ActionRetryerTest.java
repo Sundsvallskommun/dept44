@@ -6,11 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import feign.Request;
 import feign.RetryableException;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class ActionRetryerTest {
 
@@ -19,11 +18,13 @@ class ActionRetryerTest {
 	@Test
 	void continueOrPropagate() {
 		final var actionRetryer = new ActionRetryer(actionMock, 2);
-		final var retryableException = new RetryableException(200, "message", Request.HttpMethod.GET, (Long) null, Mockito.mock(Request.class));
+		final var retryableException = new RetryableException(
+				200, "message", Request.HttpMethod.GET, (Long) null, Mockito.mock(Request.class));
 
 		assertDoesNotThrow(() -> actionRetryer.continueOrPropagate(retryableException));
 		assertDoesNotThrow(() -> actionRetryer.continueOrPropagate(retryableException));
-		final var exception = assertThrows(RetryableException.class, () -> actionRetryer.continueOrPropagate(retryableException));
+		final var exception =
+				assertThrows(RetryableException.class, () -> actionRetryer.continueOrPropagate(retryableException));
 
 		assertThat(exception).isSameAs(retryableException);
 		verify(actionMock, times(2)).execute();

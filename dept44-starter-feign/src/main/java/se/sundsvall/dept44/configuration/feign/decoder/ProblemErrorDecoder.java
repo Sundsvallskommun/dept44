@@ -3,19 +3,16 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static se.sundsvall.dept44.configuration.feign.decoder.util.ProblemUtils.toProblem;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import feign.Response;
+import feign.RetryableException;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
-
 import org.zalando.problem.Problem;
 import org.zalando.problem.jackson.ProblemModule;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.ConstraintViolationProblemModule;
-
-import com.fasterxml.jackson.databind.json.JsonMapper;
-
-import feign.Response;
-import feign.RetryableException;
-import jakarta.annotation.Nonnull;
 
 /**
  * A Problem ErrorDecoder that allows you to process an Problem-based error response.
@@ -25,9 +22,9 @@ import jakarta.annotation.Nonnull;
 public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
 	private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
-		.addModule(new ProblemModule())
-		.addModule(new ConstraintViolationProblemModule())
-		.build();
+			.addModule(new ProblemModule())
+			.addModule(new ConstraintViolationProblemModule())
+			.build();
 
 	/**
 	 * Creates a new ProblemErrorDecoder with an integration name and bypass response codes.
@@ -41,7 +38,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 * @param integrationName     name of integration to whom the error decoder is connected
 	 * @param bypassResponseCodes list of response codes to bypass
 	 */
-	public ProblemErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes) {
+	public ProblemErrorDecoder(
+			@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes) {
 		super(integrationName, bypassResponseCodes, new WSO2RetryResponseVerifier());
 	}
 
@@ -71,20 +69,26 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 * @param bypassResponseCodes   list of response codes to bypass
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	public ProblemErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, final RetryResponseVerifier retryResponseVerifier) {
+	public ProblemErrorDecoder(
+			@Nonnull final String integrationName,
+			@Nonnull final List<Integer> bypassResponseCodes,
+			final RetryResponseVerifier retryResponseVerifier) {
 		super(integrationName, bypassResponseCodes, retryResponseVerifier);
 	}
 
 	@Override
 	public String extractErrorMessage(final Response response) throws IOException {
-		final var problem = isConstraintViolationProblem(response) ? toProblem(deserialize(response, ConstraintViolationProblem.class)) : deserialize(response, Problem.class);
+		final var problem = isConstraintViolationProblem(response)
+				? toProblem(deserialize(response, ConstraintViolationProblem.class))
+				: deserialize(response, Problem.class);
 
 		return ErrorMessage.create(integrationName, response.status(), problem).extractMessage();
 	}
 
 	private boolean isConstraintViolationProblem(final Response response) {
 		try {
-			return isNotEmpty(deserialize(response, ConstraintViolationProblem.class).getViolations());
+			return isNotEmpty(
+					deserialize(response, ConstraintViolationProblem.class).getViolations());
 		} catch (final Exception e) {
 			return false;
 		}

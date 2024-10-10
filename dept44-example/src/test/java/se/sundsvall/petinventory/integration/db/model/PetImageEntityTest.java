@@ -13,7 +13,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.Random;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -26,12 +25,14 @@ class PetImageEntityTest {
 
 	@Test
 	void testBean() {
-		assertThat(PetImageEntity.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+		assertThat(
+				PetImageEntity.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals(),
+						hasValidBeanToString()));
 	}
 
 	@Test
@@ -46,13 +47,13 @@ class PetImageEntityTest {
 		final var petNameEntity = PetNameEntity.create();
 
 		final var bean = PetImageEntity.create()
-			.withId(id)
-			.withContent(content)
-			.withCreated(created)
-			.withFileName(fileName)
-			.withMimeType(mimeType)
-			.withModified(modified)
-			.withPetName(petNameEntity);
+				.withId(id)
+				.withContent(content)
+				.withCreated(created)
+				.withFileName(fileName)
+				.withMimeType(mimeType)
+				.withModified(modified)
+				.withPetName(petNameEntity);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);

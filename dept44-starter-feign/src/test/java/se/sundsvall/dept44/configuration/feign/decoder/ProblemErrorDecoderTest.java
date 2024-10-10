@@ -11,12 +11,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.configuration.feign.decoder.WSO2RetryResponseVerifierTest.WSO2_TOKEN_EXPIRE_HEADER_ERROR;
 
+import feign.Request;
+import feign.RequestTemplate;
+import feign.Response;
+import feign.RetryableException;
+import feign.codec.ErrorDecoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,12 +29,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import feign.Request;
-import feign.RequestTemplate;
-import feign.Response;
-import feign.RetryableException;
-import feign.codec.ErrorDecoder;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.test.annotation.resource.Load;
@@ -57,8 +55,9 @@ class ProblemErrorDecoderTest {
 
 		// Assert
 		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {status=402 Payment Required, title=You do not have enough credit.}");
+				.isExactlyInstanceOf(ClientProblem.class)
+				.hasMessage(
+						"Bad Gateway: XXX error: {status=402 Payment Required, title=You do not have enough credit.}");
 	}
 
 	@Test
@@ -73,8 +72,9 @@ class ProblemErrorDecoderTest {
 
 		// Assert
 		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=402 Payment Required, title=You do not have enough credit.}");
+				.isExactlyInstanceOf(ClientProblem.class)
+				.hasMessage(
+						"Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=402 Payment Required, title=You do not have enough credit.}");
 	}
 
 	@Test
@@ -89,8 +89,9 @@ class ProblemErrorDecoderTest {
 
 		// Assert
 		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}");
+				.isExactlyInstanceOf(ClientProblem.class)
+				.hasMessage(
+						"Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}");
 	}
 
 	@ParameterizedTest
@@ -120,8 +121,8 @@ class ProblemErrorDecoderTest {
 
 		// Assert
 		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Not Found: XXX error: {status=404 Not Found, title=Not Found}");
+				.isExactlyInstanceOf(ClientProblem.class)
+				.hasMessage("Not Found: XXX error: {status=404 Not Found, title=Not Found}");
 	}
 
 	@ParameterizedTest
@@ -130,12 +131,15 @@ class ProblemErrorDecoderTest {
 
 		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var errorResponse = buildErrorResponse("""
+		final var errorResponse = buildErrorResponse(
+				"""
 			{
 				"title": "this is a title",
 				"detail": "this is a detail"
 			}
-			""", httpStatus, null);
+			""",
+				httpStatus,
+				null);
 
 		// Act
 		final var exception = errorDecoder.decode("test", errorResponse);
@@ -149,7 +153,8 @@ class ProblemErrorDecoderTest {
 
 		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
+		final var errorResponse =
+				buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
 
 		// Act
 		final var exception = errorDecoder.decode("test", errorResponse);
@@ -180,33 +185,37 @@ class ProblemErrorDecoderTest {
 		assertThat(exception.getCause()).isInstanceOf(ServerProblem.class);
 	}
 
-	private static Response buildErrorResponse(String errorBody, int httpStatus, Map<String, Collection<String>> headers) {
+	private static Response buildErrorResponse(
+			String errorBody, int httpStatus, Map<String, Collection<String>> headers) {
 		return Response.builder()
-			.body(errorBody, UTF_8)
-			.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
-			.status(httpStatus)
-			.headers(headers)
-			.build();
+				.body(errorBody, UTF_8)
+				.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
+				.status(httpStatus)
+				.headers(headers)
+				.build();
 	}
 
 	private static Stream<Arguments> toErrorDecoderReturnsCorrectThrowableType() {
 		return Stream.of(
-			Arguments.of(400, ClientProblem.class),
-			Arguments.of(401, ClientProblem.class),
-			Arguments.of(404, ClientProblem.class),
-			Arguments.of(418, ClientProblem.class),
-			Arguments.of(422, ClientProblem.class),
-			Arguments.of(500, ServerProblem.class),
-			Arguments.of(501, ServerProblem.class),
-			Arguments.of(502, ServerProblem.class),
-			Arguments.of(100, Problem.class),
-			Arguments.of(302, Problem.class));
+				Arguments.of(400, ClientProblem.class),
+				Arguments.of(401, ClientProblem.class),
+				Arguments.of(404, ClientProblem.class),
+				Arguments.of(418, ClientProblem.class),
+				Arguments.of(422, ClientProblem.class),
+				Arguments.of(500, ServerProblem.class),
+				Arguments.of(501, ServerProblem.class),
+				Arguments.of(502, ServerProblem.class),
+				Arguments.of(100, Problem.class),
+				Arguments.of(302, Problem.class));
 	}
 
 	private static Stream<Arguments> toErrorDecoderForErrorMessages() {
 		return Stream.of(
-			Arguments.of("<unknown message structure></unknown message structure>", 418, "Bad Gateway: XXX error: {status=418 I'm a teapot, title=Unknown error}"),
-			Arguments.of(null, 401, "Bad Gateway: XXX error: {status=401 Unauthorized, title=Unauthorized}"),
-			Arguments.of("  ", 404, "Bad Gateway: XXX error: {status=404 Not Found, title=Not Found}"));
+				Arguments.of(
+						"<unknown message structure></unknown message structure>",
+						418,
+						"Bad Gateway: XXX error: {status=418 I'm a teapot, title=Unknown error}"),
+				Arguments.of(null, 401, "Bad Gateway: XXX error: {status=401 Unauthorized, title=Unauthorized}"),
+				Arguments.of("  ", 404, "Bad Gateway: XXX error: {status=404 Not Found, title=Not Found}"));
 	}
 }

@@ -1,9 +1,5 @@
 package se.sundsvall.petinventory.integration.db.model;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -14,13 +10,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
 import se.sundsvall.petinventory.integration.db.model.listener.PetNameEntityListener;
 
 @Entity
-@Table(name = "pet_name",
-	indexes = {
-		@Index(name = "pet_name_name_index", columnList = "name")
-	})
+@Table(
+		name = "pet_name",
+		indexes = {@Index(name = "pet_name_name_index", columnList = "name")})
 @EntityListeners(PetNameEntityListener.class)
 public class PetNameEntity {
 
@@ -117,15 +115,33 @@ public class PetNameEntity {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final PetNameEntity other)) { return false; }
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final PetNameEntity other)) {
+			return false;
+		}
+		return Objects.equals(created, other.created)
+				&& Objects.equals(id, other.id)
+				&& Objects.equals(images, other.images)
+				&& Objects.equals(modified, other.modified)
+				&& Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append(", images=").append(images).append("]");
+		builder.append("PetNameEntity [id=")
+				.append(id)
+				.append(", name=")
+				.append(name)
+				.append(", created=")
+				.append(created)
+				.append(", modified=")
+				.append(modified)
+				.append(", images=")
+				.append(images)
+				.append("]");
 		return builder.toString();
 	}
 }

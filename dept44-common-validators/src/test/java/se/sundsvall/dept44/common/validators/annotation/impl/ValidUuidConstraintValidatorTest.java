@@ -6,13 +6,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,8 +65,10 @@ class ValidUuidConstraintValidatorTest {
 
 		assertThat(validator.isValid(null)).isTrue(); // null is treated as valid.
 		assertThat(validator.isValid(null, null)).isTrue(); // null is treated as valid.
-		assertThat(validator.isValid("not-valid")).isFalse(); // non-null and invalid values are still treated as invalid.
-		assertThat(validator.isValid("not-valid", null)).isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid"))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid", null))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
 
 		verify(annotationMock).nullable();
 	}

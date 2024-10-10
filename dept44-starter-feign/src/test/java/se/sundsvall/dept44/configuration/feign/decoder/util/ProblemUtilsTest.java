@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.zalando.problem.Status.BAD_REQUEST;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.DefaultProblem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
@@ -17,9 +16,9 @@ class ProblemUtilsTest {
 
 		// Arrange
 		final var violations = List.of(
-			new Violation("field1", "error1"),
-			new Violation("field2", "error2"),
-			new Violation("field3", "error3"));
+				new Violation("field1", "error1"),
+				new Violation("field2", "error2"),
+				new Violation("field3", "error3"));
 		final var constraintViolationProblem = new ConstraintViolationProblem(BAD_REQUEST, violations);
 
 		// Act

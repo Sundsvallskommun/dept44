@@ -4,6 +4,9 @@ import static java.util.Optional.ofNullable;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,7 +14,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager;
@@ -26,10 +28,6 @@ import org.springframework.web.reactive.function.client.support.WebClientAdapter
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.netty.LogbookClientHandler;
-
-import io.netty.channel.ChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import se.sundsvall.dept44.configuration.Constants;
@@ -97,25 +95,23 @@ public class WebClientBuilder {
 	 * @param  extraScopes        extra scopes for the OAuth2 client registration
 	 * @return                    this builder
 	 */
-	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration,
-		final Set<String> extraScopes) {
+	public WebClientBuilder withOAuth2ClientRegistration(
+			final ClientRegistration clientRegistration, final Set<String> extraScopes) {
 		requireNonNull(clientRegistration, "client registration cannot be null");
 
 		final var scopes = getScopes(clientRegistration);
 		ofNullable(extraScopes).ifPresent(scopes::addAll);
 
 		final var clientRegistrationWithScopes = ClientRegistration.withClientRegistration(clientRegistration)
-			.scope(scopes)
-			.build();
+				.scope(scopes)
+				.build();
 
 		return withCustomizer(builder -> builder.filter(createOAuth2Filter(clientRegistrationWithScopes)));
 	}
 
 	private Set<String> getScopes(final ClientRegistration clientRegistration) {
 		// When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
-		return ofNullable(clientRegistration.getScopes())
-			.map(HashSet::new)
-			.orElseGet(HashSet::new);
+		return ofNullable(clientRegistration.getScopes()).map(HashSet::new).orElseGet(HashSet::new);
 	}
 
 	/***
@@ -151,8 +147,9 @@ public class WebClientBuilder {
 	 * @param  handlerFunction a function to map the response to an error signal
 	 * @return                 this builder
 	 */
-	public WebClientBuilder withStatusHandler(final Predicate<HttpStatusCode> statusPredicate,
-		final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
+	public WebClientBuilder withStatusHandler(
+			final Predicate<HttpStatusCode> statusPredicate,
+			final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
 		requireNonNull(statusPredicate, "status predicate cannot be null");
 		requireNonNull(handlerFunction, "handler function cannot be null");
 
@@ -224,26 +221,26 @@ public class WebClientBuilder {
 		requireNonNull(serviceType, "serviceType cannot be null");
 
 		final var clientAdapter = WebClientAdapter.create(configureBuilder().build());
-		final var httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(clientAdapter).build();
+		final var httpServiceProxyFactory =
+				HttpServiceProxyFactory.builderFor(clientAdapter).build();
 
 		return httpServiceProxyFactory.createClient(serviceType);
 	}
 
 	private WebClient.Builder configureBuilder() {
-		final var builder = WebClient.builder()
-			.baseUrl(baseUrl)
-			.clientConnector(createClientConnector());
+		final var builder = WebClient.builder().baseUrl(baseUrl).clientConnector(createClientConnector());
 
 		customizers.forEach(customizer -> customizer.customize(builder));
 
 		return builder;
 	}
 
-	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(final ClientRegistration clientRegistration) {
+	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(
+			final ClientRegistration clientRegistration) {
 		final var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
 		final var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
 		final var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(
-			new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService));
+				new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService));
 		oAuth2Filter.setDefaultClientRegistrationId(clientRegistration.getRegistrationId());
 
 		return oAuth2Filter;
@@ -251,15 +248,15 @@ public class WebClientBuilder {
 
 	private ReactorClientHttpConnector createClientConnector() {
 		return new ReactorClientHttpConnector(HttpClient.create()
-			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
-			.doOnConnected(connection -> {
-				connection
-					.addHandlerLast(new ReadTimeoutHandler(Math.toIntExact(readTimeout.toSeconds())))
-					.addHandlerLast(new WriteTimeoutHandler(Math.toIntExact(writeTimeout.toSeconds())));
+				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
+				.doOnConnected(connection -> {
+					connection
+							.addHandlerLast(new ReadTimeoutHandler(Math.toIntExact(readTimeout.toSeconds())))
+							.addHandlerLast(new WriteTimeoutHandler(Math.toIntExact(writeTimeout.toSeconds())));
 
-				if (logbook != null) {
-					connection.addHandlerLast(new LogbookClientHandler(logbook));
-				}
-			}));
+					if (logbook != null) {
+						connection.addHandlerLast(new LogbookClientHandler(logbook));
+					}
+				}));
 	}
 }

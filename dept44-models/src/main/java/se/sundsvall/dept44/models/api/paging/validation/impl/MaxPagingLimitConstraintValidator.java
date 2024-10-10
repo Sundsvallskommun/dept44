@@ -16,12 +16,11 @@ public class MaxPagingLimitConstraintValidator implements ConstraintValidator<Ma
 	public boolean isValid(Integer value, ConstraintValidatorContext context) {
 		var isValid = value <= maxLimit;
 
-		if(!isValid) {
+		if (!isValid) {
 			useCustomMessageForValidation(context, String.format(MSG, maxLimit));
 		}
 
 		return isValid;
-
 	}
 
 	private void useCustomMessageForValidation(ConstraintValidatorContext constraintContext, String message) {

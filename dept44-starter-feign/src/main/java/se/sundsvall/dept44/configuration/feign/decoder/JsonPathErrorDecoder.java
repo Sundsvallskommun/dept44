@@ -3,15 +3,12 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
-import java.util.List;
-
-import jakarta.annotation.Nonnull;
-
 import com.jayway.jsonpath.JsonPath;
-
 import feign.Response;
 import feign.RetryableException;
+import jakarta.annotation.Nonnull;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * A flexible ErrorDecoder that allows you to massage an error response into a application-specific one using JsonPath.
@@ -36,7 +33,10 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	 * @param bypassResponseCodes list of response codes to bypass
 	 * @param jsonPathSetup       the JSON paths for custom errorMessage parsing.
 	 */
-	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, @Nonnull final JsonPathSetup jsonPathSetup) {
+	public JsonPathErrorDecoder(
+			@Nonnull final String integrationName,
+			@Nonnull final List<Integer> bypassResponseCodes,
+			@Nonnull final JsonPathSetup jsonPathSetup) {
 		super(integrationName, bypassResponseCodes, new WSO2RetryResponseVerifier());
 
 		this.jsonPathSetup = requireNonNull(jsonPathSetup);
@@ -70,7 +70,11 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	 * @param jsonPathSetup         the JSON paths for custom errorMessage parsing.
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, @Nonnull final JsonPathSetup jsonPathSetup, final RetryResponseVerifier retryResponseVerifier) {
+	public JsonPathErrorDecoder(
+			@Nonnull final String integrationName,
+			@Nonnull final List<Integer> bypassResponseCodes,
+			@Nonnull final JsonPathSetup jsonPathSetup,
+			final RetryResponseVerifier retryResponseVerifier) {
 		super(integrationName, bypassResponseCodes, retryResponseVerifier);
 
 		this.jsonPathSetup = requireNonNull(jsonPathSetup);
@@ -79,9 +83,14 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	@Override
 	public String extractErrorMessage(final Response response) throws IOException {
 		final var parsedJson = JsonPath.parse(bodyAsString(response));
-		final var title = nonNull(this.jsonPathSetup.titlePath()) ? parsedJson.read(this.jsonPathSetup.titlePath(), String.class) : null;
-		final var detail = nonNull(this.jsonPathSetup.detailPath()) ? parsedJson.read(this.jsonPathSetup.detailPath(), String.class) : null;
-		return ErrorMessage.create(integrationName, response.status(), title, detail).extractMessage();
+		final var title = nonNull(this.jsonPathSetup.titlePath())
+				? parsedJson.read(this.jsonPathSetup.titlePath(), String.class)
+				: null;
+		final var detail = nonNull(this.jsonPathSetup.detailPath())
+				? parsedJson.read(this.jsonPathSetup.detailPath(), String.class)
+				: null;
+		return ErrorMessage.create(integrationName, response.status(), title, detail)
+				.extractMessage();
 	}
 
 	/**

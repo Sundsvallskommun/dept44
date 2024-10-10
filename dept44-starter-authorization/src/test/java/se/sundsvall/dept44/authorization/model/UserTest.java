@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -34,7 +33,8 @@ class UserTest {
 		final var authority1 = GenericGrantedAuthority.create("ROLE_1");
 		final var authority2 = GenericGrantedAuthority.create("ROLE_2", "[\"ACCESS\"]");
 
-		User bean = User.create().withAuthorities(List.of(authority1, authority2)).withUsername(userName);
+		User bean =
+				User.create().withAuthorities(List.of(authority1, authority2)).withUsername(userName);
 
 		assertThat(bean.getAuthorities()).containsExactly(authority1, authority2);
 		assertThat(bean.getUsername()).isEqualTo(userName);

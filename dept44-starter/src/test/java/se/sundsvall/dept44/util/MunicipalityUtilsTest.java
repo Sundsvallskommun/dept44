@@ -7,14 +7,11 @@ import static org.apache.commons.lang3.math.NumberUtils.isDigits;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.dept44.test.annotation.resource.Load.ResourceType.STRING;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 import se.sundsvall.dept44.util.MunicipalityUtils.Municipality;
@@ -28,11 +25,11 @@ class MunicipalityUtilsTest {
 	@Test
 	void validFileContent(@Load(value = TEST_JSON_FILE, as = STRING) final String json) throws Exception {
 		assertThat(new YAMLMapper().readValue(json, new TypeReference<List<Municipality>>() {}))
-			.hasSize(EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS)
-			.allMatch(municipality -> isNotBlank(municipality.id()))
-			.allMatch(municipality -> isNotBlank(municipality.name()))
-			.allMatch(municipality -> isDigits(municipality.id()))
-			.allMatch(municipality -> hasNoSurroundingWhitespace(municipality.name()));
+				.hasSize(EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS)
+				.allMatch(municipality -> isNotBlank(municipality.id()))
+				.allMatch(municipality -> isNotBlank(municipality.name()))
+				.allMatch(municipality -> isDigits(municipality.id()))
+				.allMatch(municipality -> hasNoSurroundingWhitespace(municipality.name()));
 	}
 
 	@Test

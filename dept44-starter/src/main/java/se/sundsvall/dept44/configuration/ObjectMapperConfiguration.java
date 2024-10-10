@@ -1,14 +1,12 @@
 package se.sundsvall.dept44.configuration;
 
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
 
 @Configuration
@@ -40,7 +38,10 @@ public class ObjectMapperConfiguration {
 	 */
 	@Bean
 	Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-		return builder -> builder.postConfigurer(objectMapper -> objectMapper.getFactory()
-			.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()));
+		return builder -> builder.postConfigurer(objectMapper -> objectMapper
+				.getFactory()
+				.setStreamReadConstraints(StreamReadConstraints.builder()
+						.maxStringLength(Integer.MAX_VALUE)
+						.build()));
 	}
 }

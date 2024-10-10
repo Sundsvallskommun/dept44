@@ -10,17 +10,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,7 +41,6 @@ import org.springframework.web.servlet.config.annotation.ContentNegotiationConfi
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.zalando.problem.ThrowableProblem;
-
 import se.sundsvall.dept44.requestid.RequestId;
 
 class WebConfigurationTest {
@@ -62,7 +59,8 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Autowired
-		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter>
+				disableBrowserCacheFilterRegistration;
 
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.MunicipalityIdFilter> municipalityIdFilterRegistration;
@@ -99,10 +97,14 @@ class WebConfigurationTest {
 			webConfiguration.configureContentNegotiation(contentNegotiationConfigurer);
 
 			assertThat(contentNegotiationConfigurer).isNotNull();
-			assertThat(contentNegotiationConfigurer).extracting("mediaTypes")
-				.asInstanceOf(InstanceOfAssertFactories.map(String.class, MediaType.class))
-				.hasSize(8);
-			assertThat(contentNegotiationConfigurer).extracting("factory").extracting("favorParameter").isEqualTo(false);
+			assertThat(contentNegotiationConfigurer)
+					.extracting("mediaTypes")
+					.asInstanceOf(InstanceOfAssertFactories.map(String.class, MediaType.class))
+					.hasSize(8);
+			assertThat(contentNegotiationConfigurer)
+					.extracting("factory")
+					.extracting("favorParameter")
+					.isEqualTo(false);
 		}
 
 		@Test
@@ -119,7 +121,10 @@ class WebConfigurationTest {
 			webConfiguration.addInterceptors(interceptorRegistry);
 
 			assertThat(interceptorRegistry).isNotNull();
-			assertThat(interceptorRegistry).extracting("registrations").asInstanceOf(InstanceOfAssertFactories.list(InterceptorRegistration.class)).hasSize(1);
+			assertThat(interceptorRegistry)
+					.extracting("registrations")
+					.asInstanceOf(InstanceOfAssertFactories.list(InterceptorRegistration.class))
+					.hasSize(1);
 		}
 	}
 
@@ -137,7 +142,8 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Autowired
-		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter>
+				disableBrowserCacheFilterRegistration;
 
 		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
@@ -172,7 +178,8 @@ class WebConfigurationTest {
 		private FilterRegistrationBean<WebConfiguration.RequestIdFilter> requestIdFilterRegistration;
 
 		@Autowired(required = false)
-		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter>
+				disableBrowserCacheFilterRegistration;
 
 		@Autowired(required = false)
 		private WebConfiguration.IndexPageController indexPageController;
@@ -217,7 +224,8 @@ class WebConfigurationTest {
 		@Test
 		void getApiDocs() throws Exception {
 			final var yamlString = "yamlString";
-			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlString.getBytes());
+			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any()))
+					.thenReturn(yamlString.getBytes());
 			final var apiDocs = indexPageController.getApiDocs(httpServletRequestMock);
 			assertThat(apiDocs).isNotNull().isEqualTo(yamlString);
 		}
@@ -280,7 +288,8 @@ class WebConfigurationTest {
 		private FilterChain filterChainMock;
 
 		@Autowired
-		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter> disableBrowserCacheFilterRegistration;
+		private FilterRegistrationBean<WebConfiguration.DisableBrowserCacheFilter>
+				disableBrowserCacheFilterRegistration;
 
 		@Test
 		void doFilterInternal() throws IOException, ServletException {
@@ -288,7 +297,8 @@ class WebConfigurationTest {
 
 			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 
-			disableBrowserCacheFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
+			disableBrowserCacheFilter.doFilterInternal(
+					httpServletRequestMock, httpServletResponseMock, filterChainMock);
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletResponseMock).addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
@@ -299,7 +309,9 @@ class WebConfigurationTest {
 	}
 
 	@Nested
-	@SpringBootTest(classes = WebConfiguration.class, properties = {"mdc.municipalityId.enabled=true"})
+	@SpringBootTest(
+			classes = WebConfiguration.class,
+			properties = {"mdc.municipalityId.enabled=true"})
 	class MunicipalityIdFilterTest {
 
 		@MockBean
@@ -360,54 +372,63 @@ class WebConfigurationTest {
 
 		static Stream<Arguments> argumentsProvider() {
 			return Stream.of(
-				Arguments.of("/%s/any/service", "2281", 1),
-				Arguments.of("/any/%s/service", "2281", 2),
-				Arguments.of("/any/service/%s", "2281", 3),
-				Arguments.of("/%s/any/service", "2260", 1),
-				Arguments.of("/any/%s/service", "2260", 2),
-				Arguments.of("/any/service/%s", "2260", 3)
-			);
+					Arguments.of("/%s/any/service", "2281", 1),
+					Arguments.of("/any/%s/service", "2281", 2),
+					Arguments.of("/any/service/%s", "2281", 3),
+					Arguments.of("/%s/any/service", "2260", 1),
+					Arguments.of("/any/%s/service", "2260", 2),
+					Arguments.of("/any/service/%s", "2260", 3));
 		}
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
 		void preHandleWithAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
+			municipalityIdInterceptor =
+					new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+			final var result =
+					municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
+			assertThatNoException()
+					.isThrownBy(() -> municipalityIdInterceptor.preHandle(
+							httpServletRequestMock, httpServletResponseMock, object));
 		}
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
 		void preHandleWithNotAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
+			municipalityIdInterceptor =
+					new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object))
-				.isInstanceOf(ThrowableProblem.class)
-				.hasMessage("Not implemented for municipalityId: " + municipalityId);
+			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(
+							httpServletRequestMock, httpServletResponseMock, object))
+					.isInstanceOf(ThrowableProblem.class)
+					.hasMessage("Not implemented for municipalityId: " + municipalityId);
 		}
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
 		void preHandleWithNoConfiguredMunicipalityIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
+			municipalityIdInterceptor =
+					new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+			final var result =
+					municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
+			assertThatNoException()
+					.isThrownBy(() -> municipalityIdInterceptor.preHandle(
+							httpServletRequestMock, httpServletResponseMock, object));
 		}
 	}
 }

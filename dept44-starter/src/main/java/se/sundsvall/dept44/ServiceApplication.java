@@ -4,7 +4,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -19,12 +18,13 @@ import org.springframework.core.annotation.AliasFor;
 @SpringBootConfiguration
 @ConfigurationPropertiesScan
 @EnableAutoConfiguration
-@ComponentScan(excludeFilters = {
-    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)
-})
+@ComponentScan(
+		excludeFilters = {
+			@ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+			@ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)
+		})
 public @interface ServiceApplication {
 
-    @AliasFor(annotation = EnableAutoConfiguration.class, attribute = "exclude")
-    Class<?>[] exclude() default {};
+	@AliasFor(annotation = EnableAutoConfiguration.class, attribute = "exclude")
+	Class<?>[] exclude() default {};
 }

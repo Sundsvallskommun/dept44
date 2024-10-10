@@ -19,6 +19,17 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.springframework.util.ResourceUtils.getFile;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.VerificationException;
+import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.extension.Extension;
+import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,7 +43,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
+import net.javacrumbs.jsonunit.JsonAssert;
+import net.javacrumbs.jsonunit.core.Option;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,27 +63,13 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.extension.Extension;
-import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
-
-import net.javacrumbs.jsonunit.JsonAssert;
-import net.javacrumbs.jsonunit.core.Option;
-
 public abstract class AbstractAppTest {
 
 	private static final String FILES_DIR = "__files/";
 	private static final String COMMON_MAPPING_DIR = "/common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
-	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final ObjectMapper JSON_MAPPER =
+			JsonMapper.builder().findAndAddModules().build();
 	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
@@ -137,7 +135,8 @@ public abstract class AbstractAppTest {
 			mappingPath += "/";
 		}
 
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault().getSeparator();
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName()
+				+ FileSystems.getDefault().getSeparator();
 
 		return this;
 	}
@@ -148,10 +147,10 @@ public abstract class AbstractAppTest {
 		setupPaths();
 
 		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
+				new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
 		if (nonNull(testCaseName)) {
 			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
+					new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
 		}
 
 		return this;
@@ -197,7 +196,8 @@ public abstract class AbstractAppTest {
 	 * @param  expectedHeaderValue the list of expected header values, as regular expressions.
 	 * @return                     AbstractAppTest
 	 */
-	public AbstractAppTest withExpectedResponseHeader(final String expectedHeaderKey, final List<String> expectedHeaderValue) {
+	public AbstractAppTest withExpectedResponseHeader(
+			final String expectedHeaderKey, final List<String> expectedHeaderValue) {
 		if (isNull(expectedResponseHeaders)) {
 			expectedResponseHeaders = new HttpHeaders();
 		}
@@ -273,7 +273,8 @@ public abstract class AbstractAppTest {
 			if (options.size() == 1) {
 				setOptions(options.getFirst());
 			} else {
-				setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
+				setOptions(
+						options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
 			}
 		}
 		return this;
@@ -300,7 +301,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method replaces sections in request matching sent in string with sent in replacement string.
 	 * Observe that the withRequest method must be called before for this method to have any effect.
-	 * 
+	 *
 	 * @param matchingString    the string to match in request body
 	 * @param replacementString the string to replace with
 	 * @return AbstractAppTest
@@ -322,7 +323,8 @@ public abstract class AbstractAppTest {
 	 * @return                       AbstractAppTest
 	 * @throws FileNotFoundException if the file doesn't exist
 	 */
-	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
+	public AbstractAppTest withRequestFile(final String parameterName, final String fileName)
+			throws FileNotFoundException {
 		return withRequestFile(parameterName, getFile(testDirectoryPath + fileName));
 	}
 
@@ -378,7 +380,9 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest sendRequest() {
 		logger.info(getTestMethodName());
 
-		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
+		final var requestEntity = nonNull(multipartBody)
+				? restTemplateRequest(contentType, multipartBody)
+				: restTemplateRequest(contentType, requestBody);
 
 		// Call service and fetch response.
 		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
@@ -389,15 +393,17 @@ public abstract class AbstractAppTest {
 			expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
 				assertThat(response.getHeaders()).containsKey(expectedHeader.getKey());
 				assertThat(response.getHeaders().getValuesAsList(expectedHeader.getKey()))
-					.allMatch(actualHeaderValue -> expectedHeader.getValue().stream()
-						.allMatch(expectedHeaderValue -> equalsIgnoreCase(expectedHeaderValue, actualHeaderValue) ||
-							Pattern.matches(expectedHeaderValue, actualHeaderValue)));
+						.allMatch(actualHeaderValue -> expectedHeader.getValue().stream()
+								.allMatch(
+										expectedHeaderValue -> equalsIgnoreCase(expectedHeaderValue, actualHeaderValue)
+												|| Pattern.matches(expectedHeaderValue, actualHeaderValue)));
 			});
 		}
 		assertThat(response.getStatusCode()).isEqualTo(expectedResponseStatus);
 		if (nonNull(expectedResponseBody)) {
 			final var responseContentType = response.getHeaders().getContentType();
-			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
+			if (nonNull(responseContentType)
+					&& responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
 				assertJsonEquals(expectedResponseBody, responseBody);
 			} else {
@@ -417,12 +423,11 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest verifyStubs() {
-		await()
-			.atMost(maxVerificationDelayInSeconds, SECONDS)
-			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
-			.ignoreExceptions()
-			.until(this::verifyAllStubs);
+		await().atMost(maxVerificationDelayInSeconds, SECONDS)
+				.pollDelay(0, SECONDS)
+				.pollInterval(1, SECONDS)
+				.ignoreExceptions()
+				.until(this::verifyAllStubs);
 
 		wiremock.resetAll();
 
@@ -485,11 +490,10 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest andVerifyThat(final Callable<Boolean> conditionIsMet) {
-		await()
-			.atMost(maxVerificationDelayInSeconds, SECONDS)
-			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
-			.until(conditionIsMet);
+		await().atMost(maxVerificationDelayInSeconds, SECONDS)
+				.pollDelay(0, SECONDS)
+				.pollInterval(1, SECONDS)
+				.until(conditionIsMet);
 
 		return this;
 	}
@@ -522,10 +526,11 @@ public abstract class AbstractAppTest {
 
 	private String getTestMethodName() {
 		return Arrays.stream(Thread.currentThread().getStackTrace())
-			.map(StackTraceElement::getMethodName)
-			.filter(methodName -> methodName.startsWith("test"))
-			.findFirst()
-			.orElseThrow(() -> new UnsupportedOperationException("Could not find method name! Test method must start with 'test'"));
+				.map(StackTraceElement::getMethodName)
+				.filter(methodName -> methodName.startsWith("test"))
+				.findFirst()
+				.orElseThrow(() -> new UnsupportedOperationException(
+						"Could not find method name! Test method must start with 'test'"));
 	}
 
 	private void initializeJsonAssert() {
@@ -543,16 +548,17 @@ public abstract class AbstractAppTest {
 		// Verify all stubs by URL.
 		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
 			final var requestPattern = stub.getRequest();
-			wiremock.verify(
-				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
+			wiremock.verify(anyRequestedFor(fromOneOf(
+					requestPattern.getUrl(),
+					requestPattern.getUrlPattern(),
+					requestPattern.getUrlPath(),
+					requestPattern.getUrlPathPattern())));
 		});
 
 		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();
 		if (!isEmpty(unmatchedRequests)) {
-			final var unmatchedUrls = unmatchedRequests
-				.stream()
-				.map(LoggedRequest::getUrl)
-				.toList();
+			final var unmatchedUrls =
+					unmatchedRequests.stream().map(LoggedRequest::getUrl).toList();
 			throw new AssertionError(format("The following requests was not matched: %s", unmatchedUrls));
 		}
 

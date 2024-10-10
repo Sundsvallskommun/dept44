@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +20,6 @@ import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.client.support.interceptor.ClientInterceptor;
 import org.springframework.ws.transport.http.HttpComponents5ClientFactory;
 import org.zalando.logbook.Logbook;
-
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.support.BasicAuthentication;
@@ -46,12 +44,12 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testCreateWithBothKeyStoreFileLocationAndKeyStoreDataSet() {
 		final var webServiceTemplateBuilder = WebServiceTemplateBuilder.create()
-			.withKeyStoreFileLocation("dummyLocation")
-			.withKeyStoreData("dummy".getBytes());
+				.withKeyStoreFileLocation("dummyLocation")
+				.withKeyStoreData("dummy".getBytes());
 
 		assertThatExceptionOfType(WebServiceTemplateException.class)
-			.isThrownBy(() -> webServiceTemplateBuilder.build())
-			.withMessage("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
+				.isThrownBy(() -> webServiceTemplateBuilder.build())
+				.withMessage("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
 	}
 
 	@Test
@@ -71,44 +69,43 @@ class WebServiceTemplateBuilderTest {
 
 		// Create instance
 		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
-			.withBaseUrl(baseUrl)
-			.withBasicAuthentication(userName, password)
-			.withClientInterceptor(clientInterceptorMock)
-			.withConnectTimeout(connectTimeout)
-			.withKeyStoreFileLocation(keyStoreFileLocation)
-			.withKeyStoreData(keyStoreData)
-			.withKeyStorePassword(keyStorePassword)
-			.withLogbook(logbookMock)
-			.withPackagesToScan(List.of(package1, package2))
-			.withPackageToScan(package3)
-			.withReadTimeout(readTimeout)
-			.withWebServiceMessageFactory(webServiceMessageFactoryMock);
+				.withBaseUrl(baseUrl)
+				.withBasicAuthentication(userName, password)
+				.withClientInterceptor(clientInterceptorMock)
+				.withConnectTimeout(connectTimeout)
+				.withKeyStoreFileLocation(keyStoreFileLocation)
+				.withKeyStoreData(keyStoreData)
+				.withKeyStorePassword(keyStorePassword)
+				.withLogbook(logbookMock)
+				.withPackagesToScan(List.of(package1, package2))
+				.withPackageToScan(package3)
+				.withReadTimeout(readTimeout)
+				.withWebServiceMessageFactory(webServiceMessageFactoryMock);
 
 		// Do assertions
 		assertThat(builder)
-			.hasFieldOrPropertyWithValue("baseUrl", baseUrl)
-			.hasFieldOrPropertyWithValue("basicAuthentication", new BasicAuthentication(userName, password))
-			.hasFieldOrPropertyWithValue("clientInterceptors", Set.of(clientInterceptorMock))
-			.hasFieldOrPropertyWithValue("connectTimeout", connectTimeout)
-			.hasFieldOrPropertyWithValue("keyStoreFileLocation", keyStoreFileLocation)
-			.hasFieldOrPropertyWithValue("keyStoreData", keyStoreData)
-			.hasFieldOrPropertyWithValue("keyStorePassword", keyStorePassword)
-			.hasFieldOrPropertyWithValue("logbook", logbookMock)
-			.hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2, package3))
-			.hasFieldOrPropertyWithValue("readTimeout", readTimeout)
-			.hasFieldOrPropertyWithValue("webServiceMessageFactory", webServiceMessageFactoryMock);
+				.hasFieldOrPropertyWithValue("baseUrl", baseUrl)
+				.hasFieldOrPropertyWithValue("basicAuthentication", new BasicAuthentication(userName, password))
+				.hasFieldOrPropertyWithValue("clientInterceptors", Set.of(clientInterceptorMock))
+				.hasFieldOrPropertyWithValue("connectTimeout", connectTimeout)
+				.hasFieldOrPropertyWithValue("keyStoreFileLocation", keyStoreFileLocation)
+				.hasFieldOrPropertyWithValue("keyStoreData", keyStoreData)
+				.hasFieldOrPropertyWithValue("keyStorePassword", keyStorePassword)
+				.hasFieldOrPropertyWithValue("logbook", logbookMock)
+				.hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2, package3))
+				.hasFieldOrPropertyWithValue("readTimeout", readTimeout)
+				.hasFieldOrPropertyWithValue("webServiceMessageFactory", webServiceMessageFactoryMock);
 	}
 
 	@Test
 	void testClientInterceptorLogic() {
 		// Create instance
 		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
-			.withClientInterceptor(clientInterceptorMock)
-			.withClientInterceptor(clientInterceptorMock);
+				.withClientInterceptor(clientInterceptorMock)
+				.withClientInterceptor(clientInterceptorMock);
 
 		// Do assertions
-		assertThat(builder)
-			.hasFieldOrPropertyWithValue("clientInterceptors", Set.of(clientInterceptorMock));
+		assertThat(builder).hasFieldOrPropertyWithValue("clientInterceptors", Set.of(clientInterceptorMock));
 	}
 
 	@Test
@@ -120,12 +117,11 @@ class WebServiceTemplateBuilderTest {
 
 		// Create instance
 		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
-			.withPackagesToScan(List.of(package1, package2))
-			.withPackagesToScan(List.of(package1, package3));
+				.withPackagesToScan(List.of(package1, package2))
+				.withPackagesToScan(List.of(package1, package3));
 
 		// Do assertions
-		assertThat(builder)
-			.hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2, package3));
+		assertThat(builder).hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2, package3));
 	}
 
 	@Test
@@ -136,13 +132,12 @@ class WebServiceTemplateBuilderTest {
 
 		// Create instance
 		final WebServiceTemplateBuilder builder = WebServiceTemplateBuilder.create()
-			.withPackageToScan(package1)
-			.withPackageToScan(package1)
-			.withPackageToScan(package2);
+				.withPackageToScan(package1)
+				.withPackageToScan(package1)
+				.withPackageToScan(package2);
 
 		// Do assertions
-		assertThat(builder)
-			.hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2));
+		assertThat(builder).hasFieldOrPropertyWithValue("packagesToScan", Set.of(package1, package2));
 	}
 
 	@Test
@@ -159,9 +154,9 @@ class WebServiceTemplateBuilderTest {
 	void testWebServiceTemplateWithInterceptor() {
 		// Create instance
 		final WebServiceTemplate template = WebServiceTemplateBuilder.create()
-			.withClientInterceptor(clientInterceptorMock)
-			.withLogbook(logbookMock)
-			.build();
+				.withClientInterceptor(clientInterceptorMock)
+				.withLogbook(logbookMock)
+				.build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
@@ -176,14 +171,23 @@ class WebServiceTemplateBuilderTest {
 		final var package3 = "package3";
 
 		// Create instance
-		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withPackagesToScan(List.of(package1, package2)).withPackageToScan(package3).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create()
+				.withPackagesToScan(List.of(package1, package2))
+				.withPackageToScan(package3)
+				.build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
 		assertThat(template.getMarshaller()).isNotNull().isInstanceOf(Jaxb2Marshaller.class);
 		assertThat(template.getUnmarshaller()).isNotNull().isInstanceOf(Jaxb2Marshaller.class);
-		assertThat(template.getMarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY).containsExactlyInAnyOrder(package1, package2, package3);
-		assertThat(template.getUnmarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY).containsExactlyInAnyOrder(package1, package2, package3);
+		assertThat(template.getMarshaller())
+				.extracting("packagesToScan")
+				.asInstanceOf(ARRAY)
+				.containsExactlyInAnyOrder(package1, package2, package3);
+		assertThat(template.getUnmarshaller())
+				.extracting("packagesToScan")
+				.asInstanceOf(ARRAY)
+				.containsExactlyInAnyOrder(package1, package2, package3);
 	}
 
 	@Test
@@ -193,13 +197,19 @@ class WebServiceTemplateBuilderTest {
 		final var password = "password";
 
 		// Create instance
-		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName, password).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create()
+				.withBasicAuthentication(userName, password)
+				.build();
 
 		// Do assertions
-		assertThat(template).isNotNull()
-			.extracting("messageSenders").asInstanceOf(ARRAY).hasSize(1)
-			.extracting("clientFactory", HttpComponents5ClientFactory.class)
-			.extracting("credentials", UsernamePasswordCredentials.class).containsExactly(new UsernamePasswordCredentials(userName, password.toCharArray()));
+		assertThat(template)
+				.isNotNull()
+				.extracting("messageSenders")
+				.asInstanceOf(ARRAY)
+				.hasSize(1)
+				.extracting("clientFactory", HttpComponents5ClientFactory.class)
+				.extracting("credentials", UsernamePasswordCredentials.class)
+				.containsExactly(new UsernamePasswordCredentials(userName, password.toCharArray()));
 	}
 
 	@Test
@@ -210,9 +220,9 @@ class WebServiceTemplateBuilderTest {
 
 		// Create instance
 		final var template = WebServiceTemplateBuilder.create()
-			.withKeyStoreFileLocation(keyStoreFileLocation)
-			.withKeyStorePassword(keyStorePassword)
-			.build();
+				.withKeyStoreFileLocation(keyStoreFileLocation)
+				.withKeyStorePassword(keyStorePassword)
+				.build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
@@ -229,9 +239,9 @@ class WebServiceTemplateBuilderTest {
 
 			// Create instance
 			final var template = WebServiceTemplateBuilder.create()
-				.withKeyStoreData(keyStoreFileContent)
-				.withKeyStorePassword(keyStorePassword)
-				.build();
+					.withKeyStoreData(keyStoreFileContent)
+					.withKeyStorePassword(keyStorePassword)
+					.build();
 
 			// Do assertions
 			assertThat(template).isNotNull();

@@ -2,7 +2,6 @@ package se.sundsvall.dept44.configuration;
 
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

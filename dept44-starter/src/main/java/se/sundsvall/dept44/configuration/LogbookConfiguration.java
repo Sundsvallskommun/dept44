@@ -8,6 +8,7 @@ import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.binary
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
 import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +18,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,64 +37,60 @@ import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 @Configuration
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
-@EnableConfigurationProperties({ BodyFilterProperties.class })
+@EnableConfigurationProperties({BodyFilterProperties.class})
 public class LogbookConfiguration {
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
 
 	LogbookConfiguration(
-		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
-		@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
-		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
+			@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
+			@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
+			@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
 		this.loggerName = loggerName;
 
 		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)
-			.flatMap(Collection::stream)
-			.collect(Collectors.toSet());
+				.flatMap(Collection::stream)
+				.collect(Collectors.toSet());
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
+	Logbook logbook(
+			final ObjectMapper objectMapper,
+			final List<BodyFilter> bodyFilters,
+			BodyFilterProperties bodyFilterProperties) {
 		return Logbook.builder()
-			.sink(new DefaultSink(
-				new JsonHttpLogFormatter(objectMapper),
-				new NamedLoggerHttpLogWriter(loggerName)))
-			.responseFilters(List.of(
-				fileAttachmentFilter(),
-				binaryContentFilter()))
-			.bodyFilter(passwordFilter())
-			.bodyFilters(buildJsonPathFilters(objectMapper,
-				Optional.ofNullable(bodyFilterProperties.getJsonPath())
-					.orElseGet(Collections::emptyList)
-					.stream()
-					.reduce(new HashMap<>(), (acc, map) -> {
-						acc.put(map.get("key"), map.get("value"));
-						return acc;
-					})))
-			.bodyFilters(buildXPathFilters(
-				Optional.ofNullable(bodyFilterProperties.getxPath())
-					.orElseGet(Collections::emptyList)
-					.stream()
-					.reduce(new HashMap<>(), (acc, map) -> {
-						acc.put(map.get("key"), map.get("value"));
-						return acc;
-					})))
-			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
-			.condition(exclude(getExclusions()))
-			.build();
+				.sink(new DefaultSink(new JsonHttpLogFormatter(objectMapper), new NamedLoggerHttpLogWriter(loggerName)))
+				.responseFilters(List.of(fileAttachmentFilter(), binaryContentFilter()))
+				.bodyFilter(passwordFilter())
+				.bodyFilters(buildJsonPathFilters(
+						objectMapper,
+						Optional.ofNullable(bodyFilterProperties.getJsonPath())
+								.orElseGet(Collections::emptyList)
+								.stream()
+								.reduce(new HashMap<>(), (acc, map) -> {
+									acc.put(map.get("key"), map.get("value"));
+									return acc;
+								})))
+				.bodyFilters(buildXPathFilters(
+						Optional.ofNullable(bodyFilterProperties.getxPath()).orElseGet(Collections::emptyList).stream()
+								.reduce(new HashMap<>(), (acc, map) -> {
+									acc.put(map.get("key"), map.get("value"));
+									return acc;
+								})))
+				.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
+				.condition(exclude(getExclusions()))
+				.build();
 	}
 
 	private List<Predicate<HttpRequest>> getExclusions() {
 		return Optional.of(excludedPaths).stream()
-			.flatMap(Set::stream)
-			.map(Conditions::requestTo)
-			.toList();
+				.flatMap(Set::stream)
+				.map(Conditions::requestTo)
+				.toList();
 	}
 
 	/**

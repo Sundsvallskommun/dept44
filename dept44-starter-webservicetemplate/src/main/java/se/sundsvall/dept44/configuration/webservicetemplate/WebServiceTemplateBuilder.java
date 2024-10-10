@@ -7,15 +7,17 @@ import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPConstants;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.net.ssl.SSLContext;
-
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.config.ConnectionConfig;
@@ -36,11 +38,6 @@ import org.springframework.ws.transport.http.HttpComponents5MessageSender;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
 import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
-
-import jakarta.xml.soap.MessageFactory;
-import jakarta.xml.soap.SOAPConstants;
-import jakarta.xml.soap.SOAPException;
-import jakarta.xml.soap.SOAPMessage;
 import se.sundsvall.dept44.configuration.Constants;
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
@@ -148,7 +145,8 @@ public class WebServiceTemplateBuilder {
 	 * @param  webServiceMessageFactory messageFactory to override with
 	 * @return                          this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withWebServiceMessageFactory(final WebServiceMessageFactory webServiceMessageFactory) {
+	public WebServiceTemplateBuilder withWebServiceMessageFactory(
+			final WebServiceMessageFactory webServiceMessageFactory) {
 		this.webServiceMessageFactory = webServiceMessageFactory;
 		return this;
 	}
@@ -256,8 +254,10 @@ public class WebServiceTemplateBuilder {
 	private void setMessageFactory(final WebServiceTemplate webServiceTemplate) {
 		if (webServiceMessageFactory == null) {
 			try {
-				final var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
-				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
+				final var webMessageFactory =
+						new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
+				webMessageFactory.setMessageProperties(
+						Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
 			} catch (final SOAPException e) {
 				throw new WebServiceTemplateException("Error when setting message factory", e);
@@ -269,8 +269,9 @@ public class WebServiceTemplateBuilder {
 		final var httpComponents5MessageSender = new HttpComponents5MessageSender();
 
 		if (shouldUseBasicAuth()) {
-			httpComponents5MessageSender.setCredentials(
-				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password().toCharArray()));
+			httpComponents5MessageSender.setCredentials(new UsernamePasswordCredentials(
+					basicAuthentication.username(),
+					basicAuthentication.password().toCharArray()));
 		}
 
 		httpComponents5MessageSender.setHttpClient(createHttpClient());
@@ -280,21 +281,21 @@ public class WebServiceTemplateBuilder {
 
 	private HttpClient createHttpClient() {
 		return getDefaultHttpClientBuilder()
-			.setConnectionManager(createConnectionManager())
-			.build();
+				.setConnectionManager(createConnectionManager())
+				.build();
 	}
 
 	private HttpClientBuilder getDefaultHttpClientBuilder() {
 		final var httpClientBuilder = HttpClients.custom()
-			// Remove the content-length header since it always needs to be reset
-			.addRequestInterceptorFirst(new RemoveContentLengthHeaderInterceptor())
-			// Add request-id to all requests
-			.addRequestInterceptorFirst(new RequestIdInterceptor());
+				// Remove the content-length header since it always needs to be reset
+				.addRequestInterceptorFirst(new RemoveContentLengthHeaderInterceptor())
+				// Add request-id to all requests
+				.addRequestInterceptorFirst(new RequestIdInterceptor());
 
 		if (logbook != null) {
 			httpClientBuilder
-				.addRequestInterceptorFirst(new LogbookHttpRequestInterceptor(logbook))
-				.addResponseInterceptorFirst(new LogbookHttpResponseInterceptor());
+					.addRequestInterceptorFirst(new LogbookHttpRequestInterceptor(logbook))
+					.addResponseInterceptorFirst(new LogbookHttpResponseInterceptor());
 		}
 
 		return httpClientBuilder;
@@ -302,29 +303,31 @@ public class WebServiceTemplateBuilder {
 
 	private HttpClientConnectionManager createConnectionManager() {
 		final var connectionManagerBuilder = PoolingHttpClientConnectionManagerBuilder.create()
-			.setDefaultConnectionConfig(ConnectionConfig.custom()
-				.setSocketTimeout(Timeout.ofMilliseconds(Math.toIntExact(readTimeout.toMillis())))
-				.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
-				.build());
+				.setDefaultConnectionConfig(ConnectionConfig.custom()
+						.setSocketTimeout(Timeout.ofMilliseconds(Math.toIntExact(readTimeout.toMillis())))
+						.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
+						.build());
 
 		// Set up SSL if keystore and password are set
 		if (shouldUseSSL()) {
 			SSLContext sslContext;
 			try {
 				sslContext = SSLContexts.custom()
-					.loadTrustMaterial(getKeyStore(), (chain, authType) -> true)
-					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
-					.build();
+						.loadTrustMaterial(getKeyStore(), (chain, authType) -> true)
+						.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
+						.build();
 			} catch (final Exception e) {
 				throw new WebServiceTemplateException("Couldn't load keystore", e);
 			}
 
 			final var sslConnectionSocketFactory = SSLConnectionSocketFactoryBuilder.create()
-				.setSslContext(sslContext)
-				.setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-				.build();
+					.setSslContext(sslContext)
+					.setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+					.build();
 
-			return connectionManagerBuilder.setSSLSocketFactory(sslConnectionSocketFactory).build();
+			return connectionManagerBuilder
+					.setSSLSocketFactory(sslConnectionSocketFactory)
+					.build();
 		}
 
 		return connectionManagerBuilder.build();

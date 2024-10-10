@@ -2,23 +2,21 @@ package se.sundsvall.dept44.models.api.paging.validation.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.Column;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-
-import jakarta.persistence.Column;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingAndSortingBase;
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
 
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest(classes = { MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class })
+@SpringBootTest(classes = {MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class})
 class ValidSortByPropertyConstraintValidatorTest {
 
 	@Autowired
@@ -55,9 +53,10 @@ class ValidSortByPropertyConstraintValidatorTest {
 		final var parameters = new TestParameters();
 		parameters.setSortBy(List.of("notASortableField"));
 		assertThat(validator.validate(parameters))
-			.first()
-			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
+				.first()
+				.extracting(ConstraintViolation::getMessage)
+				.isEqualTo(
+						"One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
 	}
 
 	@Test
@@ -65,9 +64,10 @@ class ValidSortByPropertyConstraintValidatorTest {
 		final var parameters = new TestParametersWithNoBackedEntity();
 		parameters.setSortBy(List.of("notASortableField"));
 		assertThat(validator.validate(parameters))
-			.first()
-			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
+				.first()
+				.extracting(ConstraintViolation::getMessage)
+				.isEqualTo(
+						"One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
 	}
 
 	private static class TestEntity {
@@ -83,15 +83,11 @@ class ValidSortByPropertyConstraintValidatorTest {
 
 		@Column(name = "exclude_field")
 		private String excludeField;
-
 	}
 
 	@ValidSortByProperty(value = TestEntity.class, exclude = "excludeField")
-	public static class TestParameters extends AbstractParameterPagingAndSortingBase {
-	}
+	public static class TestParameters extends AbstractParameterPagingAndSortingBase {}
 
 	@ValidSortByProperty(include = "includeField")
-	public static class TestParametersWithNoBackedEntity extends AbstractParameterPagingAndSortingBase {
-	}
-
+	public static class TestParametersWithNoBackedEntity extends AbstractParameterPagingAndSortingBase {}
 }

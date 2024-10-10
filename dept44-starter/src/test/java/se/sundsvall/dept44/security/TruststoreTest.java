@@ -6,9 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-
 import javax.net.ssl.SSLContext;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -37,8 +35,10 @@ class TruststoreTest {
 
 	@Test
 	void createWhenNoCertificatesFoundInPaths() {
-		try (MockedConstruction<PathMatchingResourcePatternResolver> pathMatchingResourcePatternResolverConstructionMock = Mockito.mockConstruction(PathMatchingResourcePatternResolver.class,
-			(mock, context) -> when(mock.getResources(anyString())).thenThrow(new IOException()))) {
+		try (MockedConstruction<PathMatchingResourcePatternResolver>
+				pathMatchingResourcePatternResolverConstructionMock = Mockito.mockConstruction(
+						PathMatchingResourcePatternResolver.class,
+						(mock, context) -> when(mock.getResources(anyString())).thenThrow(new IOException()))) {
 			final var truststore = new Truststore("dummy");
 
 			assertThat(truststore).isNotNull();

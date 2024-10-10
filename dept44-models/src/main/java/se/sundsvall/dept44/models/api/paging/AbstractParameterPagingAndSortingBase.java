@@ -1,17 +1,16 @@
 package se.sundsvall.dept44.models.api.paging;
 
+import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+import java.util.Optional;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.Sort;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
 
 /**
  * Model class to extend when requesting paged result with sorting. Should be used as query parameters.
@@ -41,7 +40,9 @@ public abstract class AbstractParameterPagingAndSortingBase extends AbstractPara
 	@JsonIgnore
 	public Sort sort() {
 		return Optional.ofNullable(this.sortBy)
-			.map(sortByList -> Sort.by(Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION), sortByList.toArray(new String[0])))
-			.orElseGet(Sort::unsorted);
+				.map(sortByList -> Sort.by(
+						Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION),
+						sortByList.toArray(new String[0])))
+				.orElseGet(Sort::unsorted);
 	}
 }

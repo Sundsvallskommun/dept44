@@ -8,23 +8,21 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 
+import feign.Response;
+import feign.RetryableException;
+import feign.codec.ErrorDecoder;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus.Series;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-
-import feign.Response;
-import feign.RetryableException;
-import feign.codec.ErrorDecoder;
-import jakarta.annotation.Nonnull;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 
@@ -55,7 +53,10 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 * @param bypassResponseCodes   list of response codes to bypass
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	protected AbstractErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, final RetryResponseVerifier retryResponseVerifier) {
+	protected AbstractErrorDecoder(
+			@Nonnull final String integrationName,
+			@Nonnull final List<Integer> bypassResponseCodes,
+			final RetryResponseVerifier retryResponseVerifier) {
 		this.integrationName = requireNonNull(integrationName);
 		this.bypassResponseCodes = requireNonNull(bypassResponseCodes);
 		this.retryResponseVerifier = retryResponseVerifier;
@@ -71,7 +72,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 * @param integrationName       name of integration to whom the error decoder is connected
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	protected AbstractErrorDecoder(@Nonnull final String integrationName, final RetryResponseVerifier retryResponseVerifier) {
+	protected AbstractErrorDecoder(
+			@Nonnull final String integrationName, final RetryResponseVerifier retryResponseVerifier) {
 		this.integrationName = integrationName;
 		this.retryResponseVerifier = retryResponseVerifier;
 	}
@@ -80,12 +82,12 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	public Exception decode(final String methodKey, final Response response) {
 		if ((retryResponseVerifier != null) && retryResponseVerifier.shouldReturnRetryableException(response)) {
 			return new RetryableException(
-				response.status(),
-				retryResponseVerifier.getMessage(),
-				response.request().httpMethod(),
-				mapToProblem(response),
-				(Long) null,
-				response.request());
+					response.status(),
+					retryResponseVerifier.getMessage(),
+					response.request().httpMethod(),
+					mapToProblem(response),
+					(Long) null,
+					response.request());
 		}
 		return mapToProblem(response);
 	}
@@ -93,10 +95,10 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	private Exception mapToProblem(final Response response) {
 		// Use the bypass status code if it matches the response code, otherwise BAD_GATEWAY.
 		final var status = Optional.ofNullable(bypassResponseCodes).orElse(emptyList()).stream()
-			.filter(bypassCode -> bypassCode.equals(response.status()))
-			.map(Status::valueOf)
-			.findAny()
-			.orElse(BAD_GATEWAY);
+				.filter(bypassCode -> bypassCode.equals(response.status()))
+				.map(Status::valueOf)
+				.findAny()
+				.orElse(BAD_GATEWAY);
 
 		return switch (Series.valueOf(response.status())) {
 			case CLIENT_ERROR -> new ClientProblem(status, extractMessage(response));
@@ -139,7 +141,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	private String extractAsLastResort(final Response response, final Exception e) {
 		LOGGER.warn("Something went wrong when extracting error-message", e);
-		return ErrorMessage.create(integrationName, response.status(), "Unknown error", null).extractMessage();
+		return ErrorMessage.create(integrationName, response.status(), "Unknown error", null)
+				.extractMessage();
 	}
 
 	/**
@@ -160,17 +163,22 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		}
 
 		static ErrorMessage create(final String integrationName, final int httpStatus) {
-			return create(integrationName, httpStatus, Map.of(KEY_TITLE, Status.valueOf(httpStatus).getReasonPhrase()));
+			return create(
+					integrationName,
+					httpStatus,
+					Map.of(KEY_TITLE, Status.valueOf(httpStatus).getReasonPhrase()));
 		}
 
-		static ErrorMessage create(final String integrationName, final int httpStatus, final String title, final String detail) {
+		static ErrorMessage create(
+				final String integrationName, final int httpStatus, final String title, final String detail) {
 			final SortedMap<String, Object> map = new TreeMap<>();
 			ofNullable(title).ifPresent(value -> map.put(KEY_TITLE, value));
 			ofNullable(detail).ifPresent(value -> map.put(KEY_DETAIL, value));
 			return create(integrationName, httpStatus, map);
 		}
 
-		private static ErrorMessage create(final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
+		private static ErrorMessage create(
+				final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
 			final SortedMap<String, Object> map = new TreeMap<>();
 			map.put(KEY_STATUS, Status.valueOf(httpStatus));
 

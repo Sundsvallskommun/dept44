@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import org.junit.jupiter.api.Test;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -11,16 +9,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
 class PagingMetaDataTest {
 
 	@Test
 	void testBean() {
-		assertThat(PagingMetaData.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+		assertThat(
+				PagingMetaData.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals(),
+						hasValidBeanToString()));
 	}
 
 	@Test
@@ -32,13 +34,12 @@ class PagingMetaDataTest {
 		final var totalPages = 404;
 		final var totalRecords = 505;
 
-
 		final var meta = PagingMetaData.create()
-			.withCount(count)
-			.withLimit(limit)
-			.withPage(page)
-			.withTotalPages(totalPages)
-			.withTotalRecords(totalRecords);
+				.withCount(count)
+				.withLimit(limit)
+				.withPage(page)
+				.withTotalPages(totalPages)
+				.withTotalRecords(totalRecords);
 
 		assertThat(meta.getCount()).isEqualTo(count);
 		assertThat(meta.getLimit()).isEqualTo(limit);
@@ -50,18 +51,17 @@ class PagingMetaDataTest {
 	@Test
 	void testNoDirtOnCreatedBean() {
 		assertThat(PagingMetaData.create())
-			.hasFieldOrPropertyWithValue("count", 0)
-			.hasFieldOrPropertyWithValue("limit", 0)
-			.hasFieldOrPropertyWithValue("page", 0)
-			.hasFieldOrPropertyWithValue("totalRecords", 0L)
-			.hasFieldOrPropertyWithValue("totalPages", 0);
+				.hasFieldOrPropertyWithValue("count", 0)
+				.hasFieldOrPropertyWithValue("limit", 0)
+				.hasFieldOrPropertyWithValue("page", 0)
+				.hasFieldOrPropertyWithValue("totalRecords", 0L)
+				.hasFieldOrPropertyWithValue("totalPages", 0);
 
 		assertThat(new PagingMetaData())
-			.hasFieldOrPropertyWithValue("count", 0)
-			.hasFieldOrPropertyWithValue("limit", 0)
-			.hasFieldOrPropertyWithValue("page", 0)
-			.hasFieldOrPropertyWithValue("totalRecords", 0L)
-			.hasFieldOrPropertyWithValue("totalPages", 0);
+				.hasFieldOrPropertyWithValue("count", 0)
+				.hasFieldOrPropertyWithValue("limit", 0)
+				.hasFieldOrPropertyWithValue("page", 0)
+				.hasFieldOrPropertyWithValue("totalRecords", 0L)
+				.hasFieldOrPropertyWithValue("totalPages", 0);
 	}
-
 }

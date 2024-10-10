@@ -8,8 +8,13 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
+import feign.Feign;
+import feign.Request;
+import feign.RequestInterceptor;
+import feign.codec.Decoder;
+import feign.codec.Encoder;
+import feign.codec.ErrorDecoder;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,13 +25,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-
-import feign.Feign;
-import feign.Request;
-import feign.RequestInterceptor;
-import feign.codec.Decoder;
-import feign.codec.Encoder;
-import feign.codec.ErrorDecoder;
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
 
@@ -52,8 +50,8 @@ class FeignMultiCustomizerTest {
 	void testWithCustomizer() {
 		final var feignBuilderCustomizerMock = Mockito.mock(FeignBuilderCustomizer.class);
 		final var customizer = FeignMultiCustomizer.create()
-			.withCustomizer(feignBuilderCustomizerMock)
-			.composeCustomizersToOne();
+				.withCustomizer(feignBuilderCustomizerMock)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -65,9 +63,9 @@ class FeignMultiCustomizerTest {
 		final var feignBuilderCustomizerMock1 = Mockito.mock(FeignBuilderCustomizer.class);
 		final var feignBuilderCustomizerMock2 = Mockito.mock(FeignBuilderCustomizer.class);
 		final var customizer = FeignMultiCustomizer.create()
-			.withCustomizer(feignBuilderCustomizerMock1)
-			.withCustomizer(feignBuilderCustomizerMock2)
-			.composeCustomizersToOne();
+				.withCustomizer(feignBuilderCustomizerMock1)
+				.withCustomizer(feignBuilderCustomizerMock2)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -80,7 +78,8 @@ class FeignMultiCustomizerTest {
 		final var clientRegistration = createClientRegistration();
 
 		final var customizer = FeignMultiCustomizer.create()
-			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration).composeCustomizersToOne();
+				.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -88,9 +87,13 @@ class FeignMultiCustomizerTest {
 		verify(builderMock).retryer(any(ActionRetryer.class));
 
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
-			.extracting("clientRegistration").extracting("scopes")
-			.asInstanceOf(collection(String.class)).hasSize(1)
-			.first().matches(scope -> scope.matches("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"));
+				.extracting("clientRegistration")
+				.extracting("scopes")
+				.asInstanceOf(collection(String.class))
+				.hasSize(1)
+				.first()
+				.matches(scope ->
+						scope.matches("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"));
 	}
 
 	@Test
@@ -98,7 +101,8 @@ class FeignMultiCustomizerTest {
 		final var clientRegistration = createClientRegistration();
 
 		final var customizer = FeignMultiCustomizer.create()
-			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of()).composeCustomizersToOne();
+				.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of())
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -106,8 +110,9 @@ class FeignMultiCustomizerTest {
 		verify(builderMock).retryer(any(ActionRetryer.class));
 
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
-			.extracting("clientRegistration").extracting("scopes")
-			.isNull();
+				.extracting("clientRegistration")
+				.extracting("scopes")
+				.isNull();
 	}
 
 	@Test
@@ -115,7 +120,8 @@ class FeignMultiCustomizerTest {
 		final var clientRegistration = createClientRegistration(Set.of("some_scope"));
 
 		final var customizer = FeignMultiCustomizer.create()
-			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration).composeCustomizersToOne();
+				.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -123,16 +129,17 @@ class FeignMultiCustomizerTest {
 		verify(builderMock).retryer(any(ActionRetryer.class));
 
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
-			.extracting("clientRegistration").extracting("scopes")
-			.asInstanceOf(collection(String.class)).hasSize(2);
+				.extracting("clientRegistration")
+				.extracting("scopes")
+				.asInstanceOf(collection(String.class))
+				.hasSize(2);
 	}
 
 	@Test
 	void testWithDecoder() {
 		final var decoderMock = Mockito.mock(Decoder.class);
-		final var customizer = FeignMultiCustomizer.create()
-			.withDecoder(decoderMock)
-			.composeCustomizersToOne();
+		final var customizer =
+				FeignMultiCustomizer.create().withDecoder(decoderMock).composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -142,9 +149,8 @@ class FeignMultiCustomizerTest {
 	@Test
 	void testWithEncoder() {
 		final var encoderMock = Mockito.mock(Encoder.class);
-		final var customizer = FeignMultiCustomizer.create()
-			.withEncoder(encoderMock)
-			.composeCustomizersToOne();
+		final var customizer =
+				FeignMultiCustomizer.create().withEncoder(encoderMock).composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -154,9 +160,8 @@ class FeignMultiCustomizerTest {
 	@Test
 	void testWithErrorDecoder() {
 		final var errorDecoderMock = Mockito.mock(ErrorDecoder.class);
-		final var customizer = FeignMultiCustomizer.create()
-			.withErrorDecoder(errorDecoderMock)
-			.composeCustomizersToOne();
+		final var customizer =
+				FeignMultiCustomizer.create().withErrorDecoder(errorDecoderMock).composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -167,8 +172,8 @@ class FeignMultiCustomizerTest {
 	void testWithRequestOptions() {
 		final var requestOptionMock = Mockito.mock(Request.Options.class);
 		final var customizer = FeignMultiCustomizer.create()
-			.withRequestOptions(requestOptionMock)
-			.composeCustomizersToOne();
+				.withRequestOptions(requestOptionMock)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -177,9 +182,8 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithRequestTimeoutInSeconds() {
-		final var customizer = FeignMultiCustomizer.create()
-			.withRequestTimeoutsInSeconds(1, 2)
-			.composeCustomizersToOne();
+		final var customizer =
+				FeignMultiCustomizer.create().withRequestTimeoutsInSeconds(1, 2).composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -198,8 +202,8 @@ class FeignMultiCustomizerTest {
 	void testWithRequestInterceptor() {
 		final var requestInterceptorMock = Mockito.mock(RequestInterceptor.class);
 		final var customizer = FeignMultiCustomizer.create()
-			.withRequestInterceptor(requestInterceptorMock)
-			.composeCustomizersToOne();
+				.withRequestInterceptor(requestInterceptorMock)
+				.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 
@@ -211,12 +215,11 @@ class FeignMultiCustomizerTest {
 	}
 
 	private static ClientRegistration createClientRegistration(final Set<String> scope) {
-		return ClientRegistration
-			.withRegistrationId("test")
-			.clientId("id")
-			.tokenUri("uri")
-			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-			.scope(scope)
-			.build();
+		return ClientRegistration.withRegistrationId("test")
+				.clientId("id")
+				.tokenUri("uri")
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope(scope)
+				.build();
 	}
 }

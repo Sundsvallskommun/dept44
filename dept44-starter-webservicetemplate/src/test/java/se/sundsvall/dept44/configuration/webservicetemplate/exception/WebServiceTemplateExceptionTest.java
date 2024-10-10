@@ -1,8 +1,8 @@
 package se.sundsvall.dept44.configuration.webservicetemplate.exception;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import org.junit.jupiter.api.Test;
 
 class WebServiceTemplateExceptionTest {
 
@@ -16,6 +16,8 @@ class WebServiceTemplateExceptionTest {
 	void testWebServiceTemplateExceptionWithCause() {
 		var message = "message";
 		var cause = new RuntimeException();
-		assertThat(new WebServiceTemplateException(message, cause)).hasMessage(message).hasCause(cause);
+		assertThat(new WebServiceTemplateException(message, cause))
+				.hasMessage(message)
+				.hasCause(cause);
 	}
 }

@@ -10,19 +10,18 @@ import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Locale;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Locale;
 import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,11 +44,8 @@ import org.springframework.web.servlet.config.annotation.ContentNegotiationConfi
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.zalando.problem.Problem;
-
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.util.ResourceUtils;
-
-import io.swagger.v3.oas.annotations.Operation;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -59,9 +55,10 @@ public class WebConfiguration implements WebMvcConfigurer {
 	private final int municipalityIdUriIndex;
 	private final List<String> allowedIds;
 
-	WebConfiguration(final YAMLMapper yamlMapper,
-		@Value("${mdc.municipalityId.uriIndex:1}") int municipalityIdUriIndex,
-		@Value("${municipality.allowed-ids:}") List<String> allowedIds) {
+	WebConfiguration(
+			final YAMLMapper yamlMapper,
+			@Value("${mdc.municipalityId.uriIndex:1}") int municipalityIdUriIndex,
+			@Value("${municipality.allowed-ids:}") List<String> allowedIds) {
 		this.yamlMapper = yamlMapper;
 		this.municipalityIdUriIndex = municipalityIdUriIndex;
 		this.allowedIds = allowedIds;
@@ -95,17 +92,25 @@ public class WebConfiguration implements WebMvcConfigurer {
 	@Override
 	public void configureContentNegotiation(final ContentNegotiationConfigurer configurer) {
 		configurer
-			.favorParameter(false)
-			.ignoreAcceptHeader(false)
-			.defaultContentType(APPLICATION_JSON, APPLICATION_PROBLEM_JSON, APPLICATION_XML, APPLICATION_YAML, APPLICATION_YML, APPLICATION_OCTET_STREAM, TEXT_HTML, TEXT_PLAIN)
-			.mediaType(APPLICATION_JSON.getSubtype(), APPLICATION_JSON)
-			.mediaType(APPLICATION_PROBLEM_JSON.getSubtype(), APPLICATION_PROBLEM_JSON)
-			.mediaType(APPLICATION_YAML.getSubtype(), APPLICATION_YAML)
-			.mediaType(APPLICATION_YML.getSubtype(), APPLICATION_YML)
-			.mediaType(APPLICATION_XML.getSubtype(), APPLICATION_XML)
-			.mediaType(APPLICATION_OCTET_STREAM.getSubtype(), APPLICATION_OCTET_STREAM)
-			.mediaType(TEXT_HTML.getSubtype(), TEXT_HTML)
-			.mediaType(TEXT_PLAIN.getSubtype(), TEXT_PLAIN);
+				.favorParameter(false)
+				.ignoreAcceptHeader(false)
+				.defaultContentType(
+						APPLICATION_JSON,
+						APPLICATION_PROBLEM_JSON,
+						APPLICATION_XML,
+						APPLICATION_YAML,
+						APPLICATION_YML,
+						APPLICATION_OCTET_STREAM,
+						TEXT_HTML,
+						TEXT_PLAIN)
+				.mediaType(APPLICATION_JSON.getSubtype(), APPLICATION_JSON)
+				.mediaType(APPLICATION_PROBLEM_JSON.getSubtype(), APPLICATION_PROBLEM_JSON)
+				.mediaType(APPLICATION_YAML.getSubtype(), APPLICATION_YAML)
+				.mediaType(APPLICATION_YML.getSubtype(), APPLICATION_YML)
+				.mediaType(APPLICATION_XML.getSubtype(), APPLICATION_XML)
+				.mediaType(APPLICATION_OCTET_STREAM.getSubtype(), APPLICATION_OCTET_STREAM)
+				.mediaType(TEXT_HTML.getSubtype(), TEXT_HTML)
+				.mediaType(TEXT_PLAIN.getSubtype(), TEXT_PLAIN);
 	}
 
 	@Override
@@ -116,9 +121,9 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		// Remove null valued attributes from response JSON
 		converters.stream()
-			.filter(MappingJackson2HttpMessageConverter.class::isInstance)
-			.map(MappingJackson2HttpMessageConverter.class::cast)
-			.forEach(c -> c.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL));
+				.filter(MappingJackson2HttpMessageConverter.class::isInstance)
+				.map(MappingJackson2HttpMessageConverter.class::cast)
+				.forEach(c -> c.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL));
 	}
 
 	@Override
@@ -129,9 +134,11 @@ public class WebConfiguration implements WebMvcConfigurer {
 		// "/{municipalityId}" - Matches all paths where the municipality placeholder is the whole path.
 		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part oft the path.
 		// "/{municipalityId}/**" - Matches all paths where the municipality placeholder is the beginning of the path.
-		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the path.
+		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the
+		// path.
 		registry.addInterceptor(municipalityIdInterceptor)
-			.addPathPatterns("/{municipalityId}", "/{municipalityId}/**", "/**/{municipalityId}", "/**/{municipalityId}/**");
+				.addPathPatterns(
+						"/{municipalityId}", "/{municipalityId}/**", "/**/{municipalityId}", "/**/{municipalityId}/**");
 	}
 
 	static class MunicipalityIdInterceptor implements HandlerInterceptor {
@@ -145,7 +152,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 		}
 
 		@Override
-		public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object notUsed) {
+		public boolean preHandle(
+				final HttpServletRequest request, final HttpServletResponse response, final Object notUsed) {
 			if (allowedIds.isEmpty()) {
 				return true;
 			}
@@ -158,7 +166,10 @@ public class WebConfiguration implements WebMvcConfigurer {
 			if (allowedIds.contains(pathArray[municipalityIdUriIndex])) {
 				return true;
 			}
-			throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex]).build();
+			throw Problem.builder()
+					.withStatus(NOT_IMPLEMENTED)
+					.withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex])
+					.build();
 		}
 	}
 
@@ -171,14 +182,16 @@ public class WebConfiguration implements WebMvcConfigurer {
 		private final String template;
 		private final OpenApiWebMvcResource openApiWebMvcResource;
 
-		IndexPageController(@Value("${springdoc.api-docs.path}") final String apiDocsPath,
-			final OpenApiWebMvcResource openApiWebMvcResource,
-			@Value("classpath:templates/index.html.template") final Resource templateResource) {
+		IndexPageController(
+				@Value("${springdoc.api-docs.path}") final String apiDocsPath,
+				final OpenApiWebMvcResource openApiWebMvcResource,
+				@Value("classpath:templates/index.html.template") final Resource templateResource) {
 			this.apiDocsPath = apiDocsPath;
 			this.openApiWebMvcResource = openApiWebMvcResource;
 
-			template = ResourceUtils.asString(templateResource).replace("@API_DOC_URI@", apiDocsPath).replace("@API_DOC_URI_RELATIVE@", apiDocsPath.replaceFirst("/", ""));
-
+			template = ResourceUtils.asString(templateResource)
+					.replace("@API_DOC_URI@", apiDocsPath)
+					.replace("@API_DOC_URI_RELATIVE@", apiDocsPath.replaceFirst("/", ""));
 		}
 
 		@Operation(hidden = true)
@@ -190,15 +203,18 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Operation(tags = "API", summary = "OpenAPI")
 		@GetMapping(value = "${springdoc.api-docs.path}", produces = "application/yaml")
 		String getApiDocs(final HttpServletRequest request) throws JsonProcessingException {
-			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset.defaultCharset());
+			return new String(
+					openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()),
+					Charset.defaultCharset());
 		}
 	}
 
 	static class RequestIdFilter extends OncePerRequestFilter {
 
 		@Override
-		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-			final FilterChain chain) throws ServletException, IOException {
+		protected void doFilterInternal(
+				final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
+				throws ServletException, IOException {
 			final var requestId = request.getHeader(RequestId.HEADER_NAME);
 
 			RequestId.init(requestId);
@@ -215,8 +231,9 @@ public class WebConfiguration implements WebMvcConfigurer {
 	static class DisableBrowserCacheFilter extends OncePerRequestFilter {
 
 		@Override
-		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-			final FilterChain chain) throws ServletException, IOException {
+		protected void doFilterInternal(
+				final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
+				throws ServletException, IOException {
 			response.addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
 			response.addIntHeader(HttpHeaders.EXPIRES, 0);
 			response.addHeader(HttpHeaders.PRAGMA, "no-cache");
@@ -234,8 +251,9 @@ public class WebConfiguration implements WebMvcConfigurer {
 		}
 
 		@Override
-		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-			final FilterChain chain) throws ServletException, IOException {
+		protected void doFilterInternal(
+				final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain)
+				throws ServletException, IOException {
 			var pathParams = request.getRequestURI().split("/");
 			if (pathParams.length > municipalityIdUriIndex) {
 				MDC.put("municipalityId", pathParams[municipalityIdUriIndex]);

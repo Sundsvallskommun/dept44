@@ -2,19 +2,17 @@ package se.sundsvall.dept44.configuration.feign;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-
 import feign.Request;
 import feign.RequestInterceptor;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
 import se.sundsvall.dept44.requestid.RequestId;
@@ -32,7 +30,7 @@ public class FeignMultiCustomizer {
 
 	public static FeignMultiCustomizer create() {
 		return new FeignMultiCustomizer()
-			.withRequestInterceptor(builder -> builder.header(RequestId.HEADER_NAME, RequestId.get()));
+				.withRequestInterceptor(builder -> builder.header(RequestId.HEADER_NAME, RequestId.get()));
 	}
 
 	public FeignMultiCustomizer withCustomizer(final FeignBuilderCustomizer feignBuilderCustomizer) {
@@ -60,8 +58,10 @@ public class FeignMultiCustomizer {
 	 * @param clientRegistration containing authorization information for the client
 	 * @return FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
-	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration) {
-		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of("device_" + UUID.randomUUID()));
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(
+			final ClientRegistration clientRegistration) {
+		return withRetryableOAuth2InterceptorForClientRegistration(
+				clientRegistration, Set.of("device_" + UUID.randomUUID()));
 	}
 
 	/**
@@ -72,7 +72,8 @@ public class FeignMultiCustomizer {
 	 * @param extraScopes a set of extra scopes
 	 * @return FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
-	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes) {
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(
+			final ClientRegistration clientRegistration, final Set<String> extraScopes) {
 		return withCustomizer(builder -> {
 			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistration, extraScopes);
 			builder.requestInterceptor(oAuth2RequestInterceptor);

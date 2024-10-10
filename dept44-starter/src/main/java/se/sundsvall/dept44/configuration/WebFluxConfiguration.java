@@ -8,7 +8,6 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-
 import reactor.core.publisher.Mono;
 import se.sundsvall.dept44.requestid.RequestId;
 
@@ -41,9 +40,7 @@ public class WebFluxConfiguration {
 
 			exchange.getResponse().getHeaders().add(RequestId.HEADER_NAME, RequestId.get());
 
-			return chain.filter(exchange)
-				.then()
-				.doFinally(ignoredSignalType -> RequestId.reset());
+			return chain.filter(exchange).then().doFinally(ignoredSignalType -> RequestId.reset());
 		}
 	}
 

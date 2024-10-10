@@ -10,19 +10,20 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 class PetInventoryItemTest {
 
 	@Test
 	void testBean() {
-		assertThat(PetInventoryItem.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+		assertThat(
+				PetInventoryItem.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals(),
+						hasValidBeanToString()));
 	}
 
 	@Test
@@ -35,11 +36,11 @@ class PetInventoryItemTest {
 		final var type = "type";
 
 		final var bean = PetInventoryItem.create()
-			.withId(id)
-			.withImages(images)
-			.withName(name)
-			.withPrice(price)
-			.withType(type);
+				.withId(id)
+				.withImages(images)
+				.withName(name)
+				.withPrice(price)
+				.withType(type);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);

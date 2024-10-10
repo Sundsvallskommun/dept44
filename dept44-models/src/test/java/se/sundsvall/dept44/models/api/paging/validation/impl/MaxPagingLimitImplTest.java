@@ -1,5 +1,10 @@
 package se.sundsvall.dept44.models.api.paging.validation.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -13,11 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingBase;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest(classes = {MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class})
@@ -39,9 +39,9 @@ class MaxPagingLimitImplTest {
 	@Test
 	void isNotValid() {
 		assertThat(validator.validate(new TestModel().withLimit(1001)))
-			.first()
-			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("Page limit cannot be greater than 1000");
+				.first()
+				.extracting(ConstraintViolation::getMessage)
+				.isEqualTo("Page limit cannot be greater than 1000");
 	}
 
 	@Nested

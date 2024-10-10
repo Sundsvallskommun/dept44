@@ -4,15 +4,13 @@ import static java.util.Comparator.comparing;
 import static org.apache.commons.lang3.StringUtils.upperCase;
 import static org.springframework.util.ResourceUtils.getURL;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 public final class MunicipalityUtils {
 
@@ -23,11 +21,13 @@ public final class MunicipalityUtils {
 
 	static {
 		try {
-			new YAMLMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {}).stream()
-				.forEach(municipality -> {
-					MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
-					MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);
-				});
+			new YAMLMapper()
+							.readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {})
+							.stream()
+							.forEach(municipality -> {
+								MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
+								MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);
+							});
 		} catch (final Exception e) {
 			LOGGER.error("Error during class initialization", e);
 		}
@@ -82,8 +82,8 @@ public final class MunicipalityUtils {
 	 */
 	public static List<Municipality> findAll() {
 		return MUNICIPALITY_BY_ID_MAP.values().stream()
-			.sorted(comparing(Municipality::id))
-			.toList();
+				.sorted(comparing(Municipality::id))
+				.toList();
 	}
 
 	public static record Municipality(String id, String name) {}

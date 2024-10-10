@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,7 +24,16 @@ class ValidMSISDNConstraintValidatorTest {
 	private ValidMSISDNConstraintValidator validator;
 
 	@ParameterizedTest
-	@ValueSource(strings = { "+46701234567", "+46721234567", "+46731234567", "+46761234567", "+46791234567", "+123456789012345", "+1234" })
+	@ValueSource(
+			strings = {
+				"+46701234567",
+				"+46721234567",
+				"+46731234567",
+				"+46761234567",
+				"+46791234567",
+				"+123456789012345",
+				"+1234"
+			})
 	void validMSISDN(final String number) {
 
 		validator.initialize(annotationMock);
@@ -37,7 +45,7 @@ class ValidMSISDNConstraintValidatorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "not-valid", "46701234567", "+06701234567", "+1234567890123456", "+123" })
+	@ValueSource(strings = {"not-valid", "46701234567", "+06701234567", "+1234567890123456", "+123"})
 	void invalidMSISDN(final String number) {
 
 		validator.initialize(annotationMock);
@@ -69,15 +77,18 @@ class ValidMSISDNConstraintValidatorTest {
 
 		assertThat(validator.isValid(null)).isTrue(); // null is treated as valid.
 		assertThat(validator.isValid(null, null)).isTrue(); // null is treated as valid.
-		assertThat(validator.isValid("not-valid")).isFalse(); // non-null and invalid values are still treated as invalid.
-		assertThat(validator.isValid("not-valid", null)).isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid"))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-valid", null))
+				.isFalse(); // non-null and invalid values are still treated as invalid.
 
 		verify(annotationMock).nullable();
 	}
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$");
+		assertThat(validator.getMessage())
+				.isEqualTo("must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$");
 
 		verifyNoInteractions(annotationMock);
 	}

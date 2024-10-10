@@ -5,18 +5,17 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-import java.util.Base64;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.lang.reflect.Method;
+import java.util.Base64;
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 
 /**
  * Defines the logic to validate that a string is a valid non-blank base64-string.
  */
-public class ValidBase64ConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidBase64, String> {
+public class ValidBase64ConstraintValidator extends AbstractValidator
+		implements ConstraintValidator<ValidBase64, String> {
 
 	private static final Base64.Decoder BASE64_DECODER = Base64.getDecoder();
 
@@ -46,9 +45,9 @@ public class ValidBase64ConstraintValidator extends AbstractValidator implements
 	@Override
 	public String getMessage() {
 		return ofNullable(findMethod(ValidBase64.class, MESSAGE_METHOD_NAME))
-			.map(Method::getDefaultValue)
-			.map(Object::toString)
-			.orElseThrow(createException(ValidBase64.class.getName()));
+				.map(Method::getDefaultValue)
+				.map(Object::toString)
+				.orElseThrow(createException(ValidBase64.class.getName()));
 	}
 
 	private boolean isValidBase64(final String value) {

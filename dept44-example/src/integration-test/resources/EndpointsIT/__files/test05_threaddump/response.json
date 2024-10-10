@@ -1,5 +1,5 @@
 {
+	"detail": "No endpoint GET /actuator/threaddump.",
 	"title": "Not Found",
-	"status": 404,
-	"detail": "No endpoint GET /actuator/threaddump."
+	"status": 404
 }

@@ -6,10 +6,19 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.zalando.problem.Status.UNAUTHORIZED;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.security.WeakKeyException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map.Entry;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -20,18 +29,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import io.jsonwebtoken.security.WeakKeyException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
@@ -45,7 +42,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private static final String EXCEPTION_UNREADABLE_CREDENTIALS = "Credentials could not be read";
 	private static final String EXCEPTION_INVALID_SIGNATURE = "Invalid signature detected for credentials";
 	private static final String EXCEPTION_CREDENTIALS_EXPIRED = "Credentials has expired";
-	private static final String EXCEPTION_WEAK_KEY = "The verification key's size is not secure enough for the selected algorithm";
+	private static final String EXCEPTION_WEAK_KEY =
+			"The verification key's size is not secure enough for the selected algorithm";
 	private static final String EXCEPTION_UNHANDLED = "Exception occurred when reading credentials";
 
 	private final JwtAuthorizationProperties properties;
@@ -55,11 +53,11 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private final ObjectMapper objectMapper;
 
 	public JwtAuthorizationExtractionFilter(
-		JwtAuthorizationProperties properties,
-		JwtTokenUtil jwtTokenUtil,
-		WebAuthenticationDetailsSource webAuthenticationDetailsSource,
-		ApplicationContext applicationContext,
-		ObjectMapper objectMapper) {
+			JwtAuthorizationProperties properties,
+			JwtTokenUtil jwtTokenUtil,
+			WebAuthenticationDetailsSource webAuthenticationDetailsSource,
+			ApplicationContext applicationContext,
+			ObjectMapper objectMapper) {
 
 		this.properties = properties;
 		this.jwtTokenUtil = jwtTokenUtil;
@@ -79,11 +77,11 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		final var matches = applicationContext.getBeansWithAnnotation(ServiceApplication.class);
 		return matches.entrySet().stream()
-			.findAny()
-			.map(Entry::getValue)
-			.map(Object::getClass)
-			.map(clazz -> AnnotationUtils.getAnnotation(clazz, EnableJwtAuthorization.class))
-			.isPresent();
+				.findAny()
+				.map(Entry::getValue)
+				.map(Object::getClass)
+				.map(clazz -> AnnotationUtils.getAnnotation(clazz, EnableJwtAuthorization.class))
+				.isPresent();
 	}
 
 	/**
@@ -95,7 +93,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	 * SecurityContext to enable Springs authorization annotations to access it.
 	 */
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+			throws ServletException, IOException {
 		final String jwtToken = request.getHeader(properties.getHeaderName());
 
 		if (nonNull(jwtToken)) {
@@ -107,7 +106,9 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 		}
 	}
 
-	private void extractToken(HttpServletRequest request, HttpServletResponse response, FilterChain chain, String jwtToken) throws IOException {
+	private void extractToken(
+			HttpServletRequest request, HttpServletResponse response, FilterChain chain, String jwtToken)
+			throws IOException {
 		try {
 			// Read JWT-token and fetch user name and accesses from it
 			final String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
@@ -116,7 +117,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 			// Validate and store token in SecurityContext if it isn't stored already
 			if (nonNull(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
 				final UserDetails userDetails = createUserDetails(username, authorities);
-				final UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(userDetails, authorities);
+				final UsernameAuthenticationToken authenticationToken =
+						UsernameAuthenticationToken.authenticated(userDetails, authorities);
 				authenticationToken.setDetails(webAuthenticationDetailsSource.buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 			}
@@ -151,9 +153,10 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 
 	private ThrowableProblem createProblem(Exception exception, String title) {
 		return Problem.builder()
-			.withDetail(extractMessage(exception))
-			.withStatus(UNAUTHORIZED).withTitle(title)
-			.build();
+				.withDetail(extractMessage(exception))
+				.withStatus(UNAUTHORIZED)
+				.withTitle(title)
+				.build();
 	}
 
 	private String extractMessage(Exception e) {

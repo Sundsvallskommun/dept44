@@ -1,13 +1,12 @@
 package se.sundsvall.dept44.common.validators.annotation;
 
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
 import se.sundsvall.dept44.common.validators.annotation.impl.ValidMSISDNConstraintValidator;
 
 /**
@@ -15,7 +14,7 @@ import se.sundsvall.dept44.common.validators.annotation.impl.ValidMSISDNConstrai
  * CharSequence.
  */
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidMSISDNConstraintValidator.class)
 public @interface ValidMSISDN {
@@ -25,7 +24,8 @@ public @interface ValidMSISDN {
 	 *
 	 * @return the message.
 	 */
-	String message() default "must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$";
+	String message() default
+			"must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$";
 
 	/**
 	 * Controls whether the value can be null or not.

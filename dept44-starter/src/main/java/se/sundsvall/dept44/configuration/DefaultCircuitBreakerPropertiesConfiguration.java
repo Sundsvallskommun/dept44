@@ -1,12 +1,10 @@
 package se.sundsvall.dept44.configuration;
 
+import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 import java.util.Objects;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Configuration;
-
-import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 
 /**
  * The purpose with this class is to set circuitbreaker baseConfig to "default"
@@ -22,8 +20,8 @@ public class DefaultCircuitBreakerPropertiesConfiguration implements BeanPostPro
 	public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
 		if (bean instanceof final CircuitBreakerProperties circuitBreakerProperties) {
 			circuitBreakerProperties.getInstances().values().stream()
-				.filter(instanceProperties -> Objects.isNull(instanceProperties.getBaseConfig()))
-				.forEach(instanceProperties -> instanceProperties.setBaseConfig("default"));
+					.filter(instanceProperties -> Objects.isNull(instanceProperties.getBaseConfig()))
+					.forEach(instanceProperties -> instanceProperties.setBaseConfig("default"));
 		}
 		return bean;
 	}

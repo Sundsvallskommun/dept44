@@ -9,15 +9,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.CompressionException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.security.WeakKeyException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,15 +41,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.zalando.problem.Status;
 import org.zalando.problem.ThrowableProblem;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.jsonwebtoken.CompressionException;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import io.jsonwebtoken.security.WeakKeyException;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
@@ -93,7 +89,8 @@ class JwtAuthorizationExtractionFilterTest {
 
 	@Test
 	void shouldReturnTrueWhenAuthorizationEnabledOnApplication() throws Exception {
-		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", new ServiceApplicationWithJwtAuthorization()));
+		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class))
+				.thenReturn(Map.of("application", new ServiceApplicationWithJwtAuthorization()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isTrue();
 	}
@@ -101,7 +98,9 @@ class JwtAuthorizationExtractionFilterTest {
 	@ParameterizedTest
 	@ValueSource(classes = {PlainServiceApplication.class, PlainBean.class})
 	void shouldReturnFalseWhenAuthorizationNotEnabledOnApplication(Class<?> beanClass) throws Exception {
-		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", beanClass.getDeclaredConstructor().newInstance()));
+		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class))
+				.thenReturn(
+						Map.of("application", beanClass.getDeclaredConstructor().newInstance()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isFalse();
 	}
@@ -147,7 +146,9 @@ class JwtAuthorizationExtractionFilterTest {
 		when(jwtTokenUtilMock.getRolesFromToken(jwt)).thenReturn(List.of(genericGrantedAuthorityMock));
 
 		try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
-			securityContextHolderMock.when(() -> SecurityContextHolder.getContext()).thenReturn(securityContextMock);
+			securityContextHolderMock
+					.when(() -> SecurityContextHolder.getContext())
+					.thenReturn(securityContextMock);
 			filter.doFilterInternal(requestMock, responseMock, filterChainMock);
 
 			verify(propertiesMock).getHeaderName();
@@ -198,26 +199,24 @@ class JwtAuthorizationExtractionFilterTest {
 
 	private static Stream<Arguments> exceptionProvider() {
 		return Stream.of(
-			Arguments.of(new IllegalArgumentException("Exception 1"), "Credentials could not be read"),
-			Arguments.of(new MalformedJwtException("Exception 2"), "Credentials could not be read"),
-			Arguments.of(new UnsupportedJwtException("Exception 3"), "Credentials could not be read"),
-			Arguments.of(new SignatureException("Exception 4"), "Invalid signature detected for credentials"),
-			Arguments.of(new WeakKeyException ("Exception 5"), "The verification key's size is not secure enough for the selected algorithm"),
-			Arguments.of(new ExpiredJwtException(null, null, "Exception 6"), "Credentials has expired"),
-			Arguments.of(new CompressionException("Exception 7"), "Exception occurred when reading credentials")
-		);
+				Arguments.of(new IllegalArgumentException("Exception 1"), "Credentials could not be read"),
+				Arguments.of(new MalformedJwtException("Exception 2"), "Credentials could not be read"),
+				Arguments.of(new UnsupportedJwtException("Exception 3"), "Credentials could not be read"),
+				Arguments.of(new SignatureException("Exception 4"), "Invalid signature detected for credentials"),
+				Arguments.of(
+						new WeakKeyException("Exception 5"),
+						"The verification key's size is not secure enough for the selected algorithm"),
+				Arguments.of(new ExpiredJwtException(null, null, "Exception 6"), "Credentials has expired"),
+				Arguments.of(new CompressionException("Exception 7"), "Exception occurred when reading credentials"));
 	}
 
 	// Dummy classes to test annotation verification in shouldNotFilter method
-	private static class PlainBean {
-	}
-	
+	private static class PlainBean {}
+
 	@ServiceApplication
-	private static class PlainServiceApplication {
-	}
+	private static class PlainServiceApplication {}
 
 	@ServiceApplication
 	@EnableJwtAuthorization
-	private static class ServiceApplicationWithJwtAuthorization {
-	}
+	private static class ServiceApplicationWithJwtAuthorization {}
 }

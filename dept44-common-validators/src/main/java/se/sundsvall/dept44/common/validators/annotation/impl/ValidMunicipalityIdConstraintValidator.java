@@ -5,18 +5,17 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.lang.reflect.Method;
 import se.sundsvall.dept44.common.validators.annotation.ValidMunicipalityId;
 import se.sundsvall.dept44.util.MunicipalityUtils;
 
 /**
  * Defines the logic to validate that a string is a valid municipality ID.
  */
-public class ValidMunicipalityIdConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidMunicipalityId, String> {
+public class ValidMunicipalityIdConstraintValidator extends AbstractValidator
+		implements ConstraintValidator<ValidMunicipalityId, String> {
 
 	private boolean nullable;
 
@@ -42,8 +41,8 @@ public class ValidMunicipalityIdConstraintValidator extends AbstractValidator im
 	@Override
 	public String getMessage() {
 		return ofNullable(findMethod(ValidMunicipalityId.class, MESSAGE_METHOD_NAME))
-			.map(Method::getDefaultValue)
-			.map(Object::toString)
-			.orElseThrow(createException(ValidMunicipalityId.class.getName()));
+				.map(Method::getDefaultValue)
+				.map(Object::toString)
+				.orElseThrow(createException(ValidMunicipalityId.class.getName()));
 	}
 }

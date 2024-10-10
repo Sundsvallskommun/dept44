@@ -18,5 +18,4 @@ public final class Constants {
 	 */
 	public static final MediaType APPLICATION_YAML = new MediaType("application", "yaml");
 	public static final MediaType APPLICATION_YML = new MediaType("application", "yml");
-
 }

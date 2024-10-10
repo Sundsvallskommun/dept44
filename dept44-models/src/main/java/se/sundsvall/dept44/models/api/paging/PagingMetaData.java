@@ -1,9 +1,9 @@
 package se.sundsvall.dept44.models.api.paging;
 
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
  * Model class to use when returning paged result. Should be added in root of response under attribute "_meta".
@@ -23,10 +23,16 @@ public class PagingMetaData {
 	@Schema(description = "Displayed objects on current page", example = "13", accessMode = READ_ONLY)
 	private int count;
 
-	@Schema(description = "Total amount of hits based on provided search parameters", example = "98", accessMode = READ_ONLY)
+	@Schema(
+			description = "Total amount of hits based on provided search parameters",
+			example = "98",
+			accessMode = READ_ONLY)
 	private long totalRecords;
 
-	@Schema(description = "Total amount of pages based on provided search parameters", example = "23", accessMode = READ_ONLY)
+	@Schema(
+			description = "Total amount of pages based on provided search parameters",
+			example = "23",
+			accessMode = READ_ONLY)
 	private int totalPages;
 
 	public static PagingMetaData create() {

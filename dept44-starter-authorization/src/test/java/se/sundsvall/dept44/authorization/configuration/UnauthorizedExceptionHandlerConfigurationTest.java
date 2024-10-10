@@ -5,7 +5,6 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zalando.problem.Status;
-
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AccessDeniedExceptionHandler;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AuthenticationCredentialsNotFoundExceptionHandler;
 
@@ -26,12 +24,14 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 
 	@Test
 	void verifyConfigurationAnnotation() {
-		assertThat(getAnnotation(UnauthorizedExceptionHandlerConfiguration.class, Configuration.class)).isNotNull();
+		assertThat(getAnnotation(UnauthorizedExceptionHandlerConfiguration.class, Configuration.class))
+				.isNotNull();
 	}
 
 	@Test
 	void verifyConditionalOnPropertyAnnotation() {
-		ConditionalOnProperty annotation = getAnnotation(UnauthorizedExceptionHandlerConfiguration.class, ConditionalOnProperty.class);
+		ConditionalOnProperty annotation =
+				getAnnotation(UnauthorizedExceptionHandlerConfiguration.class, ConditionalOnProperty.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.name()).containsExactly("jwt.authorization.secret");
@@ -41,16 +41,18 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(classes = {AuthenticationCredentialsNotFoundExceptionHandler.class, AccessDeniedExceptionHandler.class})	
+	@ValueSource(
+			classes = {AuthenticationCredentialsNotFoundExceptionHandler.class, AccessDeniedExceptionHandler.class})
 	void verifyHandlerMethodAnnotation(Class<?> handler) {
 		assertThat(getAnnotation(handler, ControllerAdvice.class)).isNotNull();
 
 		Stream.of(ReflectionUtils.getDeclaredMethods(handler))
-			.filter(method -> !method.isSynthetic()) // Need to remove synthetic methods added by j-unit ($jacocoInit)
-			.forEach(method -> {
-				assertThat(getAnnotation(method, ExceptionHandler.class)).isNotNull();
-				assertThat(getAnnotation(method, ResponseBody.class)).isNotNull();
-			});
+				.filter(method ->
+						!method.isSynthetic()) // Need to remove synthetic methods added by j-unit ($jacocoInit)
+				.forEach(method -> {
+					assertThat(getAnnotation(method, ExceptionHandler.class)).isNotNull();
+					assertThat(getAnnotation(method, ResponseBody.class)).isNotNull();
+				});
 	}
 
 	@Test

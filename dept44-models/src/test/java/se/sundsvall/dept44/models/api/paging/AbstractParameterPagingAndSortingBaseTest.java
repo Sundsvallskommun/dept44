@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-
-import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.Sort;
-
-import java.util.List;
-
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -17,15 +11,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
+
 class AbstractParameterPagingAndSortingBaseTest {
 
 	@Test
 	void testBean() {
-		assertThat(TestParameter.class, allOf(
-			hasValidBeanConstructor(),
-			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals()));
+		assertThat(
+				TestParameter.class,
+				allOf(
+						hasValidBeanConstructor(),
+						hasValidGettersAndSetters(),
+						hasValidBeanHashCode(),
+						hasValidBeanEquals()));
 	}
 
 	@Test
@@ -40,9 +40,9 @@ class AbstractParameterPagingAndSortingBaseTest {
 
 		var result = test.sort();
 
-		assertThat(result.get()).extracting("property", "direction").containsExactly(
-			tuple("field1", ASC),
-			tuple("field2", ASC));
+		assertThat(result.get())
+				.extracting("property", "direction")
+				.containsExactly(tuple("field1", ASC), tuple("field2", ASC));
 	}
 
 	@Test
@@ -53,10 +53,9 @@ class AbstractParameterPagingAndSortingBaseTest {
 
 		var result = test.sort();
 
-		assertThat(result.get()).extracting("property", "direction").containsExactly(
-			tuple("field1", DESC),
-			tuple("field2", DESC));
-
+		assertThat(result.get())
+				.extracting("property", "direction")
+				.containsExactly(tuple("field1", DESC), tuple("field2", DESC));
 	}
 
 	@Test

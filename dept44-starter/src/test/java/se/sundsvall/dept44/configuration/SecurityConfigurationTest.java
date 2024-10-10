@@ -22,7 +22,7 @@ import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
-@SpringBootTest(classes = { SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class })
+@SpringBootTest(classes = {SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class})
 class SecurityConfigurationTest {
 
 	/*
@@ -43,7 +43,8 @@ class SecurityConfigurationTest {
 	private HttpSecurity httpSecurityMock;
 
 	@Mock
-	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry requestMatcherRegistryMock;
+	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+			requestMatcherRegistryMock;
 
 	@Mock
 	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrlMock;
@@ -75,13 +76,18 @@ class SecurityConfigurationTest {
 		when(requestMatcherRegistryMock.anyRequest()).thenReturn(authorizedUrlMock);
 
 		doAnswer(invocation -> {
-			final Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation.getArgument(0);
-			customizer.customize(requestMatcherRegistryMock);
-			return httpSecurityMock;
-		}).when(httpSecurityMock).authorizeHttpRequests(any());
+					final Customizer<
+									AuthorizeHttpRequestsConfigurer<HttpSecurity>
+											.AuthorizationManagerRequestMatcherRegistry>
+							customizer = invocation.getArgument(0);
+					customizer.customize(requestMatcherRegistryMock);
+					return httpSecurityMock;
+				})
+				.when(httpSecurityMock)
+				.authorizeHttpRequests(any());
 
 		when(requestMatcherRegistryMock.requestMatchers(any(EndpointRequest.EndpointRequestMatcher.class)))
-			.thenReturn(authorizedUrlMock);
+				.thenReturn(authorizedUrlMock);
 		when(authorizedUrlMock.permitAll()).thenReturn(requestMatcherRegistryMock);
 		when(httpSecurityMock.build()).thenReturn(defaultSecurityFilterChain);
 

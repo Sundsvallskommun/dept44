@@ -21,7 +21,6 @@ import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAt
 
 import java.io.IOException;
 import java.util.Arrays;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -34,23 +33,23 @@ class ResponseFilterDefinitionTest {
 	void fileAttachmentFilterReplace() throws IOException {
 		final var filter = fileAttachmentFilter();
 		final var response = filter.filter(MockHttpResponse.create()
-			.withHeaders(of(CONTENT_DISPOSITION, "attachment; filename=test.zip"))
-			.withContentType("application/x-rar-compressed")
-			.withBodyAsString("this is binary data!"));
+				.withHeaders(of(CONTENT_DISPOSITION, "attachment; filename=test.zip"))
+				.withContentType("application/x-rar-compressed")
+				.withBodyAsString("this is binary data!"));
 
 		response.withBody();
 
 		assertThat(response.getContentType()).isEqualTo("application/x-rar-compressed");
-		assertThat(response.getHeaders()).containsEntry(CONTENT_DISPOSITION, Arrays.asList("attachment; filename=test.zip"));
+		assertThat(response.getHeaders())
+				.containsEntry(CONTENT_DISPOSITION, Arrays.asList("attachment; filename=test.zip"));
 		assertThat(response.getBodyAsString()).isEqualTo("<binary>");
 	}
 
 	@Test
 	void fileAttachmentFilterDoNotReplace() throws IOException {
 		final var filter = fileAttachmentFilter();
-		final var response = filter.filter(MockHttpResponse.create()
-			.withContentType("text/plain")
-			.withBodyAsString("do not filter me"));
+		final var response = filter.filter(
+				MockHttpResponse.create().withContentType("text/plain").withBodyAsString("do not filter me"));
 
 		response.withBody();
 
@@ -59,13 +58,19 @@ class ResponseFilterDefinitionTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {
-		APPLICATION_PDF_VALUE, APPLICATION_OCTET_STREAM_VALUE, IMAGE_PNG_VALUE, IMAGE_JPEG_VALUE, IMAGE_GIF_VALUE })
+	@ValueSource(
+			strings = {
+				APPLICATION_PDF_VALUE,
+				APPLICATION_OCTET_STREAM_VALUE,
+				IMAGE_PNG_VALUE,
+				IMAGE_JPEG_VALUE,
+				IMAGE_GIF_VALUE
+			})
 	void binaryContentFilterReplace(String contentType) throws IOException {
 		final var filter = binaryContentFilter();
 		final var response = filter.filter(MockHttpResponse.create()
-			.withHeaders(HttpHeaders.of(CONTENT_TYPE_HEADER, contentType))
-			.withBodyAsString("this is binary data!"));
+				.withHeaders(HttpHeaders.of(CONTENT_TYPE_HEADER, contentType))
+				.withBodyAsString("this is binary data!"));
 
 		response.withBody();
 
@@ -73,13 +78,22 @@ class ResponseFilterDefinitionTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {
-		"text/*", ALL_VALUE, TEXT_HTML_VALUE, TEXT_XML_VALUE, TEXT_PLAIN_VALUE, APPLICATION_PROBLEM_JSON_VALUE, APPLICATION_PROBLEM_XML_VALUE, APPLICATION_GRAPHQL_RESPONSE_VALUE })
+	@ValueSource(
+			strings = {
+				"text/*",
+				ALL_VALUE,
+				TEXT_HTML_VALUE,
+				TEXT_XML_VALUE,
+				TEXT_PLAIN_VALUE,
+				APPLICATION_PROBLEM_JSON_VALUE,
+				APPLICATION_PROBLEM_XML_VALUE,
+				APPLICATION_GRAPHQL_RESPONSE_VALUE
+			})
 	void binaryContentDoNotReplace(String contentType) throws IOException {
 		final var filter = binaryContentFilter();
 		final var response = filter.filter(MockHttpResponse.create()
-			.withHeaders(HttpHeaders.of(CONTENT_TYPE_HEADER, contentType))
-			.withBodyAsString("do not filter me"));
+				.withHeaders(HttpHeaders.of(CONTENT_TYPE_HEADER, contentType))
+				.withBodyAsString("do not filter me"));
 
 		response.withBody();
 

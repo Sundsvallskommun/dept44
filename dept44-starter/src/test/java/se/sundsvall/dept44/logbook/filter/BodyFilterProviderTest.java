@@ -13,9 +13,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,7 +23,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,13 +34,10 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.logbook.BodyFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 
-@ExtendWith({ MockitoExtension.class, ResourceLoaderExtension.class })
+@ExtendWith({MockitoExtension.class, ResourceLoaderExtension.class})
 class BodyFilterProviderTest {
 
 	@Spy
@@ -66,14 +62,17 @@ class BodyFilterProviderTest {
 
 	@Test
 	void testBuildJsonPathFilters() {
-		assertThat(BodyFilterProvider.buildJsonPathFilters(objectMapperSpy, Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
+		assertThat(BodyFilterProvider.buildJsonPathFilters(objectMapperSpy, Map.of("key1", "value1", "key2", "value2")))
+				.hasSize(2);
 	}
 
 	@Test
-	void testJsonPathFilter(@Load("/json-path-filter.input.json") final String input,
-		@Load("/json-path-filter.expected.json") final String expected) {
-		final var filters = BodyFilterProvider.buildJsonPathFilters(objectMapperSpy,
-			Map.of("$.pin", "[pin]", "$.social_accounts[*].password", "[password]", "$.missing", "???"));
+	void testJsonPathFilter(
+			@Load("/json-path-filter.input.json") final String input,
+			@Load("/json-path-filter.expected.json") final String expected) {
+		final var filters = BodyFilterProvider.buildJsonPathFilters(
+				objectMapperSpy,
+				Map.of("$.pin", "[pin]", "$.social_accounts[*].password", "[password]", "$.missing", "???"));
 
 		var result = input;
 		for (final var filter : filters) {
@@ -85,12 +84,14 @@ class BodyFilterProviderTest {
 
 	@Test
 	void testBuildXPathFilters() {
-		assertThat(BodyFilterProvider.buildXPathFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
+		assertThat(BodyFilterProvider.buildXPathFilters(Map.of("key1", "value1", "key2", "value2")))
+				.hasSize(2);
 	}
 
 	@Test
 	void testCreateDocumentBuilderFactory() throws Exception {
-		try (MockedStatic<DocumentBuilderFactory> documentBuilderFactoryMock = Mockito.mockStatic(DocumentBuilderFactory.class)) {
+		try (MockedStatic<DocumentBuilderFactory> documentBuilderFactoryMock =
+				Mockito.mockStatic(DocumentBuilderFactory.class)) {
 			documentBuilderFactoryMock.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactorySpy);
 
 			assertThat(BodyFilterProvider.createDocumentBuilderFactory()).isSameAs(documentBuilderFactorySpy);
@@ -100,12 +101,14 @@ class BodyFilterProviderTest {
 
 	@Test
 	void testCreateDocumentBuilderFactoryThrowsException() throws Exception {
-		try (MockedStatic<DocumentBuilderFactory> documentBuilderFactoryMock = Mockito.mockStatic(DocumentBuilderFactory.class)) {
+		try (MockedStatic<DocumentBuilderFactory> documentBuilderFactoryMock =
+				Mockito.mockStatic(DocumentBuilderFactory.class)) {
 			final var cause = new ParserConfigurationException("test");
 			documentBuilderFactoryMock.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactorySpy);
 			doThrow(cause).when(documentBuilderFactorySpy).setFeature(any(), anyBoolean());
 
-			final InvalidConfigurationException exception = assertThrows(InvalidConfigurationException.class, BodyFilterProvider::createDocumentBuilderFactory);
+			final InvalidConfigurationException exception =
+					assertThrows(InvalidConfigurationException.class, BodyFilterProvider::createDocumentBuilderFactory);
 			assertThat(exception).hasCause(cause);
 			verify(documentBuilderFactorySpy).setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 		}
@@ -115,7 +118,8 @@ class BodyFilterProviderTest {
 	void testCreateDocumentBuilder() throws Exception {
 		when(documentBuilderFactorySpy.newDocumentBuilder()).thenReturn(documentBuilderMock);
 
-		assertThat(BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy)).isSameAs(documentBuilderMock);
+		assertThat(BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy))
+				.isSameAs(documentBuilderMock);
 		verify(documentBuilderFactorySpy).newDocumentBuilder();
 	}
 
@@ -123,7 +127,9 @@ class BodyFilterProviderTest {
 	void testCreateDocumentBuilderThrowsException() throws Exception {
 		when(documentBuilderFactorySpy.newDocumentBuilder()).thenThrow(new ParserConfigurationException("test"));
 
-		final var exception = assertThrows(InvalidConfigurationException.class, ()-> BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy));
+		final var exception = assertThrows(
+				InvalidConfigurationException.class,
+				() -> BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy));
 		assertThat(exception.getCause()).isInstanceOf(ParserConfigurationException.class);
 		assertThat(exception.getCause().getMessage()).isEqualTo("test");
 		verify(documentBuilderFactorySpy).newDocumentBuilder();
@@ -147,7 +153,8 @@ class BodyFilterProviderTest {
 			transformerFactoryMock.when(TransformerFactory::newInstance).thenReturn(transformerFactorySpy);
 			doThrow(cause).when(transformerFactorySpy).setAttribute(any(), any());
 
-			final InvalidConfigurationException exception = assertThrows(InvalidConfigurationException.class, BodyFilterProvider::createTransformerFactory);
+			final InvalidConfigurationException exception =
+					assertThrows(InvalidConfigurationException.class, BodyFilterProvider::createTransformerFactory);
 			assertThat(exception).hasCause(cause);
 			verify(transformerFactorySpy).setAttribute(any(), any());
 		}
@@ -165,7 +172,8 @@ class BodyFilterProviderTest {
 	void testCreateTransformerThrowsException() throws Exception {
 		when(transformerFactorySpy.newTransformer()).thenThrow(new TransformerConfigurationException("test"));
 
-		final var exception = assertThrows(InvalidConfigurationException.class, ()-> BodyFilterProvider.createTransformer(transformerFactorySpy));
+		final var exception = assertThrows(
+				InvalidConfigurationException.class, () -> BodyFilterProvider.createTransformer(transformerFactorySpy));
 		assertThat(exception.getCause()).isInstanceOf(TransformerConfigurationException.class);
 		assertThat(exception.getCause().getMessage()).isEqualTo("test");
 		verify(transformerFactorySpy).newTransformer();
@@ -185,35 +193,45 @@ class BodyFilterProviderTest {
 		final var INVALID_TYPE = ";";
 
 		return Stream.of(
-			Arguments.of(null, "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
-			Arguments.of(null, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
-			Arguments.of(INVALID_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
-			Arguments.of(APPLICATION_JSON.toString(), null, null),
-			Arguments.of(APPLICATION_JSON.toString(), "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
-			Arguments.of(APPLICATION_JSON.toString(), "{\"parent\": [{\"node\": \"some_long_data_string\"}]}", "{\"parent\": [{\"node\": \"some_long_data_string\"}]}"),
-			Arguments.of(APPLICATION_XHTML_XML.toString(), null, null),
-			Arguments.of(APPLICATION_XHTML_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(APPLICATION_XHTML_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(APPLICATION_XML.toString(), null, null),
-			Arguments.of(APPLICATION_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(APPLICATION_XHTML_XML.withCharset("").toString(),
-				"<?xml version=\"1.0\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(APPLICATION_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(TEXT_XML.toString(), null, null),
-			Arguments.of(TEXT_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
-			Arguments.of(TEXT_XML.toString(),
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
-				"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"));
+				Arguments.of(null, "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
+				Arguments.of(null, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
+				Arguments.of(INVALID_TYPE, "<node>some_long_data_string</node>", "<node>some_long_data_string</node>"),
+				Arguments.of(APPLICATION_JSON.toString(), null, null),
+				Arguments.of(APPLICATION_JSON.toString(), "{\"node\": \"data\"}", "{\"node\": \"data\"}"),
+				Arguments.of(
+						APPLICATION_JSON.toString(),
+						"{\"parent\": [{\"node\": \"some_long_data_string\"}]}",
+						"{\"parent\": [{\"node\": \"some_long_data_string\"}]}"),
+				Arguments.of(APPLICATION_XHTML_XML.toString(), null, null),
+				Arguments.of(
+						APPLICATION_XHTML_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(
+						APPLICATION_XHTML_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(APPLICATION_XML.toString(), null, null),
+				Arguments.of(
+						APPLICATION_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(
+						APPLICATION_XHTML_XML.withCharset("").toString(),
+						"<?xml version=\"1.0\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(
+						APPLICATION_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(TEXT_XML.toString(), null, null),
+				Arguments.of(
+						TEXT_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>data</replace><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><replace>replacement</replace><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"),
+				Arguments.of(
+						TEXT_XML.toString(),
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>data</replace></parent><keep>data</keep><replace>data</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>",
+						"<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"><SOAP-ENV:Header/><SOAP-ENV:Body><parent><keep>data</keep><replace>replacement</replace></parent><keep>data</keep><replace>replacement</replace></SOAP-ENV:Body></SOAP-ENV:Envelope>"));
 	}
 }

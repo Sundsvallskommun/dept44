@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import feign.okhttp.OkHttpClient;
 import java.lang.reflect.Method;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -16,11 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.Logbook;
-
-import feign.okhttp.OkHttpClient;
 import se.sundsvall.dept44.security.Truststore;
 
-@SpringBootTest(classes = { FeignConfiguration.class })
+@SpringBootTest(classes = {FeignConfiguration.class})
 class FeignConfigurationTest {
 
 	@MockBean
@@ -47,11 +45,13 @@ class FeignConfigurationTest {
 			}
 			case "logbookLogger" -> {
 				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));
-				assertThat(method.getAnnotation(ConditionalOnBean.class).value()).containsExactly(Logbook.class);
+				assertThat(method.getAnnotation(ConditionalOnBean.class).value())
+						.containsExactly(Logbook.class);
 			}
 			case "okHttpClient" -> {
 				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));
-				assertThat(method.getAnnotation(ConditionalOnBean.class).value()).containsExactly(Truststore.class);
+				assertThat(method.getAnnotation(ConditionalOnBean.class).value())
+						.containsExactly(Truststore.class);
 			}
 			default -> fail();
 		}
@@ -64,6 +64,8 @@ class FeignConfigurationTest {
 
 	@Test
 	void testOkHttpClient() {
-		assertThat(configuration.okHttpClient(new Truststore("/dummy"))).isNotNull().isInstanceOf(OkHttpClient.class);
+		assertThat(configuration.okHttpClient(new Truststore("/dummy")))
+				.isNotNull()
+				.isInstanceOf(OkHttpClient.class);
 	}
 }

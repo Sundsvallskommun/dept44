@@ -20,7 +20,7 @@ class RequestIdExchangeFilterFunctionTest {
 
 	@Mock
 	private HttpHeaders headersMock;
-	
+
 	@Mock
 	private ExchangeFunction functionMock;
 
@@ -28,14 +28,14 @@ class RequestIdExchangeFilterFunctionTest {
 	void initMocks() {
 		MockitoAnnotations.openMocks(this);
 	}
-	
+
 	@Test
 	void testFilter() {
 		when(requestMock.headers()).thenReturn(headersMock);
 		when(requestMock.cookies()).thenReturn(new LinkedMultiValueMap<>());
-		
+
 		new RequestIdExchangeFilterFunction().filter(requestMock, functionMock);
-		
+
 		verify(functionMock).exchange(any(ClientRequest.class));
 	}
 }

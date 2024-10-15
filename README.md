@@ -10,4 +10,5 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sundsvallskommun_dept44&metric=bugs)](https://sonarcloud.io/summary/overall?id=Sundsvallskommun_dept44)
 
 ## 
+
 Copyright (c) 2023 Sundsvalls kommun

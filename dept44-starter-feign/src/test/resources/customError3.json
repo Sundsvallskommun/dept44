@@ -1,9 +1,9 @@
 {
 	"errorMessage": "This is a custom error",
 	"extraInfo": {
-		"details": "This is details",
-		"errorDetail": "with extrainfo",
 		"instance": "http:/the-instance.com",
+		"errorDetail": "with extrainfo",
+		"details": "This is details",
 		"status": "This is a status"
 	}
 }

@@ -35,7 +35,7 @@ class RemoveContentLengthHeaderInterceptorTest {
 	void testProcess() {
 		// Call method
 		new RemoveContentLengthHeaderInterceptor().process(mockHttpRequest, mockEntityDetails, mockHttpContext);
-		
+
 		// Verify mocks
 		verify(mockHttpRequest).removeHeaders(HttpHeaders.CONTENT_LENGTH);
 		verifyNoInteractions(mockHttpContext);

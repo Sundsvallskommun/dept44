@@ -13,5 +13,8 @@ import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHand
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import({PrePostMethodSecurityConfiguration.class, UnauthorizedExceptionHandlerConfiguration.class, JwtAuthorizationProperties.class})
-public @interface EnableJwtAuthorization {}
+@Import({
+	PrePostMethodSecurityConfiguration.class, UnauthorizedExceptionHandlerConfiguration.class, JwtAuthorizationProperties.class
+})
+public @interface EnableJwtAuthorization {
+}

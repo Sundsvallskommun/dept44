@@ -299,7 +299,9 @@ class WebConfigurationTest {
 	}
 
 	@Nested
-	@SpringBootTest(classes = WebConfiguration.class, properties = {"mdc.municipalityId.enabled=true"})
+	@SpringBootTest(classes = WebConfiguration.class, properties = {
+		"mdc.municipalityId.enabled=true"
+	})
 	class MunicipalityIdFilterTest {
 
 		@MockBean
@@ -365,8 +367,7 @@ class WebConfigurationTest {
 				Arguments.of("/any/service/%s", "2281", 3),
 				Arguments.of("/%s/any/service", "2260", 1),
 				Arguments.of("/any/%s/service", "2260", 2),
-				Arguments.of("/any/service/%s", "2260", 3)
-			);
+				Arguments.of("/any/service/%s", "2260", 3));
 		}
 
 		@ParameterizedTest

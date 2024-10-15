@@ -23,7 +23,6 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 	private static final String CUSTOM_ERROR_MESSAGE_TEMPLATE = "One or more of the sortBy properties %s are not valid. Valid properties to sort by are %s.";
 	private final Set<String> entityProperties = new HashSet<>();
 
-
 	@Override
 	public void initialize(ValidSortByProperty constraintAnnotation) {
 		entityProperties.addAll(Stream.of(constraintAnnotation.value().getDeclaredFields())

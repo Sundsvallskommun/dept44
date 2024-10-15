@@ -41,7 +41,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 
-@ExtendWith({ MockitoExtension.class, ResourceLoaderExtension.class })
+@ExtendWith({
+	MockitoExtension.class, ResourceLoaderExtension.class
+})
 class BodyFilterProviderTest {
 
 	@Spy
@@ -123,7 +125,7 @@ class BodyFilterProviderTest {
 	void testCreateDocumentBuilderThrowsException() throws Exception {
 		when(documentBuilderFactorySpy.newDocumentBuilder()).thenThrow(new ParserConfigurationException("test"));
 
-		final var exception = assertThrows(InvalidConfigurationException.class, ()-> BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy));
+		final var exception = assertThrows(InvalidConfigurationException.class, () -> BodyFilterProvider.createDocumentBuilder(documentBuilderFactorySpy));
 		assertThat(exception.getCause()).isInstanceOf(ParserConfigurationException.class);
 		assertThat(exception.getCause().getMessage()).isEqualTo("test");
 		verify(documentBuilderFactorySpy).newDocumentBuilder();
@@ -165,7 +167,7 @@ class BodyFilterProviderTest {
 	void testCreateTransformerThrowsException() throws Exception {
 		when(transformerFactorySpy.newTransformer()).thenThrow(new TransformerConfigurationException("test"));
 
-		final var exception = assertThrows(InvalidConfigurationException.class, ()-> BodyFilterProvider.createTransformer(transformerFactorySpy));
+		final var exception = assertThrows(InvalidConfigurationException.class, () -> BodyFilterProvider.createTransformer(transformerFactorySpy));
 		assertThat(exception.getCause()).isInstanceOf(TransformerConfigurationException.class);
 		assertThat(exception.getCause().getMessage()).isEqualTo("test");
 		verify(transformerFactorySpy).newTransformer();

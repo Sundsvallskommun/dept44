@@ -13,42 +13,42 @@ import org.apache.maven.project.MavenProject;
 
 abstract class AbstractDept44CheckMojo extends AbstractMojo {
 
-    private MavenProject project;
-    private boolean skipAllChecks;
-    private final List<String> errors = new ArrayList<>();
+	private MavenProject project;
+	private boolean skipAllChecks;
+	private final List<String> errors = new ArrayList<>();
 
-    abstract void doExecute() throws MojoFailureException;
+	abstract void doExecute() throws MojoFailureException;
 
-    @Override
-    public void execute() throws MojoFailureException {
-        doExecute();
+	@Override
+	public void execute() throws MojoFailureException {
+		doExecute();
 
-        if (!errors.isEmpty()) {
-            var errorsString = errors.stream().collect(joining(lineSeparator() + " - ", " - ", lineSeparator()));
+		if (!errors.isEmpty()) {
+			var errorsString = errors.stream().collect(joining(lineSeparator() + " - ", " - ", lineSeparator()));
 
-            throw new MojoFailureException(lineSeparator() + errorsString);
-        }
-    }
+			throw new MojoFailureException(lineSeparator() + errorsString);
+		}
+	}
 
-    protected void addError(final String error) {
-        errors.add(error);
-    }
+	protected void addError(final String error) {
+		errors.add(error);
+	}
 
-    protected MavenProject getProject() {
-        return project;
-    }
+	protected MavenProject getProject() {
+		return project;
+	}
 
-    @Parameter(defaultValue = "${project}", required = true, readonly = true)
-    public void setProject(final MavenProject project) {
-        this.project = project;
-    }
+	@Parameter(defaultValue = "${project}", required = true, readonly = true)
+	public void setProject(final MavenProject project) {
+		this.project = project;
+	}
 
-    protected boolean isSkipAllChecks() {
-        return skipAllChecks;
-    }
+	protected boolean isSkipAllChecks() {
+		return skipAllChecks;
+	}
 
-    @Parameter(property = "dept44.check.skipAll", defaultValue = "false")
-    public void setSkipAllChecks(final boolean skipAllChecks) {
-        this.skipAllChecks = skipAllChecks;
-    }
+	@Parameter(property = "dept44.check.skipAll", defaultValue = "false")
+	public void setSkipAllChecks(final boolean skipAllChecks) {
+		this.skipAllChecks = skipAllChecks;
+	}
 }

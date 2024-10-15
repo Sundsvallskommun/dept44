@@ -20,43 +20,43 @@ import org.zalando.problem.Problem;
 
 @Configuration
 @ConditionalOnProperty(name = "jwt.authorization.secret")
-public class UnauthorizedExceptionHandlerConfiguration { //NOSONAR
+public class UnauthorizedExceptionHandlerConfiguration { // NOSONAR
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UnauthorizedExceptionHandlerConfiguration.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UnauthorizedExceptionHandlerConfiguration.class);
 
-    private static final String LOG_MESSAGE = "Translating exception to problem";
+	private static final String LOG_MESSAGE = "Translating exception to problem";
 
-    private static String extractMessage(Exception e) {
-        return Optional.ofNullable(e.getMessage()).orElse(String.valueOf(e));
-    }
+	private static String extractMessage(Exception e) {
+		return Optional.ofNullable(e.getMessage()).orElse(String.valueOf(e));
+	}
 
-    private static ResponseEntity<Problem> createResponseEntity(Exception exception) {
-        LOGGER.info(LOG_MESSAGE, exception);
+	private static ResponseEntity<Problem> createResponseEntity(Exception exception) {
+		LOGGER.info(LOG_MESSAGE, exception);
 
-        final var errorResponse = Problem.builder()
-            .withStatus(UNAUTHORIZED)
-            .withTitle(UNAUTHORIZED.getReasonPhrase())
-            .withDetail(extractMessage(exception))
-            .build();
-        
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(APPLICATION_PROBLEM_JSON).body(errorResponse);
-    }
-    
-    @ControllerAdvice
-    public static class AuthenticationCredentialsNotFoundExceptionHandler {
-        @ExceptionHandler
-        @ResponseBody
-        public ResponseEntity<Problem> handleException(AuthenticationCredentialsNotFoundException exception) {
-        	return createResponseEntity(exception);
-        }
-    }
+		final var errorResponse = Problem.builder()
+			.withStatus(UNAUTHORIZED)
+			.withTitle(UNAUTHORIZED.getReasonPhrase())
+			.withDetail(extractMessage(exception))
+			.build();
 
-    @ControllerAdvice
-    public static class AccessDeniedExceptionHandler {
-        @ExceptionHandler
-        @ResponseBody
-        public ResponseEntity<Problem> handleException(AccessDeniedException exception) {
-        	return createResponseEntity(exception);
-        }
-    }
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).contentType(APPLICATION_PROBLEM_JSON).body(errorResponse);
+	}
+
+	@ControllerAdvice
+	public static class AuthenticationCredentialsNotFoundExceptionHandler {
+		@ExceptionHandler
+		@ResponseBody
+		public ResponseEntity<Problem> handleException(AuthenticationCredentialsNotFoundException exception) {
+			return createResponseEntity(exception);
+		}
+	}
+
+	@ControllerAdvice
+	public static class AccessDeniedExceptionHandler {
+		@ExceptionHandler
+		@ResponseBody
+		public ResponseEntity<Problem> handleException(AccessDeniedException exception) {
+			return createResponseEntity(exception);
+		}
+	}
 }

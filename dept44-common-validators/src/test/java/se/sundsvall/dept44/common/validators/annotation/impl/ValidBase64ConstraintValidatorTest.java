@@ -37,7 +37,9 @@ class ValidBase64ConstraintValidatorTest {
 
 	@ParameterizedTest
 	@NullSource
-	@ValueSource(strings = {"not-base64-encoded", ""})
+	@ValueSource(strings = {
+		"not-base64-encoded", ""
+	})
 	void invalidBase64(final String value) {
 		validator.initialize(mockAnnotation);
 

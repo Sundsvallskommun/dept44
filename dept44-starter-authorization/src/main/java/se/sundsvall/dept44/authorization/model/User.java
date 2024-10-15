@@ -17,8 +17,7 @@ public class User implements UserDetails {
 		return new User();
 	}
 
-	private User() {
-	}
+	private User() {}
 
 	public User withUsername(String username) {
 		this.username = username;

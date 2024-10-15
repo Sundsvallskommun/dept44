@@ -16,7 +16,9 @@ import se.sundsvall.dept44.common.validators.annotation.impl.MemberOfConstraintV
  * case-sensitivity.
  */
 @Documented
-@Target({ ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = MemberOfConstraintValidator.class)
 public @interface MemberOf {

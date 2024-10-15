@@ -20,11 +20,11 @@ import org.springframework.core.annotation.AliasFor;
 @ConfigurationPropertiesScan
 @EnableAutoConfiguration
 @ComponentScan(excludeFilters = {
-    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-    @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)
+	@ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+	@ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)
 })
 public @interface ServiceApplication {
 
-    @AliasFor(annotation = EnableAutoConfiguration.class, attribute = "exclude")
-    Class<?>[] exclude() default {};
+	@AliasFor(annotation = EnableAutoConfiguration.class, attribute = "exclude")
+	Class<?>[] exclude() default {};
 }

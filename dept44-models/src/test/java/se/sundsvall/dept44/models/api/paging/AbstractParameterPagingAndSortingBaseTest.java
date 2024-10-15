@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 

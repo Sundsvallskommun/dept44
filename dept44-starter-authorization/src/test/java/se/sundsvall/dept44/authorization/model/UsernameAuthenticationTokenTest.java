@@ -87,9 +87,10 @@ class UsernameAuthenticationTokenTest {
 
 		UsernameAuthenticationToken bean = unauthenticated(principal, credentials);
 		bean.eraseCredentials();
-		
+
 		assertThat(bean.getCredentials()).isNull();
 	}
+
 	@Test
 	void testHashCode() {
 		final var authorities = List.of(GenericGrantedAuthority.create("ROLE"));

@@ -41,7 +41,9 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(classes = {AuthenticationCredentialsNotFoundExceptionHandler.class, AccessDeniedExceptionHandler.class})	
+	@ValueSource(classes = {
+		AuthenticationCredentialsNotFoundExceptionHandler.class, AccessDeniedExceptionHandler.class
+	})
 	void verifyHandlerMethodAnnotation(Class<?> handler) {
 		assertThat(getAnnotation(handler, ControllerAdvice.class)).isNotNull();
 

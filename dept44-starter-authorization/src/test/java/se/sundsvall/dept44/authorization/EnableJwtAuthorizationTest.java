@@ -40,8 +40,7 @@ class EnableJwtAuthorizationTest {
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.value()).containsExactlyInAnyOrder(
 			PrePostMethodSecurityConfiguration.class,
-			UnauthorizedExceptionHandlerConfiguration.class, 
-			JwtAuthorizationProperties.class
-		);
+			UnauthorizedExceptionHandlerConfiguration.class,
+			JwtAuthorizationProperties.class);
 	}
 }

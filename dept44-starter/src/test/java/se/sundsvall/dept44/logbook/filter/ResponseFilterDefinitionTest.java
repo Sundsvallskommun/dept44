@@ -60,7 +60,8 @@ class ResponseFilterDefinitionTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		APPLICATION_PDF_VALUE, APPLICATION_OCTET_STREAM_VALUE, IMAGE_PNG_VALUE, IMAGE_JPEG_VALUE, IMAGE_GIF_VALUE })
+		APPLICATION_PDF_VALUE, APPLICATION_OCTET_STREAM_VALUE, IMAGE_PNG_VALUE, IMAGE_JPEG_VALUE, IMAGE_GIF_VALUE
+	})
 	void binaryContentFilterReplace(String contentType) throws IOException {
 		final var filter = binaryContentFilter();
 		final var response = filter.filter(MockHttpResponse.create()
@@ -74,7 +75,8 @@ class ResponseFilterDefinitionTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"text/*", ALL_VALUE, TEXT_HTML_VALUE, TEXT_XML_VALUE, TEXT_PLAIN_VALUE, APPLICATION_PROBLEM_JSON_VALUE, APPLICATION_PROBLEM_XML_VALUE, APPLICATION_GRAPHQL_RESPONSE_VALUE })
+		"text/*", ALL_VALUE, TEXT_HTML_VALUE, TEXT_XML_VALUE, TEXT_PLAIN_VALUE, APPLICATION_PROBLEM_JSON_VALUE, APPLICATION_PROBLEM_XML_VALUE, APPLICATION_GRAPHQL_RESPONSE_VALUE
+	})
 	void binaryContentDoNotReplace(String contentType) throws IOException {
 		final var filter = binaryContentFilter();
 		final var response = filter.filter(MockHttpResponse.create()

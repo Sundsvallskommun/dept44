@@ -5,13 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 class InvalidConfigurationExceptionTest {
-	
+
 	@Test
 	void testInvalidConfigurationExceptionWithMessageAndCause() {
 		final var cause = new IllegalArgumentException("test");
 		final var message = "message";
 		final var exception = new InvalidConfigurationException(message, cause);
-		
+
 		assertThat(exception).isInstanceOf(RuntimeException.class);
 		assertThat(exception.getMessage()).isEqualTo(message);
 		assertThat(exception.getCause()).isSameAs(cause);
@@ -21,7 +21,7 @@ class InvalidConfigurationExceptionTest {
 	void testInvalidConfigurationExceptionWithMessage() {
 		final var message = "message";
 		final var exception = new InvalidConfigurationException(message);
-		
+
 		assertThat(exception).isInstanceOf(RuntimeException.class);
 		assertThat(exception.getMessage()).isEqualTo(message);
 		assertThat(exception.getCause()).isNull();
@@ -31,7 +31,7 @@ class InvalidConfigurationExceptionTest {
 	void testInvalidConfigurationExceptionWithCause() {
 		final var cause = new IllegalArgumentException("test");
 		final var exception = new InvalidConfigurationException(cause);
-		
+
 		assertThat(exception).isInstanceOf(RuntimeException.class);
 		assertThat(exception.getMessage()).isEqualTo("java.lang.IllegalArgumentException: test");
 		assertThat(exception.getCause()).isSameAs(cause);

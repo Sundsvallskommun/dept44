@@ -97,7 +97,7 @@ class AbstractAppTestTest {
 			.withServicePath(uriBuilder -> uriBuilder.path("/some/path/{value}")
 				.queryParam("someParam", "someValue")
 				.build(123))
-			//.withServicePath("/some/path")
+			// .withServicePath("/some/path")
 			.withHttpMethod(GET)
 			.withHeader("headerKey", "headerValue")
 			.withExpectedResponse("{}")
@@ -298,8 +298,8 @@ class AbstractAppTestTest {
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
 		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
 			{
-			  "key": "this-is-key",
-			  "value": "this-is-value"
+			"key": "this-is-key",
+			"value": "this-is-value"
 			}
 			""", responseHeaders, NO_CONTENT));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));

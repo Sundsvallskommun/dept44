@@ -17,7 +17,9 @@ import se.sundsvall.dept44.common.validators.annotation.impl.ValidBase64Constrai
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4648">RFC 4648</a>
  */
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidBase64ConstraintValidator.class)
 public @interface ValidBase64 {

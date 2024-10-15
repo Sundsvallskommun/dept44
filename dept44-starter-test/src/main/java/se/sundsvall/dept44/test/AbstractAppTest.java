@@ -301,9 +301,9 @@ public abstract class AbstractAppTest {
 	 * Method replaces sections in request matching sent in string with sent in replacement string.
 	 * Observe that the withRequest method must be called before for this method to have any effect.
 	 * 
-	 * @param matchingString    the string to match in request body
-	 * @param replacementString the string to replace with
-	 * @return AbstractAppTest
+	 * @param  matchingString    the string to match in request body
+	 * @param  replacementString the string to replace with
+	 * @return                   AbstractAppTest
 	 */
 	public AbstractAppTest withRequestReplacement(final String matchingString, final String replacementString) {
 		if (allNotNull(requestBody, matchingString, replacementString)) {

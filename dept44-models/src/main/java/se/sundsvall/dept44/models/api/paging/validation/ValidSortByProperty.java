@@ -15,7 +15,9 @@ import java.lang.annotation.Target;
  * present in entity class as a {@link jakarta.persistence.Column} i.e. it is possible to sort on.
  */
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidSortByPropertyConstraintValidator.class)
 public @interface ValidSortByProperty {

@@ -19,7 +19,9 @@ import se.sundsvall.dept44.common.validators.annotation.impl.ValidMobileNumberCo
  *      namnsättning</a>
  */
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidMobileNumberConstraintValidator.class)
 public @interface ValidMobileNumber {

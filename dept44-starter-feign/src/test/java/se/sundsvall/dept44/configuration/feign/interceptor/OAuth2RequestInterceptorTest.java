@@ -95,7 +95,6 @@ class OAuth2RequestInterceptorTest {
 		assertThat(RequestInterceptor.class).isAssignableFrom(OAuth2RequestInterceptor.class);
 	}
 
-
 	@Test
 	void testConstructorWithDeviceScope() {
 		ClientRegistration clientRegistrationWithScopeMock = mock(ClientRegistration.class);
@@ -295,8 +294,6 @@ class OAuth2RequestInterceptorTest {
 			.withRequestBody(matching("^grant_type=client_credentials&scope=scope1$")));
 	}
 
-
-
 	@Test
 	void testVerifyTokenRenewal(WireMockRuntimeInfo wmRuntimeInfo) {
 
@@ -304,14 +301,14 @@ class OAuth2RequestInterceptorTest {
 		var token1 = "firstToken";
 		var token2 = "secondToken";
 		var tokenBody = """
-					{
-						"access_token": "%s",
-						"expires_in": 3600,
-						"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
-						"scope": "whatever",
-						"token_type": "bearer"
-					}
-					""";
+			{
+				"access_token": "%s",
+				"expires_in": 3600,
+				"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
+				"scope": "whatever",
+				"token_type": "bearer"
+			}
+			""";
 
 		stubFor(post("/token")
 			.inScenario("Retry")
@@ -328,7 +325,7 @@ class OAuth2RequestInterceptorTest {
 				.withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.withBody(String.format(tokenBody, token2))));
 
-		//===== Setup API stubs =====
+		// ===== Setup API stubs =====
 		stubFor(get("/test")
 			.inScenario("get")
 			.whenScenarioStateIs(STARTED)
@@ -345,7 +342,7 @@ class OAuth2RequestInterceptorTest {
 				.withHeader("Content-Type", "text/plain")
 				.withBody("successful")));
 
-		//===== Create feign client =====
+		// ===== Create feign client =====
 		int port = wmRuntimeInfo.getHttpPort();
 		var clientRegistration = ClientRegistration.withRegistrationId("test")
 			.tokenUri("http://localhost:" + port + "/token")
@@ -367,10 +364,10 @@ class OAuth2RequestInterceptorTest {
 
 		var target = builder.target(TestApi.class, "http://localhost:" + port + "/");
 
-		//===== Make call =====
+		// ===== Make call =====
 		var result = target.get();
 
-		//===== Assertions =====
+		// ===== Assertions =====
 		assertThat(result).isEqualTo("successful");
 
 		com.github.tomakehurst.wiremock.client.WireMock.verify(2, postRequestedFor(urlPathEqualTo("/token"))

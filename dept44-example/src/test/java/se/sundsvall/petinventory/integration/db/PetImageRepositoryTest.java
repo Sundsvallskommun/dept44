@@ -37,7 +37,9 @@ class PetImageRepositoryTest {
 		// Setup
 		final var fileName = "test.jpg";
 		final var mimeType = "image/jpeg";
-		final var content = new byte[] { 5, 1, 9, 2, 6 };
+		final var content = new byte[] {
+			5, 1, 9, 2, 6
+		};
 		final var entity = PetImageEntity.create()
 			.withFileName(fileName)
 			.withMimeType(mimeType)
@@ -102,7 +104,9 @@ class PetImageRepositoryTest {
 
 		// Setup
 		final var id = 103L;
-		final var newContent = new byte[] { 5, 1, 9, 2, 6 };
+		final var newContent = new byte[] {
+			5, 1, 9, 2, 6
+		};
 
 		// Fetch existing entity.
 		final var petImage = repository.findById(id).orElseThrow();

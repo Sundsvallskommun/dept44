@@ -35,6 +35,7 @@
 	<module>dept44-starter-webservicetemplate</module>
 	<module>dept44-common-validators</module>
 	<module>dept44-example</module>
+	<module>dept44-formatting-plugin</module>
 </modules>
 <scm>
 	<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -239,6 +240,24 @@
 	</pluginManagement>
 	<plugins>
 	<plugin>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-formatting-plugin</artifactId>
+		<version>6.0.3-SNAPSHOT</version>
+		<executions>
+		<execution>
+			<goals>
+			<goal>format-check</goal>
+			</goals>
+			<phase>validate</phase>
+		</execution>
+		</executions>
+	</plugin>
+	<plugin>
+		<groupId>com.diffplug.spotless</groupId>
+		<artifactId>spotless-maven-plugin</artifactId>
+		<version>${spotless-maven-plugin-version}</version>
+	</plugin>
+	<plugin>
 		<groupId>org.openapitools</groupId>
 		<artifactId>openapi-generator-maven-plugin</artifactId>
 		<version>${openapi-generator-maven-plugin.version}</version>
@@ -315,80 +334,6 @@
 		</execution>
 		</executions>
 	</plugin>
-	<plugin>
-		<groupId>com.diffplug.spotless</groupId>
-		<artifactId>spotless-maven-plugin</artifactId>
-		<version>${spotless-maven-plugin-version}</version>
-		<configuration>
-		<java>
-			<excludes>
-			<exclude>**/target/**</exclude>
-			</excludes>
-			<eclipse>
-			<file>sundsvall_formatting.xml</file>
-			</eclipse>
-			<indent>
-			<tabs>true</tabs>
-			<spacesPerTab>4</spacesPerTab>
-			</indent>
-		</java>
-		<json>
-			<excludes>
-			<exclude>**/target/**</exclude>
-			</excludes>
-			<includes>
-			<include>src/**/*.json</include>
-			</includes>
-			<simple/>
-			<indent>
-			<tabs>true</tabs>
-			<spacesPerTab>4</spacesPerTab>
-			</indent>
-		</json>
-		<sql>
-			<excludes>
-			<exclude>**/target/**</exclude>
-			</excludes>
-			<includes>
-			<include>src/main/resources/**/*.sql</include>
-			</includes>
-			<excludes>
-			<exclude>**/migration/**</exclude>
-			<exclude>**/schema.sql</exclude>
-			</excludes>
-			<dbeaver/>
-		</sql>
-		<markdown>
-			<excludes>
-			<exclude>**/target/**</exclude>
-			</excludes>
-			<includes>
-			<include>**/*.md</include>
-			</includes>
-			<flexmark/>
-		</markdown>
-		<pom>
-			<includes>
-			<include>pom.xml</include>
-			</includes>
-			<sortPom>
-			<expandEmptyElements>false</expandEmptyElements>
-			</sortPom>
-			<indent>
-			<tabs>true</tabs>
-			<spacesPerTab>4</spacesPerTab>
-			</indent>
-		</pom>
-		</configuration>
-		<executions>
-		<execution>
-			<goals>
-			<goal>check</goal>
-			</goals>
-			<phase>validate</phase>
-		</execution>
-		</executions>
-	</plugin>
 	</plugins>
 </build>
 <profiles>
@@ -436,6 +381,11 @@
 			<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
 			<autoReleaseAfterClose>false</autoReleaseAfterClose>
 			</configuration>
+		</plugin>
+		<plugin>
+			<groupId>com.diffplug.spotless</groupId>
+			<artifactId>spotless-maven-plugin</artifactId>
+			<version>${spotless-maven-plugin-version}</version>
 		</plugin>
 		</plugins>
 	</build>

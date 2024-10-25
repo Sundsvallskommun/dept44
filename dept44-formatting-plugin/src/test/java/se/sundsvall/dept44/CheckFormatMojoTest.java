@@ -32,7 +32,7 @@ class CheckFormatMojoTest {
 	@Mock
 	private MavenProject mavenProjectMock;
 	@Mock
-	RepositorySystemSession repositorySession;
+	private RepositorySystemSession repositorySession;
 	@Mock
 	private MavenSession mavenSession;
 	@InjectMocks

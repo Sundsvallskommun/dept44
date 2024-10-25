@@ -29,14 +29,12 @@ class ApplyFormatMojoTest {
 
 	@Mock
 	private BuildPluginManager pluginManager;
-
 	@Mock
 	private MavenProject mavenProjectMock;
 	@Mock
-	RepositorySystemSession repositorySession;
+	private RepositorySystemSession repositorySession;
 	@Mock
 	private MavenSession mavenSession;
-
 	@InjectMocks
 	private ApplyFormatMojo applyFormatMojo;
 

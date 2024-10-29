@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(classes = { LogbookConfiguration.class, BodyFilterProperties.class, ObjectMapperConfiguration.class })
+@SpringBootTest(classes = {
+	LogbookConfiguration.class, BodyFilterProperties.class, ObjectMapperConfiguration.class
+})
 @ActiveProfiles("junit")
 class BodyFilterPropertiesTest {
 

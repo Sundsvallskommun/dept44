@@ -1,72 +1,60 @@
 {
-	"status": "UP",
 	"components": {
-		"circuitBreakers": {
-			"status": "UP",
-			"details": {
-				"petstore": {
-					"status": "UP",
-					"details": {
-						"failureRate": "-1.0%",
-						"failureRateThreshold": "50.0%",
-						"slowCallRate": "-1.0%",
-						"slowCallRateThreshold": "100.0%",
-						"bufferedCalls": 0,
-						"slowCalls": 0,
-						"slowFailedCalls": 0,
-						"failedCalls": 0,
-						"notPermittedCalls": 0,
-						"state": "CLOSED"
-					}
-				}
-			}
+		"reactiveDiscoveryClients": {
+			"components": {"Simple Reactive Discovery Client": {
+				"description": "Discovery Client not initialized",
+				"status": "UNKNOWN"
+			}},
+			"status": "UNKNOWN"
 		},
 		"clientConfigServer": {
-			"status": "UNKNOWN",
+			"details": {"error": "no property sources located"},
+			"status": "UNKNOWN"
+		},
+		"diskSpace": {
 			"details": {
-				"error": "no property sources located"
-			}
+				"path": "${json-unit.any-string}",
+				"total": "${json-unit.any-number}",
+				"exists": true,
+				"threshold": "${json-unit.any-number}",
+				"free": "${json-unit.any-number}"
+			},
+			"status": "UP"
+		},
+		"ping": {"status": "UP"},
+		"discoveryComposite": {
+			"components": {"discoveryClient": {
+				"description": "Discovery Client not initialized",
+				"status": "UNKNOWN"
+			}},
+			"status": "UNKNOWN"
+		},
+		"refreshScope": {"status": "UP"},
+		"circuitBreakers": {
+			"details": {"petstore": {
+				"details": {
+					"slowCallRate": "-1.0%",
+					"failureRate": "-1.0%",
+					"failureRateThreshold": "50.0%",
+					"slowCallRateThreshold": "100.0%",
+					"failedCalls": 0,
+					"notPermittedCalls": 0,
+					"slowCalls": 0,
+					"state": "CLOSED",
+					"slowFailedCalls": 0,
+					"bufferedCalls": 0
+				},
+				"status": "UP"
+			}},
+			"status": "UP"
 		},
 		"db": {
-			"status": "UP",
 			"details": {
 				"database": "MariaDB",
 				"validationQuery": "isValid()"
-			}
-		},
-		"discoveryComposite": {
-			"status": "UNKNOWN",
-			"components": {
-				"discoveryClient": {
-					"description": "Discovery Client not initialized",
-					"status": "UNKNOWN"
-				}
-			}
-		},
-		"diskSpace": {
-			"status": "UP",
-			"details": {
-				"total": "${json-unit.any-number}",
-				"free": "${json-unit.any-number}",
-				"threshold": "${json-unit.any-number}",
-				"path": "${json-unit.any-string}",
-				"exists": true
-			}
-		},
-		"ping": {
-			"status": "UP"
-		},
-		"reactiveDiscoveryClients": {
-			"status": "UNKNOWN",
-			"components": {
-				"Simple Reactive Discovery Client": {
-					"description": "Discovery Client not initialized",
-					"status": "UNKNOWN"
-				}
-			}
-		},
-		"refreshScope": {
+			},
 			"status": "UP"
 		}
-	}
+	},
+	"status": "UP"
 }

@@ -14,6 +14,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import org.hibernate.validator.internal.engine.constraintvalidation.ConstraintValidatorContextImpl;
 
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+
 /**
  * Defines the logic to validate that a string exists in a list of allowed values.
  */

@@ -18,7 +18,9 @@ import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingAndSortingBa
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
 
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest(classes = { MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class })
+@SpringBootTest(classes = {
+	MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class
+})
 class ValidSortByPropertyConstraintValidatorTest {
 
 	@Autowired

@@ -41,7 +41,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
-@EnableConfigurationProperties({ BodyFilterProperties.class })
+@EnableConfigurationProperties({
+	BodyFilterProperties.class
+})
 public class LogbookConfiguration {
 
 	private final String loggerName;

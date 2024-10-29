@@ -47,7 +47,7 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 	}
 
 	private Set<String> getScopeSet(final ClientRegistration clientRegistration) {
-		//When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
+		// When adding a scope to the clientRegistration it produces an "UnmodifiableSet", work around it.
 		return ofNullable(clientRegistration.getScopes())
 			.map(HashSet::new)
 			.orElseGet(HashSet::new);

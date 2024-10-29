@@ -25,7 +25,9 @@ class ValidOrganizationNumberConstraintValidatorTest {
 	private ValidOrganizationNumberConstraintValidator validator;
 
 	@ParameterizedTest
-	@ValueSource(strings = {"1026112233", "2120122334", "3154812233", "5566112233", "7021112233", "8921112233", "9351112233"})
+	@ValueSource(strings = {
+		"1026112233", "2120122334", "3154812233", "5566112233", "7021112233", "8921112233", "9351112233"
+	})
 	void validOrganizationNumber(String orgNbr) {
 
 		// Mock
@@ -38,7 +40,9 @@ class ValidOrganizationNumberConstraintValidatorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"1006112233", "2110122334", "0921112233", "4566112233", "6021112233", "not-valid"})
+	@ValueSource(strings = {
+		"1006112233", "2110122334", "0921112233", "4566112233", "6021112233", "not-valid"
+	})
 	void invalidOrganizationNumber(String orgNbr) {
 
 		validator.initialize(annotationMock);

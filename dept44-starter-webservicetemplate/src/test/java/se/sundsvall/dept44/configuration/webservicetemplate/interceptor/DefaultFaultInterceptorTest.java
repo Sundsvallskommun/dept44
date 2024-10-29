@@ -22,41 +22,41 @@ class DefaultFaultInterceptorTest {
 
 	@Mock
 	private MessageContext messageContextMock;
-	
+
 	@Mock
 	private SoapMessage soapMessageMock;
 
 	@Mock
 	private SoapEnvelope soapEnvelopeMock;
-	
+
 	@Mock
 	private SoapBody soapBodyMock;
-	
+
 	@Mock
 	private SoapFault soapFaultMock;
-	
+
 	private DefaultFaultInterceptor interceptor = new DefaultFaultInterceptor();
-	
+
 	@BeforeEach
 	public void initMocks() {
 		MockitoAnnotations.openMocks(this);
 	}
-	
+
 	@Test
 	void testInheritance() {
 		assertThat(interceptor).isInstanceOf(ClientInterceptorAdapter.class);
 	}
-	
+
 	@Test
 	void testHandleResponseWhenFaultNotPresent() {
 		// Setup mocks
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
 		when(soapMessageMock.getEnvelope()).thenReturn(soapEnvelopeMock);
 		when(soapEnvelopeMock.getBody()).thenReturn(soapBodyMock);
-		
+
 		// Call and assert
 		assertThat(interceptor.handleResponse(messageContextMock)).isTrue();
-		
+
 		// Verify mocks
 		verify(messageContextMock).getResponse();
 		verify(soapMessageMock).getEnvelope();
@@ -66,23 +66,23 @@ class DefaultFaultInterceptorTest {
 
 	@Test
 	void testHandleResponseWhenFaultPresent() {
-		// Create variables 
+		// Create variables
 		var faultStringOrReason = "faultStringOrReason";
-		
+
 		// Setup mocks
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
 		when(soapMessageMock.getEnvelope()).thenReturn(soapEnvelopeMock);
 		when(soapEnvelopeMock.getBody()).thenReturn(soapBodyMock);
 		when(soapBodyMock.getFault()).thenReturn(soapFaultMock);
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
-		
+
 		// Call and assert
 		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleResponse(messageContextMock));
-		
+
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(problem.getDetail()).isEqualTo(faultStringOrReason);
-		
+
 		// Verify mocks
 		verify(messageContextMock).getResponse();
 		verify(soapMessageMock).getEnvelope();
@@ -96,10 +96,10 @@ class DefaultFaultInterceptorTest {
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
 		when(soapMessageMock.getEnvelope()).thenReturn(soapEnvelopeMock);
 		when(soapEnvelopeMock.getBody()).thenReturn(soapBodyMock);
-		
+
 		// Call and assert
 		assertThat(interceptor.handleFault(messageContextMock)).isTrue();
-		
+
 		// Verify mocks
 		verify(messageContextMock).getResponse();
 		verify(soapMessageMock).getEnvelope();
@@ -109,23 +109,23 @@ class DefaultFaultInterceptorTest {
 
 	@Test
 	void testHandleFaultWhenFaultPresent() {
-		// Create variables 
+		// Create variables
 		var faultStringOrReason = "faultStringOrReason";
-		
+
 		// Setup mocks
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
 		when(soapMessageMock.getEnvelope()).thenReturn(soapEnvelopeMock);
 		when(soapEnvelopeMock.getBody()).thenReturn(soapBodyMock);
 		when(soapBodyMock.getFault()).thenReturn(soapFaultMock);
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
-		
+
 		// Call and assert
 		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleFault(messageContextMock));
-		
+
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(problem.getDetail()).isEqualTo(faultStringOrReason);
-		
+
 		// Verify mocks
 		verify(messageContextMock).getResponse();
 		verify(soapMessageMock).getEnvelope();

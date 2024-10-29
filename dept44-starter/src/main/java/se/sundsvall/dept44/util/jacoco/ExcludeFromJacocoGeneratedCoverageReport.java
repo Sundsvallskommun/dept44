@@ -8,6 +8,8 @@ import java.lang.annotation.Target;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR })
+@Target({
+	ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR
+})
 public @interface ExcludeFromJacocoGeneratedCoverageReport {
 }

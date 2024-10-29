@@ -7,7 +7,9 @@ import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
  * Model class to use when returning paged result. Should be added in root of response under attribute "_meta".
- * In compliance with <a href="https://dev.dataportal.se/rest-api-profil/filtrering-paginering-och-sokparametrar#paginering">DIGG Paginering</a>
+ * In compliance with
+ * <a href="https://dev.dataportal.se/rest-api-profil/filtrering-paginering-och-sokparametrar#paginering">DIGG
+ * Paginering</a>
  * See {@link AbstractParameterPagingBase} for request.
  */
 @Data

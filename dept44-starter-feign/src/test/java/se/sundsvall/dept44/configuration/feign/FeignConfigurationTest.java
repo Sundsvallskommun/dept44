@@ -20,7 +20,9 @@ import org.zalando.logbook.Logbook;
 import feign.okhttp.OkHttpClient;
 import se.sundsvall.dept44.security.Truststore;
 
-@SpringBootTest(classes = { FeignConfiguration.class })
+@SpringBootTest(classes = {
+	FeignConfiguration.class
+})
 class FeignConfigurationTest {
 
 	@MockBean

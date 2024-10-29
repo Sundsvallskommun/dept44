@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-
 import org.junit.jupiter.api.Test;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;

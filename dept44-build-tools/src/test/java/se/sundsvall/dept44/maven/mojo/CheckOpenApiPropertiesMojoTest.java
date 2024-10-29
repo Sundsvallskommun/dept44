@@ -19,56 +19,58 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CheckOpenApiPropertiesMojoTest {
 
-    @Mock
-    private MavenProject mockMavenProject;
+	@Mock
+	private MavenProject mockMavenProject;
 
-    private final CheckOpenApiPropertiesMojo mojo = new CheckOpenApiPropertiesMojo();
+	private final CheckOpenApiPropertiesMojo mojo = new CheckOpenApiPropertiesMojo();
 
-    @BeforeEach
-    void setUp() {
-        mojo.setProject(mockMavenProject);
-    }
+	@BeforeEach
+	void setUp() {
+		mojo.setProject(mockMavenProject);
+	}
 
-    @Test
-    void executeWhenPomPackagingIsUsed() {
-        when(mockMavenProject.getPackaging()).thenReturn("pom");
+	@Test
+	void executeWhenPomPackagingIsUsed() {
+		when(mockMavenProject.getPackaging()).thenReturn("pom");
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-    @Test
-    void executeWhenSkipAllChecksIsSet() {
-        mojo.setSkipAllChecks(true);
+	@Test
+	void executeWhenSkipAllChecksIsSet() {
+		mojo.setSkipAllChecks(true);
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-    @Test
-    void executeWhenSkipIsSet() {
-        mojo.setSkip(true);
+	@Test
+	void executeWhenSkipIsSet() {
+		mojo.setSkip(true);
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-    @ParameterizedTest
-    @ValueSource(strings = {"openapi-not-enabled", "using-properties-file", "using-yaml-file"})
-    void execute(final String testdir) {
-        when(mockMavenProject.getBasedir())
-            .thenReturn(new File("src/test/resources/openapi-properties/" + testdir));
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"openapi-not-enabled", "using-properties-file", "using-yaml-file"
+	})
+	void execute(final String testdir) {
+		when(mockMavenProject.getBasedir())
+			.thenReturn(new File("src/test/resources/openapi-properties/" + testdir));
 
-        assertThatNoException().isThrownBy(mojo::execute);
-    }
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
 
-    @Test
-    void executeWithMissingOpenApiProperties() {
-        when(mockMavenProject.getBasedir())
-            .thenReturn(new File("src/test/resources/openapi-properties/missing-properties"));
+	@Test
+	void executeWithMissingOpenApiProperties() {
+		when(mockMavenProject.getBasedir())
+			.thenReturn(new File("src/test/resources/openapi-properties/missing-properties"));
 
-        assertThatExceptionOfType(MojoFailureException.class)
-            .isThrownBy(mojo::execute)
-            .withMessageContainingAll(
-                "Property \"openapi.name\" is missing or empty in application properties/YAML",
-                "Property \"openapi.title\" is missing or empty in application*.properties/YAML",
-                "Property \"openapi.version\" is missing or empty in application*.properties/YAML");
-    }
+		assertThatExceptionOfType(MojoFailureException.class)
+			.isThrownBy(mojo::execute)
+			.withMessageContainingAll(
+				"Property \"openapi.name\" is missing or empty in application properties/YAML",
+				"Property \"openapi.title\" is missing or empty in application*.properties/YAML",
+				"Property \"openapi.version\" is missing or empty in application*.properties/YAML");
+	}
 }

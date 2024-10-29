@@ -117,7 +117,6 @@ class JsonPathErrorDecoderTest {
 		assertThat(exception).hasMessage("Bad Gateway: XXX error: {detail=This is details, status=418 I'm a teapot}");
 	}
 
-
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderForErrorMessages")
 	void errorDecoderForErrorMessages(String body, int httpStatus, String expectedMessage) {
@@ -184,7 +183,7 @@ class JsonPathErrorDecoderTest {
 	@Test
 	void errorDecoderReturnsRetryableExceptionOnWSO2TokenExpire() {
 		final var errorDecoder = new JsonPathErrorDecoder("XXX", new JsonPathSetup("$['title']", "$['detail']"));
-		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of( WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
+		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
 
 		final var exception = errorDecoder.decode("test", errorResponse);
 

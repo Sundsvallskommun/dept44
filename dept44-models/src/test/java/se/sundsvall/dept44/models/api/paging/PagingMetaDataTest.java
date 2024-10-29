@@ -32,7 +32,6 @@ class PagingMetaDataTest {
 		final var totalPages = 404;
 		final var totalRecords = 505;
 
-
 		final var meta = PagingMetaData.create()
 			.withCount(count)
 			.withLimit(limit)

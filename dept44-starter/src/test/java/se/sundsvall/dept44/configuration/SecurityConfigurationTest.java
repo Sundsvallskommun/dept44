@@ -22,7 +22,9 @@ import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
-@SpringBootTest(classes = { SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class })
+@SpringBootTest(classes = {
+	SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class
+})
 class SecurityConfigurationTest {
 
 	/*

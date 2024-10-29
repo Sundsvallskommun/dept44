@@ -4,6 +4,7 @@ import feign.Response;
 
 public interface RetryResponseVerifier {
 
-    boolean shouldReturnRetryableException(Response response);
-    String getMessage();
+	boolean shouldReturnRetryableException(Response response);
+
+	String getMessage();
 }

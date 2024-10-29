@@ -125,7 +125,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 	public void addInterceptors(final InterceptorRegistry registry) {
 		var municipalityIdInterceptor = new MunicipalityIdInterceptor(allowedIds, municipalityIdUriIndex);
 
-		//  Add interceptor to check if the municipality ID is allowed.
+		// Add interceptor to check if the municipality ID is allowed.
 		// "/{municipalityId}" - Matches all paths where the municipality placeholder is the whole path.
 		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part oft the path.
 		// "/{municipalityId}/**" - Matches all paths where the municipality placeholder is the beginning of the path.

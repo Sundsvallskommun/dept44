@@ -13,8 +13,8 @@ public final class EncodingUtils {
 	 * If a String contains characters like: "ÃÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * By running it through this method, it will become correctly UTF-8 encoded again.
 	 *
-	 * @param string String to fix
-	 * @return the corrected string
+	 * @param  string String to fix
+	 * @return        the corrected string
 	 */
 	public static String fixDoubleEncodedUTF8Content(final String string) {
 		if (isDoubleEncodedUTF8Content(string)) {
@@ -30,8 +30,8 @@ public final class EncodingUtils {
 	 * If a String contains characters like: "ÃÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * This method will detect that.
 	 *
-	 * @param string content to check
-	 * @return true if the string content is double encoded, false otherwise.
+	 * @param  string content to check
+	 * @return        true if the string content is double encoded, false otherwise.
 	 */
 	public static boolean isDoubleEncodedUTF8Content(final String string) {
 		// Interpret the string as UTF-8

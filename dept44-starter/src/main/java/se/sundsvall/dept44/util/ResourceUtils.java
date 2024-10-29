@@ -19,8 +19,8 @@ public final class ResourceUtils {
 	/**
 	 * Loads the given resource to a string, using UTF-8 charset.
 	 *
-	 * @param resource the resource
-	 * @return the resource contents as a string
+	 * @param  resource the resource
+	 * @return          the resource contents as a string
 	 */
 	public static String asString(final Resource resource) {
 		return asString(resource, UTF_8);
@@ -29,9 +29,9 @@ public final class ResourceUtils {
 	/**
 	 * Loads the given resource to a string, using the given charset.
 	 *
-	 * @param resource the resource
-	 * @param charset  the charset
-	 * @return the resource contents as a string
+	 * @param  resource the resource
+	 * @param  charset  the charset
+	 * @return          the resource contents as a string
 	 */
 	public static String asString(final Resource resource, final Charset charset) {
 		try (var reader = new InputStreamReader(resource.getInputStream(), charset)) {

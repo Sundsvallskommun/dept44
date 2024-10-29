@@ -20,7 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest(classes = {MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class})
+@SpringBootTest(classes = {
+	MaxPagingLimitConstraintValidator.class, LocalValidatorFactoryBean.class
+})
 class MaxPagingLimitImplTest {
 
 	@Autowired

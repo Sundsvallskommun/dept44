@@ -11,10 +11,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Target({ ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = MaxPagingLimitConstraintValidator.class)
-public @interface MaxPagingLimit  {
+public @interface MaxPagingLimit {
 	String message() default "Page limit exceeded";
 
 	Class<?>[] groups() default {};

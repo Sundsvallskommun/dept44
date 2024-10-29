@@ -47,7 +47,9 @@ class MemberOfConstraintValidatorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"HOME", "WORK"})
+	@ValueSource(strings = {
+		"HOME", "WORK"
+	})
 	void allowedValues(final String value) {
 		validator.initialize(mockAnnotation);
 
@@ -61,7 +63,9 @@ class MemberOfConstraintValidatorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"home", "work"})
+	@ValueSource(strings = {
+		"home", "work"
+	})
 	void allowedValuesWhenCaseSensitiveIsFalse(final String value) {
 		when(mockAnnotation.caseSensitive()).thenReturn(false);
 
@@ -93,7 +97,9 @@ class MemberOfConstraintValidatorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = {"home", "work"})
+	@ValueSource(strings = {
+		"home", "work"
+	})
 	void disallowedValuesWhenCaseSensitiveIsTrue(final String value) {
 		when(mockContext.unwrap(HibernateConstraintValidatorContext.class)).thenReturn(mockContext);
 

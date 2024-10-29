@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+		xmlns="http://maven.apache.org/POM/4.0.0"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
@@ -17,8 +20,8 @@
 	<developers>
 		<developer>
 			<name>Utvecklingsfabriken Sundsvall kommun</name>
-			<organization>Sundsvalls kommun</organization>
 			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
 		</developer>
 	</developers>
 	<modules>
@@ -35,63 +38,14 @@
 		<module>dept44-starter-webservicetemplate</module>
 		<module>dept44-common-validators</module>
 		<module>dept44-example</module>
+		<module>dept44-formatting-plugin</module>
 	</modules>
 	<scm>
-		<url>https://github.com/Sundsvallskommun/dept44</url>
-		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
 		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
-	<profiles>
-		<profile>
-			<id>maven-central</id>
-			<distributionManagement>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-				</snapshotRepository>
-				<repository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-			</distributionManagement>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>${maven-gpg-plugin.version}</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-								<configuration>
-									<gpgArguments>
-										<arg>--pinentry-mode</arg>
-										<arg>loopback</arg>
-									</gpgArguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>${nexus-staging-maven-plugin.version}</version>
-						<extensions>true</extensions>
-						<configuration>
-						        <serverId>ossrh</serverId>
-						        <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-						        <autoReleaseAfterClose>false</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 	<properties>
 		<java.version>21</java.version>
 		<spring-boot.version>3.3.5</spring-boot.version>
@@ -104,7 +58,8 @@
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.17.0</commons-lang3.version>
 		<logbook.version>3.9.0</logbook.version>
-		<problem.version>0.27.1</problem.version> <!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
+		<problem.version>0.27.1</problem.version>
+		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>2.6.0</springdoc.version>
 		<spring-cloud.version>2023.0.3</spring-cloud.version>
@@ -129,6 +84,7 @@
 		<git-commit-id-maven-plugin.version>9.0.1</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.9.0</openapi-generator-maven-plugin.version>
+		<spotless-maven-plugin-version>2.44.0.BETA2</spotless-maven-plugin-version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
@@ -275,17 +231,35 @@
 					<version>6.0.3-SNAPSHOT</version>
 					<executions>
 						<execution>
-							<phase>initialize</phase>
 							<goals>
 								<goal>check-truststore-validity</goal>
 								<goal>check-openapi-properties</goal>
 							</goals>
+							<phase>initialize</phase>
 						</execution>
 					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-formatting-plugin</artifactId>
+				<version>6.0.3-SNAPSHOT</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>format-check</goal>
+						</goals>
+						<phase>validate</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless-maven-plugin-version}</version>
+			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
@@ -356,13 +330,68 @@
 				<executions>
 					<execution>
 						<id>validate</id>
-						<phase>validate</phase>
 						<goals>
 							<goal>check</goal>
 						</goals>
+						<phase>validate</phase>
 					</execution>
 				</executions>
-			 </plugin>
+			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>maven-central</id>
+			<distributionManagement>
+				<repository>
+					<id>ossrh</id>
+					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+				</repository>
+				<snapshotRepository>
+					<id>ossrh</id>
+					<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+				</snapshotRepository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${maven-gpg-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+								<phase>verify</phase>
+								<configuration>
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>${nexus-staging-maven-plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<serverId>ossrh</serverId>
+							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+							<autoReleaseAfterClose>true</autoReleaseAfterClose>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>com.diffplug.spotless</groupId>
+						<artifactId>spotless-maven-plugin</artifactId>
+						<version>${spotless-maven-plugin-version}</version>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

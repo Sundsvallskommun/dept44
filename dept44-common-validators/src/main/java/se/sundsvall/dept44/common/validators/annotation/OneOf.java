@@ -14,7 +14,9 @@ import se.sundsvall.dept44.common.validators.annotation.impl.OneOfConstraintVali
  * The annotated element must exist within a given list of allowed values.
  */
 @Documented
-@Target({ ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE })
+@Target({
+	ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE
+})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = OneOfConstraintValidator.class)
 public @interface OneOf {

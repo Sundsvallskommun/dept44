@@ -236,22 +236,22 @@
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>se.sundsvall.dept44</groupId>
+					<artifactId>dept44-formatting-plugin</artifactId>
+					<version>6.0.3-SNAPSHOT</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>check</goal>
+							</goals>
+							<phase>validate</phase>
+						</execution>
+					</executions>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<plugin>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-formatting-plugin</artifactId>
-				<version>6.0.3-SNAPSHOT</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>format-check</goal>
-						</goals>
-						<phase>validate</phase>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>

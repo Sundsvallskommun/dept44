@@ -6,7 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import javax.inject.Inject;
 
-@Mojo(name = "format-check", defaultPhase = LifecyclePhase.VALIDATE)
+@Mojo(name = "check", defaultPhase = LifecyclePhase.VALIDATE)
 public class CheckFormatMojo extends AbstractFormatMojo {
 
 	@Inject

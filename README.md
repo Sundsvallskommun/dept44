@@ -38,19 +38,15 @@ To keep our codebase clean and consistent, we use a custom Maven plugin, `dept44
 Our plugin provides two primary commands:
 
 - **Check formatting**:  
-  Use `mvn dept44:formatting-check` to validate that code follows the project’s formatting rules.
+  Use `mvn dept44-formatting:check` to validate that code follows the project’s formatting rules.
 
 - **Apply formatting**:  
-  Use `mvn dept44:formatting-apply` to automatically apply the required formatting.
-
-**Note for `dept44`:** Because `dept44-formatting-plugin` is a module of the parent in this project, you may need to run the full command:
-
-```bash
-mvn se.sundsvall.dept44:dept44-formatting-plugin:6.0.3-SNAPSHOT:formatting-apply
-```
+  Use `mvn dept44-formatting:apply` to automatically apply the required formatting.
 
 The `dept44:formatting-check` goal is also configured to run during the Maven validation phase, ensuring all code meets formatting standards before builds proceed.
 For more details, refer to the [plugin documentation here](https://github.com/Sundsvallskommun/dept44/dept44-formatting-plugin/blob/main/README.md).
+
+**Note for `dept44`:** Because `dept44-formatting-plugin` is a module of the parent in this project, you need to run the commands manually for the plugin to take effect on the parent pom.
 
 ## Status
 

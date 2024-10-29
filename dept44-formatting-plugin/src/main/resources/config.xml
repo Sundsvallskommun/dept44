@@ -52,7 +52,7 @@
 		</includes>
 		<sortPom>
 			<expandEmptyElements>false</expandEmptyElements>
-			<indentAttribute>all</indentAttribute>
+			<spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
 			<nrOfIndentSpace>2</nrOfIndentSpace>
 		</sortPom>
 		<indent>

@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-		xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<!--- To avoid circular dependencies, this plugin is not using the parent pom. -->
@@ -89,7 +86,7 @@
 						<includes>
 							<include>src/**/*.json</include>
 						</includes>
-						<simple/>
+						<simple />
 						<indent>
 							<tabs>true</tabs>
 							<spacesPerTab>4</spacesPerTab>
@@ -106,7 +103,7 @@
 							<exclude>**/migration/**</exclude>
 							<exclude>**/schema.sql</exclude>
 						</excludes>
-						<dbeaver/>
+						<dbeaver />
 					</sql>
 					<markdown>
 						<excludes>
@@ -115,7 +112,7 @@
 						<includes>
 							<include>**/*.md</include>
 						</includes>
-						<flexmark/>
+						<flexmark />
 					</markdown>
 					<pom>
 						<includes>
@@ -123,7 +120,7 @@
 						</includes>
 						<sortPom>
 							<expandEmptyElements>false</expandEmptyElements>
-							<indentAttribute>all</indentAttribute>
+							<spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
 							<nrOfIndentSpace>2</nrOfIndentSpace>
 						</sortPom>
 						<indent>

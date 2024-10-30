@@ -29,7 +29,7 @@ Add this plugin to your project's `pom.xml` in the `<plugins>` section:
 1. **To check formatting** (useful for CI pipelines):
 
    ```bash
-   mvn dept44:formatting-check
+   mvn dept44-formatting:check
    ```
 
    This command will validate the format of Java, JSON, SQL, Markdown, and POM files against the defined rules. If any discrepancies are found, the build will fail.
@@ -37,7 +37,7 @@ Add this plugin to your project's `pom.xml` in the `<plugins>` section:
 2. **To apply formatting**:
 
    ```bash
-   mvn dept44:formatting-apply
+   mvn dept44-formatting:apply
    ```
 
    This command will automatically format your files according to the specified configuration.

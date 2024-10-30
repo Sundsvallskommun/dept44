@@ -73,7 +73,7 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 			// Customize the error message
 			String message = e.getMessage();
 			if (message != null && message.contains("Run 'mvn spotless:apply' to fix these violations.")) {
-				message = message.replace("Run 'mvn spotless:apply' to fix these violations.", "Run 'mvn dept44:apply' to fix these violations.");
+				message = message.replace("Run 'mvn spotless:apply' to fix these violations.", "Run 'mvn dept44-formatting:apply' to fix these violations.");
 			}
 			throw new MojoExecutionException(message, e.getCause());
 		} catch (final Exception e) {

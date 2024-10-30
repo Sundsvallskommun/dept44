@@ -8,7 +8,6 @@
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-feign</artifactId>
-
 	<dependencies>
 		<!-- Framework -->
 		<dependency>

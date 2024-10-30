@@ -6,7 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import javax.inject.Inject;
 
-@Mojo(name = "format-apply", defaultPhase = LifecyclePhase.VALIDATE)
+@Mojo(name = "apply", defaultPhase = LifecyclePhase.VALIDATE)
 public class ApplyFormatMojo extends AbstractFormatMojo {
 
 	@Inject

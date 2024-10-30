@@ -33,6 +33,10 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-formatting-plugin</artifactId>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>

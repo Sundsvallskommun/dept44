@@ -1,24 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>se.sundsvall.dept44</groupId>
-	<!--- To avoid circular dependencies, this plugin is not using the parent pom. -->
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-parent</artifactId>
+		<version>6.0.3-SNAPSHOT</version>
+	</parent>
 	<artifactId>dept44-formatting-plugin</artifactId>
 	<version>6.0.3-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
-	<properties>
-		<maven.compiler.source>21</maven.compiler.source>
-		<maven.compiler.target>21</maven.compiler.target>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spotless-maven-plugin-version>2.44.0.BETA2</spotless-maven-plugin-version>
-		<maven-api.version>3.9.9</maven-api.version>
-		<maven-plugin-annotations.version>3.15.0</maven-plugin-annotations.version>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>
 			<artifactId>maven-plugin-annotations</artifactId>
-			<version>${maven-plugin-annotations.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -47,7 +41,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
-			<version>3.3.4</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -58,14 +51,12 @@
 				<artifactId>maven-plugin-plugin</artifactId>
 				<version>${maven-plugin-annotations.version}</version>
 				<configuration>
-					<goalPrefix>dept44</goalPrefix>
+					<goalPrefix>dept44-formatting</goalPrefix>
 				</configuration>
 			</plugin>
 			<plugin>
-				<!--- This is only for the dep44-formatting-plugin itself. -->
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
-				<version>${spotless-maven-plugin-version}</version>
 				<configuration>
 					<java>
 						<excludes>

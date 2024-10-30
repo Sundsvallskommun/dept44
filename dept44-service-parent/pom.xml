@@ -8,19 +8,15 @@
 	</parent>
 	<artifactId>dept44-service-parent</artifactId>
 	<packaging>pom</packaging>
-
 	<properties>
 		<!-- Don't make services generate source and JavaDoc JAR:s, unless overridden -->
 		<maven.source.skip>true</maven.source.skip>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
-
 		<!-- The Nexus/Docker repository -->
 		<docker.repository>evil.sundsvall.se</docker.repository>
-
 		<!-- Default Jenkins pipeline properties -->
 		<exposed.app.port>8080</exposed.app.port>
 	</properties>
-
 	<dependencies>
 		<!-- Framework -->
 		<dependency>
@@ -33,7 +29,6 @@
 			<artifactId>dept44-starter-logback-logserver</artifactId>
 		</dependency>
 	</dependencies>
-
 	<build>
 		<resources>
 			<resource>
@@ -47,11 +42,9 @@
 				<directory>${basedir}/src/test/resources</directory>
 			</testResource>
 		</testResources>
-
 		<pluginManagement>
 			<plugins />
 		</pluginManagement>
-
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -81,7 +74,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -92,7 +84,6 @@
 					</compilerArgs>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
@@ -111,7 +102,6 @@
 					<encoding>${project.encoding}</encoding>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
@@ -146,7 +136,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -155,7 +144,6 @@
 					<argLine>-Dfile.encoding=${project.encoding} -Xmx256m ${surefireArgLine}</argLine>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -189,7 +177,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -311,6 +298,10 @@
 				<artifactId>dept44-build-tools</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-formatting-plugin</artifactId>
+			</plugin>
+			<plugin>
 				<groupId>io.github.git-commit-id</groupId>
 				<artifactId>git-commit-id-maven-plugin</artifactId>
 				<version>${git-commit-id-maven-plugin.version}</version>
@@ -335,7 +326,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<profiles>
 		<profile>
 			<id>default</id>
@@ -348,12 +338,10 @@
 			<properties>
 				<buildnumber>local</buildnumber>
 				<spring.profiles.active>default</spring.profiles.active>
-
 				<!-- Download sources and JavaDoc by default -->
 				<downloadSources>true</downloadSources>
 				<downloadJavadocs>true</downloadJavadocs>
 			</properties>
 		</profile>
 	</profiles>
-
 </project>

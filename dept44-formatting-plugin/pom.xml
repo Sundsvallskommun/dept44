@@ -49,6 +49,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
+				<version>${maven-plugin-annotations.version}</version>
 				<configuration>
 					<goalPrefix>dept44-formatting</goalPrefix>
 				</configuration>

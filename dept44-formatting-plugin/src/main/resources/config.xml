@@ -6,10 +6,6 @@
 		<eclipse>
 			<file>src/main/resources/sundsvall_formatting.xml</file>
 		</eclipse>
-		<indent>
-			<tabs>true</tabs>
-			<spacesPerTab>4</spacesPerTab>
-		</indent>
 	</java>
 	<json>
 		<excludes>
@@ -18,7 +14,7 @@
 		<includes>
 			<include>src/**/*.json</include>
 		</includes>
-		<simple/>
+		<simple />
 		<indent>
 			<tabs>true</tabs>
 			<spacesPerTab>4</spacesPerTab>
@@ -35,7 +31,7 @@
 			<exclude>**/migration/**</exclude>
 			<exclude>**/schema.sql</exclude>
 		</excludes>
-		<dbeaver/>
+		<dbeaver />
 	</sql>
 	<markdown>
 		<excludes>
@@ -44,7 +40,7 @@
 		<includes>
 			<include>**/*.md</include>
 		</includes>
-		<flexmark/>
+		<flexmark />
 	</markdown>
 	<pom>
 		<includes>

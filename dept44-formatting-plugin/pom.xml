@@ -65,10 +65,6 @@
 						<eclipse>
 							<file>src/main/resources/sundsvall_formatting.xml</file>
 						</eclipse>
-						<indent>
-							<tabs>true</tabs>
-							<spacesPerTab>4</spacesPerTab>
-						</indent>
 					</java>
 					<json>
 						<excludes>

@@ -9,7 +9,7 @@
 	<artifactId>dept44-build-tools</artifactId>
 	<packaging>maven-plugin</packaging>
 	<properties>
-		<bcpkix-jdk18on.version>1.78.1</bcpkix-jdk18on.version>
+		<bcpkix-jdk18on.version>1.79</bcpkix-jdk18on.version>
 	</properties>
 	<dependencies>
 		<dependency>

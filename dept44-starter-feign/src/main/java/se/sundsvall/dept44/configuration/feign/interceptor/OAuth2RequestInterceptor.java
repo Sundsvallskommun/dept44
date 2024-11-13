@@ -41,7 +41,8 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 		var clientRegistrations = new InMemoryClientRegistrationRepository(this.clientRegistration);
 		oAuth2AuthorizedClientService = new InMemoryOAuth2AuthorizedClientService(clientRegistrations);
 
-		this.authorizedClientManager = createAuthorizedClientManager(clientRegistrations, oAuth2AuthorizedClientService);
+		this.authorizedClientManager = createAuthorizedClientManager(clientRegistrations,
+			oAuth2AuthorizedClientService);
 	}
 
 	private Set<String> getScopeSet(final ClientRegistration clientRegistration) {
@@ -55,7 +56,8 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 		InMemoryClientRegistrationRepository clientRegistrationRepository,
 		InMemoryOAuth2AuthorizedClientService clientService) {
 
-		var manager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, clientService);
+		var manager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository,
+			clientService);
 		var clientProvider = OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build();
 
 		manager.setAuthorizedClientProvider(clientProvider);
@@ -84,7 +86,8 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 
 	public void removeToken() {
 		synchronized (this) {
-			oAuth2AuthorizedClientService.removeAuthorizedClient(clientRegistration.getRegistrationId(), ANONYMOUS_AUTHENTICATION.getName());
+			oAuth2AuthorizedClientService.removeAuthorizedClient(clientRegistration.getRegistrationId(),
+				ANONYMOUS_AUTHENTICATION.getName());
 		}
 	}
 }

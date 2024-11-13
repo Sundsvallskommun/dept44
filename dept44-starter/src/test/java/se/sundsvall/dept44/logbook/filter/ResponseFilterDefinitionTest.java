@@ -40,7 +40,8 @@ class ResponseFilterDefinitionTest {
 		response.withBody();
 
 		assertThat(response.getContentType()).isEqualTo("application/x-rar-compressed");
-		assertThat(response.getHeaders()).containsEntry(CONTENT_DISPOSITION, Arrays.asList("attachment; filename=test.zip"));
+		assertThat(response.getHeaders()).containsEntry(CONTENT_DISPOSITION, Arrays.asList(
+			"attachment; filename=test.zip"));
 		assertThat(response.getBodyAsString()).isEqualTo("<binary>");
 	}
 
@@ -74,7 +75,8 @@ class ResponseFilterDefinitionTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"text/*", ALL_VALUE, TEXT_HTML_VALUE, TEXT_XML_VALUE, TEXT_PLAIN_VALUE, APPLICATION_PROBLEM_JSON_VALUE, APPLICATION_PROBLEM_XML_VALUE, APPLICATION_GRAPHQL_RESPONSE_VALUE
+		"text/*", ALL_VALUE, TEXT_HTML_VALUE, TEXT_XML_VALUE, TEXT_PLAIN_VALUE, APPLICATION_PROBLEM_JSON_VALUE,
+		APPLICATION_PROBLEM_XML_VALUE, APPLICATION_GRAPHQL_RESPONSE_VALUE
 	})
 	void binaryContentDoNotReplace(String contentType) throws IOException {
 		final var filter = binaryContentFilter();

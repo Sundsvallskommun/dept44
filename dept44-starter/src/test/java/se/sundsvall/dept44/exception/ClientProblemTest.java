@@ -19,7 +19,8 @@ class ClientProblemTest {
 		assertThat(problem)
 			.hasMessage("Bad Request: Error detail")
 			.isInstanceOf(AbstractThrowableProblem.class)
-			.extracting(ClientProblem::getType, ClientProblem::getTitle, ClientProblem::getStatus, ClientProblem::getDetail)
+			.extracting(ClientProblem::getType, ClientProblem::getTitle, ClientProblem::getStatus,
+				ClientProblem::getDetail)
 			.containsExactly(new URI("about:blank"), "Bad Request", BAD_REQUEST, "Error detail");
 	}
 }

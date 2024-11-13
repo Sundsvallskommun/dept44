@@ -27,7 +27,9 @@ import org.springframework.data.domain.Sort;
 @Schema(description = "PagingAndSortingMetaData model")
 public class PagingAndSortingMetaData extends PagingMetaData {
 
-	@ArraySchema(schema = @Schema(description = "The properties to sort by", example = "property", accessMode = READ_ONLY))
+	@ArraySchema(schema = @Schema(description = "The properties to sort by",
+		example = "property",
+		accessMode = READ_ONLY))
 	private List<String> sortBy;
 
 	@Schema(description = "The sort order direction", example = "ASC", enumAsRef = true)

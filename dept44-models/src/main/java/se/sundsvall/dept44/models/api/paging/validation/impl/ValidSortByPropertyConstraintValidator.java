@@ -35,7 +35,8 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 	}
 
 	@Override
-	public boolean isValid(final AbstractParameterPagingAndSortingBase parameters, final ConstraintValidatorContext context) {
+	public boolean isValid(final AbstractParameterPagingAndSortingBase parameters,
+		final ConstraintValidatorContext context) {
 		final boolean isValid = isEmpty(parameters.getSortBy()) || entityProperties.containsAll(parameters.getSortBy());
 
 		if (!isValid) {
@@ -45,8 +46,10 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 		return isValid;
 	}
 
-	private void useCustomMessageForValidation(final ConstraintValidatorContext constraintContext, final List<String> sortBy) {
+	private void useCustomMessageForValidation(final ConstraintValidatorContext constraintContext,
+		final List<String> sortBy) {
 		constraintContext.disableDefaultConstraintViolation();
-		constraintContext.buildConstraintViolationWithTemplate(InterpolationHelper.escapeMessageParameter(String.format(CUSTOM_ERROR_MESSAGE_TEMPLATE, sortBy, entityProperties))).addConstraintViolation();
+		constraintContext.buildConstraintViolationWithTemplate(InterpolationHelper.escapeMessageParameter(String.format(
+			CUSTOM_ERROR_MESSAGE_TEMPLATE, sortBy, entityProperties))).addConstraintViolation();
 	}
 }

@@ -21,7 +21,8 @@ public final class MunicipalityUtils {
 
 	static {
 		try {
-			new YAMLMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {}).stream()
+			new YAMLMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {})
+				.stream()
 				.forEach(municipality -> {
 					MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
 					MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);

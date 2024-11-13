@@ -97,12 +97,14 @@ class OAuth2RequestInterceptorTest {
 		ClientRegistration clientRegistrationWithScopeMock = mock(ClientRegistration.class);
 		when(clientRegistrationWithScopeMock.getRegistrationId()).thenReturn("registrationId");
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationMock.getScopes()).thenReturn(Set.of("scope1", "scope2"));
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationWithScopeMock);
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 			var interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
 			assertThat(interceptor)
 				.isNotNull()
@@ -110,7 +112,8 @@ class OAuth2RequestInterceptorTest {
 		}
 
 		verify(clientRegistrationBuilderMock).scope(scopeCaptor.capture());
-		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+			Pattern.MULTILINE);
 		assertThat(scopeCaptor.getValue()).anyMatch(s -> pattern.matcher(s).find());
 		assertThat(scopeCaptor.getValue()).containsAll(Set.of("scope1", "scope2"));
 	}
@@ -120,12 +123,14 @@ class OAuth2RequestInterceptorTest {
 		ClientRegistration clientRegistrationWithScopeMock = mock(ClientRegistration.class);
 		when(clientRegistrationWithScopeMock.getRegistrationId()).thenReturn("registrationId");
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationMock.getScopes()).thenReturn(Set.of("scope1", "scope2"));
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationWithScopeMock);
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 			var interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, emptySet());
 			assertThat(interceptor)
 				.isNotNull()
@@ -133,7 +138,8 @@ class OAuth2RequestInterceptorTest {
 		}
 
 		verify(clientRegistrationBuilderMock).scope(scopeCaptor.capture());
-		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+			Pattern.MULTILINE);
 		assertThat(scopeCaptor.getValue()).noneMatch(s -> pattern.matcher(s).find());
 		assertThat(scopeCaptor.getValue()).containsAll(Set.of("scope1", "scope2"));
 	}
@@ -143,12 +149,14 @@ class OAuth2RequestInterceptorTest {
 		ClientRegistration clientRegistrationWithScopeMock = mock(ClientRegistration.class);
 		when(clientRegistrationWithScopeMock.getRegistrationId()).thenReturn("registrationId");
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationMock.getScopes()).thenReturn(Set.of("scope1", "scope2"));
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationWithScopeMock);
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 			var interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, null);
 			assertThat(interceptor)
 				.isNotNull()
@@ -156,7 +164,8 @@ class OAuth2RequestInterceptorTest {
 		}
 
 		verify(clientRegistrationBuilderMock).scope(scopeCaptor.capture());
-		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", Pattern.MULTILINE);
+		Pattern pattern = Pattern.compile("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+			Pattern.MULTILINE);
 		assertThat(scopeCaptor.getValue()).noneMatch(s -> pattern.matcher(s).find());
 		assertThat(scopeCaptor.getValue()).containsAll(Set.of("scope1", "scope2"));
 	}
@@ -170,13 +179,16 @@ class OAuth2RequestInterceptorTest {
 	@Test
 	void testApplyWithNoAuthorizedClient() {
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationMock);
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
-			assertThat(assertThrows(IllegalArgumentException.class, () -> oAuth2RequestInterceptor.apply(requestTemplateMock)))
+			assertThat(assertThrows(IllegalArgumentException.class, () -> oAuth2RequestInterceptor.apply(
+				requestTemplateMock)))
 				.hasMessage("authorizedClient cannot be null");
 		}
 	}
@@ -185,7 +197,8 @@ class OAuth2RequestInterceptorTest {
 	void testApplyWithAuthorizedClient() {
 		ClientRegistration clientRegistrationWithScopeMock = mock(ClientRegistration.class);
 		when(clientRegistrationWithScopeMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationWithScopeMock);
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
 		when(clientManagerMock.authorize(any())).thenReturn(authorizedClientMock);
@@ -193,9 +206,11 @@ class OAuth2RequestInterceptorTest {
 		when(accessTokenMock.getTokenValue()).thenReturn("tokenValue");
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 
-			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
+			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock,
+				DEFAULT_SCOPESET);
 			ReflectionTestUtils.setField(interceptor, "authorizedClientManager", clientManagerMock);
 
 			clearInvocations(clientRegistrationWithScopeMock);
@@ -210,14 +225,18 @@ class OAuth2RequestInterceptorTest {
 	@Test
 	void testRemoveToken() {
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
-		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(
+			clientRegistrationBuilderMock);
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationMock);
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
-			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(
+				clientRegistrationBuilderMock);
 
-			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
-			ReflectionTestUtils.setField(interceptor, "oAuth2AuthorizedClientService", oAuth2AuthorizedClientServiceMock);
+			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock,
+				DEFAULT_SCOPESET);
+			ReflectionTestUtils.setField(interceptor, "oAuth2AuthorizedClientService",
+				oAuth2AuthorizedClientServiceMock);
 			clearInvocations(clientRegistrationMock);
 
 			interceptor.removeToken();
@@ -256,7 +275,8 @@ class OAuth2RequestInterceptorTest {
 		interceptor.apply(requestTemplateMock);
 
 		com.github.tomakehurst.wiremock.client.WireMock.verify(postRequestedFor(urlPathEqualTo("/token"))
-			.withRequestBody(matching("^grant_type=client_credentials&scope=device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")));
+			.withRequestBody(matching(
+				"^grant_type=client_credentials&scope=device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")));
 	}
 
 	@Test
@@ -328,7 +348,8 @@ class OAuth2RequestInterceptorTest {
 			.whenScenarioStateIs(STARTED)
 			.willReturn(unauthorized()
 				.withHeader("Content-Type", "text/plain")
-				.withHeader("www-authenticate", "\"OAuth2 realm=\"WSO2 API Manager\", error=\"invalid_token\", error_description=\"The access token expired\"")
+				.withHeader("www-authenticate",
+					"\"OAuth2 realm=\"WSO2 API Manager\", error=\"invalid_token\", error_description=\"The access token expired\"")
 				.withBody("ERROR!"))
 			.willSetStateTo("second call"));
 
@@ -368,7 +389,8 @@ class OAuth2RequestInterceptorTest {
 		assertThat(result).isEqualTo("successful");
 
 		com.github.tomakehurst.wiremock.client.WireMock.verify(2, postRequestedFor(urlPathEqualTo("/token"))
-			.withRequestBody(matching("^grant_type=client_credentials&scope=device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")));
+			.withRequestBody(matching(
+				"^grant_type=client_credentials&scope=device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$")));
 
 		com.github.tomakehurst.wiremock.client.WireMock.verify(2, getRequestedFor(urlPathEqualTo("/test")));
 		var requests = findAll(getRequestedFor(urlPathEqualTo("/test")));

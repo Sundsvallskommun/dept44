@@ -82,11 +82,15 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class)))
+			.thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -106,15 +110,18 @@ class AbstractAppTestTest {
 
 		// Verification
 		assertThat(instance).isNotNull();
-		verify(restTemplateMock).exchange(eq("/some/path/123?someParam=someValue"), eq(GET), httpEntityCaptor.capture(), eq(String.class));
+		verify(restTemplateMock).exchange(eq("/some/path/123?someParam=someValue"), eq(GET), httpEntityCaptor.capture(),
+			eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
 		verify(wiremockMock).verify(any());
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGETCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON
+			.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testGETCall"));
 
 		// Verification of reset-method
 		assertThat(appTest.reset()).hasAllNullFieldsOrPropertiesExcept(
@@ -136,11 +143,15 @@ class AbstractAppTestTest {
 		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
 		final var contentBytes = Files.readAllBytes(file.toPath());
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn(".");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class))).thenReturn(new ResponseEntity<>(contentBytes, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class))).thenReturn(
+			new ResponseEntity<>(contentBytes, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -160,8 +171,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBinaryCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON
+			.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testBinaryCall"));
 	}
 
 	@Test
@@ -171,11 +184,15 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+			.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -199,8 +216,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testPOSTCall"));
 	}
 
 	@Test
@@ -211,11 +230,15 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+			.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -240,8 +263,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(MULTIPART_FORM_DATA_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallWithMultiPart"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			MULTIPART_FORM_DATA_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testPOSTCallWithMultiPart"));
 	}
 
 	@Test
@@ -251,11 +276,15 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("http://someurl:111222/aaa"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+			.thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -279,8 +308,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallMatchesExpectedHeaderValueWithReqexp"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testPOSTCallMatchesExpectedHeaderValueWithReqexp"));
 	}
 
 	@Test
@@ -290,16 +321,20 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
-			{
-			"key": "this-is-key",
-			"value": "this-is-value"
-			}
-			""", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(
+			new ResponseEntity<>("""
+				{
+				"key": "this-is-key",
+				"value": "this-is-value"
+				}
+				""", responseHeaders, NO_CONTENT));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var call = appTest.setupCall()
@@ -328,8 +363,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPUTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testPUTCall"));
 	}
 
 	@Test
@@ -339,11 +376,15 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(
+			new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -363,18 +404,24 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testDELETECall"));
 	}
 
 	@Test
 	void testBodyReplacement() {
 		// Setup
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation
+																								 // is a cast, hence
+																								 // this.
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
 		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class)))
+			.thenReturn(new ResponseEntity<>(OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()),
+			null));
 
 		// Call
 		final var instance = appTest.setupCall()
@@ -398,8 +445,10 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBodyReplacement"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(
+			APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of(
+			"AppTestImplementation.testBodyReplacement"));
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
 	}
 }

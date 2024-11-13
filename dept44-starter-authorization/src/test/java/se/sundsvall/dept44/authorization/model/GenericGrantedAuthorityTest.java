@@ -71,7 +71,8 @@ class GenericGrantedAuthorityTest {
 
 		GenericGrantedAuthority bean = GenericGrantedAuthority.create(ROLE, ACCESS_JSON);
 
-		final var exception = assertThrows(IllegalArgumentException.class, () -> bean.hasAuthority(ROLE, invalidJsonPath));
+		final var exception = assertThrows(IllegalArgumentException.class, () -> bean.hasAuthority(ROLE,
+			invalidJsonPath));
 		assertThat(exception.getMessage()).isEqualTo("Provided jsonpath '$@\"' is invalid");
 	}
 

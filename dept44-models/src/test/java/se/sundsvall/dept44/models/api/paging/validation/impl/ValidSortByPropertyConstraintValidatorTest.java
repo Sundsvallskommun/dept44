@@ -57,7 +57,8 @@ class ValidSortByPropertyConstraintValidatorTest {
 		assertThat(validator.validate(parameters))
 			.first()
 			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
+			.isEqualTo(
+				"One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
 	}
 
 	@Test
@@ -67,7 +68,8 @@ class ValidSortByPropertyConstraintValidatorTest {
 		assertThat(validator.validate(parameters))
 			.first()
 			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
+			.isEqualTo(
+				"One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
 	}
 
 	private static class TestEntity {

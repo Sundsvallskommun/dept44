@@ -25,10 +25,14 @@ public class PagingMetaData {
 	@Schema(description = "Displayed objects on current page", example = "13", accessMode = READ_ONLY)
 	private int count;
 
-	@Schema(description = "Total amount of hits based on provided search parameters", example = "98", accessMode = READ_ONLY)
+	@Schema(description = "Total amount of hits based on provided search parameters",
+		example = "98",
+		accessMode = READ_ONLY)
 	private long totalRecords;
 
-	@Schema(description = "Total amount of pages based on provided search parameters", example = "23", accessMode = READ_ONLY)
+	@Schema(description = "Total amount of pages based on provided search parameters",
+		example = "23",
+		accessMode = READ_ONLY)
 	private int totalPages;
 
 	public static PagingMetaData create() {

@@ -145,7 +145,8 @@ public class WebServiceTemplateBuilder {
 	 * @param  webServiceMessageFactory messageFactory to override with
 	 * @return                          this builder {@link WebServiceTemplateBuilder}
 	 */
-	public WebServiceTemplateBuilder withWebServiceMessageFactory(final WebServiceMessageFactory webServiceMessageFactory) {
+	public WebServiceTemplateBuilder withWebServiceMessageFactory(
+		final WebServiceMessageFactory webServiceMessageFactory) {
 		this.webServiceMessageFactory = webServiceMessageFactory;
 		return this;
 	}
@@ -253,8 +254,10 @@ public class WebServiceTemplateBuilder {
 	private void setMessageFactory(final WebServiceTemplate webServiceTemplate) {
 		if (webServiceMessageFactory == null) {
 			try {
-				final var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(SOAPConstants.SOAP_1_1_PROTOCOL));
-				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION, Boolean.TRUE.toString()));
+				final var webMessageFactory = new SaajSoapMessageFactory(MessageFactory.newInstance(
+					SOAPConstants.SOAP_1_1_PROTOCOL));
+				webMessageFactory.setMessageProperties(Collections.singletonMap(SOAPMessage.WRITE_XML_DECLARATION,
+					Boolean.TRUE.toString()));
 				webServiceTemplate.setMessageFactory(webMessageFactory);
 			} catch (final SOAPException e) {
 				throw new WebServiceTemplateException("Error when setting message factory", e);
@@ -267,7 +270,8 @@ public class WebServiceTemplateBuilder {
 
 		if (shouldUseBasicAuth()) {
 			httpComponents5MessageSender.setCredentials(
-				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password().toCharArray()));
+				new UsernamePasswordCredentials(basicAuthentication.username(), basicAuthentication.password()
+					.toCharArray()));
 		}
 
 		httpComponents5MessageSender.setHttpClient(createHttpClient());

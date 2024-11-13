@@ -55,7 +55,8 @@ class PetStoreConfigurationTest {
 		when(clientRepositoryMock.findByRegistrationId(CLIENT_ID)).thenReturn(clientRegistrationMock);
 
 		// Mock static FeignMultiCustomizer to enable spy and to verify that static method is being called
-		try (MockedStatic<FeignMultiCustomizer> feignMultiCustomizerMock = Mockito.mockStatic(FeignMultiCustomizer.class)) {
+		try (MockedStatic<FeignMultiCustomizer> feignMultiCustomizerMock = Mockito.mockStatic(
+			FeignMultiCustomizer.class)) {
 			feignMultiCustomizerMock.when(FeignMultiCustomizer::create).thenReturn(feignMultiCustomizerSpy);
 
 			configuration.feignBuilderCustomizer(propertiesMock, clientRepositoryMock);

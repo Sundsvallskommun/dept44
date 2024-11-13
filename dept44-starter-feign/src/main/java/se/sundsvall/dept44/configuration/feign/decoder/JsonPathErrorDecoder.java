@@ -27,13 +27,15 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	 *
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
 	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the
+	 * decode-method.
 	 *
 	 * @param integrationName     name of integration to whom the error decoder is connected
 	 * @param bypassResponseCodes list of response codes to bypass
 	 * @param jsonPathSetup       the JSON paths for custom errorMessage parsing.
 	 */
-	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, @Nonnull final JsonPathSetup jsonPathSetup) {
+	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes,
+		@Nonnull final JsonPathSetup jsonPathSetup) {
 		super(integrationName, bypassResponseCodes, new WSO2RetryResponseVerifier());
 
 		this.jsonPathSetup = requireNonNull(jsonPathSetup);
@@ -60,14 +62,16 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	 *
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
 	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the
+	 * decode-method.
 	 *
 	 * @param integrationName       name of integration to whom the error decoder is connected
 	 * @param bypassResponseCodes   list of response codes to bypass
 	 * @param jsonPathSetup         the JSON paths for custom errorMessage parsing.
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, @Nonnull final JsonPathSetup jsonPathSetup, final RetryResponseVerifier retryResponseVerifier) {
+	public JsonPathErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes,
+		@Nonnull final JsonPathSetup jsonPathSetup, final RetryResponseVerifier retryResponseVerifier) {
 		super(integrationName, bypassResponseCodes, retryResponseVerifier);
 
 		this.jsonPathSetup = requireNonNull(jsonPathSetup);
@@ -76,8 +80,10 @@ public class JsonPathErrorDecoder extends AbstractErrorDecoder {
 	@Override
 	public String extractErrorMessage(final Response response) throws IOException {
 		final var parsedJson = JsonPath.parse(bodyAsString(response));
-		final var title = nonNull(this.jsonPathSetup.titlePath()) ? parsedJson.read(this.jsonPathSetup.titlePath(), String.class) : null;
-		final var detail = nonNull(this.jsonPathSetup.detailPath()) ? parsedJson.read(this.jsonPathSetup.detailPath(), String.class) : null;
+		final var title = nonNull(this.jsonPathSetup.titlePath()) ? parsedJson.read(this.jsonPathSetup.titlePath(),
+			String.class) : null;
+		final var detail = nonNull(this.jsonPathSetup.detailPath()) ? parsedJson.read(this.jsonPathSetup.detailPath(),
+			String.class) : null;
 		return ErrorMessage.create(integrationName, response.status(), title, detail).extractMessage();
 	}
 

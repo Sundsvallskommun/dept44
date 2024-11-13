@@ -77,7 +77,8 @@ class DefaultFaultInterceptorTest {
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
 
 		// Call and assert
-		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleResponse(messageContextMock));
+		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleResponse(
+			messageContextMock));
 
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
@@ -120,7 +121,8 @@ class DefaultFaultInterceptorTest {
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
 
 		// Call and assert
-		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleFault(messageContextMock));
+		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleFault(
+			messageContextMock));
 
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);

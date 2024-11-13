@@ -49,7 +49,8 @@ public class JwtTokenUtil implements Serializable {
 	public Collection<GenericGrantedAuthority> getRolesFromToken(final String token) {
 		final Map<?, ?> roles = getAllClaimsFromToken(token).get("roles", Map.class);
 		return Optional.ofNullable(roles).orElse(emptyMap()).entrySet().stream()
-			.map(entry -> GenericGrantedAuthority.create(String.valueOf(entry.getKey()), Objects.toString(entry.getValue(), null)))
+			.map(entry -> GenericGrantedAuthority.create(String.valueOf(entry.getKey()), Objects.toString(entry
+				.getValue(), null)))
 			.toList();
 	}
 

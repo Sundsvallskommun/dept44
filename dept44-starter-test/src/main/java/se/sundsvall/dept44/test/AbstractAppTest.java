@@ -134,7 +134,8 @@ public abstract class AbstractAppTest {
 			mappingPath += "/";
 		}
 
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault().getSeparator();
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault()
+			.getSeparator();
 
 		return this;
 	}
@@ -194,7 +195,8 @@ public abstract class AbstractAppTest {
 	 * @param  expectedHeaderValue the list of expected header values, as regular expressions.
 	 * @return                     AbstractAppTest
 	 */
-	public AbstractAppTest withExpectedResponseHeader(final String expectedHeaderKey, final List<String> expectedHeaderValue) {
+	public AbstractAppTest withExpectedResponseHeader(final String expectedHeaderKey,
+		final List<String> expectedHeaderValue) {
 		if (isNull(expectedResponseHeaders)) {
 			expectedResponseHeaders = new HttpHeaders();
 		}
@@ -319,7 +321,8 @@ public abstract class AbstractAppTest {
 	 * @return                       AbstractAppTest
 	 * @throws FileNotFoundException if the file doesn't exist
 	 */
-	public AbstractAppTest withRequestFile(final String parameterName, final String fileName) throws FileNotFoundException {
+	public AbstractAppTest withRequestFile(final String parameterName, final String fileName)
+		throws FileNotFoundException {
 		return withRequestFile(parameterName, getFile(testDirectoryPath + fileName));
 	}
 
@@ -375,7 +378,8 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest sendRequest() {
 		logger.info(getTestMethodName());
 
-		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
+		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody)
+			: restTemplateRequest(contentType, requestBody);
 
 		// Call service and fetch response.
 		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
@@ -394,7 +398,8 @@ public abstract class AbstractAppTest {
 		assertThat(response.getStatusCode()).isEqualTo(expectedResponseStatus);
 		if (nonNull(expectedResponseBody)) {
 			final var responseContentType = response.getHeaders().getContentType();
-			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
+			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON,
+				APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
 				assertJsonEquals(expectedResponseBody, responseBody);
 			} else {
@@ -522,7 +527,8 @@ public abstract class AbstractAppTest {
 			.map(StackTraceElement::getMethodName)
 			.filter(methodName -> methodName.startsWith("test"))
 			.findFirst()
-			.orElseThrow(() -> new UnsupportedOperationException("Could not find method name! Test method must start with 'test'"));
+			.orElseThrow(() -> new UnsupportedOperationException(
+				"Could not find method name! Test method must start with 'test'"));
 	}
 
 	private void initializeJsonAssert() {
@@ -541,7 +547,8 @@ public abstract class AbstractAppTest {
 		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
 			final var requestPattern = stub.getRequest();
 			wiremock.verify(
-				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
+				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern
+					.getUrlPath(), requestPattern.getUrlPathPattern())));
 		});
 
 		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();

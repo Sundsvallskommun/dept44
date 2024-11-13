@@ -50,7 +50,8 @@ class PetInventoryServiceTest {
 		final var type = "DOG";
 
 		when(petNameRepositoryMock.findById(id)).thenReturn(Optional.of(PetNameEntity.create().withName(name)));
-		when(petStoreClientMock.findPetById(id)).thenReturn(Optional.of(new Pet().id(id).price(price).type(TypeEnum.fromValue(type))));
+		when(petStoreClientMock.findPetById(id)).thenReturn(Optional.of(new Pet().id(id).price(price).type(TypeEnum
+			.fromValue(type))));
 
 		// Call
 		final var result = service.getPetInventoryItem(id);
@@ -124,7 +125,8 @@ class PetInventoryServiceTest {
 
 		// Assertions
 		assertThat(result)
-			.extracting(PetInventoryItem::getId, PetInventoryItem::getName, PetInventoryItem::getPrice, PetInventoryItem::getType)
+			.extracting(PetInventoryItem::getId, PetInventoryItem::getName, PetInventoryItem::getPrice,
+				PetInventoryItem::getType)
 			.containsExactlyInAnyOrder(
 				tuple(id1, name1, price1, type1),
 				tuple(id2, name2, price2, type2),

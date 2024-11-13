@@ -89,7 +89,8 @@ class JwtAuthorizationExtractionFilterTest {
 
 	@Test
 	void shouldReturnTrueWhenAuthorizationEnabledOnApplication() throws Exception {
-		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", new ServiceApplicationWithJwtAuthorization()));
+		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application",
+			new ServiceApplicationWithJwtAuthorization()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isTrue();
 	}
@@ -99,7 +100,8 @@ class JwtAuthorizationExtractionFilterTest {
 		PlainServiceApplication.class, PlainBean.class
 	})
 	void shouldReturnFalseWhenAuthorizationNotEnabledOnApplication(Class<?> beanClass) throws Exception {
-		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", beanClass.getDeclaredConstructor().newInstance()));
+		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application",
+			beanClass.getDeclaredConstructor().newInstance()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isFalse();
 	}
@@ -200,7 +202,8 @@ class JwtAuthorizationExtractionFilterTest {
 			Arguments.of(new MalformedJwtException("Exception 2"), "Credentials could not be read"),
 			Arguments.of(new UnsupportedJwtException("Exception 3"), "Credentials could not be read"),
 			Arguments.of(new SignatureException("Exception 4"), "Invalid signature detected for credentials"),
-			Arguments.of(new WeakKeyException("Exception 5"), "The verification key's size is not secure enough for the selected algorithm"),
+			Arguments.of(new WeakKeyException("Exception 5"),
+				"The verification key's size is not secure enough for the selected algorithm"),
 			Arguments.of(new ExpiredJwtException(null, null, "Exception 6"), "Credentials has expired"),
 			Arguments.of(new CompressionException("Exception 7"), "Exception occurred when reading credentials"));
 	}

@@ -50,11 +50,19 @@ public class PetInventoryResource {
 	})
 	@Operation(summary = "Get Pet inventory items")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "400",
+		description = "Bad request",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		})))
+	@ApiResponse(responseCode = "500",
+		description = "Internal Server error",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "502",
+		description = "Bad Gateway",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<List<PetInventoryItem>> getPetInventoryList() {
 		return ok(petInventoryService.getPetInventoryList());
 	}
@@ -64,11 +72,19 @@ public class PetInventoryResource {
 	})
 	@Operation(summary = "Get Pet inventory item by id")
 	@ApiResponse(responseCode = "200", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "400",
+		description = "Bad request",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		})))
+	@ApiResponse(responseCode = "500",
+		description = "Internal Server error",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "502",
+		description = "Bad Gateway",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
 	ResponseEntity<PetInventoryItem> getPetInventoryItem(@PathVariable(name = "id") final long id) {
 		return ok(petInventoryService.getPetInventoryItem(id));
 	}
@@ -80,12 +96,21 @@ public class PetInventoryResource {
 	})
 	@Operation(summary = "Add pet inventory item image by id")
 	@ApiResponse(responseCode = "201", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	ResponseEntity<Void> addPetImage(@PathVariable(name = "id") final long id, @RequestPart("file") MultipartFile multipartFile) {
+	@ApiResponse(responseCode = "400",
+		description = "Bad request",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		})))
+	@ApiResponse(responseCode = "500",
+		description = "Internal Server error",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "502",
+		description = "Bad Gateway",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	ResponseEntity<Void> addPetImage(@PathVariable(name = "id") final long id,
+		@RequestPart("file") MultipartFile multipartFile) {
 		final var petImageId = petInventoryService.savePetImage(id, multipartFile);
 		return created(fromPath("/pet-inventory-items/{id}/images/{pictureId}").buildAndExpand(id, petImageId).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -97,12 +122,21 @@ public class PetInventoryResource {
 	})
 	@Operation(summary = "Get pet inventory item image by id")
 	@ApiResponse(responseCode = "201", description = "Successful operation", useReturnTypeSchema = true)
-	@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
-		Problem.class, ConstraintViolationProblem.class
-	})))
-	@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
-	ResponseEntity<byte[]> getPetImage(@PathVariable(name = "id") final long id, @PathVariable(name = "imageId") final long imageId) {
+	@ApiResponse(responseCode = "400",
+		description = "Bad request",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
+			Problem.class, ConstraintViolationProblem.class
+		})))
+	@ApiResponse(responseCode = "500",
+		description = "Internal Server error",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	@ApiResponse(responseCode = "502",
+		description = "Bad Gateway",
+		content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE,
+			schema = @Schema(implementation = Problem.class)))
+	ResponseEntity<byte[]> getPetImage(@PathVariable(name = "id") final long id, @PathVariable(
+		name = "imageId") final long imageId) {
 		final var petImage = petInventoryService.getPetImage(id, imageId);
 		return ok()
 			.header(CONTENT_DISPOSITION, CONTENT_DISPOSITION_HEADER_VALUE.formatted(petImage.getFileName()))

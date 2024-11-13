@@ -16,7 +16,8 @@ class JwtAuthorizationPropertiesTest {
 
 	@Test
 	void verifyConfigurationPropertiesAnnotation() {
-		ConfigurationProperties annotation = getAnnotation(JwtAuthorizationProperties.class, ConfigurationProperties.class);
+		ConfigurationProperties annotation = getAnnotation(JwtAuthorizationProperties.class,
+			ConfigurationProperties.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.value()).isEqualTo("jwt.authorization");

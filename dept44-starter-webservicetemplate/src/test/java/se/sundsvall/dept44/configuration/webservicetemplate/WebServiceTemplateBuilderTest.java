@@ -174,14 +174,17 @@ class WebServiceTemplateBuilderTest {
 		final var package3 = "package3";
 
 		// Create instance
-		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withPackagesToScan(List.of(package1, package2)).withPackageToScan(package3).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withPackagesToScan(List.of(package1,
+			package2)).withPackageToScan(package3).build();
 
 		// Do assertions
 		assertThat(template).isNotNull();
 		assertThat(template.getMarshaller()).isNotNull().isInstanceOf(Jaxb2Marshaller.class);
 		assertThat(template.getUnmarshaller()).isNotNull().isInstanceOf(Jaxb2Marshaller.class);
-		assertThat(template.getMarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY).containsExactlyInAnyOrder(package1, package2, package3);
-		assertThat(template.getUnmarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY).containsExactlyInAnyOrder(package1, package2, package3);
+		assertThat(template.getMarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY).containsExactlyInAnyOrder(
+			package1, package2, package3);
+		assertThat(template.getUnmarshaller()).extracting("packagesToScan").asInstanceOf(ARRAY)
+			.containsExactlyInAnyOrder(package1, package2, package3);
 	}
 
 	@Test
@@ -191,13 +194,15 @@ class WebServiceTemplateBuilderTest {
 		final var password = "password";
 
 		// Create instance
-		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName, password).build();
+		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName,
+			password).build();
 
 		// Do assertions
 		assertThat(template).isNotNull()
 			.extracting("messageSenders").asInstanceOf(ARRAY).hasSize(1)
 			.extracting("clientFactory", HttpComponents5ClientFactory.class)
-			.extracting("credentials", UsernamePasswordCredentials.class).containsExactly(new UsernamePasswordCredentials(userName, password.toCharArray()));
+			.extracting("credentials", UsernamePasswordCredentials.class).containsExactly(
+				new UsernamePasswordCredentials(userName, password.toCharArray()));
 	}
 
 	@Test

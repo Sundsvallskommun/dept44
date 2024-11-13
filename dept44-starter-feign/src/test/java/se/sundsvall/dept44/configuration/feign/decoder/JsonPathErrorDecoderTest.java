@@ -55,7 +55,8 @@ class JsonPathErrorDecoderTest {
 		final var exception = errorDecoder.decode("test", response);
 
 		// Verify
-		assertThat(exception).hasMessage("Bad Gateway: XXX error: {detail=A minor detail, status=418 I'm a teapot, title=This is a custom error}");
+		assertThat(exception).hasMessage(
+			"Bad Gateway: XXX error: {detail=A minor detail, status=418 I'm a teapot, title=This is a custom error}");
 	}
 
 	@Test
@@ -69,21 +70,24 @@ class JsonPathErrorDecoderTest {
 		final var exception = errorDecoder.decode("test", response);
 
 		// Verify
-		assertThat(exception).hasMessage("Bad Gateway: XXX error: {status=418 I'm a teapot, title=This is a custom error}");
+		assertThat(exception).hasMessage(
+			"Bad Gateway: XXX error: {status=418 I'm a teapot, title=This is a custom error}");
 	}
 
 	@Test
 	void decodeCustomError2(@Load("customError2.json") String errorBody) {
 
 		// Setup
-		final var errorDecoder = new JsonPathErrorDecoder("XXX", new JsonPathSetup("$['errorMessage']", "concat($['extraInfo']['details'], \" with custom status \", $['extraInfo']['status'])"));
+		final var errorDecoder = new JsonPathErrorDecoder("XXX", new JsonPathSetup("$['errorMessage']",
+			"concat($['extraInfo']['details'], \" with custom status \", $['extraInfo']['status'])"));
 		final var response = buildErrorResponse(errorBody, 500, null);
 
 		// Execute
 		final var exception = errorDecoder.decode("test", response);
 
 		// Verify
-		assertThat(exception).hasMessage("Bad Gateway: XXX error: {detail=This is details with custom status 418 I'm a teapot, status=500 Internal Server Error, title=This is a custom error}");
+		assertThat(exception).hasMessage(
+			"Bad Gateway: XXX error: {detail=This is details with custom status 418 I'm a teapot, status=500 Internal Server Error, title=This is a custom error}");
 	}
 
 	@Test
@@ -98,7 +102,8 @@ class JsonPathErrorDecoderTest {
 		final var exception = errorDecoder.decode("test", response);
 
 		// Verify
-		assertThat(exception).hasMessage("Bad Gateway: XXX error: {detail=This is details, status=418 I'm a teapot, title=This is a custom error - with extrainfo}");
+		assertThat(exception).hasMessage(
+			"Bad Gateway: XXX error: {detail=This is details, status=418 I'm a teapot, title=This is a custom error - with extrainfo}");
 	}
 
 	@Test
@@ -134,7 +139,8 @@ class JsonPathErrorDecoderTest {
 	void errorDecoderWhenBypassResponseCodesAreSet() {
 
 		// Setup
-		final var errorDecoder = new JsonPathErrorDecoder("XXX", List.of(400, 401, 404, 418), new JsonPathSetup("$['title']", "$['detail']"));
+		final var errorDecoder = new JsonPathErrorDecoder("XXX", List.of(400, 401, 404, 418), new JsonPathSetup(
+			"$['title']", "$['detail']"));
 		final var response = buildErrorResponse(null, 404, null); // statusCode exists in bypassList.
 
 		// Execute
@@ -148,14 +154,16 @@ class JsonPathErrorDecoderTest {
 	void errorDecoderWhenBypassResponseCodesAndJsonPathSetupAreSet(@Load("customError1.json") String errorBody) {
 
 		// Setup
-		final var errorDecoder = new JsonPathErrorDecoder("XXX", List.of(400, 401, 404, 418), new JsonPathSetup("$['Message']", "$['Detail']"));
+		final var errorDecoder = new JsonPathErrorDecoder("XXX", List.of(400, 401, 404, 418), new JsonPathSetup(
+			"$['Message']", "$['Detail']"));
 		final var response = buildErrorResponse(errorBody, 404, null); // statusCode exists in bypassList.
 
 		// Execute
 		final var exception = errorDecoder.decode("test", response);
 
 		// Verify
-		assertThat(exception).hasMessage("Not Found: XXX error: {detail=A minor detail, status=404 Not Found, title=This is a custom error}");
+		assertThat(exception).hasMessage(
+			"Not Found: XXX error: {detail=A minor detail, status=404 Not Found, title=This is a custom error}");
 	}
 
 	@ParameterizedTest
@@ -181,7 +189,8 @@ class JsonPathErrorDecoderTest {
 	@Test
 	void errorDecoderReturnsRetryableExceptionOnWSO2TokenExpire() {
 		final var errorDecoder = new JsonPathErrorDecoder("XXX", new JsonPathSetup("$['title']", "$['detail']"));
-		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
+		final var errorResponse = buildErrorResponse("Error", 401, Map.of("www-authenticate", Set.of(
+			WSO2_TOKEN_EXPIRE_HEADER_ERROR)));
 
 		final var exception = errorDecoder.decode("test", errorResponse);
 
@@ -192,7 +201,8 @@ class JsonPathErrorDecoderTest {
 	@Test
 	void errorDecoderReturnsRetryableException() {
 		final var retryResponseVerifierMock = Mockito.mock(RetryResponseVerifier.class);
-		final var errorDecoder = new JsonPathErrorDecoder("XXX", emptyList(), new JsonPathSetup("$['title']", "$['detail']"), retryResponseVerifierMock);
+		final var errorDecoder = new JsonPathErrorDecoder("XXX", emptyList(), new JsonPathSetup("$['title']",
+			"$['detail']"), retryResponseVerifierMock);
 		final var errorResponse = buildErrorResponse("Error", 500, null);
 
 		when(retryResponseVerifierMock.shouldReturnRetryableException(any())).thenReturn(true);
@@ -207,7 +217,8 @@ class JsonPathErrorDecoderTest {
 		assertThat(exception.getCause()).isInstanceOf(ServerProblem.class);
 	}
 
-	private static Response buildErrorResponse(String errorBody, int httpStatus, Map<String, Collection<String>> headers) {
+	private static Response buildErrorResponse(String errorBody, int httpStatus,
+		Map<String, Collection<String>> headers) {
 		return Response.builder()
 			.body(errorBody, UTF_8)
 			.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
@@ -232,7 +243,8 @@ class JsonPathErrorDecoderTest {
 
 	private static Stream<Arguments> toErrorDecoderForErrorMessages() {
 		return Stream.of(
-			Arguments.of("<unknown message structure></unknown message structure>", 418, "Bad Gateway: XXX error: {status=418 I'm a teapot, title=Unknown error}"),
+			Arguments.of("<unknown message structure></unknown message structure>", 418,
+				"Bad Gateway: XXX error: {status=418 I'm a teapot, title=Unknown error}"),
 			Arguments.of(null, 401, "Bad Gateway: XXX error: {status=401 Unauthorized, title=Unauthorized}"),
 			Arguments.of("  ", 404, "Bad Gateway: XXX error: {status=404 Not Found, title=Not Found}"));
 	}

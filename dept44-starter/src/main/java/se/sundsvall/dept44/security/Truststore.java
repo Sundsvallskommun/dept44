@@ -83,7 +83,9 @@ public class Truststore {
 
 	private static final String SSL_PROTOCOL = "TLSv1.2";
 	private static final String CERTIFICATE_TYPE = "X.509";
-	private static final String INTERNAL_TRUSTSTORE_PATH = "internal-truststore/*"; // Points to src/main/resources/internal-truststore/* in this project.
+	private static final String INTERNAL_TRUSTSTORE_PATH = "internal-truststore/*"; // Points to
+																					 // src/main/resources/internal-truststore/*
+																					 // in this project.
 
 	private final String trustStorePath;
 	private final String internalTrustStorePath;
@@ -151,7 +153,8 @@ public class Truststore {
 		return initializedSSLContext;
 	}
 
-	private SSLContext initializeTruststore() throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, KeyManagementException {
+	private SSLContext initializeTruststore() throws IOException, KeyStoreException, NoSuchAlgorithmException,
+		CertificateException, KeyManagementException {
 
 		this.trustManagerFactory = TrustManagerFactory.getInstance(getDefaultAlgorithm());
 
@@ -170,7 +173,8 @@ public class Truststore {
 		certificates.forEach(certificate -> {
 			try {
 				final var certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
-				final var x509Certificate = (X509Certificate) certificateFactory.generateCertificate(certificate.getInputStream());
+				final var x509Certificate = (X509Certificate) certificateFactory.generateCertificate(certificate
+					.getInputStream());
 				x509Certificate.checkValidity(); // Will prevent adding of invalid certificates.
 				keyStore.setCertificateEntry(certificate.getFilename(), x509Certificate);
 				LOG.info(MESSAGE_ADD_CERTIFICATE_CONFIRMATION, certificate.getFilename());

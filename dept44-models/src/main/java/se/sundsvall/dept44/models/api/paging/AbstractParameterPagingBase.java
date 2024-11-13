@@ -30,7 +30,9 @@ public abstract class AbstractParameterPagingBase {
 	@Min(1)
 	protected int page = 1;
 
-	@Schema(description = "Result size per page. Maximum allowed value is dynamically configured", minimum = "1", example = "15")
+	@Schema(description = "Result size per page. Maximum allowed value is dynamically configured",
+		minimum = "1",
+		example = "15")
 	@Min(1)
 	@MaxPagingLimit
 	protected int limit;

@@ -18,11 +18,13 @@ class ActionRetryerTest {
 	@Test
 	void continueOrPropagate() {
 		final var actionRetryer = new ActionRetryer(actionMock, 2);
-		final var retryableException = new RetryableException(200, "message", Request.HttpMethod.GET, (Long) null, Mockito.mock(Request.class));
+		final var retryableException = new RetryableException(200, "message", Request.HttpMethod.GET, (Long) null,
+			Mockito.mock(Request.class));
 
 		assertDoesNotThrow(() -> actionRetryer.continueOrPropagate(retryableException));
 		assertDoesNotThrow(() -> actionRetryer.continueOrPropagate(retryableException));
-		final var exception = assertThrows(RetryableException.class, () -> actionRetryer.continueOrPropagate(retryableException));
+		final var exception = assertThrows(RetryableException.class, () -> actionRetryer.continueOrPropagate(
+			retryableException));
 
 		assertThat(exception).isSameAs(retryableException);
 		verify(actionMock, times(2)).execute();

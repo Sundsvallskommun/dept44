@@ -48,7 +48,8 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * @param credentials the credentials to set.
 	 * @param authorities the authorities to set.
 	 */
-	public UsernameAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
+	public UsernameAuthenticationToken(Object principal, Object credentials,
+		Collection<? extends GrantedAuthority> authorities) {
 		super(authorities);
 		this.principal = principal;
 		this.credentials = credentials;
@@ -75,7 +76,8 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * @param  authorities the authorities to set.
 	 * @return             UsernameAuthenticationToken with true isAuthenticated() result
 	 */
-	public static UsernameAuthenticationToken authenticated(Object principal, Collection<? extends GrantedAuthority> authorities) {
+	public static UsernameAuthenticationToken authenticated(Object principal,
+		Collection<? extends GrantedAuthority> authorities) {
 		return new UsernameAuthenticationToken(principal, null, authorities);
 	}
 
@@ -91,7 +93,8 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 
 	@Override
 	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
-		isTrue(!isAuthenticated, "Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
+		isTrue(!isAuthenticated,
+			"Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
 		super.setAuthenticated(false);
 	}
 

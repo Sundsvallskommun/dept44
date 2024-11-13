@@ -60,7 +60,8 @@ public class LogbookConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
+	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters,
+		BodyFilterProperties bodyFilterProperties) {
 		return Logbook.builder()
 			.sink(new DefaultSink(
 				new JsonHttpLogFormatter(objectMapper),

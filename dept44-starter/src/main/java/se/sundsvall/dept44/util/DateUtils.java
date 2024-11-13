@@ -45,7 +45,8 @@ public final class DateUtils {
 			case null -> null;
 			case final OffsetDateTime offsetDateTime -> toOffsetDateTimeWithLocalOffset(offsetDateTime);
 			case final LocalDateTime localDateTime -> toOffsetDateTimeWithLocalOffset(localDateTime);
-			default -> throw new IllegalArgumentException("Method has no support for type " + temporal.getClass().getName());
+			default -> throw new IllegalArgumentException("Method has no support for type " + temporal.getClass()
+				.getName());
 		};
 	}
 
@@ -58,7 +59,8 @@ public final class DateUtils {
 	private static OffsetDateTime toOffsetDateTimeWithLocalOffset(final OffsetDateTime offsetDateTime) {
 		return Optional.ofNullable(offsetDateTime)
 			// Calculate local offset based on provided offsetDateTime, for this systems zoneId.
-			.map(offsetDateTime1 -> offsetDateTime1.withOffsetSameInstant(ZoneId.systemDefault().getRules().getOffset(offsetDateTime1.toInstant())))
+			.map(offsetDateTime1 -> offsetDateTime1.withOffsetSameInstant(ZoneId.systemDefault().getRules().getOffset(
+				offsetDateTime1.toInstant())))
 			.orElse(null);
 	}
 

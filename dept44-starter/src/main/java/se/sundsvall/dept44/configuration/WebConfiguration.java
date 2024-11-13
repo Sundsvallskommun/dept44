@@ -93,7 +93,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 		configurer
 			.favorParameter(false)
 			.ignoreAcceptHeader(false)
-			.defaultContentType(APPLICATION_JSON, APPLICATION_PROBLEM_JSON, APPLICATION_XML, APPLICATION_YAML, APPLICATION_YML, APPLICATION_OCTET_STREAM, TEXT_HTML, TEXT_PLAIN)
+			.defaultContentType(APPLICATION_JSON, APPLICATION_PROBLEM_JSON, APPLICATION_XML, APPLICATION_YAML,
+				APPLICATION_YML, APPLICATION_OCTET_STREAM, TEXT_HTML, TEXT_PLAIN)
 			.mediaType(APPLICATION_JSON.getSubtype(), APPLICATION_JSON)
 			.mediaType(APPLICATION_PROBLEM_JSON.getSubtype(), APPLICATION_PROBLEM_JSON)
 			.mediaType(APPLICATION_YAML.getSubtype(), APPLICATION_YAML)
@@ -125,9 +126,11 @@ public class WebConfiguration implements WebMvcConfigurer {
 		// "/{municipalityId}" - Matches all paths where the municipality placeholder is the whole path.
 		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part oft the path.
 		// "/{municipalityId}/**" - Matches all paths where the municipality placeholder is the beginning of the path.
-		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the path.
+		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the
+		// path.
 		registry.addInterceptor(municipalityIdInterceptor)
-			.addPathPatterns("/{municipalityId}", "/{municipalityId}/**", "/**/{municipalityId}", "/**/{municipalityId}/**");
+			.addPathPatterns("/{municipalityId}", "/{municipalityId}/**", "/**/{municipalityId}",
+				"/**/{municipalityId}/**");
 	}
 
 	static class MunicipalityIdInterceptor implements HandlerInterceptor {
@@ -141,7 +144,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 		}
 
 		@Override
-		public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object notUsed) {
+		public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response,
+			final Object notUsed) {
 			if (allowedIds.isEmpty()) {
 				return true;
 			}
@@ -154,7 +158,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 			if (allowedIds.contains(pathArray[municipalityIdUriIndex])) {
 				return true;
 			}
-			throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex]).build();
+			throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: "
+				+ pathArray[municipalityIdUriIndex]).build();
 		}
 	}
 
@@ -173,7 +178,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 			this.apiDocsPath = apiDocsPath;
 			this.openApiWebMvcResource = openApiWebMvcResource;
 
-			template = ResourceUtils.asString(templateResource).replace("@API_DOC_URI@", apiDocsPath).replace("@API_DOC_URI_RELATIVE@", apiDocsPath.replaceFirst("/", ""));
+			template = ResourceUtils.asString(templateResource).replace("@API_DOC_URI@", apiDocsPath).replace(
+				"@API_DOC_URI_RELATIVE@", apiDocsPath.replaceFirst("/", ""));
 
 		}
 
@@ -186,7 +192,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Operation(tags = "API", summary = "OpenAPI")
 		@GetMapping(value = "${springdoc.api-docs.path}", produces = "application/yaml")
 		String getApiDocs(final HttpServletRequest request) throws JsonProcessingException {
-			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset.defaultCharset());
+			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset
+				.defaultCharset());
 		}
 	}
 

@@ -46,7 +46,10 @@ public class PetImageEntity {
 	private OffsetDateTime modified;
 
 	@ManyToOne(optional = false, fetch = FetchType.EAGER)
-	@JoinColumn(name = "pet_name_id", nullable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_pet_image_pet_name_id_pet_name_id"))
+	@JoinColumn(name = "pet_name_id",
+		nullable = false,
+		updatable = false,
+		foreignKey = @ForeignKey(name = "fk_pet_image_pet_name_id_pet_name_id"))
 	@OnDelete(action = OnDeleteAction.CASCADE)
 	private PetNameEntity petName;
 
@@ -158,15 +161,19 @@ public class PetImageEntity {
 	public boolean equals(Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final PetImageEntity other)) { return false; }
-		return Arrays.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType) && Objects.equals(modified,
-			other.modified) && Objects.equals(petName, other.petName);
+		return Arrays.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(
+			fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType)
+			&& Objects.equals(modified,
+				other.modified) && Objects.equals(petName, other.petName);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetImageEntity [id=").append(id).append(", fileName=").append(fileName).append(", mimeType=").append(mimeType).append(", content=").append(Arrays.toString(content)).append(", created=").append(created).append(", modified=").append(
-			modified).append(", petName=").append(petName).append("]");
+		builder.append("PetImageEntity [id=").append(id).append(", fileName=").append(fileName).append(", mimeType=")
+			.append(mimeType).append(", content=").append(Arrays.toString(content)).append(", created=").append(created)
+			.append(", modified=").append(
+				modified).append(", petName=").append(petName).append("]");
 		return builder.toString();
 	}
 }

@@ -92,7 +92,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	 * SecurityContext to enable Springs authorization annotations to access it.
 	 */
 	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+		throws ServletException, IOException {
 		final String jwtToken = request.getHeader(properties.getHeaderName());
 
 		if (nonNull(jwtToken)) {
@@ -104,7 +105,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 		}
 	}
 
-	private void extractToken(HttpServletRequest request, HttpServletResponse response, FilterChain chain, String jwtToken) throws IOException {
+	private void extractToken(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+		String jwtToken) throws IOException {
 		try {
 			// Read JWT-token and fetch user name and accesses from it
 			final String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
@@ -113,7 +115,8 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 			// Validate and store token in SecurityContext if it isn't stored already
 			if (nonNull(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
 				final UserDetails userDetails = createUserDetails(username, authorities);
-				final UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(userDetails, authorities);
+				final UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(
+					userDetails, authorities);
 				authenticationToken.setDetails(webAuthenticationDetailsSource.buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 			}

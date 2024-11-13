@@ -54,10 +54,13 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 			if (certificateFiles != null) {
 				for (var certificateFile : certificateFiles) {
 					try (var certificateInputStream = new FileInputStream(certificateFile)) {
-						var certificate = (X509Certificate) certificateFactory.generateCertificate(certificateInputStream);
-						var notAfter = certificate.getNotAfter().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+						var certificate = (X509Certificate) certificateFactory.generateCertificate(
+							certificateInputStream);
+						var notAfter = certificate.getNotAfter().toInstant().atZone(ZoneId.systemDefault())
+							.toLocalDate();
 						if (notAfter.isBefore(expiry)) {
-							addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE), monthsUntilExpiration, today.format(ISO_DATE)));
+							addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE),
+								monthsUntilExpiration, today.format(ISO_DATE)));
 						}
 					}
 				}

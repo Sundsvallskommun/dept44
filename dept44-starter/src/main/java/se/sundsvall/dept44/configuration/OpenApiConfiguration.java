@@ -37,7 +37,8 @@ public class OpenApiConfiguration {
 
 	@Bean("dept44OpenApi")
 	OpenAPI customOpenAPI(
-		@Autowired(required = false) @Qualifier("dept44Oauth2SecurityScheme") final SecurityScheme oauth2SecurityScheme) {
+		@Autowired(
+			required = false) @Qualifier("dept44Oauth2SecurityScheme") final SecurityScheme oauth2SecurityScheme) {
 		return new OpenAPI()
 			.servers(properties.getServers().stream()
 				.map(server -> new Server()

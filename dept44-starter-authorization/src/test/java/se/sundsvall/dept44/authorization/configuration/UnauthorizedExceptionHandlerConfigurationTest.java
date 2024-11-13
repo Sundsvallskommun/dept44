@@ -29,7 +29,8 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 
 	@Test
 	void verifyConditionalOnPropertyAnnotation() {
-		ConditionalOnProperty annotation = getAnnotation(UnauthorizedExceptionHandlerConfiguration.class, ConditionalOnProperty.class);
+		ConditionalOnProperty annotation = getAnnotation(UnauthorizedExceptionHandlerConfiguration.class,
+			ConditionalOnProperty.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.name()).containsExactly("jwt.authorization.secret");

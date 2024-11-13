@@ -33,12 +33,14 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 *
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
 	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the
+	 * decode-method.
 	 *
 	 * @param integrationName     name of integration to whom the error decoder is connected
 	 * @param bypassResponseCodes list of response codes to bypass
 	 */
-	public ProblemErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes) {
+	public ProblemErrorDecoder(@Nonnull final String integrationName,
+		@Nonnull final List<Integer> bypassResponseCodes) {
 		super(integrationName, bypassResponseCodes, new WSO2RetryResponseVerifier());
 	}
 
@@ -60,7 +62,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 *
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
 	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the
+	 * decode-method.
 	 *
 	 * If the {@link RetryResponseVerifier} returns true a {@link RetryableException} will be thrown.
 	 *
@@ -68,13 +71,15 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 * @param bypassResponseCodes   list of response codes to bypass
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	public ProblemErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, final RetryResponseVerifier retryResponseVerifier) {
+	public ProblemErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes,
+		final RetryResponseVerifier retryResponseVerifier) {
 		super(integrationName, bypassResponseCodes, retryResponseVerifier);
 	}
 
 	@Override
 	public String extractErrorMessage(final Response response) throws IOException {
-		final var problem = isConstraintViolationProblem(response) ? toProblem(deserialize(response, ConstraintViolationProblem.class)) : deserialize(response, Problem.class);
+		final var problem = isConstraintViolationProblem(response) ? toProblem(deserialize(response,
+			ConstraintViolationProblem.class)) : deserialize(response, Problem.class);
 
 		return ErrorMessage.create(integrationName, response.status(), problem).extractMessage();
 	}

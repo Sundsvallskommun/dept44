@@ -25,7 +25,8 @@ class BasicAuthenticationTest {
 	@MethodSource("toBlankErrorArguments")
 	void argumentIsBlank(String userName, String password, String expectedMessage) {
 
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> new BasicAuthentication(userName, password));
+		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> new BasicAuthentication(
+			userName, password));
 
 		assertThat(illegalArgumentException).isNotNull();
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(expectedMessage);

@@ -52,14 +52,17 @@ public class FeignMultiCustomizer {
 
 	/**
 	 * Method for creating a RetryableOAuth2InterceptorForClientRegistration with default scope-set, which includes the
-	 * device-scope needed to ensure correct handling of multiple instances in WSO2. The device-scope will be merged with
+	 * device-scope needed to ensure correct handling of multiple instances in WSO2. The device-scope will be merged
+	 * with
 	 * the scopes defined in the clientRegistration.
 	 *
 	 * @param  clientRegistration containing authorization information for the client
 	 * @return                    FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
-	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration) {
-		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of("device_" + UUID.randomUUID()));
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(
+		final ClientRegistration clientRegistration) {
+		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of("device_" + UUID
+			.randomUUID()));
 	}
 
 	/**
@@ -70,7 +73,8 @@ public class FeignMultiCustomizer {
 	 * @param  extraScopes        a set of extra scopes
 	 * @return                    FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
-	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes) {
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(
+		final ClientRegistration clientRegistration, final Set<String> extraScopes) {
 		return withCustomizer(builder -> {
 			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistration, extraScopes);
 			builder.requestInterceptor(oAuth2RequestInterceptor);

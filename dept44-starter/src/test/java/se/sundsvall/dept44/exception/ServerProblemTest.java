@@ -19,7 +19,8 @@ class ServerProblemTest {
 		assertThat(problem)
 			.hasMessage("Bad Gateway: Error detail")
 			.isInstanceOf(AbstractThrowableProblem.class)
-			.extracting(ServerProblem::getType, ServerProblem::getTitle, ServerProblem::getStatus, ServerProblem::getDetail)
+			.extracting(ServerProblem::getType, ServerProblem::getTitle, ServerProblem::getStatus,
+				ServerProblem::getDetail)
 			.containsExactly(new URI("about:blank"), "Bad Gateway", BAD_GATEWAY, "Error detail");
 	}
 }

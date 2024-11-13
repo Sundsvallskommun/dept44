@@ -40,7 +40,8 @@ public abstract class AbstractParameterPagingAndSortingBase extends AbstractPara
 	@JsonIgnore
 	public Sort sort() {
 		return Optional.ofNullable(this.sortBy)
-			.map(sortByList -> Sort.by(Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION), sortByList.toArray(new String[0])))
+			.map(sortByList -> Sort.by(Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION), sortByList
+				.toArray(new String[0])))
 			.orElseGet(Sort::unsorted);
 	}
 }

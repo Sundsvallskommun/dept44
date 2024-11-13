@@ -15,7 +15,8 @@ public class WSO2RetryResponseVerifier implements RetryResponseVerifier {
 	@Override
 	public boolean shouldReturnRetryableException(final Response response) {
 		final var set = response.headers().get(HttpHeaders.WWW_AUTHENTICATE);
-		return response.status() == UNAUTHORIZED.value() && nonNull(set) && set.stream().anyMatch(s -> pattern.matcher(s).find());
+		return response.status() == UNAUTHORIZED.value() && nonNull(set) && set.stream().anyMatch(s -> pattern.matcher(
+			s).find());
 	}
 
 	@Override

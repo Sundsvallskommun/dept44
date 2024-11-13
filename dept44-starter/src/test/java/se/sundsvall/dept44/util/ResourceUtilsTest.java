@@ -13,7 +13,8 @@ class ResourceUtilsTest {
 
 	@Test
 	void requireNonNullWhenNull() {
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNonNull(null, EXCEPTION_MESSAGE));
+		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils
+			.requireNonNull(null, EXCEPTION_MESSAGE));
 
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(EXCEPTION_MESSAGE);
 	}
@@ -28,7 +29,8 @@ class ResourceUtilsTest {
 
 	@Test
 	void requireNotBlankWhenNull() {
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(null, EXCEPTION_MESSAGE));
+		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils
+			.requireNotBlank(null, EXCEPTION_MESSAGE));
 
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(EXCEPTION_MESSAGE);
 	}
@@ -36,7 +38,8 @@ class ResourceUtilsTest {
 	@Test
 	void requireNotBlankWhenBlank() {
 		final var blankString = " ";
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(blankString, EXCEPTION_MESSAGE));
+		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils
+			.requireNotBlank(blankString, EXCEPTION_MESSAGE));
 
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(EXCEPTION_MESSAGE);
 	}
@@ -44,7 +47,8 @@ class ResourceUtilsTest {
 	@Test
 	void requireNotBlankWhenEmpty() {
 		final var emptyString = "";
-		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils.requireNotBlank(emptyString, EXCEPTION_MESSAGE));
+		final var illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> ResourceUtils
+			.requireNotBlank(emptyString, EXCEPTION_MESSAGE));
 
 		assertThat(illegalArgumentException.getMessage()).isEqualTo(EXCEPTION_MESSAGE);
 	}
@@ -72,6 +76,7 @@ class ResourceUtilsTest {
 		final var exception = assertThrows(UncheckedIOException.class, () -> ResourceUtils.asString(resource));
 
 		assertThat(exception).isNotNull().isInstanceOf(UncheckedIOException.class);
-		assertThat(exception.getMessage()).isEqualTo("java.io.FileNotFoundException: class path resource [non-existing] cannot be opened because it does not exist");
+		assertThat(exception.getMessage()).isEqualTo(
+			"java.io.FileNotFoundException: class path resource [non-existing] cannot be opened because it does not exist");
 	}
 }

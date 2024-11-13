@@ -31,7 +31,8 @@ class DefaultCircuitBreakerPropertiesConfigurationTest {
 		when(circuitBreakerPropertiesMock.getInstances()).thenReturn(Map.of("instance-1", instancePropertiesMock));
 
 		// Call
-		defaultCircuitBreakerPropertiesConfiguration.postProcessAfterInitialization(circuitBreakerPropertiesMock, "test");
+		defaultCircuitBreakerPropertiesConfiguration.postProcessAfterInitialization(circuitBreakerPropertiesMock,
+			"test");
 
 		// Verification.
 		verify(circuitBreakerPropertiesMock).getInstances();

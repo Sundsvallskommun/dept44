@@ -45,7 +45,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 *
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
 	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the
+	 * decode-method.
 	 *
 	 * If the {@link RetryResponseVerifier} returns true a {@link RetryableException} will be thrown.
 	 *
@@ -53,7 +54,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 * @param bypassResponseCodes   list of response codes to bypass
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	protected AbstractErrorDecoder(@Nonnull final String integrationName, @Nonnull final List<Integer> bypassResponseCodes, final RetryResponseVerifier retryResponseVerifier) {
+	protected AbstractErrorDecoder(@Nonnull final String integrationName,
+		@Nonnull final List<Integer> bypassResponseCodes, final RetryResponseVerifier retryResponseVerifier) {
 		this.integrationName = requireNonNull(integrationName);
 		this.bypassResponseCodes = requireNonNull(bypassResponseCodes);
 		this.retryResponseVerifier = retryResponseVerifier;
@@ -69,7 +71,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	 * @param integrationName       name of integration to whom the error decoder is connected
 	 * @param retryResponseVerifier if verifier returns true a {@link RetryableException} will be returned
 	 */
-	protected AbstractErrorDecoder(@Nonnull final String integrationName, final RetryResponseVerifier retryResponseVerifier) {
+	protected AbstractErrorDecoder(@Nonnull final String integrationName,
+		final RetryResponseVerifier retryResponseVerifier) {
 		this.integrationName = integrationName;
 		this.retryResponseVerifier = retryResponseVerifier;
 	}
@@ -161,14 +164,16 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 			return create(integrationName, httpStatus, Map.of(KEY_TITLE, Status.valueOf(httpStatus).getReasonPhrase()));
 		}
 
-		static ErrorMessage create(final String integrationName, final int httpStatus, final String title, final String detail) {
+		static ErrorMessage create(final String integrationName, final int httpStatus, final String title,
+			final String detail) {
 			final SortedMap<String, Object> map = new TreeMap<>();
 			ofNullable(title).ifPresent(value -> map.put(KEY_TITLE, value));
 			ofNullable(detail).ifPresent(value -> map.put(KEY_DETAIL, value));
 			return create(integrationName, httpStatus, map);
 		}
 
-		private static ErrorMessage create(final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
+		private static ErrorMessage create(final String integrationName, final int httpStatus,
+			final Map<String, Object> errorInfo) {
 			final SortedMap<String, Object> map = new TreeMap<>();
 			map.put(KEY_STATUS, Status.valueOf(httpStatus));
 

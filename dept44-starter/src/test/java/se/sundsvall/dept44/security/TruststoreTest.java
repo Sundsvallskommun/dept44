@@ -35,8 +35,10 @@ class TruststoreTest {
 
 	@Test
 	void createWhenNoCertificatesFoundInPaths() {
-		try (MockedConstruction<PathMatchingResourcePatternResolver> pathMatchingResourcePatternResolverConstructionMock = Mockito.mockConstruction(PathMatchingResourcePatternResolver.class,
-			(mock, context) -> when(mock.getResources(anyString())).thenThrow(new IOException()))) {
+		try (
+			MockedConstruction<PathMatchingResourcePatternResolver> pathMatchingResourcePatternResolverConstructionMock = Mockito
+				.mockConstruction(PathMatchingResourcePatternResolver.class,
+					(mock, context) -> when(mock.getResources(anyString())).thenThrow(new IOException()))) {
 			final var truststore = new Truststore("dummy");
 
 			assertThat(truststore).isNotNull();

@@ -67,13 +67,15 @@ public class PetImage {
 	public boolean equals(Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final PetImage other)) { return false; }
-		return Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType);
+		return Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType,
+			other.mimeType);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetImage [id=").append(id).append(", fileName=").append(fileName).append(", mimeType=").append(mimeType).append("]");
+		builder.append("PetImage [id=").append(id).append(", fileName=").append(fileName).append(", mimeType=").append(
+			mimeType).append("]");
 		return builder.toString();
 	}
 }

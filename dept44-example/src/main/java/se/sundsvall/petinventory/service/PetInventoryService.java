@@ -27,7 +27,8 @@ public class PetInventoryService {
 	private final PetNameRepository petNameRepository;
 	private final PetImageRepository petImageRepository;
 
-	public PetInventoryService(PetStoreClient petStoreClient, PetNameRepository petNameRepository, PetImageRepository petImageRepository) {
+	public PetInventoryService(PetStoreClient petStoreClient, PetNameRepository petNameRepository,
+		PetImageRepository petImageRepository) {
 		this.petStoreClient = petStoreClient;
 		this.petNameRepository = petNameRepository;
 		this.petImageRepository = petImageRepository;
@@ -79,7 +80,8 @@ public class PetInventoryService {
 	}
 
 	private PetInventoryItem populateWithName(final PetInventoryItem petInventoryItem) {
-		petNameRepository.findById(petInventoryItem.getId()).ifPresent(petNameEntity -> petInventoryItem.setName(petNameEntity.getName()));
+		petNameRepository.findById(petInventoryItem.getId()).ifPresent(petNameEntity -> petInventoryItem.setName(
+			petNameEntity.getName()));
 		return petInventoryItem;
 	}
 

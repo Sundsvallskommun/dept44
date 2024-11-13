@@ -66,7 +66,8 @@ public class ResourceLoaderExtension implements ParameterResolver {
 					case STRING -> Optional.of(parameterClass)
 						.filter(String.class::isAssignableFrom)
 						.map(ignored -> fromClasspath(path))
-						.orElseThrow(() -> new IllegalStateException("Unable to load resource into parameter of type " + parameterClass.getName()));
+						.orElseThrow(() -> new IllegalStateException("Unable to load resource into parameter of type "
+							+ parameterClass.getName()));
 				};
 			})
 			.orElseThrow(() -> new IllegalStateException("No @Load annotation on parameter " + parameter.getName()));

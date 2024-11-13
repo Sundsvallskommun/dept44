@@ -237,7 +237,8 @@ public class WebClientBuilder {
 		return builder;
 	}
 
-	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(final ClientRegistration clientRegistration) {
+	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(
+		final ClientRegistration clientRegistration) {
 		final var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
 		final var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
 		final var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(

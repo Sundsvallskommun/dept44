@@ -70,12 +70,18 @@ class WebClientBuilderTest {
 	void testValueRestrictions() {
 		final var builder = createBuilder(false);
 
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(null))).hasMessage("baseUrl cannot be null or blank");
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(""))).hasMessage("baseUrl cannot be null or blank");
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(" "))).hasMessage("baseUrl cannot be null or blank");
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withConnectTimeout(null))).hasMessage("connectTimeout may not be null.");
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withReadTimeout(null))).hasMessage("readTimeout may not be null.");
-		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withWriteTimeout(null))).hasMessage("writeTimeout may not be null.");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(null))).hasMessage(
+			"baseUrl cannot be null or blank");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(""))).hasMessage(
+			"baseUrl cannot be null or blank");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withBaseUrl(" "))).hasMessage(
+			"baseUrl cannot be null or blank");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withConnectTimeout(null))).hasMessage(
+			"connectTimeout may not be null.");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withReadTimeout(null))).hasMessage(
+			"readTimeout may not be null.");
+		assertThat(assertThrows(IllegalArgumentException.class, () -> builder.withWriteTimeout(null))).hasMessage(
+			"writeTimeout may not be null.");
 	}
 
 	@Test
@@ -95,7 +101,8 @@ class WebClientBuilderTest {
 		final var webClient = createBuilder(true, true, false).build();
 
 		assertTimeoutSetting(webClient, 54000);
-		assertThat(webClient).extracting("defaultHeaders").asString().isEqualTo("[Authorization:\"Basic dXNlck5hbWU6cGFzc3dvcmQ=\"]");
+		assertThat(webClient).extracting("defaultHeaders").asString().isEqualTo(
+			"[Authorization:\"Basic dXNlck5hbWU6cGFzc3dvcmQ=\"]");
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
 		assertThat(webClient).extracting("builder").extracting("filters").asList()
 			.hasSize(1)
@@ -133,7 +140,8 @@ class WebClientBuilderTest {
 		assertThat(webClient).extracting("defaultStatusHandlers").asList().isEmpty();
 
 		webClient = createBuilder(false)
-			.withStatusHandler(HttpStatusCode::isError, clientResponse -> Mono.just(Problem.valueOf(Status.INTERNAL_SERVER_ERROR)))
+			.withStatusHandler(HttpStatusCode::isError, clientResponse -> Mono.just(Problem.valueOf(
+				Status.INTERNAL_SERVER_ERROR)))
 			.build();
 
 		assertThat(webClient).extracting("defaultStatusHandlers").asList().hasSize(1);
@@ -151,7 +159,8 @@ class WebClientBuilderTest {
 			var mockStaticHttpServiceProxyFactory = mockStatic(HttpServiceProxyFactory.class)) {
 			mockStaticWebClientAdapter.when(() -> WebClientAdapter.create(any(WebClient.class)))
 				.thenReturn(mockWebClientAdapter);
-			mockStaticHttpServiceProxyFactory.when(() -> HttpServiceProxyFactory.builderFor(any(HttpExchangeAdapter.class)))
+			mockStaticHttpServiceProxyFactory.when(() -> HttpServiceProxyFactory.builderFor(any(
+				HttpExchangeAdapter.class)))
 				.thenReturn(mockHttpServiceProxyFactoryBuilder);
 
 			when(mockHttpServiceProxyFactoryBuilder.build()).thenReturn(mockHttpServiceProxyFactory);
@@ -165,7 +174,8 @@ class WebClientBuilderTest {
 	private void assertTimeoutSetting(WebClient webClient, int timeoutMillis) {
 		assertThat(webClient)
 			.extracting("builder").extracting("connector").extracting("httpClient").extracting("config")
-			.extracting("options").asInstanceOf(InstanceOfAssertFactories.MAP).containsEntry(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis);
+			.extracting("options").asInstanceOf(InstanceOfAssertFactories.MAP).containsEntry(
+				ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis);
 	}
 
 	private WebClientBuilder createBuilder(boolean populateValues) {

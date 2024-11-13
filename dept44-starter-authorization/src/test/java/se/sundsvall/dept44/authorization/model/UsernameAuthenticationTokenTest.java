@@ -76,7 +76,8 @@ class UsernameAuthenticationTokenTest {
 		UsernameAuthenticationToken bean = unauthenticated(null, null);
 
 		final var exception = assertThrows(IllegalArgumentException.class, () -> bean.setAuthenticated(true));
-		assertThat(exception.getMessage()).isEqualTo("Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
+		assertThat(exception.getMessage()).isEqualTo(
+			"Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
 	}
 
 	@Test

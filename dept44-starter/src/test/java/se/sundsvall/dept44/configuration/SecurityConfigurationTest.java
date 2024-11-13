@@ -77,7 +77,8 @@ class SecurityConfigurationTest {
 		when(requestMatcherRegistryMock.anyRequest()).thenReturn(authorizedUrlMock);
 
 		doAnswer(invocation -> {
-			final Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation.getArgument(0);
+			final Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation
+				.getArgument(0);
 			customizer.customize(requestMatcherRegistryMock);
 			return httpSecurityMock;
 		}).when(httpSecurityMock).authorizeHttpRequests(any());

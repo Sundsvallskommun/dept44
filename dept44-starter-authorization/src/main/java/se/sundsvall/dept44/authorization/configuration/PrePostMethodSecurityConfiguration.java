@@ -23,12 +23,14 @@ public class PrePostMethodSecurityConfiguration {
 		ApplicationContext applicationContext,
 		ObjectMapper objectMapper) {
 
-		return new JwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, objectMapper);
+		return new JwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource,
+			applicationContext, objectMapper);
 	}
 
 	@Bean
 	JwtTokenUtil jwtTokenUtil(JwtAuthorizationProperties properties) {
-		hasText(properties.getSecret(), "Required property 'jwt.authorization.secret' must be present in service properties");
+		hasText(properties.getSecret(),
+			"Required property 'jwt.authorization.secret' must be present in service properties");
 		return new JwtTokenUtil(properties.getSecret());
 	}
 

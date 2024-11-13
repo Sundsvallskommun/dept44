@@ -88,7 +88,8 @@ class FeignMultiCustomizerTest {
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
 			.extracting("clientRegistration").extracting("scopes")
 			.asInstanceOf(collection(String.class)).hasSize(1)
-			.first().matches(scope -> scope.matches("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"));
+			.first().matches(scope -> scope.matches(
+				"device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"));
 	}
 
 	@Test
@@ -96,7 +97,8 @@ class FeignMultiCustomizerTest {
 		final var clientRegistration = createClientRegistration();
 
 		final var customizer = FeignMultiCustomizer.create()
-			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of()).composeCustomizersToOne();
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of())
+			.composeCustomizersToOne();
 
 		customizer.customize(builderMock);
 

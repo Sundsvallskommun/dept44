@@ -23,7 +23,8 @@ class ResourceLoaderExtensionTest {
 		assertThat(testObject).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(testObject.getKey()).isEqualTo("this-is-a-key");
 		assertThat(testObject.getValue()).isEqualTo("this-is-a-value");
-		assertThat(testObject.getOffsetDateTime()).isAtSameInstantAs(OffsetDateTime.parse("2022-01-01T00:00:00+02:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+		assertThat(testObject.getOffsetDateTime()).isAtSameInstantAs(OffsetDateTime.parse("2022-01-01T00:00:00+02:00",
+			DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 	}
 
 	@Test
@@ -31,7 +32,8 @@ class ResourceLoaderExtensionTest {
 		assertThat(testObject).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(testObject.getKey()).isEqualTo("this-is-a-key");
 		assertThat(testObject.getValue()).isEqualTo("this-is-a-value");
-		assertThat(testObject.getOffsetDateTime()).isAtSameInstantAs(OffsetDateTime.parse("2022-01-01T00:00:00+02:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+		assertThat(testObject.getOffsetDateTime()).isAtSameInstantAs(OffsetDateTime.parse("2022-01-01T00:00:00+02:00",
+			DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 	}
 
 	@Test
@@ -47,7 +49,8 @@ class ResourceLoaderExtensionTest {
 
 	/**
 	 * @see CustomTestExecutionExceptionHandler for the tests below. This class is necessary in these tests due to the
-	 *      testing of functionality that happens before the actual test implementation. We must "swallow" the exceptions
+	 *      testing of functionality that happens before the actual test implementation. We must "swallow" the
+	 *      exceptions
 	 *      generated during the
 	 *      annotation-processing on the method parameters.
 	 */
@@ -56,12 +59,14 @@ class ResourceLoaderExtensionTest {
 	class AnnotationExceptionTest {
 
 		@Test
-		void deserializeJsonWhenFileDoesntMatchObject(@Load(value = TEST_XML_FILE, as = Load.ResourceType.JSON) final TestObject testObject) {
+		void deserializeJsonWhenFileDoesntMatchObject(@Load(value = TEST_XML_FILE,
+			as = Load.ResourceType.JSON) final TestObject testObject) {
 			fail("Should have failed when the method parameters was resolved!");
 		}
 
 		@Test
-		void deserializeXmlWhenFileDoesntMatchObject(@Load(value = TEST_JSON_FILE, as = Load.ResourceType.XML) final TestObject testObject) {
+		void deserializeXmlWhenFileDoesntMatchObject(@Load(value = TEST_JSON_FILE,
+			as = Load.ResourceType.XML) final TestObject testObject) {
 			fail("Should have failed when the method parameters was resolved!");
 		}
 

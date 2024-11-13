@@ -56,7 +56,8 @@ class JwtTokenUtilTest {
 
 	@Test
 	void constructorWithNull() {
-		final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new JwtTokenUtil(null));
+		final IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> new JwtTokenUtil(
+			null));
 
 		assertThat(exception.getMessage()).isEqualTo("String containing secret must be present");
 	}
@@ -99,7 +100,8 @@ class JwtTokenUtilTest {
 	@Test
 	void processExpiredJwt(@Load("expired_jwt.txt") String jwt) {
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
-		final ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> util.getUsernameFromToken(jwt));
+		final ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> util.getUsernameFromToken(
+			jwt));
 
 		assertThat(exception.getMessage()).matches(expiredMessageRegexMatch);
 	}
@@ -107,17 +109,21 @@ class JwtTokenUtilTest {
 	@Test
 	void processInvalidSignatureJwt(@Load("invalid_signature_jwt.txt") String jwt) {
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
-		final SignatureException exception = assertThrows(SignatureException.class, () -> util.getUsernameFromToken(jwt));
+		final SignatureException exception = assertThrows(SignatureException.class, () -> util.getUsernameFromToken(
+			jwt));
 
-		assertThat(exception.getMessage()).isEqualTo("JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
+		assertThat(exception.getMessage()).isEqualTo(
+			"JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
 	}
 
 	@Test
 	void processMalformedJwt(@Load("malformed_jwt.txt") String jwt) {
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
-		final MalformedJwtException exception = assertThrows(MalformedJwtException.class, () -> util.getUsernameFromToken(jwt));
+		final MalformedJwtException exception = assertThrows(MalformedJwtException.class, () -> util
+			.getUsernameFromToken(jwt));
 
-		assertThat(exception.getMessage()).isEqualTo("Compact JWT strings MUST always have a Base64Url protected header per https://tools.ietf.org/html/rfc7519#section-7.2 (steps 2-4).");
+		assertThat(exception.getMessage()).isEqualTo(
+			"Compact JWT strings MUST always have a Base64Url protected header per https://tools.ietf.org/html/rfc7519#section-7.2 (steps 2-4).");
 	}
 
 	@Test

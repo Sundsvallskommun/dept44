@@ -24,7 +24,8 @@ import se.sundsvall.dept44.common.validators.annotation.OneOf;
 public class MemberOfConstraintValidator extends AbstractValidator implements ConstraintValidator<MemberOf, String> {
 
 	private static final Supplier<Set<String>> CASE_SENSITIVE = HashSet::new;
-	private static final Supplier<Set<String>> CASE_INSENSITIVE = () -> new TreeSet<>(nullsLast(String.CASE_INSENSITIVE_ORDER));
+	private static final Supplier<Set<String>> CASE_INSENSITIVE = () -> new TreeSet<>(nullsLast(
+		String.CASE_INSENSITIVE_ORDER));
 
 	private boolean nullable;
 	private boolean caseSensitive;

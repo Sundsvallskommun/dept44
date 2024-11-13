@@ -53,7 +53,8 @@ public final class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper,
+		final Map<String, String> jsonPathFilters) {
 
 		final var jsonPathConfiguration = Configuration.builder()
 			.jsonProvider(new JacksonJsonProvider(objectMapper))
@@ -137,7 +138,8 @@ public final class BodyFilterProvider {
 	}
 
 	static BodyFilter xPath(final String xPath, final String replacement, final Transformer transformer) {
-		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
+		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(),
+			TEXT_XML.getMimeType());
 
 		return (contentTypeString, body) -> {
 			if (anyNull(contentTypeString, body)) {
@@ -174,14 +176,16 @@ public final class BodyFilterProvider {
 				return body;
 
 			} catch (final Exception e) {
-				LOGGER.warn("An exception occured while filtering content from incoming xml request body ({}).", e.getMessage());
+				LOGGER.warn("An exception occured while filtering content from incoming xml request body ({}).", e
+					.getMessage());
 				return body;
 			}
 		};
 	}
 
 	private static Charset evaluateCharset(final ContentType contentType) {
-		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is returned
+		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is
+		// returned
 		return isNull(contentType.getCharset()) ? StandardCharsets.UTF_8 : contentType.getCharset();
 	}
 }

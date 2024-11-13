@@ -118,13 +118,15 @@ public class PetNameEntity {
 	public boolean equals(Object obj) {
 		if (this == obj) { return true; }
 		if (!(obj instanceof final PetNameEntity other)) { return false; }
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images,
+			other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append(", images=").append(images).append("]");
+		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(
+			created).append(", modified=").append(modified).append(", images=").append(images).append("]");
 		return builder.toString();
 	}
 }

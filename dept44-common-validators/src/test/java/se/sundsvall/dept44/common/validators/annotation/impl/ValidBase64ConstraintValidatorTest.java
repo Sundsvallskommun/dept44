@@ -56,8 +56,10 @@ class ValidBase64ConstraintValidatorTest {
 
 		assertThat(validator.isValid(null)).isTrue(); // null is treated as valid.
 		assertThat(validator.isValid(null, null)).isTrue(); // null is treated as valid.
-		assertThat(validator.isValid("not-base64-encoded")).isFalse(); // non-null and invalid values are still treated as invalid.
-		assertThat(validator.isValid("not-base64-encoded", null)).isFalse(); // non-null and invalid values are still treated as invalid.
+		assertThat(validator.isValid("not-base64-encoded")).isFalse(); // non-null and invalid values are still treated
+																		 // as invalid.
+		assertThat(validator.isValid("not-base64-encoded", null)).isFalse(); // non-null and invalid values are still
+																			 // treated as invalid.
 
 		verify(mockAnnotation).nullable();
 	}

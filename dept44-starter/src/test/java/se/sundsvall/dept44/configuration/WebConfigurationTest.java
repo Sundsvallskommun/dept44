@@ -99,7 +99,8 @@ class WebConfigurationTest {
 			assertThat(contentNegotiationConfigurer).extracting("mediaTypes")
 				.asInstanceOf(InstanceOfAssertFactories.map(String.class, MediaType.class))
 				.hasSize(8);
-			assertThat(contentNegotiationConfigurer).extracting("factory").extracting("favorParameter").isEqualTo(false);
+			assertThat(contentNegotiationConfigurer).extracting("factory").extracting("favorParameter").isEqualTo(
+				false);
 		}
 
 		@Test
@@ -116,7 +117,8 @@ class WebConfigurationTest {
 			webConfiguration.addInterceptors(interceptorRegistry);
 
 			assertThat(interceptorRegistry).isNotNull();
-			assertThat(interceptorRegistry).extracting("registrations").asInstanceOf(InstanceOfAssertFactories.list(InterceptorRegistration.class)).hasSize(1);
+			assertThat(interceptorRegistry).extracting("registrations").asInstanceOf(InstanceOfAssertFactories.list(
+				InterceptorRegistration.class)).hasSize(1);
 		}
 	}
 
@@ -285,7 +287,8 @@ class WebConfigurationTest {
 
 			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 
-			disableBrowserCacheFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
+			disableBrowserCacheFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock,
+				filterChainMock);
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletResponseMock).addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
@@ -371,25 +374,30 @@ class WebConfigurationTest {
 		@MethodSource("argumentsProvider")
 		void preHandleWithAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId),
+				municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock,
+				object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
+			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock,
+				httpServletResponseMock, object));
 		}
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
 		void preHandleWithNotAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"),
+				municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object))
+			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock,
+				httpServletResponseMock, object))
 				.isInstanceOf(ThrowableProblem.class)
 				.hasMessage("Not implemented for municipalityId: " + municipalityId);
 		}
@@ -398,14 +406,17 @@ class WebConfigurationTest {
 		@MethodSource("argumentsProvider")
 		void preHandleWithNoConfiguredMunicipalityIds(String path, String municipalityId, int municipalityIdUriIndex) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(),
+				municipalityIdUriIndex);
 
 			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock,
+				object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
+			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock,
+				httpServletResponseMock, object));
 		}
 	}
 }

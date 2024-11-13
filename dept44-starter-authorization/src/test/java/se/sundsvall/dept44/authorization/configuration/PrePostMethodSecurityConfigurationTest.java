@@ -28,7 +28,8 @@ class PrePostMethodSecurityConfigurationTest {
 
 	@Test
 	void verifyEnableGlobalMethodSecurityAnnotation() {
-		final EnableMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class, EnableMethodSecurity.class);
+		final EnableMethodSecurity annotation = getAnnotation(PrePostMethodSecurityConfiguration.class,
+			EnableMethodSecurity.class);
 
 		assertThat(annotation).isNotNull();
 		assertThat(annotation.prePostEnabled()).isTrue();
@@ -57,9 +58,12 @@ class PrePostMethodSecurityConfigurationTest {
 
 		final PrePostMethodSecurityConfiguration configuration = new PrePostMethodSecurityConfiguration();
 
-		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, objectMapper))
+		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil,
+			webAuthenticationDetailsSource, applicationContext, objectMapper))
 			.isNotNull().isInstanceOf(JwtAuthorizationExtractionFilter.class);
-		assertThat(configuration.webAuthenticationDetailsSource()).isNotNull().isInstanceOf(WebAuthenticationDetailsSource.class);
-		assertThat(configuration.jwtTokenUtil(jwtAuthorizationProperties)).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());
+		assertThat(configuration.webAuthenticationDetailsSource()).isNotNull().isInstanceOf(
+			WebAuthenticationDetailsSource.class);
+		assertThat(configuration.jwtTokenUtil(jwtAuthorizationProperties)).isNotNull().hasFieldOrPropertyWithValue(
+			"secret", secret.getBytes());
 	}
 }

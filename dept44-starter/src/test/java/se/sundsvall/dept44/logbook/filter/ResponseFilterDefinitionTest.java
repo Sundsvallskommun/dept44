@@ -21,7 +21,6 @@ import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAt
 
 import java.io.IOException;
 import java.util.Arrays;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

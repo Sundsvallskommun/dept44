@@ -3,12 +3,10 @@ package se.sundsvall.petinventory.service.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import generated.swagger.io.petstore.Pet;
 import generated.swagger.io.petstore.TypeEnum;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 import se.sundsvall.petinventory.api.model.PetImage;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 

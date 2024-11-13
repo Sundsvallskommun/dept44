@@ -11,12 +11,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.configuration.feign.decoder.WSO2RetryResponseVerifierTest.WSO2_TOKEN_EXPIRE_HEADER_ERROR;
 
+import feign.Request;
+import feign.RequestTemplate;
+import feign.Response;
+import feign.RetryableException;
+import feign.codec.ErrorDecoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,12 +29,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import feign.Request;
-import feign.RequestTemplate;
-import feign.Response;
-import feign.RetryableException;
-import feign.codec.ErrorDecoder;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.test.annotation.resource.Load;

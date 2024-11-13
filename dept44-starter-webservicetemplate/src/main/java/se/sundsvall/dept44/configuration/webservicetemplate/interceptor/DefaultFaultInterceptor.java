@@ -3,7 +3,6 @@ package se.sundsvall.dept44.configuration.webservicetemplate.interceptor;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 
 import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ws.client.WebServiceClientException;

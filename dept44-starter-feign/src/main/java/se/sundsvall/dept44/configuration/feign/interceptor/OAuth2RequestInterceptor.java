@@ -5,9 +5,10 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
 import java.util.HashSet;
 import java.util.Set;
-
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -20,9 +21,6 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.util.Assert;
-
-import feign.RequestInterceptor;
-import feign.RequestTemplate;
 
 public class OAuth2RequestInterceptor implements RequestInterceptor {
 

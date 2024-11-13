@@ -6,12 +6,10 @@ import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetI
 
 import java.util.List;
 import java.util.Objects;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.PetImageRepository;
 import se.sundsvall.petinventory.integration.db.PetNameRepository;

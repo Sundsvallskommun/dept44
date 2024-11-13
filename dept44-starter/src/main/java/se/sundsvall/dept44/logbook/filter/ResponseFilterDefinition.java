@@ -7,7 +7,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.zalando.logbook.core.ResponseFilters.replaceBody;
 
 import java.util.List;
-
 import org.springframework.http.MediaType;
 import org.zalando.logbook.ResponseFilter;
 

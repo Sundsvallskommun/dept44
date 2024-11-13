@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.math.NumberUtils.INTEGER_ZERO;
 
 import java.util.UUID;
-
 import org.slf4j.MDC;
 
 public final class RequestId {

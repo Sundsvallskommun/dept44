@@ -6,9 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-
 import javax.net.ssl.SSLContext;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;

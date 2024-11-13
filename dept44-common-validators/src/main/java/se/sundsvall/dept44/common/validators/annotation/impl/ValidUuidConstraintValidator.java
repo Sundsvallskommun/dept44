@@ -4,12 +4,10 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.lang.reflect.Method;
+import java.util.UUID;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 /**

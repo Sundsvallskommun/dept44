@@ -5,12 +5,10 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-import java.util.Base64;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
+import java.lang.reflect.Method;
+import java.util.Base64;
 import se.sundsvall.dept44.common.validators.annotation.ValidBase64;
 
 /**

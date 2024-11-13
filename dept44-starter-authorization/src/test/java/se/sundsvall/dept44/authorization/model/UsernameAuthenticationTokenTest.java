@@ -6,7 +6,6 @@ import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToke
 import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken.unauthenticated;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 

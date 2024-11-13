@@ -10,7 +10,8 @@ public final class EncodingUtils {
 	/**
 	 * Removes double encoded content.
 	 *
-	 * If a String contains characters like: "ÃÃÃÃ¥Ã¤Ã¶", it might be double encoded.
+	 * If a String contains characters like: "Ã
+	 * ÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * By running it through this method, it will become correctly UTF-8 encoded again.
 	 *
 	 * @param  string String to fix
@@ -27,7 +28,8 @@ public final class EncodingUtils {
 	/**
 	 * Check if a string contains double encoded UTF-8 content.
 	 *
-	 * If a String contains characters like: "ÃÃÃÃ¥Ã¤Ã¶", it might be double encoded.
+	 * If a String contains characters like: "Ã
+	 * ÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * This method will detect that.
 	 *
 	 * @param  string content to check

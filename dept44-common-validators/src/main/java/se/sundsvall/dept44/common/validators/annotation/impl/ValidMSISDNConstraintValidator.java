@@ -5,10 +5,9 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
-import java.lang.reflect.Method;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.lang.reflect.Method;
 import se.sundsvall.dept44.common.validators.annotation.ValidMSISDN;
 
 /**

@@ -8,23 +8,21 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 
+import feign.Response;
+import feign.RetryableException;
+import feign.codec.ErrorDecoder;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus.Series;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-
-import feign.Response;
-import feign.RetryableException;
-import feign.codec.ErrorDecoder;
-import jakarta.annotation.Nonnull;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 

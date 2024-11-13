@@ -1,12 +1,10 @@
 package se.sundsvall.dept44.configuration;
 
+import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 import java.util.Objects;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Configuration;
-
-import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 
 /**
  * The purpose with this class is to set circuitbreaker baseConfig to "default"

@@ -4,7 +4,6 @@ import static org.springframework.util.Assert.isTrue;
 
 import java.util.Collection;
 import java.util.Objects;
-
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 

@@ -3,15 +3,12 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
-import java.io.IOException;
-import java.util.List;
-
-import jakarta.annotation.Nonnull;
-
 import com.jayway.jsonpath.JsonPath;
-
 import feign.Response;
 import feign.RetryableException;
+import jakarta.annotation.Nonnull;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * A flexible ErrorDecoder that allows you to massage an error response into a application-specific one using JsonPath.

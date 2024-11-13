@@ -3,12 +3,10 @@ package se.sundsvall.petinventory.service.mapper;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 
+import generated.swagger.io.petstore.Pet;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.commons.lang3.ObjectUtils;
-
-import generated.swagger.io.petstore.Pet;
 import se.sundsvall.petinventory.api.model.PetImage;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;

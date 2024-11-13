@@ -1,17 +1,16 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import feign.Request;
-import feign.RequestTemplate;
-import feign.Response;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-import java.util.Set;
-
 import static feign.Request.HttpMethod.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import feign.Request;
+import feign.RequestTemplate;
+import feign.Response;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
 
 class WSO2RetryResponseVerifierTest {
 

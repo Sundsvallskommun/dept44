@@ -1,13 +1,11 @@
 package se.sundsvall.dept44.configuration.feign;
 
-import javax.net.ssl.X509TrustManager;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.context.annotation.Bean;
-
 import feign.Client;
 import feign.Logger;
 import feign.okhttp.OkHttpClient;
+import javax.net.ssl.X509TrustManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.annotation.Bean;
 import se.sundsvall.dept44.security.Truststore;
 
 public class FeignConfiguration {

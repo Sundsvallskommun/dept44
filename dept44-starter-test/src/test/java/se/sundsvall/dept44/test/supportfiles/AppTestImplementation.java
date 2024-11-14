@@ -1,7 +1,6 @@
 package se.sundsvall.dept44.test.supportfiles;
 
 import org.springframework.test.context.ActiveProfiles;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 

@@ -14,7 +14,6 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,7 +25,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
-
 import se.sundsvall.petinventory.Application;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;

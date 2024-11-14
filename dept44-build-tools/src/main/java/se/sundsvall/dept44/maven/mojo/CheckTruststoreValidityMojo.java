@@ -10,7 +10,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
-
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;

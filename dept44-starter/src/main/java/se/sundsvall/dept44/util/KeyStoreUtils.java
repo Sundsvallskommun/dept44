@@ -2,7 +2,6 @@ package se.sundsvall.dept44.util;
 
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
-
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;

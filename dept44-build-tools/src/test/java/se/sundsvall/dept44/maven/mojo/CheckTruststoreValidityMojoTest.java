@@ -15,7 +15,6 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.bouncycastle.asn1.ASN1InputStream;

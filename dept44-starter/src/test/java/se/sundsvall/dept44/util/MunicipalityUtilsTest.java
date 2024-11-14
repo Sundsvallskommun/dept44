@@ -7,14 +7,11 @@ import static org.apache.commons.lang3.math.NumberUtils.isDigits;
 import static org.assertj.core.api.Assertions.assertThat;
 import static se.sundsvall.dept44.test.annotation.resource.Load.ResourceType.STRING;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 import se.sundsvall.dept44.util.MunicipalityUtils.Municipality;

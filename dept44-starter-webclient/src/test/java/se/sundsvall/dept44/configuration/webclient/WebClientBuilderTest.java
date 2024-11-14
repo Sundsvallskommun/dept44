@@ -8,9 +8,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import io.netty.channel.ChannelOption;
 import java.time.Duration;
 import java.util.Set;
-
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +28,6 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import org.zalando.problem.Problem;
 import org.zalando.problem.Status;
-
-import io.netty.channel.ChannelOption;
 import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)

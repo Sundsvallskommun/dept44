@@ -3,8 +3,8 @@ package se.sundsvall.dept44.authorization.configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -15,9 +15,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.ReflectionUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 

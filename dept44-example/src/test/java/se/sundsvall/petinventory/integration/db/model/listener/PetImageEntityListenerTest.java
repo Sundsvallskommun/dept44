@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import org.junit.jupiter.api.Test;
-
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 
 class PetImageEntityListenerTest {

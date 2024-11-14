@@ -10,7 +10,6 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

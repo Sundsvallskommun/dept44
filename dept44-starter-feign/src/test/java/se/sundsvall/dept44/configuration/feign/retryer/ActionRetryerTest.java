@@ -6,11 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
 import feign.Request;
 import feign.RetryableException;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class ActionRetryerTest {
 

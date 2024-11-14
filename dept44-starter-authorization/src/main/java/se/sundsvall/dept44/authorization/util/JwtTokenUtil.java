@@ -3,6 +3,9 @@ package se.sundsvall.dept44.authorization.util;
 import static java.util.Collections.emptyMap;
 import static org.springframework.util.Assert.hasText;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -11,12 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.springframework.stereotype.Component;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 
 @Component

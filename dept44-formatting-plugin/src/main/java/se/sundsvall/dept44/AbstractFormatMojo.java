@@ -1,5 +1,12 @@
 package se.sundsvall.dept44;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.Optional;
+import javax.inject.Inject;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -10,14 +17,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
-import java.util.Optional;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AbstractFormatMojo extends AbstractMojo {
 

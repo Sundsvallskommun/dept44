@@ -1,16 +1,14 @@
 package se.sundsvall.dept44.authorization;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
-
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.configuration.PrePostMethodSecurityConfiguration;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration;

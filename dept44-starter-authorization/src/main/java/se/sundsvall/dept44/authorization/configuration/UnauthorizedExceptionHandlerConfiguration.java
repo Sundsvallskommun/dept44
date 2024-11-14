@@ -1,15 +1,14 @@
 package se.sundsvall.dept44.authorization.configuration;
 
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.zalando.problem.Status.UNAUTHORIZED;
 
 import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;

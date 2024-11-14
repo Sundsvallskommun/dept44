@@ -59,14 +59,20 @@
 				<artifactId>spotless-maven-plugin</artifactId>
 				<configuration>
 					<java>
+						<toggleOffOn />
 						<excludes>
 							<exclude>**/target/**</exclude>
 						</excludes>
 						<eclipse>
 							<file>src/main/resources/sundsvall_formatting.xml</file>
 						</eclipse>
+						<importOrder />
+						<removeUnusedImports>
+							<engine>cleanthat-javaparser-unnecessaryimport</engine>
+						</removeUnusedImports>
 					</java>
 					<json>
+						<toggleOffOn />
 						<excludes>
 							<exclude>**/target/**</exclude>
 						</excludes>
@@ -80,6 +86,7 @@
 						</indent>
 					</json>
 					<sql>
+						<toggleOffOn />
 						<excludes>
 							<exclude>**/target/**</exclude>
 						</excludes>
@@ -93,6 +100,7 @@
 						<dbeaver />
 					</sql>
 					<markdown>
+						<toggleOffOn />
 						<excludes>
 							<exclude>**/target/**</exclude>
 						</excludes>
@@ -102,6 +110,7 @@
 						<flexmark />
 					</markdown>
 					<pom>
+						<toggleOffOn />
 						<includes>
 							<include>pom.xml</include>
 						</includes>

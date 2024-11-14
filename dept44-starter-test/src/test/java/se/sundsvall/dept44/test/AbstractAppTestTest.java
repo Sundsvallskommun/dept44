@@ -21,10 +21,18 @@ import static org.springframework.http.MediaType.IMAGE_JPEG;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
+import com.github.tomakehurst.wiremock.common.FileSource;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
+import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
-
+import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -37,17 +45,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ResourceUtils;
-
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
-import com.github.tomakehurst.wiremock.common.FileSource;
-import com.github.tomakehurst.wiremock.core.Options;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
-import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-
-import net.javacrumbs.jsonunit.core.Option;
 import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
 import se.sundsvall.dept44.test.supportfiles.TestBody;
 

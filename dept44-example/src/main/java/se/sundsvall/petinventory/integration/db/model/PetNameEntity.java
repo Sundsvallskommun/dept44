@@ -1,9 +1,5 @@
 package se.sundsvall.petinventory.integration.db.model;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -14,6 +10,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Objects;
 import se.sundsvall.petinventory.integration.db.model.listener.PetNameEntityListener;
 
 @Entity

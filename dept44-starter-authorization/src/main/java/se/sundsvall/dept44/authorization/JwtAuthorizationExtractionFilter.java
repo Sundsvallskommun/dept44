@@ -6,10 +6,19 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.zalando.problem.Status.UNAUTHORIZED;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.security.WeakKeyException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map.Entry;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -20,18 +29,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ThrowableProblem;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import io.jsonwebtoken.security.WeakKeyException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;

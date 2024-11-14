@@ -9,15 +9,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.CompressionException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.security.WeakKeyException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,15 +41,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.zalando.problem.Status;
 import org.zalando.problem.ThrowableProblem;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.jsonwebtoken.CompressionException;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import io.jsonwebtoken.security.WeakKeyException;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;

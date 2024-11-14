@@ -5,7 +5,6 @@ import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.zalando.problem.Status;
-
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AccessDeniedExceptionHandler;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AuthenticationCredentialsNotFoundExceptionHandler;
 

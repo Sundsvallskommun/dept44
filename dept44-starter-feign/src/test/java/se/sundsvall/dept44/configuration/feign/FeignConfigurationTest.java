@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import feign.okhttp.OkHttpClient;
 import java.lang.reflect.Method;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -16,8 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.zalando.logbook.Logbook;
-
-import feign.okhttp.OkHttpClient;
 import se.sundsvall.dept44.security.Truststore;
 
 @SpringBootTest(classes = {

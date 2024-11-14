@@ -5,7 +5,6 @@ import static org.zalando.problem.Status.BAD_GATEWAY;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.Status;

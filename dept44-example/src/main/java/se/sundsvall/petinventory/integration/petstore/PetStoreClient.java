@@ -1,16 +1,15 @@
 package se.sundsvall.petinventory.integration.petstore;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.petinventory.integration.petstore.configuration.PetStoreConfiguration.CLIENT_ID;
+
 import generated.swagger.io.petstore.Pet;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import se.sundsvall.petinventory.integration.petstore.configuration.PetStoreConfiguration;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static se.sundsvall.petinventory.integration.petstore.configuration.PetStoreConfiguration.CLIENT_ID;
 
 @FeignClient(name = CLIENT_ID, url = "${integration.petstore.url}", configuration = PetStoreConfiguration.class)
 public interface PetStoreClient {

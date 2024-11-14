@@ -1,17 +1,16 @@
 package se.sundsvall.dept44.test.extension;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.supportfiles.CustomTestExecutionExceptionHandler;
 import se.sundsvall.dept44.test.extension.supportfiles.TestObject;
-
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(ResourceLoaderExtension.class)
 class ResourceLoaderExtensionTest {

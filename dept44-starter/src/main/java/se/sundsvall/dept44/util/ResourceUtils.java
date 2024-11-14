@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
-
 import org.springframework.core.io.Resource;
 
 public final class ResourceUtils {

@@ -2,19 +2,17 @@ package se.sundsvall.dept44.configuration.feign;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-
 import feign.Request;
 import feign.RequestInterceptor;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
 import se.sundsvall.dept44.requestid.RequestId;

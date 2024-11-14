@@ -1,7 +1,6 @@
 package se.sundsvall.dept44.test.extension.supportfiles;
 
 import java.util.List;
-
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 

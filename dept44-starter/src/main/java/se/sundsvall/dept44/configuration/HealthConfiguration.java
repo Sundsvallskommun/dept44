@@ -6,7 +6,6 @@ import static org.springframework.boot.actuate.health.Status.UNKNOWN;
 import static org.springframework.boot.actuate.health.Status.UP;
 
 import java.util.Set;
-
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.actuate.health.StatusAggregator;
 import org.springframework.context.annotation.Bean;

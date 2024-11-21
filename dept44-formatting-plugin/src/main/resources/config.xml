@@ -20,7 +20,7 @@
 		<includes>
 			<include>src/**/*.json</include>
 		</includes>
-		<simple />
+		<gson />
 		<indent>
 			<tabs>true</tabs>
 			<spacesPerTab>4</spacesPerTab>

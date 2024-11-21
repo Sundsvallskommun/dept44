@@ -4,8 +4,12 @@
 			"Violation": {
 				"type": "object",
 				"properties": {
-					"field": {"type": "string"},
-					"message": {"type": "string"}
+					"field": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
 				}
 			},
 			"PetImage": {
@@ -36,7 +40,9 @@
 				"properties": {
 					"images": {
 						"type": "array",
-						"items": {"$ref": "#/components/schemas/PetImage"}
+						"items": {
+							"$ref": "#/components/schemas/PetImage"
+						}
 					},
 					"price": {
 						"format": "float",
@@ -65,7 +71,9 @@
 			"StatusType": {
 				"type": "object",
 				"properties": {
-					"reasonPhrase": {"type": "string"},
+					"reasonPhrase": {
+						"type": "string"
+					},
 					"statusCode": {
 						"format": "int32",
 						"type": "integer"
@@ -79,68 +87,114 @@
 						"format": "uri",
 						"type": "string"
 					},
-					"localizedMessage": {"type": "string"},
-					"cause": {"$ref": "#/components/schemas/ThrowableProblem"},
+					"localizedMessage": {
+						"type": "string"
+					},
+					"cause": {
+						"$ref": "#/components/schemas/ThrowableProblem"
+					},
 					"stackTrace": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"fileName": {"type": "string"},
-								"moduleVersion": {"type": "string"},
-								"moduleName": {"type": "string"},
-								"nativeMethod": {"type": "boolean"},
-								"methodName": {"type": "string"},
-								"className": {"type": "string"},
+								"fileName": {
+									"type": "string"
+								},
+								"moduleVersion": {
+									"type": "string"
+								},
+								"moduleName": {
+									"type": "string"
+								},
+								"nativeMethod": {
+									"type": "boolean"
+								},
+								"methodName": {
+									"type": "string"
+								},
+								"className": {
+									"type": "string"
+								},
 								"lineNumber": {
 									"format": "int32",
 									"type": "integer"
 								},
-								"classLoaderName": {"type": "string"}
+								"classLoaderName": {
+									"type": "string"
+								}
 							}
 						}
 					},
-					"detail": {"type": "string"},
+					"detail": {
+						"type": "string"
+					},
 					"suppressed": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"localizedMessage": {"type": "string"},
+								"localizedMessage": {
+									"type": "string"
+								},
 								"stackTrace": {
 									"type": "array",
 									"items": {
 										"type": "object",
 										"properties": {
-											"fileName": {"type": "string"},
-											"moduleVersion": {"type": "string"},
-											"moduleName": {"type": "string"},
-											"nativeMethod": {"type": "boolean"},
-											"methodName": {"type": "string"},
-											"className": {"type": "string"},
+											"fileName": {
+												"type": "string"
+											},
+											"moduleVersion": {
+												"type": "string"
+											},
+											"moduleName": {
+												"type": "string"
+											},
+											"nativeMethod": {
+												"type": "boolean"
+											},
+											"methodName": {
+												"type": "string"
+											},
+											"className": {
+												"type": "string"
+											},
 											"lineNumber": {
 												"format": "int32",
 												"type": "integer"
 											},
-											"classLoaderName": {"type": "string"}
+											"classLoaderName": {
+												"type": "string"
+											}
 										}
 									}
 								},
-								"message": {"type": "string"}
+								"message": {
+									"type": "string"
+								}
 							}
 						}
 					},
-					"message": {"type": "string"},
+					"message": {
+						"type": "string"
+					},
 					"type": {
 						"format": "uri",
 						"type": "string"
 					},
-					"title": {"type": "string"},
+					"title": {
+						"type": "string"
+					},
 					"parameters": {
-						"additionalProperties": {"type": "object"},
+						"additionalProperties": {
+							"type": "object"
+						},
 						"type": "object"
 					},
-					"status": {"$ref": "#/components/schemas/StatusType"}
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					}
 				}
 			},
 			"Problem": {
@@ -150,17 +204,25 @@
 						"format": "uri",
 						"type": "string"
 					},
-					"detail": {"type": "string"},
+					"detail": {
+						"type": "string"
+					},
 					"type": {
 						"format": "uri",
 						"type": "string"
 					},
-					"title": {"type": "string"},
+					"title": {
+						"type": "string"
+					},
 					"parameters": {
-						"additionalProperties": {"type": "object"},
+						"additionalProperties": {
+							"type": "object"
+						},
 						"type": "object"
 					},
-					"status": {"$ref": "#/components/schemas/StatusType"}
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					}
 				}
 			},
 			"ConstraintViolationProblem": {
@@ -170,58 +232,98 @@
 						"format": "uri",
 						"type": "string"
 					},
-					"localizedMessage": {"type": "string"},
+					"localizedMessage": {
+						"type": "string"
+					},
 					"violations": {
 						"type": "array",
-						"items": {"$ref": "#/components/schemas/Violation"}
+						"items": {
+							"$ref": "#/components/schemas/Violation"
+						}
 					},
-					"cause": {"$ref": "#/components/schemas/ThrowableProblem"},
+					"cause": {
+						"$ref": "#/components/schemas/ThrowableProblem"
+					},
 					"stackTrace": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"fileName": {"type": "string"},
-								"moduleVersion": {"type": "string"},
-								"moduleName": {"type": "string"},
-								"nativeMethod": {"type": "boolean"},
-								"methodName": {"type": "string"},
-								"className": {"type": "string"},
+								"fileName": {
+									"type": "string"
+								},
+								"moduleVersion": {
+									"type": "string"
+								},
+								"moduleName": {
+									"type": "string"
+								},
+								"nativeMethod": {
+									"type": "boolean"
+								},
+								"methodName": {
+									"type": "string"
+								},
+								"className": {
+									"type": "string"
+								},
 								"lineNumber": {
 									"format": "int32",
 									"type": "integer"
 								},
-								"classLoaderName": {"type": "string"}
+								"classLoaderName": {
+									"type": "string"
+								}
 							}
 						}
 					},
-					"detail": {"type": "string"},
+					"detail": {
+						"type": "string"
+					},
 					"suppressed": {
 						"type": "array",
 						"items": {
 							"type": "object",
 							"properties": {
-								"localizedMessage": {"type": "string"},
+								"localizedMessage": {
+									"type": "string"
+								},
 								"stackTrace": {
 									"type": "array",
 									"items": {
 										"type": "object",
 										"properties": {
-											"fileName": {"type": "string"},
-											"moduleVersion": {"type": "string"},
-											"moduleName": {"type": "string"},
-											"nativeMethod": {"type": "boolean"},
-											"methodName": {"type": "string"},
-											"className": {"type": "string"},
+											"fileName": {
+												"type": "string"
+											},
+											"moduleVersion": {
+												"type": "string"
+											},
+											"moduleName": {
+												"type": "string"
+											},
+											"nativeMethod": {
+												"type": "boolean"
+											},
+											"methodName": {
+												"type": "string"
+											},
+											"className": {
+												"type": "string"
+											},
 											"lineNumber": {
 												"format": "int32",
 												"type": "integer"
 											},
-											"classLoaderName": {"type": "string"}
+											"classLoaderName": {
+												"type": "string"
+											}
 										}
 									}
 								},
-								"message": {"type": "string"}
+								"message": {
+									"type": "string"
+								}
 							}
 						}
 					},
@@ -229,198 +331,360 @@
 						"format": "uri",
 						"type": "string"
 					},
-					"title": {"type": "string"},
-					"message": {"type": "string"},
+					"title": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
 					"parameters": {
-						"additionalProperties": {"type": "object"},
+						"additionalProperties": {
+							"type": "object"
+						},
 						"type": "object"
 					},
-					"status": {"$ref": "#/components/schemas/StatusType"}
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					}
 				}
 			}
 		},
 		"securitySchemes": {}
 	},
-	"servers": [{
-		"description": "Generated server url",
-		"url": "${json-unit.any-string}"
-	}],
+	"servers": [
+		{
+			"description": "Generated server url",
+			"url": "${json-unit.any-string}"
+		}
+	],
 	"openapi": "3.0.1",
 	"paths": {
-		"/pet-inventory-items/{id}": {"get": {
-			"summary": "Get Pet inventory item by id",
-			"operationId": "getPetInventoryItem",
-			"responses": {
-				"200": {
-					"description": "Successful operation",
-					"content": {
-						"application/json": {"schema": {"$ref": "#/components/schemas/PetInventoryItem"}},
-						"application/problem+json": {"schema": {"$ref": "#/components/schemas/PetInventoryItem"}}
+		"/pet-inventory-items/{id}": {
+			"get": {
+				"summary": "Get Pet inventory item by id",
+				"operationId": "getPetInventoryItem",
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PetInventoryItem"
+								}
+							},
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/PetInventoryItem"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
-				"400": {
-					"description": "Bad request",
-					"content": {"application/problem+json": {"schema": {"oneOf": [
-						{"$ref": "#/components/schemas/Problem"},
-						{"$ref": "#/components/schemas/ConstraintViolationProblem"}
-					]}}}
-				},
-				"500": {
-					"description": "Internal Server error",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				},
-				"502": {
-					"description": "Bad Gateway",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				}
-			},
-			"parameters": [{
-				"schema": {
-					"format": "int64",
-					"type": "integer"
-				},
-				"in": "path",
-				"name": "id",
-				"required": true
-			}],
-			"tags": ["Pet inventory"]
-		}},
-		"/pet-inventory-items/{id}/images/{imageId}": {"get": {
-			"summary": "Get pet inventory item image by id",
-			"operationId": "getPetImage",
-			"responses": {
-				"201": {
-					"description": "Successful operation",
-					"content": {"*/*": {"schema": {
-						"format": "byte",
-						"type": "string"
-					}}}
-				},
-				"400": {
-					"description": "Bad request",
-					"content": {"application/problem+json": {"schema": {"oneOf": [
-						{"$ref": "#/components/schemas/Problem"},
-						{"$ref": "#/components/schemas/ConstraintViolationProblem"}
-					]}}}
-				},
-				"500": {
-					"description": "Internal Server error",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				},
-				"502": {
-					"description": "Bad Gateway",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				}
-			},
-			"parameters": [
-				{
-					"schema": {
-						"format": "int64",
-						"type": "integer"
+				"parameters": [
+					{
+						"schema": {
+							"format": "int64",
+							"type": "integer"
+						},
+						"in": "path",
+						"name": "id",
+						"required": true
+					}
+				],
+				"tags": [
+					"Pet inventory"
+				]
+			}
+		},
+		"/pet-inventory-items/{id}/images/{imageId}": {
+			"get": {
+				"summary": "Get pet inventory item image by id",
+				"operationId": "getPetImage",
+				"responses": {
+					"201": {
+						"description": "Successful operation",
+						"content": {
+							"*/*": {
+								"schema": {
+									"format": "byte",
+									"type": "string"
+								}
+							}
+						}
 					},
-					"in": "path",
-					"name": "id",
-					"required": true
-				},
-				{
-					"schema": {
-						"format": "int64",
-						"type": "integer"
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
 					},
-					"in": "path",
-					"name": "imageId",
-					"required": true
-				}
-			],
-			"tags": ["Pet inventory"]
-		}},
-		"/pet-inventory-items": {"get": {
-			"summary": "Get Pet inventory items",
-			"operationId": "getPetInventoryList",
-			"responses": {
-				"200": {
-					"description": "Successful operation",
-					"content": {
-						"application/json": {"schema": {
-							"type": "array",
-							"items": {"$ref": "#/components/schemas/PetInventoryItem"}
-						}},
-						"application/problem+json": {"schema": {
-							"type": "array",
-							"items": {"$ref": "#/components/schemas/PetInventoryItem"}
-						}}
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
 					}
 				},
-				"400": {
-					"description": "Bad request",
-					"content": {"application/problem+json": {"schema": {"oneOf": [
-						{"$ref": "#/components/schemas/Problem"},
-						{"$ref": "#/components/schemas/ConstraintViolationProblem"}
-					]}}}
+				"parameters": [
+					{
+						"schema": {
+							"format": "int64",
+							"type": "integer"
+						},
+						"in": "path",
+						"name": "id",
+						"required": true
+					},
+					{
+						"schema": {
+							"format": "int64",
+							"type": "integer"
+						},
+						"in": "path",
+						"name": "imageId",
+						"required": true
+					}
+				],
+				"tags": [
+					"Pet inventory"
+				]
+			}
+		},
+		"/pet-inventory-items": {
+			"get": {
+				"summary": "Get Pet inventory items",
+				"operationId": "getPetInventoryList",
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/PetInventoryItem"
+									}
+								}
+							},
+							"application/problem+json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/PetInventoryItem"
+									}
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
 				},
-				"500": {
-					"description": "Internal Server error",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+				"tags": [
+					"Pet inventory"
+				]
+			}
+		},
+		"/pet-inventory-items/{id}/images": {
+			"post": {
+				"summary": "Add pet inventory item image by id",
+				"requestBody": {
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"required": [
+									"file"
+								],
+								"properties": {
+									"file": {
+										"format": "binary",
+										"type": "string"
+									}
+								}
+							}
+						}
+					}
 				},
-				"502": {
-					"description": "Bad Gateway",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				}
-			},
-			"tags": ["Pet inventory"]
-		}},
-		"/pet-inventory-items/{id}/images": {"post": {
-			"summary": "Add pet inventory item image by id",
-			"requestBody": {"content": {"multipart/form-data": {"schema": {
-				"type": "object",
-				"required": ["file"],
-				"properties": {"file": {
-					"format": "binary",
-					"type": "string"
-				}}
-			}}}},
-			"operationId": "addPetImage",
-			"responses": {
-				"201": {"description": "Successful operation"},
-				"400": {
-					"description": "Bad request",
-					"content": {"application/problem+json": {"schema": {"oneOf": [
-						{"$ref": "#/components/schemas/Problem"},
-						{"$ref": "#/components/schemas/ConstraintViolationProblem"}
-					]}}}
+				"operationId": "addPetImage",
+				"responses": {
+					"201": {
+						"description": "Successful operation"
+					},
+					"400": {
+						"description": "Bad request",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Problem"
+										},
+										{
+											"$ref": "#/components/schemas/ConstraintViolationProblem"
+										}
+									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server error",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "Bad Gateway",
+						"content": {
+							"application/problem+json": {
+								"schema": {
+									"$ref": "#/components/schemas/Problem"
+								}
+							}
+						}
+					}
 				},
-				"500": {
-					"description": "Internal Server error",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+				"parameters": [
+					{
+						"schema": {
+							"format": "int64",
+							"type": "integer"
+						},
+						"in": "path",
+						"name": "id",
+						"required": true
+					}
+				],
+				"tags": [
+					"Pet inventory"
+				]
+			}
+		},
+		"/api-docs": {
+			"get": {
+				"summary": "OpenAPI",
+				"x-auth-type": "None",
+				"operationId": "getApiDocs",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/yaml": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					}
 				},
-				"502": {
-					"description": "Bad Gateway",
-					"content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
-				}
-			},
-			"parameters": [{
-				"schema": {
-					"format": "int64",
-					"type": "integer"
-				},
-				"in": "path",
-				"name": "id",
-				"required": true
-			}],
-			"tags": ["Pet inventory"]
-		}},
-		"/api-docs": {"get": {
-			"summary": "OpenAPI",
-			"x-auth-type": "None",
-			"operationId": "getApiDocs",
-			"responses": {"200": {
-				"description": "OK",
-				"content": {"application/yaml": {"schema": {"type": "string"}}}
-			}},
-			"x-wso2-mutual-ssl": "Optional",
-			"x-throttling-tier": "Unlimited",
-			"tags": ["API"]
-		}}
+				"x-wso2-mutual-ssl": "Optional",
+				"x-throttling-tier": "Unlimited",
+				"tags": [
+					"API"
+				]
+			}
+		}
 	},
 	"info": {
 		"license": {
@@ -431,8 +695,10 @@
 		"title": "api-service-pet-inventory",
 		"version": "${json-unit.any-string}"
 	},
-	"tags": [{
-		"name": "Pet inventory",
-		"description": "Pet inventory operations"
-	}]
+	"tags": [
+		{
+			"name": "Pet inventory",
+			"description": "Pet inventory operations"
+		}
+	]
 }

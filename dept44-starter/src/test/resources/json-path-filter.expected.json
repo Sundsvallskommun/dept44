@@ -1,9 +1,11 @@
 {
-	"social_accounts": [{
-		"password": "[password]",
-		"platform": "Twitter",
-		"username": "andy12345"
-	}],
+	"social_accounts": [
+		{
+			"password": "[password]",
+			"platform": "Twitter",
+			"username": "andy12345"
+		}
+	],
 	"pin": "[pin]",
 	"name": "Andy"
 }

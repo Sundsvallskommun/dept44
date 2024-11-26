@@ -32,11 +32,11 @@ import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -49,10 +49,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class, properties = "mdc.municipalityId.enabled=true")
 	class WebConfigurationEnabledTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
@@ -124,10 +124,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class, properties = "openapi.enabled=false")
 	class WebConfigurationWithIndexPageControllerDisabledTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
@@ -159,10 +159,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class, properties = "spring.main.web-application-type=reactive")
 	class WebConfigurationDisabledTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired(required = false)
@@ -194,15 +194,12 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class)
 	class IndexPageControllerTest {
 
-		@MockBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockBean
-		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
-
 		@Mock
 		HttpServletRequest httpServletRequestMock;
-
+		@MockitoBean
+		private YAMLMapper mockYamlMapper;
+		@MockitoBean
+		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 		@Autowired
 		private WebConfiguration.IndexPageController indexPageController;
 
@@ -224,10 +221,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class)
 	class RequestIdFilterTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -261,10 +258,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class)
 	class DisableBrowserCacheFilterTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -301,10 +298,10 @@ class WebConfigurationTest {
 	})
 	class MunicipalityIdFilterTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -328,7 +325,7 @@ class WebConfigurationTest {
 			when(httpServletRequestMock.getRequestURI()).thenReturn(uri);
 			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 
-			try (MockedStatic<MDC> mdc = Mockito.mockStatic(MDC.class)) {
+			try (final MockedStatic<MDC> mdc = Mockito.mockStatic(MDC.class)) {
 				municipalityIdFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
 				mdc.verify(() -> MDC.put("municipalityId", "2281"));
 				mdc.verify(() -> MDC.remove("municipalityId"));
@@ -343,10 +340,10 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class)
 	class MunicipalityIdInterceptorTest {
 
-		@MockBean
+		@MockitoBean
 		private YAMLMapper mockYamlMapper;
 
-		@MockBean
+		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -369,7 +366,7 @@ class WebConfigurationTest {
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void preHandleWithAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
+		void preHandleWithAllowedIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
 
@@ -383,7 +380,7 @@ class WebConfigurationTest {
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void preHandleWithNotAllowedIds(String path, String municipalityId, int municipalityIdUriIndex) {
+		void preHandleWithNotAllowedIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
 
@@ -396,7 +393,7 @@ class WebConfigurationTest {
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void preHandleWithNoConfiguredMunicipalityIds(String path, String municipalityId, int municipalityIdUriIndex) {
+		void preHandleWithNoConfiguredMunicipalityIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
 

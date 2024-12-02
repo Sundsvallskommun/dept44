@@ -59,7 +59,7 @@
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>2.6.0</springdoc.version>
-		<spring-cloud.version>2023.0.3</spring-cloud.version>
+		<spring-cloud.version>2023.0.4</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>4.1.0</json-unit.version>
 		<logback-gelf.version>6.1.0</logback-gelf.version>

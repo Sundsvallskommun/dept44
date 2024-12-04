@@ -29,17 +29,31 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 
 	private String spotlessMavenPluginVersion;
 
+	@Parameter(property = "javaIncludes")
+	private List<String> javaIncludes;
+
 	@Parameter(property = "javaExcludes")
 	private List<String> javaExcludes;
+
+	@Parameter(property = "jsonIncludes")
+	private List<String> jsonIncludes;
 
 	@Parameter(property = "jsonExcludes")
 	private List<String> jsonExcludes;
 
+	@Parameter(property = "sqlIncludes")
+	private List<String> sqlIncludes;
+
 	@Parameter(property = "sqlExcludes")
 	private List<String> sqlExcludes;
+	@Parameter(property = "markdownIncludes")
+	private List<String> markdownIncludes;
 
 	@Parameter(property = "markdownExcludes")
 	private List<String> markdownExcludes;
+
+	@Parameter(property = "pomIncludes")
+	private List<String> pomIncludes;
 
 	@Parameter(property = "pomExcludes")
 	private List<String> pomExcludes;
@@ -81,6 +95,12 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 			setExcludes(configuration.getChild("markdown"), markdownExcludes);
 			setExcludes(configuration.getChild("pom"), pomExcludes);
 
+			setIncludes(configuration.getChild("java"), javaIncludes);
+			setIncludes(configuration.getChild("json"), jsonIncludes);
+			setIncludes(configuration.getChild("sql"), sqlIncludes);
+			setIncludes(configuration.getChild("markdown"), markdownIncludes);
+			setIncludes(configuration.getChild("pom"), pomIncludes);
+
 			MojoExecutor.executeMojo(
 				MojoExecutor.plugin(
 					MojoExecutor.groupId("com.diffplug.spotless"),
@@ -113,6 +133,21 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 				final var excludeNode = new Xpp3Dom("exclude");
 				excludeNode.setValue(exclude);
 				excludesNode.addChild(excludeNode);
+			}
+		}
+	}
+
+	private void setIncludes(final Xpp3Dom languageConfig, final List<String> includes) {
+		if (languageConfig != null && includes != null) {
+			Xpp3Dom includesNode = languageConfig.getChild("includes");
+			if (includesNode == null) {
+				includesNode = new Xpp3Dom("includes");
+				languageConfig.addChild(includesNode);
+			}
+			for (final var include : includes) {
+				final var excludeNode = new Xpp3Dom("include");
+				excludeNode.setValue(include);
+				includesNode.addChild(excludeNode);
 			}
 		}
 	}

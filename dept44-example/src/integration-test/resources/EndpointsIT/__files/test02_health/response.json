@@ -66,6 +66,13 @@
 				"validationQuery": "isValid()"
 			},
 			"status": "UP"
+		},
+		"ssl": {
+			"details": {
+				"validChains": [],
+				"invalidChains": []
+			},
+			"status": "UP"
 		}
 	},
 	"status": "UP"

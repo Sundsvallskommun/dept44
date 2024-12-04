@@ -71,7 +71,7 @@ public class PetImageEntity {
 		return fileName;
 	}
 
-	public void setFileName(String fileName) {
+	public void setFileName(final String fileName) {
 		this.fileName = fileName;
 	}
 
@@ -84,7 +84,7 @@ public class PetImageEntity {
 		return mimeType;
 	}
 
-	public void setMimeType(String mimeType) {
+	public void setMimeType(final String mimeType) {
 		this.mimeType = mimeType;
 	}
 
@@ -136,11 +136,11 @@ public class PetImageEntity {
 		return petName;
 	}
 
-	public void setPetName(PetNameEntity petName) {
+	public void setPetName(final PetNameEntity petName) {
 		this.petName = petName;
 	}
 
-	public PetImageEntity withPetName(PetNameEntity petName) {
+	public PetImageEntity withPetName(final PetNameEntity petName) {
 		this.petName = petName;
 		return this;
 	}
@@ -155,18 +155,20 @@ public class PetImageEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final PetImageEntity other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final PetImageEntity other)) {
+			return false;
+		}
 		return Arrays.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType) && Objects.equals(modified,
 			other.modified) && Objects.equals(petName, other.petName);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("PetImageEntity [id=").append(id).append(", fileName=").append(fileName).append(", mimeType=").append(mimeType).append(", content=").append(Arrays.toString(content)).append(", created=").append(created).append(", modified=").append(
-			modified).append(", petName=").append(petName).append("]");
-		return builder.toString();
+		return "PetImageEntity [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + ", content=" + Arrays.toString(content) + ", created=" + created + ", modified="
+			+ modified + ", petName=" + petName + "]";
 	}
 }

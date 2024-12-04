@@ -17,7 +17,9 @@ import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 /**
  * PetNameRepository tests
  *
- * @see /src/test/resources/db/testdata-junit.sql for data setup.
+ * @see <a href=
+ *      "/src/test/resources/db/scripts/testdata-junit.sql">/src/test/resources/db/scripts/testdata-junit.sql</a> for
+ *      data setup.
  */
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -133,6 +135,7 @@ class PetImageRepositoryTest {
 		assertThat(repository.findById(id)).isPresent();
 
 		repository.deleteById(id);
+		repository.flush();
 
 		// Verification
 		assertThat(repository.findById(id)).isNotPresent();

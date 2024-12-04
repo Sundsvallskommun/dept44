@@ -37,7 +37,7 @@ public class PetNameEntity {
 	@Column(name = "modified")
 	private OffsetDateTime modified;
 
-	@OneToMany(mappedBy = "petName", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "petName", fetch = FetchType.EAGER, orphanRemoval = true)
 	private List<PetImageEntity> images;
 
 	public static PetNameEntity create() {
@@ -100,11 +100,11 @@ public class PetNameEntity {
 		return images;
 	}
 
-	public void setImages(List<PetImageEntity> images) {
+	public void setImages(final List<PetImageEntity> images) {
 		this.images = images;
 	}
 
-	public PetNameEntity withImages(List<PetImageEntity> images) {
+	public PetNameEntity withImages(final List<PetImageEntity> images) {
 		this.images = images;
 		return this;
 	}
@@ -115,16 +115,18 @@ public class PetNameEntity {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final PetNameEntity other)) { return false; }
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!(obj instanceof final PetNameEntity other)) {
+			return false;
+		}
 		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("PetNameEntity [id=").append(id).append(", name=").append(name).append(", created=").append(created).append(", modified=").append(modified).append(", images=").append(images).append("]");
-		return builder.toString();
+		return "PetNameEntity [id=" + id + ", name=" + name + ", created=" + created + ", modified=" + modified + ", images=" + images + "]";
 	}
 }

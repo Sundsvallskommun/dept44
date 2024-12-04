@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.zalando.logbook.Logbook;
 import se.sundsvall.dept44.security.Truststore;
 
@@ -23,7 +23,7 @@ import se.sundsvall.dept44.security.Truststore;
 })
 class FeignConfigurationTest {
 
-	@MockBean
+	@MockitoBean
 	private Logbook logbookMock;
 
 	@Autowired

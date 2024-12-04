@@ -15,7 +15,9 @@ import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
 /**
  * PetNameRepository tests
  *
- * @see /src/test/resources/db/testdata-junit.sql for data setup.
+ * @see <a href=
+ *      "/src/test/resources/db/scripts/testdata-junit.sql">/src/test/resources/db/scripts/testdata-junit.sql</a> for
+ *      data setup.
  */
 @SpringBootTest
 @ActiveProfiles("junit")
@@ -92,13 +94,13 @@ class PetNameRepositoryTest {
 		final var id = 3L;
 
 		// Fetch existing entity.
-		final var petname3 = repository.findById(id).orElseThrow();
-		assertThat(petname3.getName()).isEqualTo("Boozer");
-		assertThat(petname3.getModified()).isNull();
+		final var petName3 = repository.findById(id).orElseThrow();
+		assertThat(petName3.getName()).isEqualTo("Boozer");
+		assertThat(petName3.getModified()).isNull();
 
 		// Update entity.
-		petname3.setName("Shaggy");
-		repository.save(petname3);
+		petName3.setName("Shaggy");
+		repository.save(petName3);
 
 		// Verification
 		final var result = repository.findById(id).orElseThrow();

@@ -27,38 +27,18 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 })
 class SecurityConfigurationTest {
 
-	/*
-	 * Custom configuration to ensure that there is a HandlerMappingIntrospector bean, as it is
-	 * required for the SecurityConfiguration to work properly, and since we don't set up the web
-	 * context in this test
-	 */
-	@Configuration
-	static class CustomWebConfiguration {
-
-		@Bean
-		HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
-			return new HandlerMappingIntrospector();
-		}
-	}
-
 	@Mock
 	private HttpSecurity httpSecurityMock;
-
 	@Mock
 	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry requestMatcherRegistryMock;
-
 	@Mock
 	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrlMock;
-
 	@Mock
 	private DefaultSecurityFilterChain defaultSecurityFilterChain;
-
 	@Autowired
 	private SecurityFilterChain securityFilterChain;
-
 	@Autowired
 	private WebSecurityCustomizer webSecurityCustomizer;
-
 	@InjectMocks
 	private SecurityConfiguration securityConfiguration;
 
@@ -74,6 +54,7 @@ class SecurityConfigurationTest {
 
 	@Test
 	void authorizeRequests() throws Exception {
+		when(httpSecurityMock.securityMatcher(any(String[].class))).thenReturn(httpSecurityMock);
 		when(requestMatcherRegistryMock.anyRequest()).thenReturn(authorizedUrlMock);
 
 		doAnswer(invocation -> {
@@ -94,5 +75,19 @@ class SecurityConfigurationTest {
 		verify(authorizedUrlMock).permitAll();
 		verify(httpSecurityMock).build();
 		assertThat(chain).isEqualTo(defaultSecurityFilterChain);
+	}
+
+	/*
+	 * Custom configuration to ensure that there is a HandlerMappingIntrospector bean, as it is
+	 * required for the SecurityConfiguration to work properly, and since we don't set up the web
+	 * context in this test
+	 */
+	@Configuration
+	static class CustomWebConfiguration {
+
+		@Bean
+		HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
+			return new HandlerMappingIntrospector();
+		}
 	}
 }

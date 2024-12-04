@@ -45,7 +45,7 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
-		<spring-boot.version>3.3.5</spring-boot.version>
+		<spring-boot.version>3.4.0</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
@@ -56,10 +56,11 @@
 		<commons-lang3.version>3.17.0</commons-lang3.version>
 		<logbook.version>3.10.0</logbook.version>
 		<problem.version>0.27.1</problem.version>
+		<okhttp-mockwebserver-version>4.12.0</okhttp-mockwebserver-version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
-		<springdoc.version>2.6.0</springdoc.version>
-		<spring-cloud.version>2023.0.3</spring-cloud.version>
+		<springdoc.version>2.7.0</springdoc.version>
+		<spring-cloud.version>2024.0.0</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>4.1.0</json-unit.version>
 		<logback-gelf.version>6.1.0</logback-gelf.version>

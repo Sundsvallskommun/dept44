@@ -10,8 +10,6 @@ import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
 import static net.javacrumbs.jsonunit.JsonAssert.setOptions;
-import static org.apache.commons.lang3.ObjectUtils.allNotNull;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -45,7 +43,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import net.javacrumbs.jsonunit.JsonAssert;
 import net.javacrumbs.jsonunit.core.Option;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +72,10 @@ public abstract class AbstractAppTest {
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
-
+	@Autowired
+	protected TestRestTemplate restTemplate;
+	@Autowired
+	protected WireMockServer wiremock;
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
 	private MultiValueMap<String, Object> multipartBody;
@@ -95,12 +95,6 @@ public abstract class AbstractAppTest {
 	private Map<String, String> headerValues;
 	private String testDirectoryPath;
 	private String testCaseName;
-
-	@Autowired
-	protected TestRestTemplate restTemplate;
-
-	@Autowired
-	protected WireMockServer wiremock;
 
 	public AbstractAppTest reset() {
 		expectedResponseBodyIsNull = false;
@@ -203,11 +197,9 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method takes a JSON response string or a file name where the response can be
-	 * read from.
+	 * Method takes a JSON response string or a file name where the response can be read from.
 	 *
-	 * @param  expectedResponse raw json response string or filename where the response can be
-	 *                          read from
+	 * @param  expectedResponse raw json response string or filename where the response can be read from
 	 * @return                  AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponse(final String expectedResponse) {
@@ -252,13 +244,13 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method adds options to be used when assertion of json is done, for example IGNORING_EXTRA_ARRAY_ITEMS.
-	 * By default the test will compare arrays with option to ignore array order. If the need to use
-	 * maximum strictness in JsonAssert - send in null or an empty list to just reset options to
-	 * JsonAsserts default ones.
+	 * Method adds options to be used when assertion of json is done, for example IGNORING_EXTRA_ARRAY_ITEMS. By default,
+	 * the test will compare arrays with option to ignore array order. If the need to use maximum strictness in JsonAssert -
+	 * send in null or
+	 * an empty list to just reset options to JsonAsserts default ones.
 	 *
-	 * @param  options list of options to use when doing the json assertion or null/empty list for resetting
-	 *                 to JsonAssert defaults (strict comparison)
+	 * @param  options list of options to use when doing the json assertion or null/empty list for resetting to JsonAssert
+	 *                 defaults (strict comparison)
 	 * @return         AbstractAppTest
 	 */
 	public AbstractAppTest withJsonAssertOptions(final List<Option> options) {
@@ -277,11 +269,9 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method takes a JSON request string or a file name where the request can be
-	 * read from.
+	 * Method takes a JSON request string or a file name where the request can be read from.
 	 *
-	 * @param  request raw JSON request string or filename where the request can be
-	 *                 read from.
+	 * @param  request raw JSON request string or filename where the request can be read from.
 	 * @return         AbstractAppTest
 	 */
 	public AbstractAppTest withRequest(final String request) {
@@ -295,16 +285,16 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method replaces sections in request matching sent in string with sent in replacement string.
-	 * Observe that the withRequest method must be called before for this method to have any effect.
-	 * 
+	 * Method replaces sections in request matching sent in string with sent in replacement string. Observe that the
+	 * withRequest method must be called before for this method to have any effect.
+	 *
 	 * @param  matchingString    the string to match in request body
 	 * @param  replacementString the string to replace with
 	 * @return                   AbstractAppTest
 	 */
 	public AbstractAppTest withRequestReplacement(final String matchingString, final String replacementString) {
-		if (allNotNull(requestBody, matchingString, replacementString)) {
-			requestBody = StringUtils.replace(requestBody, matchingString, replacementString);
+		if (nonNull(requestBody) && nonNull(matchingString) && nonNull(replacementString)) {
+			requestBody = requestBody.replace(matchingString, replacementString);
 		}
 		return this;
 	}
@@ -314,8 +304,7 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  parameterName         the name of the multipart parameter.
 	 * @param  fileName              to be added to the request as a multipart, the method will look for the file in the
-	 *                               current
-	 *                               test-case directory.
+	 *                               current test-case directory.
 	 * @return                       AbstractAppTest
 	 * @throws FileNotFoundException if the file doesn't exist
 	 */
@@ -341,10 +330,10 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method takes a MultiValueMap that will set the multipart body.
-	 * If you have added any parts to the multipartbody before a call to this method, these parts will be lost.
+	 * Method takes a MultiValueMap that will set the multipart body. If you have added any parts to the multipart body
+	 * before a call to this method, these parts will be lost.
 	 *
-	 * @param  multiPartBody the multipartbody (as a MultiValueMap).
+	 * @param  multiPartBody the multipart body (as a MultiValueMap).
 	 * @return               AbstractAppTest
 	 * @see                  org.springframework.http.client.MultipartBodyBuilder for instruction on how to create a
 	 *                       suitable MultiValueMap.
@@ -356,9 +345,7 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Set max verification delay in seconds.
-	 *
-	 * I.e. the maximum time to spend while verifying a condition.
+	 * Set max verification delay in seconds. I.e. the maximum time to spend while verifying a condition.
 	 *
 	 * @param  maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
 	 * @return                               AbstractAppTest
@@ -383,11 +370,11 @@ public abstract class AbstractAppTest {
 		responseHeaders = response.getHeaders();
 
 		if (nonNull(expectedResponseHeaders)) {
-			expectedResponseHeaders.entrySet().stream().forEach(expectedHeader -> {
-				assertThat(response.getHeaders()).containsKey(expectedHeader.getKey());
-				assertThat(response.getHeaders().getValuesAsList(expectedHeader.getKey()))
-					.allMatch(actualHeaderValue -> expectedHeader.getValue().stream()
-						.allMatch(expectedHeaderValue -> equalsIgnoreCase(expectedHeaderValue, actualHeaderValue) ||
+			expectedResponseHeaders.forEach((key, value) -> {
+				assertThat(response.getHeaders()).containsKey(key);
+				assertThat(response.getHeaders().getValuesAsList(key))
+					.allMatch(actualHeaderValue -> value.stream()
+						.allMatch(expectedHeaderValue -> expectedHeaderValue.equalsIgnoreCase(actualHeaderValue) ||
 							Pattern.matches(expectedHeaderValue, actualHeaderValue)));
 			});
 		}
@@ -449,13 +436,13 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method returns the received server response mapped to the sent in class.
+	 * Returns the received server response mapped to the specified class.
 	 *
-	 * @param  <T>                     Response type.
-	 * @param  clazz                   class to map response to
-	 * @return                         response mapped to sent in class type
-	 * @throws JsonProcessingException if JSON-processing fails
-	 * @throws ClassNotFoundException  if class is not found
+	 * @param  <T>                     the type of the response
+	 * @param  clazz                   the class to map the response body to
+	 * @return                         the mapped response
+	 * @throws JsonProcessingException if JSON processing fails
+	 * @throws ClassNotFoundException  if the class is not found
 	 */
 	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(responseBody, forName(clazz.getName())));
@@ -495,7 +482,7 @@ public abstract class AbstractAppTest {
 		return this.testDirectoryPath;
 	}
 
-	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, Object body) {
+	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {
 		final var httpHeaders = new HttpHeaders();
 		httpHeaders.setContentType(mediaType);
 		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());

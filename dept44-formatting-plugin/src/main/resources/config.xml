@@ -28,13 +28,11 @@
 	</json>
 	<sql>
 		<toggleOffOn />
-		<excludes>
-			<exclude>**/target/**</exclude>
-		</excludes>
 		<includes>
 			<include>src/main/resources/**/*.sql</include>
 		</includes>
 		<excludes>
+			<exclude>**/target/**</exclude>
 			<exclude>**/migration/**</exclude>
 			<exclude>**/schema.sql</exclude>
 		</excludes>

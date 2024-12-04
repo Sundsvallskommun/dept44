@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -27,6 +28,35 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 	private MavenSession mavenSession;
 
 	private String spotlessMavenPluginVersion;
+
+	@Parameter(property = "javaIncludes")
+	private List<String> javaIncludes;
+
+	@Parameter(property = "javaExcludes")
+	private List<String> javaExcludes;
+
+	@Parameter(property = "jsonIncludes")
+	private List<String> jsonIncludes;
+
+	@Parameter(property = "jsonExcludes")
+	private List<String> jsonExcludes;
+
+	@Parameter(property = "sqlIncludes")
+	private List<String> sqlIncludes;
+
+	@Parameter(property = "sqlExcludes")
+	private List<String> sqlExcludes;
+	@Parameter(property = "markdownIncludes")
+	private List<String> markdownIncludes;
+
+	@Parameter(property = "markdownExcludes")
+	private List<String> markdownExcludes;
+
+	@Parameter(property = "pomIncludes")
+	private List<String> pomIncludes;
+
+	@Parameter(property = "pomExcludes")
+	private List<String> pomExcludes;
 
 	@Inject
 	AbstractFormatMojo(final BuildPluginManager pluginManager) {
@@ -59,6 +89,18 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 
 			final var configuration = loadConfiguration();
 
+			setExcludes(configuration.getChild("java"), javaExcludes);
+			setExcludes(configuration.getChild("json"), jsonExcludes);
+			setExcludes(configuration.getChild("sql"), sqlExcludes);
+			setExcludes(configuration.getChild("markdown"), markdownExcludes);
+			setExcludes(configuration.getChild("pom"), pomExcludes);
+
+			setIncludes(configuration.getChild("java"), javaIncludes);
+			setIncludes(configuration.getChild("json"), jsonIncludes);
+			setIncludes(configuration.getChild("sql"), sqlIncludes);
+			setIncludes(configuration.getChild("markdown"), markdownIncludes);
+			setIncludes(configuration.getChild("pom"), pomIncludes);
+
 			MojoExecutor.executeMojo(
 				MojoExecutor.plugin(
 					MojoExecutor.groupId("com.diffplug.spotless"),
@@ -77,6 +119,36 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 			throw new MojoExecutionException(message, e.getCause());
 		} catch (final Exception e) {
 			throw new MojoExecutionException("Failed to execute Spotless plugin", e);
+		}
+	}
+
+	private void setExcludes(final Xpp3Dom languageConfig, final List<String> excludes) {
+		if (languageConfig != null && excludes != null) {
+			Xpp3Dom excludesNode = languageConfig.getChild("excludes");
+			if (excludesNode == null) {
+				excludesNode = new Xpp3Dom("excludes");
+				languageConfig.addChild(excludesNode);
+			}
+			for (final var exclude : excludes) {
+				final var excludeNode = new Xpp3Dom("exclude");
+				excludeNode.setValue(exclude);
+				excludesNode.addChild(excludeNode);
+			}
+		}
+	}
+
+	private void setIncludes(final Xpp3Dom languageConfig, final List<String> includes) {
+		if (languageConfig != null && includes != null) {
+			Xpp3Dom includesNode = languageConfig.getChild("includes");
+			if (includesNode == null) {
+				includesNode = new Xpp3Dom("includes");
+				languageConfig.addChild(includesNode);
+			}
+			for (final var include : includes) {
+				final var excludeNode = new Xpp3Dom("include");
+				excludeNode.setValue(include);
+				includesNode.addChild(excludeNode);
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -27,6 +28,21 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 	private MavenSession mavenSession;
 
 	private String spotlessMavenPluginVersion;
+
+	@Parameter(property = "javaExcludes")
+	private List<String> javaExcludes;
+
+	@Parameter(property = "jsonExcludes")
+	private List<String> jsonExcludes;
+
+	@Parameter(property = "sqlExcludes")
+	private List<String> sqlExcludes;
+
+	@Parameter(property = "markdownExcludes")
+	private List<String> markdownExcludes;
+
+	@Parameter(property = "pomExcludes")
+	private List<String> pomExcludes;
 
 	@Inject
 	AbstractFormatMojo(final BuildPluginManager pluginManager) {
@@ -59,6 +75,12 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 
 			final var configuration = loadConfiguration();
 
+			setExcludes(configuration.getChild("java"), javaExcludes);
+			setExcludes(configuration.getChild("json"), jsonExcludes);
+			setExcludes(configuration.getChild("sql"), sqlExcludes);
+			setExcludes(configuration.getChild("markdown"), markdownExcludes);
+			setExcludes(configuration.getChild("pom"), pomExcludes);
+
 			MojoExecutor.executeMojo(
 				MojoExecutor.plugin(
 					MojoExecutor.groupId("com.diffplug.spotless"),
@@ -77,6 +99,21 @@ public abstract class AbstractFormatMojo extends AbstractMojo {
 			throw new MojoExecutionException(message, e.getCause());
 		} catch (final Exception e) {
 			throw new MojoExecutionException("Failed to execute Spotless plugin", e);
+		}
+	}
+
+	private void setExcludes(final Xpp3Dom languageConfig, final List<String> excludes) {
+		if (languageConfig != null && excludes != null) {
+			Xpp3Dom excludesNode = languageConfig.getChild("excludes");
+			if (excludesNode == null) {
+				excludesNode = new Xpp3Dom("excludes");
+				languageConfig.addChild(excludesNode);
+			}
+			for (final var exclude : excludes) {
+				final var excludeNode = new Xpp3Dom("exclude");
+				excludeNode.setValue(exclude);
+				excludesNode.addChild(excludeNode);
+			}
 		}
 	}
 

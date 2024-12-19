@@ -1,0 +1,23 @@
+{
+	"request": {
+		"headers": {
+			"Authorization": {
+				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			}
+		},
+		"method": "GET",
+		"urlPath": "/api-petstore/pets"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/problem+json"
+		},
+		"jsonBody": {
+			"title": "Internal Server Error",
+			"status": 500,
+			"detail": "Could not process request!"
+		},
+		"status": 500
+	},
+	"name": "api-petstore-pets"
+}

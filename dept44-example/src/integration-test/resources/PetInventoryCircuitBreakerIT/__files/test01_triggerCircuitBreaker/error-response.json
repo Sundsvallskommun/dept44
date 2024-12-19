@@ -1,0 +1,5 @@
+{
+	"title": "Bad Gateway",
+	"status": 502,
+	"detail": "petstore error: {detail=Could not process request!, status=500 Internal Server Error, title=Internal Server Error}"
+}

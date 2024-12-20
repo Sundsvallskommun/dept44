@@ -1,0 +1,5 @@
+{
+	"title": "Internal Server Error",
+	"status": 500,
+	"detail": "CircuitBreaker 'petstore' is OPEN and does not permit further calls"
+}

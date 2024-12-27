@@ -36,6 +36,7 @@
 		<module>dept44-common-validators</module>
 		<module>dept44-example</module>
 		<module>dept44-formatting-plugin</module>
+		<module>dept44-scheduler</module>
 	</modules>
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -159,6 +160,11 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
+				<version>6.0.6-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-scheduler</artifactId>
 				<version>6.0.6-SNAPSHOT</version>
 			</dependency>
 			<!-- Problem -->

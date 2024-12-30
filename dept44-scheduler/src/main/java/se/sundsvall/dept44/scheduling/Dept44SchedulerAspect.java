@@ -32,6 +32,10 @@ import se.sundsvall.dept44.requestid.RequestId;
  * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the aspect. If you
  * catch and handle exceptions in the method, they won't be caught here, and the health indicator won't be updated.
  * </p>
+ * <p>
+ * <strong>Manual Health Checks:</strong> You can manually set the health status of a scheduled method using the
+ * {@link #setHealthIndicatorHealthy(String)} and {@link #setHealthIndicatorUnhealthy(String, String)} methods.
+ * </p>
  *
  * @see se.sundsvall.dept44.scheduling.Dep44Scheduled
  * @see se.sundsvall.dept44.scheduling.Dept44HealthIndicator
@@ -43,10 +47,36 @@ import se.sundsvall.dept44.requestid.RequestId;
 public class Dept44SchedulerAspect {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Dept44SchedulerAspect.class);
+	private static final ConcurrentMap<String, Dept44HealthIndicator> healthIndicators = new ConcurrentHashMap<>();
+	private static final AtomicReference<LocalDateTime> lastSuccess = new AtomicReference<>();
+	private static final AtomicReference<LocalDateTime> lastFailure = new AtomicReference<>();
 
-	private final AtomicReference<LocalDateTime> lastSuccess = new AtomicReference<>();
-	private final AtomicReference<LocalDateTime> lastFailure = new AtomicReference<>();
-	private final ConcurrentMap<String, Dept44HealthIndicator> healthIndicators = new ConcurrentHashMap<>();
+	/**
+	 * Set the health indicator to healthy for the given method name.
+	 *
+	 * @param methodName the name of the scheduled method e.g. the name attribute of the {@link Dep44Scheduled} annotation
+	 */
+	public static void setHealthIndicatorHealthy(final String methodName) {
+		final var healthIndicator = healthIndicators.get(methodName);
+		if (healthIndicator != null) {
+			healthIndicator.setHealthy();
+		}
+	}
+
+	/**
+	 * Set the health indicator to unhealthy for the given method name.
+	 *
+	 * @param methodName   the name of the scheduled method e.g. the name attribute of the {@link Dep44Scheduled} annotation
+	 * @param errorMessage the error message to set
+	 */
+	public static void setHealthIndicatorUnhealthy(final String methodName, final String errorMessage) {
+		final var healthIndicator = healthIndicators.get(methodName);
+		if (healthIndicator != null) {
+			healthIndicator.setUnhealthy(errorMessage);
+			lastFailure.set(LocalDateTime.now());
+
+		}
+	}
 
 	/**
 	 * Get the timestamp of the last success.
@@ -85,7 +115,9 @@ public class Dept44SchedulerAspect {
 	 * <p>
 	 * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the
 	 * aspect. If you catch and handle exceptions in the method, they won't be caught here, and the health indicator won't
-	 * be updated.
+	 * be updated. If you need to catch and handle exceptions in the method, you can manually set the health status using
+	 * the
+	 * {@link #setHealthIndicatorHealthy(String)} and {@link #setHealthIndicatorUnhealthy(String, String)} methods.
 	 * </p>
 	 * <p>
 	 * <strong>Usage:</strong>

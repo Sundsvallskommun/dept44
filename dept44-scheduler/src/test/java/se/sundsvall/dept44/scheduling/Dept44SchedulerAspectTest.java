@@ -23,6 +23,93 @@ class Dept44SchedulerAspectTest {
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
 		aspect = new Dept44SchedulerAspect();
+		// Initialize health indicator for test methods
+		aspect.getHealthIndicators().put("TestTask", new Dept44HealthIndicator());
+	}
+
+	@Test
+	void testSetHealthIndicatorHealthy() {
+		// arrange
+		final String methodName = "TestTask";
+		Dept44SchedulerAspect.setHealthIndicatorUnhealthy(methodName, "Initial error");
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorHealthy(methodName);
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getStatus().getCode()).isEqualTo("UP");
+	}
+
+	// Test setting the health indicator to healthy when it is already healthy
+	@Test
+	void testSetHealthIndicatorHealthyWhenAlreadyHealthy() {
+		// arrange
+		final String methodName = "TestTask";
+		Dept44SchedulerAspect.setHealthIndicatorHealthy(methodName);
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorHealthy(methodName);
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getStatus().getCode()).isEqualTo("UP");
+	}
+
+	// Test setting the health indicator to unhealthy when it is already unhealthy
+	@Test
+	void testSetHealthIndicatorUnhealthyWhenAlreadyUnhealthy() {
+		// arrange
+		final String methodName = "TestTask";
+		final String errorMessage = "Initial error";
+		Dept44SchedulerAspect.setHealthIndicatorUnhealthy(methodName, errorMessage);
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorUnhealthy(methodName, "Another error");
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getDetails()).containsEntry("Reason", "Another error");
+	}
+
+	// Test setting the health indicator to healthy for a non-existent method name
+	@Test
+	void testSetHealthIndicatorHealthyForNonExistentMethod() {
+		// arrange
+		final String methodName = "NonExistentTask";
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorHealthy(methodName);
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName)).isNull();
+	}
+
+	@Test
+	void testSetHealthIndicatorUnhealthy() {
+		// arrange
+		final String methodName = "TestTask";
+		final String errorMessage = "Test error";
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorUnhealthy(methodName, errorMessage);
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(aspect.getHealthIndicators().get(methodName).health().getDetails()).containsEntry("Reason", errorMessage);
+		assertThat(aspect.getLastFailure()).isNotNull();
+	}
+
+	// Test setting the health indicator to unhealthy for a non-existent method name
+	@Test
+	void testSetHealthIndicatorUnhealthyForNonExistentMethod() {
+		// arrange
+		final String methodName = "NonExistentTask";
+		final String errorMessage = "Test error";
+
+		// act
+		Dept44SchedulerAspect.setHealthIndicatorUnhealthy(methodName, errorMessage);
+
+		// assert
+		assertThat(aspect.getHealthIndicators().get(methodName)).isNull();
 	}
 
 	@Test
@@ -37,7 +124,7 @@ class Dept44SchedulerAspectTest {
 		// assert
 		assertThat(result).isEqualTo("Success");
 		assertThat(aspect.getLastSuccess()).isNotNull();
-		assertThat(aspect.getLastFailure()).isNull();
+		assertThat(aspect.getLastFailure()).isBefore(aspect.getLastSuccess());
 		assertThat(aspect.getHealthIndicators().get("TestTask").health().getStatus().getCode()).isEqualTo("UP");
 	}
 
@@ -51,7 +138,7 @@ class Dept44SchedulerAspectTest {
 		aspect.aroundScheduledMethod(pjp, dep44Scheduled);
 
 		// assert
-		assertThat(aspect.getLastSuccess()).isNull();
+		assertThat(aspect.getLastSuccess()).isBefore(aspect.getLastFailure());
 		assertThat(aspect.getLastFailure()).isNotNull();
 		assertThat(aspect.getHealthIndicators().get("TestTask").health().getStatus().getCode()).isEqualTo("RESTRICTED");
 		assertThat(aspect.getHealthIndicators().get("TestTask").health().getDetails()).containsEntry("Reason", "Test exception");

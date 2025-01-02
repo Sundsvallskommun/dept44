@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.scheduling.annotation.Scheduled;
+import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
 /**
  * Custom annotation merging {@link Scheduled} and {@link SchedulerLock} for scheduling and locking tasks.
@@ -22,7 +23,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Target(ElementType.METHOD)
 @Scheduled
 @SchedulerLock
-public @interface Dep44Scheduled {
+public @interface Dept44Scheduled {
 
 	/**
 	 * Alias for {@link Scheduled#cron()}.
@@ -57,7 +58,7 @@ public @interface Dep44Scheduled {
 	 * Default is 2 minutes.
 	 *
 	 * @return the maximum execution time
-	 * @see    se.sundsvall.dept44.scheduling.Dept44HealthIndicator
+	 * @see    Dept44HealthIndicator
 	 */
 	int maximumExecutionTime() default 2;
 }

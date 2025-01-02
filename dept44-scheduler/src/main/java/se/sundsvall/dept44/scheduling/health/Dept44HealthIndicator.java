@@ -1,13 +1,14 @@
-package se.sundsvall.dept44.scheduling;
+package se.sundsvall.dept44.scheduling.health;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
+import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
- * Health indicator for schedulers using the {@link Dep44Scheduled} annotation.
+ * Health indicator for schedulers using the {@link Dept44Scheduled} annotation.
  *
  * <p>
  * This class implements the {@link HealthIndicator} interface to provide health status for scheduled tasks. It
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
  * additional context when the health status is <code>"RESTRICTED"</code>.
  * </p>
  *
- * @see se.sundsvall.dept44.scheduling.Dep44Scheduled
+ * @see Dept44Scheduled
  * @see org.springframework.boot.actuate.health.HealthIndicator
  * @see org.springframework.boot.actuate.health.Health
  */
@@ -50,11 +51,10 @@ public class Dept44HealthIndicator implements HealthIndicator {
 	public Health health() {
 		if (healthy.get()) {
 			return Health.up().build();
-		} else {
-			return Health.status("RESTRICTED")
-				.withDetail("Reason", Objects.requireNonNullElse(reason, "Unknown"))
-				.build();
 		}
+		return Health.status("RESTRICTED")
+			.withDetail("Reason", Objects.requireNonNullElse(reason, "Unknown"))
+			.build();
 	}
 
 	/**

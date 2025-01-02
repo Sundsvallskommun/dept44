@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.scheduling;
+package se.sundsvall.dept44.scheduling.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

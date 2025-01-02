@@ -13,10 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class Dept44HealthUtilityTest {
 
 	@InjectMocks
-	Dept44HealthUtility dept44Health;
+	private Dept44HealthUtility dept44Health;
 
 	@Mock
-	Dept44CompositeHealthContributor healthContributor;
+	private Dept44CompositeHealthContributor healthContributor;
 
 	@Test
 	void testSetHealthIndicatorHealthy() {

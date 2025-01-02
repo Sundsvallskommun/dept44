@@ -12,6 +12,7 @@ provides two primary commands:
 
 - **Java 21**
 - **Maven 3.9.9 or higher**
+- **Spring Boot 3.x**
 
 ### Installation
 
@@ -22,7 +23,7 @@ Add this plugin to your project's `pom.xml` in the `<plugins>` section:
 <plugin>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-formatting-plugin</artifactId>
-	<version>6.0.3-SNAPSHOT</version>
+	<version>6.0.6-SNAPSHOT</version>
 </plugin>
 ```
 
@@ -111,6 +112,7 @@ the [CONTRIBUTING.md](https://github.com/Sundsvallskommun/.github/blob/main/.git
 
 ## License
 
-This plugin is distributed under the [MIT License](LICENSE).
+This plugin is distributed under
+the [MIT License](https://github.com/Sundsvallskommun/.github/blob/main/LICENSE).
 
 © 2024 Sundsvalls kommun

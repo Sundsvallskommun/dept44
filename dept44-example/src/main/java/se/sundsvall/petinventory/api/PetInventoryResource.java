@@ -35,13 +35,13 @@ import se.sundsvall.petinventory.service.PetInventoryService;
 @Validated
 @RequestMapping("/pet-inventory-items")
 @Tag(name = "Pet inventory", description = "Pet inventory operations")
-public class PetInventoryResource {
+class PetInventoryResource {
 
 	private static final String CONTENT_DISPOSITION_HEADER_VALUE = "attachment; filename=\"%s\"";
 
 	private final PetInventoryService petInventoryService;
 
-	public PetInventoryResource(final PetInventoryService petInventoryService) {
+	PetInventoryResource(final PetInventoryService petInventoryService) {
 		this.petInventoryService = petInventoryService;
 	}
 

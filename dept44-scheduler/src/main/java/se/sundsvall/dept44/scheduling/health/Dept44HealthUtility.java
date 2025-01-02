@@ -7,7 +7,12 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  * Utility class for setting the health of a scheduled method.
  *
  * <p>
- * This class is used
+ * This class is used to set the health of a scheduled method. It provides methods to set the health indicator to
+ * healthy or unhealthy.
+ *
+ * <p>
+ * Use this if you need to set the health of a scheduled method from within the method itself instead of relying on the
+ * aspect to catch exceptions.
  */
 @Component
 public class Dept44HealthUtility {

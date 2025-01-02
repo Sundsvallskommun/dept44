@@ -6,13 +6,17 @@ import static org.mockito.Mockito.when;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
+@ExtendWith(MockitoExtension.class)
 class Dept44SchedulerAspectTest {
 
+	@InjectMocks
 	private Dept44SchedulerAspect aspect;
 
 	@Mock
@@ -26,8 +30,6 @@ class Dept44SchedulerAspectTest {
 
 	@BeforeEach
 	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		aspect = new Dept44SchedulerAspect(healthContributor);
 		// Initialize health indicator for test methods
 		when(healthContributor.getOrCreateIndicator("TestTask")).thenReturn(new Dept44HealthIndicator());
 	}

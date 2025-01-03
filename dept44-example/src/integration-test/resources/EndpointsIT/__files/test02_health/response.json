@@ -28,6 +28,9 @@
 		"ping": {
 			"status": "UP"
 		},
+		"dept44": {
+			"status": "UP"
+		},
 		"discoveryComposite": {
 			"components": {
 				"discoveryClient": {

@@ -23,3 +23,7 @@ spring:
           petstore:
             authorization-grant-type: client_credentials
             provider: petstore
+
+scheduler:
+  pet-scheduler:
+    cron: "-"

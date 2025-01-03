@@ -49,59 +49,72 @@ Include the dependency in your `pom.xml`:
 1. **Enable the Scheduler**  
    Create a configuration class to activate the scheduling aspect:
 
-   ```java
-   @Configuration
-   @ComponentScan(basePackages = "se.sundsvall.dept44.scheduling")
-   public class SchedulerConfiguration {
-   }
-   ```
+    ```java
+    @Configuration
+    @ComponentScan(basePackages = "se.sundsvall.dept44.scheduling")
+    public class SchedulerConfiguration {
+    }
+    ```
+
 2. **Create Scheduled Tasks**  
    Annotate a method with `@Dept44Scheduled` to handle exceptions, enforce locking, and monitor task durations:
 
-   ```java
-   @Component
-   public class ScheduledTasks {
-       @Dept44Scheduled(
-           cron = "${scheduler.scheduled-task.cron}",
-           name = "${scheduler.scheduled-task.name}",
-           lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
-           maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
-       )
-       public void scheduledTask() {
-           // Task logic
-       }
-   }
-   ```
-3. **Manually Adjust Health**  
+    ```java
+    @Component
+    public class ScheduledTasks {
+        @Dept44Scheduled(
+            cron = "${scheduler.scheduled-task.cron}",
+            name = "${scheduler.scheduled-task.name}",
+            lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
+            maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
+        )
+        public void scheduledTask() {
+            // Task logic
+        }
+    }
+    ```
+
+3. **Add database table for shedlock**  
+   Add the following table to your database as shedlock requires it to work properly:
+
+    ```sql
+    create table shedlock
+    (
+        name       varchar(64)  not null,
+        lock_until timestamp(3) not null,
+        locked_at  timestamp(3) not null default current_timestamp(3),
+        locked_by  varchar(255) not null,
+        primary key (name)
+    );
+    ```
+
+4. **Manually Adjust Health**  
    Should you require customized exception handling, manually set the health status:
 
-```java
+    ```java
+    @Component
+    public class ScheduledTasks {
+        private final Dept44HealthUtility dept44HealthUtility;
 
-@Component
-public class ScheduledTasks {
-	private final Dept44HealthUtility dept44HealthUtility;
+        public ScheduledTasks(final Dept44HealthUtility dept44HealthUtility) {
+            this.dept44HealthUtility = dept44HealthUtility;
+        }
 
-	public ScheduledTasks(final Dept44HealthUtility dept44HealthUtility) {
-		this.dept44HealthUtility = dept44HealthUtility;
-	}
-
-	@Dept44Scheduled(
-		cron = "${scheduler.scheduled-task.cron}",
-		name = "${scheduler.scheduled-task.name}",
-		lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
-		maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
-	)
-	public void scheduledTask() {
-		try {
-			// Task logic
-		} catch (final Exception e) {
-			dept44HealthUtility.setHealthIndicatorUnhealthy("ScheduledTask", e.getMessage());
-		}
-	}
-
-}
-
-```
+        @Dept44Scheduled(
+            cron = "${scheduler.scheduled-task.cron}",
+            name = "${scheduler.scheduled-task.name}",
+            lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
+            maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
+        )
+        public void scheduledTask() {
+            try {
+                // Task logic
+            } catch (final Exception e) {
+                dept44HealthUtility.setHealthIndicatorUnhealthy("ScheduledTask", e.getMessage());
+            }
+        }
+    }
+    ```
 
 ## Configuration
 

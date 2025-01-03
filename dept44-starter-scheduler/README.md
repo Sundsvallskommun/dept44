@@ -51,7 +51,6 @@ Include the dependency in your `pom.xml`:
 
    ```java
    @Configuration
-   @EnableAspectJAutoProxy
    @ComponentScan(basePackages = "se.sundsvall.dept44.scheduling")
    public class SchedulerConfiguration {
    }

@@ -32,6 +32,3 @@ spring:
           petstore:
             client-id: the-client-id
             client-secret: the-client-secret
-scheduler:
-  pet-scheduler:
-    cron: "* * * * * *"

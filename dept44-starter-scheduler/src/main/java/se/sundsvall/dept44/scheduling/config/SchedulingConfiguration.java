@@ -4,8 +4,9 @@ import javax.sql.DataSource;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -22,7 +23,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @see JdbcTemplateLockProvider
  * @see EnableSchedulerLock
  */
-@Configuration
+@AutoConfiguration
+@ComponentScan(basePackages = "se.sundsvall.dept44.scheduling")
 @EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "PT2M")
 @EnableAspectJAutoProxy

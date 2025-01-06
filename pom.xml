@@ -60,7 +60,7 @@
 		<okhttp-mockwebserver-version>4.12.0</okhttp-mockwebserver-version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
-		<springdoc.version>2.7.0</springdoc.version>
+		<springdoc.version>2.8.1</springdoc.version>
 		<spring-cloud.version>2024.0.0</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<json-unit.version>4.1.0</json-unit.version>

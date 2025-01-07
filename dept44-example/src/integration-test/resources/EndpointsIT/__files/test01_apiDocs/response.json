@@ -187,9 +187,7 @@
 						"type": "string"
 					},
 					"parameters": {
-						"additionalProperties": {
-							"type": "object"
-						},
+						"additionalProperties": {},
 						"type": "object"
 					},
 					"status": {
@@ -215,9 +213,7 @@
 						"type": "string"
 					},
 					"parameters": {
-						"additionalProperties": {
-							"type": "object"
-						},
+						"additionalProperties": {},
 						"type": "object"
 					},
 					"status": {
@@ -338,9 +334,7 @@
 						"type": "string"
 					},
 					"parameters": {
-						"additionalProperties": {
-							"type": "object"
-						},
+						"additionalProperties": {},
 						"type": "object"
 					},
 					"status": {
@@ -357,7 +351,7 @@
 			"url": "${json-unit.any-string}"
 		}
 	],
-	"openapi": "3.0.1",
+	"openapi": "3.1.0",
 	"paths": {
 		"/pet-inventory-items/{id}": {
 			"get": {

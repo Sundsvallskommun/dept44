@@ -73,7 +73,9 @@ public final class BodyFilterProvider {
 					return "";
 				}
 
-				if (ContentType.parse(contentType).getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+				var parsedContentType = ContentType.parse(contentType);
+
+				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
 					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
 					final var value = documentContext.read(filter.getKey());
 					if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
@@ -146,7 +148,7 @@ public final class BodyFilterProvider {
 
 			try {
 				final ContentType contentType = ContentType.parse(contentTypeString);
-				if (xmlContentTypes.contains(contentType.getMimeType())) {
+				if (contentType != null && xmlContentTypes.contains(contentType.getMimeType())) {
 					// Evaluate what charSet to use
 					final var charSet = evaluateCharset(contentType);
 

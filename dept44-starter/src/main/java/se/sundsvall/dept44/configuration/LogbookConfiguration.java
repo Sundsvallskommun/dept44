@@ -33,6 +33,7 @@ import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
+import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
@@ -46,13 +47,28 @@ public class LogbookConfiguration {
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
+	private final int maxBodySize;
 
+	/**
+	 * Constructor for LogbookConfiguration.
+	 *
+	 * @param loggerName              The name of the logger to use.
+	 * @param defaultExcludedPaths    The default paths to exclude from logging.
+	 * @param additionalExcludedPaths Additional paths to exclude from logging.
+	 * @param maxBodySize             The maximum size of the body to log.
+	 *                                If the size of the payload is larger than this value the log will be cut and no
+	 *                                filtering will be applied.
+	 *                                E.g. passwords will not be masked. Use only when absolutely necessary.
+	 *                                Defaults to max-size of an int.
+	 */
 	LogbookConfiguration(
 		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
 		@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
-		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
-		this.loggerName = loggerName;
+		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths,
+		@Value("${logbook.logs.maxBodySize:2147483647}") int maxBodySize) {
 
+		this.maxBodySize = maxBodySize;
+		this.loggerName = loggerName;
 		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)
 			.flatMap(Collection::stream)
 			.collect(Collectors.toSet());
@@ -69,6 +85,7 @@ public class LogbookConfiguration {
 				fileAttachmentFilter(),
 				binaryContentFilter()))
 			.bodyFilter(passwordFilter())
+			.bodyFilter(BodyFilters.truncate(maxBodySize))
 			.bodyFilters(buildJsonPathFilters(objectMapper,
 				Optional.ofNullable(bodyFilterProperties.getJsonPath())
 					.orElseGet(Collections::emptyList)

@@ -17,7 +17,7 @@ Include the dependency in your `pom.xml`:
 
 <dependency>
 	<groupId>se.sundsvall.dept44</groupId>
-	<artifactId>dept44-scheduler</artifactId>
+	 <artifactId>dept44-starter-scheduler</artifactId>
 	<version>6.0.6-SNAPSHOT</version>
 </dependency>
 ```

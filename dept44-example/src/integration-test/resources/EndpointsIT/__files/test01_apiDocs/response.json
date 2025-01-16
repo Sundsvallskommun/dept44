@@ -7,7 +7,7 @@
 			"name": "MIT License",
 			"url": "https://opensource.org/licenses/MIT"
 		},
-		"version": "6.0.6-SNAPSHOT"
+		"version": "${json-unit.any-string}"
 	},
 	"servers": [
 		{

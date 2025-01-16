@@ -31,8 +31,10 @@ import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpLogWriter;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.LogbookCreator;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
+import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
@@ -46,13 +48,28 @@ public class LogbookConfiguration {
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
+	private final int maxBodySizeToLog;
 
+	/**
+	 * Constructor for LogbookConfiguration.
+	 *
+	 * @param loggerName              The name of the logger to use.
+	 * @param defaultExcludedPaths    The default paths to exclude from logging.
+	 * @param additionalExcludedPaths Additional paths to exclude from logging.
+	 * @param maxBodySizeToLog        The maximum size of the body to log.
+	 *                                If the size of the payload is larger than this value the log will be cut and no
+	 *                                filtering will be applied.
+	 *                                E.g. passwords will not be masked. Use only when absolutely necessary.
+	 *                                Defaults to -1 (disabled).
+	 */
 	LogbookConfiguration(
 		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
 		@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
-		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths) {
-		this.loggerName = loggerName;
+		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths,
+		@Value("${logbook.logs.maxBodySizeToLog:-1}") int maxBodySizeToLog) {
 
+		this.maxBodySizeToLog = maxBodySizeToLog;
+		this.loggerName = loggerName;
 		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)
 			.flatMap(Collection::stream)
 			.collect(Collectors.toSet());
@@ -61,22 +78,24 @@ public class LogbookConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
-		return Logbook.builder()
+		var builder = Logbook.builder()
 			.sink(new DefaultSink(
 				new JsonHttpLogFormatter(objectMapper),
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilters(List.of(
 				fileAttachmentFilter(),
 				binaryContentFilter()))
-			.bodyFilter(passwordFilter())
-			.bodyFilters(buildJsonPathFilters(objectMapper,
-				Optional.ofNullable(bodyFilterProperties.getJsonPath())
-					.orElseGet(Collections::emptyList)
-					.stream()
-					.reduce(new HashMap<>(), (acc, map) -> {
-						acc.put(map.get("key"), map.get("value"));
-						return acc;
-					})))
+			.bodyFilter(passwordFilter());
+
+		setMaxBodySizeToLog(builder);
+
+		return builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
+			.orElseGet(Collections::emptyList)
+			.stream()
+			.reduce(new HashMap<>(), (acc, map) -> {
+				acc.put(map.get("key"), map.get("value"));
+				return acc;
+			})))
 			.bodyFilters(buildXPathFilters(
 				Optional.ofNullable(bodyFilterProperties.getxPath())
 					.orElseGet(Collections::emptyList)
@@ -88,6 +107,12 @@ public class LogbookConfiguration {
 			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
 			.condition(exclude(getExclusions()))
 			.build();
+	}
+
+	private void setMaxBodySizeToLog(LogbookCreator.Builder builder) {
+		if (maxBodySizeToLog > 0) {
+			builder.bodyFilter(BodyFilters.truncate(maxBodySizeToLog));
+		}
 	}
 
 	private List<Predicate<HttpRequest>> getExclusions() {

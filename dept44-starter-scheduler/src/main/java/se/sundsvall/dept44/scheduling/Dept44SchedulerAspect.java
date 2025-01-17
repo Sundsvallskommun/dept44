@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
@@ -42,9 +43,11 @@ public class Dept44SchedulerAspect {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Dept44SchedulerAspect.class);
 	private final Dept44CompositeHealthContributor dept44Composite;
+	private final Environment environment;
 
-	public Dept44SchedulerAspect(final Dept44CompositeHealthContributor dept44Composite) {
+	public Dept44SchedulerAspect(final Dept44CompositeHealthContributor dept44Composite, final Environment environment) {
 		this.dept44Composite = dept44Composite;
+		this.environment = environment;
 	}
 
 	/**
@@ -88,10 +91,11 @@ public class Dept44SchedulerAspect {
 	@Around("@annotation(dept44Scheduled)")
 	public Object aroundScheduledMethod(final ProceedingJoinPoint pjp, final Dept44Scheduled dept44Scheduled) throws Throwable {
 
-		final var name = dept44Scheduled.name();
+		final var name = environment.resolvePlaceholders(dept44Scheduled.name());
+		final var maxExecutionTime = environment.resolvePlaceholders(dept44Scheduled.maximumExecutionTime());
+
 		final var healthIndicator = dept44Composite.getOrCreateIndicator(name);
 		final var startTime = OffsetDateTime.now();
-
 		try {
 			RequestId.init();
 			LOG.info("Scheduled method {} start. RequestID={}", name, RequestId.get());
@@ -105,7 +109,7 @@ public class Dept44SchedulerAspect {
 		} finally {
 			final var endTime = OffsetDateTime.now();
 			final var duration = Duration.between(startTime, endTime);
-			if (duration.compareTo(Duration.parse(dept44Scheduled.maximumExecutionTime())) > 0) {
+			if (duration.compareTo(Duration.parse(maxExecutionTime)) > 0) {
 				LOG.warn("Scheduled method {} took too long: {} minutes. RequestID={}", name, duration.toMinutes(), RequestId.get());
 				healthIndicator.setUnhealthy("Maximum execution time exceeded");
 			}

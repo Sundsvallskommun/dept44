@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
@@ -36,7 +35,6 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  * @see org.springframework.boot.actuate.health.HealthIndicator
  * @see org.springframework.boot.actuate.health.Health
  */
-@Component
 public class Dept44HealthIndicator implements HealthIndicator {
 	private final AtomicBoolean healthy = new AtomicBoolean(true);
 	private final AtomicBoolean errors = new AtomicBoolean(false);

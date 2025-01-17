@@ -27,3 +27,5 @@ spring:
 scheduler:
   pet-scheduler:
     cron: "-"
+    name: pet-scheduler
+    maximum-execution-time: PT3M

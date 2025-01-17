@@ -15,7 +15,9 @@ public class PetScheduler {
 		this.petSchedulerWorker = petSchedulerWorker;
 	}
 
-	@Dept44Scheduled(name = "pet-scheduler", cron = "${scheduler.pet-scheduler.cron}")
+	@Dept44Scheduled(name = "${scheduler.pet-scheduler.name}",
+		cron = "${scheduler.pet-scheduler.cron}",
+		maximumExecutionTime = "${scheduler.pet-scheduler.maximum-execution-time}")
 	public void getAndProcessPets() {
 		LOG.info("Getting and processing pets");
 		petSchedulerWorker.getPets().forEach(pet -> LOG.info("Processing pet: {}", pet));

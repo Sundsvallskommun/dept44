@@ -60,5 +60,5 @@ public @interface Dept44Scheduled {
 	 * @return the maximum execution time
 	 * @see    Dept44HealthIndicator
 	 */
-	int maximumExecutionTime() default 2;
+	String maximumExecutionTime() default "2";
 }

@@ -105,7 +105,7 @@ public class Dept44SchedulerAspect {
 		} finally {
 			final var endTime = OffsetDateTime.now();
 			final var duration = Duration.between(startTime, endTime);
-			if (duration.toMinutes() > dept44Scheduled.maximumExecutionTime()) {
+			if (duration.compareTo(Duration.parse(dept44Scheduled.maximumExecutionTime())) > 0) {
 				LOG.warn("Scheduled method {} took too long: {} minutes. RequestID={}", name, duration.toMinutes(), RequestId.get());
 				healthIndicator.setUnhealthy("Maximum execution time exceeded");
 			}

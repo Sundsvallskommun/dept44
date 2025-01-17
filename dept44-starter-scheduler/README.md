@@ -17,7 +17,7 @@ Include the dependency in your `pom.xml`:
 
 <dependency>
 	<groupId>se.sundsvall.dept44</groupId>
-	 <artifactId>dept44-starter-scheduler</artifactId>
+	<artifactId>dept44-starter-scheduler</artifactId>
 	<version>6.0.6-SNAPSHOT</version>
 </dependency>
 ```
@@ -115,8 +115,8 @@ scheduler.scheduled-task.name=ScheduledTask
 scheduler.scheduled-task.cron=0 0/5 * * * ?
 # Lock at most for 2 minutes
 schedulers.scheduled-task.shedlock-lock-at-most-for=PT2M
-# Execution time in minutes
-scheduler.scheduled-task.maximum-execution-time=2
+# Limit execution time to 2 minutes, if exceeded, the task will be marked as unhealthy
+scheduler.scheduled-task.maximum-execution-time=PT2M
 ```
 
 ### application.yml
@@ -127,7 +127,7 @@ scheduler:
     name: "ScheduledTask"
     cron: "0 0/5 * * * ?"
     shedlock-lock-at-most-for: "PT2M"
-    maximum-execution-time: 2
+    maximum-execution-time: "PT2M"
 ```
 
 ## Contributing

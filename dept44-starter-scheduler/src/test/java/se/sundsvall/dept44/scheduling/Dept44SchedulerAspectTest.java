@@ -32,6 +32,7 @@ class Dept44SchedulerAspectTest {
 	void setUp() {
 		// Initialize health indicator for test methods
 		when(healthContributor.getOrCreateIndicator("TestTask")).thenReturn(new Dept44HealthIndicator());
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
 	}
 
 	@Test

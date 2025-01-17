@@ -7,7 +7,6 @@ import java.lang.annotation.Target;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.scheduling.annotation.Scheduled;
-import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
 /**
  * Custom annotation merging {@link Scheduled} and {@link SchedulerLock} for scheduling and locking tasks.
@@ -53,12 +52,13 @@ public @interface Dept44Scheduled {
 	String lockAtMostFor() default "";
 
 	/**
-	 * The maximum time for executing the task before the health status is set to restricted.
+	 * * The maximum time for executing the task before the health status is set to restricted.
+	 * <p>
+	 * Should be ISO8601 duration as described in {@link java.time.Duration#parse(CharSequence)}, for example PT30S.
 	 * <p>
 	 * Default is 2 minutes.
 	 *
 	 * @return the maximum execution time
-	 * @see    Dept44HealthIndicator
 	 */
-	int maximumExecutionTime() default 2;
+	String maximumExecutionTime() default "PT2M";
 }

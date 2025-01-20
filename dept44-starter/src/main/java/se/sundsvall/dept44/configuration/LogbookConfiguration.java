@@ -84,18 +84,18 @@ public class LogbookConfiguration {
 				new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilters(List.of(
 				fileAttachmentFilter(),
-				binaryContentFilter()))
-			.bodyFilter(passwordFilter());
+				binaryContentFilter()));
 
 		setMaxBodySizeToLog(builder);
 
-		return builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
-			.orElseGet(Collections::emptyList)
-			.stream()
-			.reduce(new HashMap<>(), (acc, map) -> {
-				acc.put(map.get("key"), map.get("value"));
-				return acc;
-			})))
+		return builder.bodyFilter(passwordFilter())
+			.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
+				.orElseGet(Collections::emptyList)
+				.stream()
+				.reduce(new HashMap<>(), (acc, map) -> {
+					acc.put(map.get("key"), map.get("value"));
+					return acc;
+				})))
 			.bodyFilters(buildXPathFilters(
 				Optional.ofNullable(bodyFilterProperties.getxPath())
 					.orElseGet(Collections::emptyList)

@@ -21,9 +21,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class DateUtilsTest {
 
+	private static final TimeZone DEFAULT_TIMEZONE = TimeZone.getTimeZone("Europe/Stockholm");
+
 	@BeforeAll
 	static void beforeAll() {
-		TimeZone.setDefault(TimeZone.getTimeZone("Europe/Stockholm"));
+		TimeZone.setDefault(DEFAULT_TIMEZONE);
 	}
 
 	@Test

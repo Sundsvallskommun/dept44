@@ -40,5 +40,4 @@ class BasicAuthenticationTest {
 			Arguments.of(null, "password", "Username must be set"),
 			Arguments.of(null, null, "Username must be set"));
 	}
-
 }

@@ -71,9 +71,7 @@ class PetInventoryResource {
 		return ok(petInventoryService.getPetInventoryItem(id));
 	}
 
-	@PostMapping(path = "/{id}/images", consumes = {
-		MULTIPART_FORM_DATA_VALUE
-	}, produces = APPLICATION_JSON_VALUE)
+	@PostMapping(path = "/{id}/images", consumes = MULTIPART_FORM_DATA_VALUE, produces = APPLICATION_JSON_VALUE)
 	@Operation(summary = "Add pet inventory item image by id", responses = {
 		@ApiResponse(responseCode = "201", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {
@@ -89,9 +87,7 @@ class PetInventoryResource {
 			.build();
 	}
 
-	@GetMapping(path = "/{id}/images/{imageId}", produces = {
-		MediaType.ALL_VALUE
-	})
+	@GetMapping(path = "/{id}/images/{imageId}", produces = ALL_VALUE)
 	@Operation(summary = "Get pet inventory item image by id", responses = {
 		@ApiResponse(responseCode = "201", description = "Successful operation", useReturnTypeSchema = true),
 		@ApiResponse(responseCode = "400", description = "Bad request", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(oneOf = {

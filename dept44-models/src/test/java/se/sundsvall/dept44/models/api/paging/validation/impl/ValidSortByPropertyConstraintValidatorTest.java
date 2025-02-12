@@ -93,5 +93,4 @@ class ValidSortByPropertyConstraintValidatorTest {
 	@ValidSortByProperty(include = "includeField")
 	public static class TestParametersWithNoBackedEntity extends AbstractParameterPagingAndSortingBase {
 	}
-
 }

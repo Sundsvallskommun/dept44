@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
+import static jakarta.validation.constraints.Pattern.Flag.CASE_INSENSITIVE;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.ArrayList;
@@ -16,7 +18,7 @@ public class OpenApiProperties {
 	private List<Server> servers = new ArrayList<>();
 
 	@NotBlank
-	@Pattern(regexp = "[a-z0-9_-]+", flags = Pattern.Flag.CASE_INSENSITIVE)
+	@Pattern(regexp = "[a-z0-9_-]+", flags = CASE_INSENSITIVE)
 	private String name;
 
 	@NotBlank

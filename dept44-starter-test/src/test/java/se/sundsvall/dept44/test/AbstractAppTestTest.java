@@ -76,7 +76,7 @@ class AbstractAppTestTest {
 	private ArgumentCaptor<HttpEntity<String>> httpEntityCaptor;
 
 	@Test
-	void testGETCall() throws Exception {
+	void testGetCall() {
 
 		// Setup
 		final var responseHeaders = new HttpHeaders();
@@ -114,7 +114,7 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGETCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGetCall"));
 
 		// Verification of reset-method
 		assertThat(appTest.reset()).hasAllNullFieldsOrPropertiesExcept(
@@ -165,7 +165,7 @@ class AbstractAppTestTest {
 	}
 
 	@Test
-	void testPOSTCall() throws Exception {
+	void testPostCall() {
 
 		// Setup
 		final var responseHeaders = new HttpHeaders();
@@ -200,11 +200,11 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCall"));
 	}
 
 	@Test
-	void testPOSTCallWithMultiPart() throws Exception {
+	void testPostCallWithMultiPart() {
 
 		// Setup
 		final var file = new File("src/test/resources/test.xml");
@@ -241,11 +241,11 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(MULTIPART_FORM_DATA_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallWithMultiPart"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCallWithMultiPart"));
 	}
 
 	@Test
-	void testPOSTCallMatchesExpectedHeaderValueWithReqexp() throws Exception {
+	void testPostCallMatchesExpectedHeaderValueWithReqexp() {
 
 		// Setup
 		final var responseHeaders = new HttpHeaders();
@@ -280,11 +280,11 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPOSTCallMatchesExpectedHeaderValueWithReqexp"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCallMatchesExpectedHeaderValueWithReqexp"));
 	}
 
 	@Test
-	void testPUTCall() throws Exception {
+	void testPutCall() throws Exception {
 
 		// Setup
 		final var responseHeaders = new HttpHeaders();
@@ -329,11 +329,11 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPUTCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPutCall"));
 	}
 
 	@Test
-	void testDELETECall() throws Exception {
+	void testDeleteCall() {
 
 		// Setup
 		final var responseHeaders = new HttpHeaders();
@@ -364,7 +364,7 @@ class AbstractAppTestTest {
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDELETECall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDeleteCall"));
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package se.sundsvall.dept44.configuration.feign;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
@@ -42,7 +43,7 @@ class FeignMultiCustomizerTest {
 		final var customizer = FeignMultiCustomizer.create();
 		customizer.composeCustomizersToOne().customize(builderMock);
 
-		assertThat(customizer).extracting("customizers").asList().hasSize(1);
+		assertThat(customizer).extracting("customizers").asInstanceOf(LIST).hasSize(1);
 		verify(builderMock).requestInterceptor(any(RequestInterceptor.class));
 	}
 

@@ -78,16 +78,17 @@ public class LogbookConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
-		var builder = Logbook.builder()
-			.sink(new DefaultSink(
-				new JsonHttpLogFormatter(objectMapper),
-				new NamedLoggerHttpLogWriter(loggerName)))
+		var builder = Logbook.builder();
+
+		setMaxBodySizeToLog(builder);
+
+		builder.sink(new DefaultSink(
+			new JsonHttpLogFormatter(objectMapper),
+			new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilters(List.of(
 				fileAttachmentFilter(),
 				binaryContentFilter()))
 			.bodyFilter(passwordFilter());
-
-		setMaxBodySizeToLog(builder);
 
 		return builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
 			.orElseGet(Collections::emptyList)

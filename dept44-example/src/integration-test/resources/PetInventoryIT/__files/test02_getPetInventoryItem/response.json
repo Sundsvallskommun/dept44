@@ -9,5 +9,6 @@
 	"price": 1337.5,
 	"name": "Boozer",
 	"id": 3,
-	"type": "BIRD"
+	"type": "BIRD",
+	"clientId": "joe01exotic"
 }

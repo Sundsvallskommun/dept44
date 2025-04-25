@@ -341,6 +341,9 @@
 			"Problem": {
 				"type": "object",
 				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
 					"instance": {
 						"type": "string",
 						"format": "uri"
@@ -355,13 +358,10 @@
 							"type": "object"
 						}
 					},
-					"status": {
-						"$ref": "#/components/schemas/StatusType"
-					},
-					"title": {
+					"detail": {
 						"type": "string"
 					},
-					"detail": {
+					"title": {
 						"type": "string"
 					}
 				}
@@ -543,6 +543,9 @@
 					"message": {
 						"type": "string"
 					},
+					"status": {
+						"$ref": "#/components/schemas/StatusType"
+					},
 					"instance": {
 						"type": "string",
 						"format": "uri"
@@ -557,13 +560,10 @@
 							"type": "object"
 						}
 					},
-					"status": {
-						"$ref": "#/components/schemas/StatusType"
-					},
-					"title": {
+					"detail": {
 						"type": "string"
 					},
-					"detail": {
+					"title": {
 						"type": "string"
 					},
 					"suppressed": {
@@ -675,6 +675,11 @@
 						"type": "string",
 						"description": "Pet type",
 						"example": "DOG"
+					},
+					"clientId": {
+						"type": "string",
+						"description": "Client ID",
+						"example": "joe01doe"
 					},
 					"images": {
 						"type": "array",

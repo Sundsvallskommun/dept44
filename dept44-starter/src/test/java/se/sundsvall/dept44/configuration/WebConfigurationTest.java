@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,6 +43,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistration
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
 
 class WebConfigurationTest {
 
@@ -195,11 +198,14 @@ class WebConfigurationTest {
 	class IndexPageControllerTest {
 
 		@Mock
-		HttpServletRequest httpServletRequestMock;
+		private HttpServletRequest httpServletRequestMock;
+
 		@MockitoBean
 		private YAMLMapper mockYamlMapper;
+
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
+
 		@Autowired
 		private WebConfiguration.IndexPageController indexPageController;
 
@@ -251,6 +257,64 @@ class WebConfigurationTest {
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(RequestId.HEADER_NAME);
+		}
+	}
+
+	@Nested
+	@SpringBootTest(classes = WebConfiguration.class)
+	class IdentifierFilterTest {
+
+		@MockitoBean
+		private YAMLMapper mockYamlMapper;
+
+		@MockitoBean
+		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
+
+		@Mock
+		private HttpServletRequest httpServletRequestMock;
+
+		@Mock
+		private HttpServletResponse httpServletResponseMock;
+
+		@Mock
+		private FilterChain filterChainMock;
+
+		@Autowired
+		private FilterRegistrationBean<WebConfiguration.IdentifierFilter> identifierFilterRegistration;
+
+		@AfterEach
+		void afterEach() {
+			Identifier.remove(); // Clean up identifier in ThreadLocal. Necessary since all tests-runs in the ParameterizedTest runs in the same thread.
+		}
+
+		@ParameterizedTest
+		@MethodSource("argumentsProvider")
+		void doFilterInternal(String headerName, String headerValue, Identifier expectedIdentifier) throws IOException, ServletException {
+			// Arrange
+			final var identifierFilter = identifierFilterRegistration.getFilter();
+
+			when(httpServletRequestMock.getHeader(headerName)).thenReturn(headerValue);
+			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+
+			assertThat(Identifier.get()).isNull();
+
+			// Act
+			identifierFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
+
+			// Assert
+			assertThat(Identifier.get()).isEqualTo(expectedIdentifier);
+			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+			verify(httpServletRequestMock).getHeader(headerName);
+		}
+
+		static Stream<Arguments> argumentsProvider() {
+			return Stream.of(
+				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
+				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
+				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
+				Arguments.of("X-Sent-By", null, null),
+				Arguments.of("sentbyuser", "joe01doe", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
+				Arguments.of("sentbyuser", null, null));
 		}
 	}
 

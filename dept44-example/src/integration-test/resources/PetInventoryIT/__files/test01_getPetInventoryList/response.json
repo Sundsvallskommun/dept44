@@ -10,7 +10,8 @@
 		"price": 105,
 		"name": "Daisy",
 		"id": 1,
-		"type": "DOG"
+		"type": "DOG",
+		"clientId": "joe01exotic"
 	},
 	{
 		"images": [
@@ -23,7 +24,8 @@
 		"price": 20.75,
 		"name": "Beatle",
 		"id": 2,
-		"type": "CAT"
+		"type": "CAT",
+		"clientId": "joe01exotic"
 	},
 	{
 		"images": [
@@ -36,6 +38,7 @@
 		"price": 1337.5,
 		"name": "Boozer",
 		"id": 3,
-		"type": "BIRD"
+		"type": "BIRD",
+		"clientId": "joe01exotic"
 	}
 ]

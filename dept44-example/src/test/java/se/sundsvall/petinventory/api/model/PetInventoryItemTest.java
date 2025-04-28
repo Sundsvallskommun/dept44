@@ -32,13 +32,15 @@ class PetInventoryItemTest {
 		final var name = "name";
 		final var price = 1.0F;
 		final var type = "type";
+		final var clientId = "clientId";
 
 		final var bean = PetInventoryItem.create()
 			.withId(id)
 			.withImages(images)
 			.withName(name)
 			.withPrice(price)
-			.withType(type);
+			.withType(type)
+			.withClientId(clientId);
 
 		assertThat(bean).isNotNull().hasNoNullFieldsOrProperties();
 		assertThat(bean.getId()).isEqualTo(id);
@@ -46,6 +48,7 @@ class PetInventoryItemTest {
 		assertThat(bean.getName()).isEqualTo(name);
 		assertThat(bean.getPrice()).isEqualTo(price);
 		assertThat(bean.getType()).isEqualTo(type);
+		assertThat(bean.getClientId()).isEqualTo(clientId);
 	}
 
 	@Test

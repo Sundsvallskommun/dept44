@@ -20,6 +20,9 @@ public class PetInventoryItem {
 	@Schema(description = "Pet type", example = "DOG")
 	private String type;
 
+	@Schema(description = "Client ID", example = "joe01doe")
+	private String clientId;
+
 	@ArraySchema(schema = @Schema(implementation = PetImage.class))
 	private List<PetImage> images;
 
@@ -79,6 +82,19 @@ public class PetInventoryItem {
 		return this;
 	}
 
+	public String getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	public PetInventoryItem withClientId(String clientId) {
+		this.clientId = clientId;
+		return this;
+	}
+
 	public List<PetImage> getImages() {
 		return images;
 	}
@@ -94,20 +110,26 @@ public class PetInventoryItem {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, images, name, price, type);
+		return Objects.hash(clientId, id, images, name, price, type);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) { return true; }
-		if (!(obj instanceof final PetInventoryItem other)) { return false; }
-		return Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(name, other.name) && Objects.equals(price, other.price) && Objects.equals(type, other.type);
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		PetInventoryItem other = (PetInventoryItem) obj;
+		return Objects.equals(clientId, other.clientId) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(name, other.name) && Objects.equals(price, other.price) && Objects.equals(type, other.type);
 	}
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("PetInventoryItem [id=").append(id).append(", price=").append(price).append(", name=").append(name).append(", type=").append(type).append(", images=").append(images).append("]");
-		return builder.toString();
+		return "PetInventoryItem [id=" + id + ", price=" + price + ", name=" + name + ", type=" + type + ", clientId=" + clientId + ", images=" + images + "]";
 	}
 }

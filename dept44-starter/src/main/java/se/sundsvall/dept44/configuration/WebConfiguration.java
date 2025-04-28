@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
@@ -45,6 +47,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.zalando.problem.Problem;
 import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.util.ResourceUtils;
 
 @Configuration
@@ -66,6 +69,14 @@ public class WebConfiguration implements WebMvcConfigurer {
 	@Bean
 	FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
 		final var registration = new FilterRegistrationBean<>(new RequestIdFilter());
+		registration.addUrlPatterns("/*");
+		registration.setOrder(1);
+		return registration;
+	}
+
+	@Bean
+	FilterRegistrationBean<IdentifierFilter> identifierFilterRegistration() {
+		final var registration = new FilterRegistrationBean<>(new IdentifierFilter());
 		registration.addUrlPatterns("/*");
 		registration.setOrder(1);
 		return registration;
@@ -174,7 +185,6 @@ public class WebConfiguration implements WebMvcConfigurer {
 			this.openApiWebMvcResource = openApiWebMvcResource;
 
 			template = ResourceUtils.asString(templateResource).replace("@API_DOC_URI@", apiDocsPath).replace("@API_DOC_URI_RELATIVE@", apiDocsPath.replaceFirst("/", ""));
-
 		}
 
 		@Operation(hidden = true)
@@ -205,6 +215,28 @@ public class WebConfiguration implements WebMvcConfigurer {
 			} finally {
 				RequestId.reset();
 			}
+		}
+	}
+
+	static class IdentifierFilter extends OncePerRequestFilter {
+
+		@Override
+		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws ServletException, IOException {
+			var identifierString = request.getHeader(Identifier.HEADER_NAME);
+
+			/**
+			 * TODO: Delete this "if-statement" when clients have removed all usages of header "sentbyuser", in favor of "X-Sent-By"
+			 * (added in version 6.0.9)
+			 */
+			if (isNull(identifierString)) {
+				final var sentbyuserString = request.getHeader("sentbyuser");
+				if (nonNull(sentbyuserString)) {
+					identifierString = "%s;type=adAccount".formatted(sentbyuserString);
+				}
+			}
+
+			Identifier.set(Identifier.parse(identifierString));
+			chain.doFilter(request, response);
 		}
 	}
 

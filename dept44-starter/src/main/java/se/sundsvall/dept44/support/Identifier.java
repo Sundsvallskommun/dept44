@@ -29,7 +29,7 @@ import java.util.Optional;
  * Identifier.set(identifier);
  *
  * // Retrieve it later in the same thread
- * Identifier current = Identifier.get();
+ * final var currentIdentifier = Identifier.get();
  *
  * // Clean up when done
  * Identifier.remove();

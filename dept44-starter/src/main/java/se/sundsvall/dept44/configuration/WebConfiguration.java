@@ -235,8 +235,12 @@ public class WebConfiguration implements WebMvcConfigurer {
 				}
 			}
 
-			Identifier.set(Identifier.parse(identifierString));
-			chain.doFilter(request, response);
+			try {
+				Identifier.set(Identifier.parse(identifierString));
+				chain.doFilter(request, response);
+			} finally {
+				Identifier.remove();
+			}
 		}
 	}
 

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -282,11 +281,6 @@ class WebConfigurationTest {
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.IdentifierFilter> identifierFilterRegistration;
 
-		@AfterEach
-		void afterEach() {
-			Identifier.remove(); // Clean up identifier in ThreadLocal. Necessary since all tests-runs in the ParameterizedTest runs in the same thread.
-		}
-
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
 		void doFilterInternal(String headerName, String headerValue, Identifier expectedIdentifier) throws IOException, ServletException {
@@ -302,7 +296,7 @@ class WebConfigurationTest {
 			identifierFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
 
 			// Assert
-			assertThat(Identifier.get()).isEqualTo(expectedIdentifier);
+			assertThat(Identifier.get()).isNull();
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(headerName);
 		}

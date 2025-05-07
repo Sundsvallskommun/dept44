@@ -10,5 +10,3 @@ updates:
     target-branch: "main"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "Sundsvallskommun/team-unmasked"

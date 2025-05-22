@@ -35,10 +35,7 @@ class PetInventoryIT extends AbstractAppTest {
 		// Call
 		setupCall()
 			.withServicePath("/pet-inventory-items")
-			.withHeader("sentbyuser", "joe01exotic")
-			// .withHeader("x-sent-by", "joe01exotic; type=adAccount")
-			// TODO: Remove "sentbyuser" and uncomment the line above when
-			// se.sundsvall.dept44.configuration.WebConfiguration.IdentifierFilter is cleaned up,
+			.withHeader("x-sent-by", "joe01exotic; type=adAccount")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withExpectedResponse("response.json")

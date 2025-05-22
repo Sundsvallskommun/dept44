@@ -1,7 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
@@ -12,7 +11,6 @@ import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -125,7 +123,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 		converters.stream()
 			.filter(MappingJackson2HttpMessageConverter.class::isInstance)
 			.map(MappingJackson2HttpMessageConverter.class::cast)
-			.forEach(c -> c.getObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL));
+			.forEach(c -> c.getObjectMapper().setSerializationInclusion(NON_NULL));
 	}
 
 	@Override
@@ -223,17 +221,6 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws ServletException, IOException {
 			var identifierString = request.getHeader(Identifier.HEADER_NAME);
-
-			/**
-			 * TODO: Delete this "if-statement" when clients have removed all usages of header "sentbyuser", in favor of "X-Sent-By"
-			 * (added in version 6.0.9)
-			 */
-			if (isNull(identifierString)) {
-				final var sentbyuserString = request.getHeader("sentbyuser");
-				if (nonNull(sentbyuserString)) {
-					identifierString = "%s;type=adAccount".formatted(sentbyuserString);
-				}
-			}
 
 			try {
 				Identifier.set(Identifier.parse(identifierString));

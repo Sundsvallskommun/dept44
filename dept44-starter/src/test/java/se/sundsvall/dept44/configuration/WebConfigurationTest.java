@@ -299,6 +299,7 @@ class WebConfigurationTest {
 			assertThat(Identifier.get()).isNull();
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(headerName);
+			verifyNoMoreInteractions(httpServletRequestMock);
 		}
 
 		static Stream<Arguments> argumentsProvider() {
@@ -306,9 +307,7 @@ class WebConfigurationTest {
 				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
 				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
 				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
-				Arguments.of("X-Sent-By", null, null),
-				Arguments.of("sentbyuser", "joe01doe", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
-				Arguments.of("sentbyuser", null, null));
+				Arguments.of("X-Sent-By", null, null));
 		}
 	}
 

@@ -16,7 +16,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,27 +28,25 @@ class SecurityConfigurationTest {
 
 	@Mock
 	private HttpSecurity httpSecurityMock;
+
 	@Mock
 	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry requestMatcherRegistryMock;
+
 	@Mock
 	private AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizedUrl authorizedUrlMock;
+
 	@Mock
 	private DefaultSecurityFilterChain defaultSecurityFilterChain;
+
 	@Autowired
 	private SecurityFilterChain securityFilterChain;
-	@Autowired
-	private WebSecurityCustomizer webSecurityCustomizer;
+
 	@InjectMocks
 	private SecurityConfiguration securityConfiguration;
 
 	@Test
 	void securityFilterChain() {
 		assertThat(securityFilterChain).isNotNull();
-	}
-
-	@Test
-	void webSecurityCustomizer() {
-		assertThat(webSecurityCustomizer).isNotNull();
 	}
 
 	@Test

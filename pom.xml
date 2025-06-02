@@ -55,7 +55,7 @@
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.17.0</commons-lang3.version>
-		<logbook.version>3.12.0</logbook.version>
+		<logbook.version>3.12.1</logbook.version>
 		<problem.version>0.27.1</problem.version>
 		<okhttp-mockwebserver-version>4.12.0</okhttp-mockwebserver-version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->

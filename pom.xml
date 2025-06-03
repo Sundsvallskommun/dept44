@@ -55,7 +55,7 @@
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.17.0</commons-lang3.version>
-		<logbook.version>3.12.0</logbook.version>
+		<logbook.version>3.12.1</logbook.version>
 		<problem.version>0.27.1</problem.version>
 		<okhttp-mockwebserver-version>4.12.0</okhttp-mockwebserver-version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
@@ -69,7 +69,7 @@
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.12.6</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>3.4.7</spring-boot-admin.version>
+		<spring-boot-admin.version>3.5.0</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<maven-api.version>3.9.9</maven-api.version>
 		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
@@ -85,7 +85,7 @@
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.13.0</openapi-generator-maven-plugin.version>
-		<spotless-maven-plugin-version>2.44.4</spotless-maven-plugin-version>
+		<spotless-maven-plugin-version>2.44.5</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -15,9 +16,9 @@ public class SecurityConfiguration {
 	@Order(0)
 	SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
 		return http
+			.csrf(CsrfConfigurer::disable) // Disable CSRF
 			.securityMatcher("/**")
 			.authorizeHttpRequests(authorizeHttpRequestsCustomizer -> authorizeHttpRequestsCustomizer.anyRequest().permitAll())
 			.build();
 	}
-
 }

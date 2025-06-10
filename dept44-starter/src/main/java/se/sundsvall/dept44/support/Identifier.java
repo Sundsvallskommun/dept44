@@ -2,9 +2,9 @@ package se.sundsvall.dept44.support;
 
 import static com.google.common.base.CaseFormat.LOWER_CAMEL;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
-import static com.nimbusds.oauth2.sdk.util.StringUtils.isNotBlank;
 import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static java.util.Optional.ofNullable;
+import static org.springframework.util.StringUtils.hasText;
 import static se.sundsvall.dept44.support.Identifier.Type.CUSTOM;
 
 import java.util.Objects;
@@ -45,6 +45,7 @@ public class Identifier {
 
 	private static final ThreadLocal<Identifier> THREAD_LOCAL_INSTANCE = new ThreadLocal<>();
 	private static final String TYPE_FORMAT_PREFIX = "type=";
+	private static final String HEADER_VALUE_FORMAT = "%s; type=%s";
 
 	private Type type;
 	private String typeString;
@@ -60,10 +61,11 @@ public class Identifier {
 
 	public void setType(Type type) {
 		this.type = type;
+		this.typeString = Optional.ofNullable(type).map(t -> UPPER_UNDERSCORE.to(LOWER_CAMEL, t.name())).orElse(null);
 	}
 
 	public Identifier withType(Type type) {
-		this.type = type;
+		setType(type);
 		return this;
 	}
 
@@ -76,7 +78,7 @@ public class Identifier {
 	}
 
 	public Identifier withTypeString(String typeString) {
-		this.typeString = typeString;
+		setTypeString(typeString);
 		return this;
 	}
 
@@ -89,7 +91,7 @@ public class Identifier {
 	}
 
 	public Identifier withValue(String value) {
-		this.value = value;
+		setValue(value);
 		return this;
 	}
 
@@ -139,7 +141,8 @@ public class Identifier {
 	 *               or {@code null} if the input is invalid or incomplete
 	 */
 	public static Identifier parse(String value) {
-		if (isBlank(value)) {
+
+		if (!hasText(value)) {
 			return null;
 		}
 
@@ -155,7 +158,7 @@ public class Identifier {
 				final var type = Type.fromString(parsedType);
 
 				identifier.setType(type != null ? type : CUSTOM);
-				identifier.setTypeString(type != null ? type.name() : parsedType);
+				identifier.setTypeString(type != null ? UPPER_UNDERSCORE.to(LOWER_CAMEL, type.name()) : parsedType);
 
 				continue;
 			}
@@ -166,8 +169,31 @@ public class Identifier {
 		return isValid(identifier) ? identifier : null;
 	}
 
+	/**
+	 * Returns the value as used when transmitted as a HTTP-header.
+	 * 
+	 * Example:
+	 * 
+	 * <pre>{@code
+	 * "joe01doe; type=adAccount"
+	 * "e9f1319d-0aae-4fc4-bc31-91eb39e02fb5; type=partyId"
+	 * "xyz; type=someCustomType"
+	 * }</pre>
+	 * 
+	 * @return the value as used in a HTTP-header
+	 */
+	public String toHeaderValue() {
+		if (!isValid(this)) {
+			return null;
+		}
+
+		return HEADER_VALUE_FORMAT.formatted(
+			ofNullable(getValue()).orElse(""),
+			ofNullable(getTypeString()).orElse(""));
+	}
+
 	private static boolean isValid(Identifier identifier) {
-		return isNotBlank(identifier.getValue()) && nonNull(identifier.getType()) && isNotBlank(identifier.getTypeString());
+		return hasText(identifier.getValue()) && nonNull(identifier.getType()) && hasText(identifier.getTypeString());
 	}
 
 	@Override

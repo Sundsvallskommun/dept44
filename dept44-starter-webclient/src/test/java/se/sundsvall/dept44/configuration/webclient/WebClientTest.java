@@ -30,7 +30,7 @@ class WebClientTest {
 	private Logbook logbook = builder().build();
 
 	@BeforeEach
-	public void startServer() throws Exception {
+	void startServer() throws Exception {
 		openMocks(this);
 
 		mockServer = new MockWebServer();
@@ -80,7 +80,7 @@ class WebClientTest {
 	}
 
 	@AfterEach
-	public void stopServer() throws Exception {
+	void stopServer() throws Exception {
 		mockServer.shutdown();
 	}
 

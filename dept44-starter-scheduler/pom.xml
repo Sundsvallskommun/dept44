@@ -9,7 +9,7 @@
 	</parent>
 	<artifactId>dept44-starter-scheduler</artifactId>
 	<properties>
-		<shedlock.version>6.8.0</shedlock.version>
+		<shedlock.version>6.9.0</shedlock.version>
 		<faux-pas.version>0.9.0</faux-pas.version>
 	</properties>
 	<dependencies>

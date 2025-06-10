@@ -48,7 +48,7 @@ class WebServiceTemplateBuilderTest {
 			.withKeyStoreData("dummy".getBytes());
 
 		assertThatExceptionOfType(WebServiceTemplateException.class)
-			.isThrownBy(() -> webServiceTemplateBuilder.build())
+			.isThrownBy(webServiceTemplateBuilder::build)
 			.withMessage("Only one of 'keyStoreFileLocation' and 'keyStoreData' may be set");
 	}
 

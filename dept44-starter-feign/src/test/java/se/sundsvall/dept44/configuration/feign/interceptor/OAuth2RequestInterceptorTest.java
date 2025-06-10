@@ -83,7 +83,7 @@ class OAuth2RequestInterceptorTest {
 	private ArgumentCaptor<HashSet<String>> scopeCaptor;
 
 	@BeforeEach
-	public void initMocks() {
+	void initMocks() {
 		MockitoAnnotations.openMocks(this);
 	}
 

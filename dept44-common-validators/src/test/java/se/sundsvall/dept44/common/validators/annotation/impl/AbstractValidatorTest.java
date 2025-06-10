@@ -16,6 +16,6 @@ class AbstractValidatorTest {
 	void testAbstractCreateExceptionMethodWithNull() {
 		final var exception = AbstractValidator.createException(null);
 
-		assertThat(assertThrows(IllegalArgumentException.class, () -> exception.get())).hasMessage("className may not be null");
+		assertThat(assertThrows(IllegalArgumentException.class, exception::get)).hasMessage("className may not be null");
 	}
 }

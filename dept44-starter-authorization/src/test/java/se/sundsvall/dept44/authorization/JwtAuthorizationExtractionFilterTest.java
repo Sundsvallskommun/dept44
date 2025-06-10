@@ -145,7 +145,7 @@ class JwtAuthorizationExtractionFilterTest {
 		when(jwtTokenUtilMock.getRolesFromToken(jwt)).thenReturn(List.of(genericGrantedAuthorityMock));
 
 		try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
-			securityContextHolderMock.when(() -> SecurityContextHolder.getContext()).thenReturn(securityContextMock);
+			securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContextMock);
 			filter.doFilterInternal(requestMock, responseMock, filterChainMock);
 
 			verify(propertiesMock).getHeaderName();

@@ -38,7 +38,7 @@ class DefaultFaultInterceptorTest {
 	private DefaultFaultInterceptor interceptor = new DefaultFaultInterceptor();
 
 	@BeforeEach
-	public void initMocks() {
+	void initMocks() {
 		MockitoAnnotations.openMocks(this);
 	}
 

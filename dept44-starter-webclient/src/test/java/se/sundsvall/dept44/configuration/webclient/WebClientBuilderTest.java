@@ -85,7 +85,7 @@ class WebClientBuilderTest {
 		assertTimeoutSetting(webClient, 10000);
 		assertThat(webClient).extracting("defaultHeaders").isNull();
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
-		assertThat(webClient).extracting("builder").extracting("filters").asList()
+		assertThat(webClient).extracting("builder").extracting("filters").asInstanceOf(LIST)
 			.hasSize(1)
 			.hasOnlyElementsOfType(RequestIdExchangeFilterFunction.class);
 	}
@@ -97,7 +97,7 @@ class WebClientBuilderTest {
 		assertTimeoutSetting(webClient, 54000);
 		assertThat(webClient).extracting("defaultHeaders").asString().isEqualTo("[Authorization:\"Basic dXNlck5hbWU6cGFzc3dvcmQ=\"]");
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
-		assertThat(webClient).extracting("builder").extracting("filters").asList()
+		assertThat(webClient).extracting("builder").extracting("filters").asInstanceOf(LIST)
 			.hasSize(1)
 			.hasOnlyElementsOfType(RequestIdExchangeFilterFunction.class);
 	}
@@ -111,7 +111,7 @@ class WebClientBuilderTest {
 		assertTimeoutSetting(webClient, 54000);
 		assertThat(webClient).extracting("defaultHeaders").isNull();
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
-		assertThat(webClient).extracting("builder").extracting("filters").asList()
+		assertThat(webClient).extracting("builder").extracting("filters").asInstanceOf(LIST)
 			.hasSize(2)
 			.hasAtLeastOneElementOfType(RequestIdExchangeFilterFunction.class)
 			.hasAtLeastOneElementOfType(ServerOAuth2AuthorizedClientExchangeFilterFunction.class);
@@ -130,13 +130,13 @@ class WebClientBuilderTest {
 	void testBuildWithStatusHandler() {
 		var webClient = createBuilder(false).build();
 
-		assertThat(webClient).extracting("defaultStatusHandlers").asList().isEmpty();
+		assertThat(webClient).extracting("defaultStatusHandlers").asInstanceOf(LIST).isEmpty();
 
 		webClient = createBuilder(false)
 			.withStatusHandler(HttpStatusCode::isError, clientResponse -> Mono.just(Problem.valueOf(Status.INTERNAL_SERVER_ERROR)))
 			.build();
 
-		assertThat(webClient).extracting("defaultStatusHandlers").asList().hasSize(1);
+		assertThat(webClient).extracting("defaultStatusHandlers").asInstanceOf(LIST).hasSize(1);
 	}
 
 	@Test

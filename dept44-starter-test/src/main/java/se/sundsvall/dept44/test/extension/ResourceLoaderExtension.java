@@ -20,22 +20,16 @@ import org.junit.platform.commons.util.AnnotationUtils;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 
 /**
- * Extension to facilitate resource loading in tests - used in conjunction with the
- * {@link Load} annotation on test method parameters. Examples:<br />
- * <br />
+ * Extension to facilitate resource loading in tests - used in conjunction with the {@link Load} annotation on test method parameters. Examples:<br /> <br />
  *
  * <p>
  * {@code @Load("myfile.txt") String s}
- * </p>
  * <p>
  * {@code @Load(value = "myfile.txt" as = Load.ResourceType.STRING) String s}
- * </p>
  * <p>
  * {@code @Load(value = "somefile.json", as = Load.ResourceType.JSON) MyClass mc)}
- * </p>
  * <p>
  * {@code @Load(value = "anotherfile.xml", as = Load.ResourceType.XML) AnotherClass ac)}
- * </p>
  */
 public class ResourceLoaderExtension implements ParameterResolver {
 

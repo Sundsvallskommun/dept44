@@ -20,7 +20,9 @@ import org.junit.platform.commons.util.AnnotationUtils;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 
 /**
- * Extension to facilitate resource loading in tests - used in conjunction with the {@link Load} annotation on test method parameters. Examples:<br /> <br />
+ * Extension to facilitate resource loading in tests - used in conjunction with the {@link Load} annotation on test
+ * method parameters. Examples:<br />
+ * <br />
  *
  * <p>
  * {@code @Load("myfile.txt") String s}

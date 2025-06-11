@@ -16,8 +16,10 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 /**
  * Aspect for handling scheduled methods via {@link se.sundsvall.dept44.scheduling.Dept44Scheduled}.
  * <p>
- * Captures and logs any exceptions, sets a unique {@link se.sundsvall.dept44.requestid.RequestId} for each run, and updates last-success/last-failure timestamps for slick health tracking. Also registers a separate
- * {@link se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator} per method so you can see at a glance how each scheduled task is doing on the /actuator/health endpoint.
+ * Captures and logs any exceptions, sets a unique {@link se.sundsvall.dept44.requestid.RequestId} for each run, and
+ * updates last-success/last-failure timestamps for slick health tracking. Also registers a separate
+ * {@link se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator} per method so you can see at a glance how each
+ * scheduled task is doing on the /actuator/health endpoint.
  * <p>
  * <strong>Usage:</strong>
  * <ul>
@@ -43,10 +45,11 @@ public class Dept44SchedulerAspect {
 	private final Environment environment;
 
 	/**
-	 * <p>Constructor for Dept44SchedulerAspect.
+	 * <p>
+	 * Constructor for Dept44SchedulerAspect.
 	 *
 	 * @param dept44Composite a {@link se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor} object
-	 * @param environment a {@link org.springframework.core.env.Environment} object
+	 * @param environment     a {@link org.springframework.core.env.Environment} object
 	 */
 	public Dept44SchedulerAspect(final Dept44CompositeHealthContributor dept44Composite, final Environment environment) {
 		this.dept44Composite = dept44Composite;
@@ -56,11 +59,14 @@ public class Dept44SchedulerAspect {
 	/**
 	 * Around advice for scheduled methods annotated with {@link se.sundsvall.dept44.scheduling.Dept44Scheduled}.
 	 * <p>
-	 * This method sets a unique {@link se.sundsvall.dept44.requestid.RequestId} for each run, logs start and end of the method, and updates last-success/last-failure timestamps for slick health tracking. It also registers a separate
-	 * {@link se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator} per method so you can see at a glance how each scheduled task is doing on the /actuator/health endpoint.
+	 * This method sets a unique {@link se.sundsvall.dept44.requestid.RequestId} for each run, logs start and end of the
+	 * method, and updates last-success/last-failure timestamps for slick health tracking. It also registers a separate
+	 * {@link se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator} per method so you can see at a glance how each
+	 * scheduled task is doing on the /actuator/health endpoint.
 	 * <p>
 	 * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the
-	 * aspect. If you catch and handle exceptions in the method, they won't be caught here, and the health indicator won't be updated.
+	 * aspect. If you catch and handle exceptions in the method, they won't be caught here, and the health indicator won't
+	 * be updated.
 	 * <p>
 	 * <strong>Usage:</strong>
 	 * <ul>
@@ -80,9 +86,10 @@ public class Dept44SchedulerAspect {
 	 * }
 	 * </pre>
 	 *
-	 * @param pjp the {@link org.aspectj.lang.ProceedingJoinPoint} for the scheduled method
-	 * @param dept44Scheduled the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled} annotation for the scheduled method
-	 * @return the result of the scheduled method
+	 * @param  pjp                 the {@link org.aspectj.lang.ProceedingJoinPoint} for the scheduled method
+	 * @param  dept44Scheduled     the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled} annotation for the scheduled
+	 *                             method
+	 * @return                     the result of the scheduled method
 	 * @throws java.lang.Throwable if the scheduled method throws an exception
 	 */
 	@Around("@annotation(dept44Scheduled)")

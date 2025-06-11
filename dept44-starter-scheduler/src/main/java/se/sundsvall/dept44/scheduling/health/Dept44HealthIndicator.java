@@ -10,18 +10,22 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  * Health indicator for schedulers using the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled} annotation.
  *
  * <p>
- * This class implements the {@link org.springframework.boot.actuate.health.HealthIndicator} interface to provide health status for scheduled tasks. It indicates whether the scheduled task is healthy or not based on internal state.
+ * This class implements the {@link org.springframework.boot.actuate.health.HealthIndicator} interface to provide health
+ * status for scheduled tasks. It indicates whether the scheduled task is healthy or not based on internal state.
  *
  * <p>
- * The health status is determined by the <code>healthy</code> and <code>errors</code> flags. If <code>healthy</code> is true, the health status is <code>"UP"</code>. If <code>healthy</code> is false, the health status is
+ * The health status is determined by the <code>healthy</code> and <code>errors</code> flags. If <code>healthy</code> is
+ * true, the health status is <code>"UP"</code>. If <code>healthy</code> is false, the health status is
  * <code>"RESTRICTED"</code> with
  * an optional reason.
  *
  * <p>
- * Methods are provided to set the health status to healthy or unhealthy, and to reset error states. The health status can be queried using the <code>health</code> method.
+ * Methods are provided to set the health status to healthy or unhealthy, and to reset error states. The health status
+ * can be queried using the <code>health</code> method.
  *
  * <p>
- * The class uses {@link java.util.concurrent.atomic.AtomicBoolean} to track the health and error states. The <code>reason</code> field provides additional context when the health status is <code>"RESTRICTED"</code>.
+ * The class uses {@link java.util.concurrent.atomic.AtomicBoolean} to track the health and error states. The
+ * <code>reason</code> field provides additional context when the health status is <code>"RESTRICTED"</code>.
  *
  * @see Dept44Scheduled
  * @see org.springframework.boot.actuate.health.HealthIndicator

@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
- * Composite health contributor for schedulers using the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled} annotation.
+ * Composite health contributor for schedulers using the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled}
+ * annotation.
  * <p>
- * This class implements the {@link org.springframework.boot.actuate.health.CompositeHealthContributor} interface to provide health status for scheduled tasks. It aggregates health indicators for all scheduled tasks.
+ * This class implements the {@link org.springframework.boot.actuate.health.CompositeHealthContributor} interface to
+ * provide health status for scheduled tasks. It aggregates health indicators for all scheduled tasks.
  * <p>
  * The health status is determined by the health status of the individual tasks:
  * <ul>
@@ -58,8 +60,8 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 	/**
 	 * Get or create a health indicator with the specified method name.
 	 *
-	 * @param methodName the method name
-	 * @return the health indicator
+	 * @param  methodName the method name
+	 * @return            the health indicator
 	 */
 	public Dept44HealthIndicator getOrCreateIndicator(final String methodName) {
 		return indicators.computeIfAbsent(methodName, k -> new Dept44HealthIndicator());
@@ -70,7 +72,8 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 	 *
 	 * Obtain an iterator over the health contributors.
 	 * <p>
-	 * This method returns an iterator over the health contributors, allowing iteration through all the {@link NamedContributor} instances that represent the health indicators for the scheduled tasks.
+	 * This method returns an iterator over the health contributors, allowing iteration through all the
+	 * {@link NamedContributor} instances that represent the health indicators for the scheduled tasks.
 	 */
 	@NotNull
 	@Override

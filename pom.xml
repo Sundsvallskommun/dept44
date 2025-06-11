@@ -83,10 +83,10 @@
 		<build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
-		<nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.13.0</openapi-generator-maven-plugin.version>
 		<spotless-maven-plugin-version>2.44.5</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
+		<central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
@@ -267,16 +267,13 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<plugin>
-				<groupId>com.diffplug.spotless</groupId>
-				<artifactId>spotless-maven-plugin</artifactId>
-				<version>${spotless-maven-plugin-version}</version>
-			</plugin>
+			<!--Generates code from an OpenAPI spec (e.g., REST clients or servers) -->
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
 				<version>${openapi-generator-maven-plugin.version}</version>
 			</plugin>
+			<!-- Runs unit tests during the build; disables Spring Boot banner for cleaner test output -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -285,48 +282,13 @@
 					<argLine>-Dspring.main.banner-mode=off</argLine>
 				</configuration>
 			</plugin>
+			<!-- Applies automatic code formatting using Spotless to ensure consistent style across the project -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven-source-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless-maven-plugin-version}</version>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${maven-javadoc-plugin.version}</version>
-				<configuration>
-					<additionalJOption>-Xdoclint:none</additionalJOption>
-					<detectOfflineLinks>false</detectOfflineLinks>
-				</configuration>
-				<executions>
-					<execution>
-						<id>attach-javadocs</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>${maven-release-plugin.version}</version>
-				<configuration>
-					<autoVersionSubmodules>true</autoVersionSubmodules>
-					<useReleaseProfile>false</useReleaseProfile>
-					<tagNameFormat>dept44-release-@{project.version}</tagNameFormat>
-					<releaseProfiles>maven-central</releaseProfiles>
-					<goals>deploy</goals>
-				</configuration>
-			</plugin>
+			<!-- Enforces code style rules using Checkstyle during validation -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
@@ -354,18 +316,53 @@
 	<profiles>
 		<profile>
 			<id>maven-central</id>
-			<distributionManagement>
-				<repository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-				</snapshotRepository>
-			</distributionManagement>
 			<build>
 				<plugins>
+					<!-- Generates central-metadata.xml for Central Portal publishing; publishing is skipped during Maven build since it's handled externally with GitHub Actions -->
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>${central-publishing-maven-plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<publishingServerId>central</publishingServerId>
+							<skipPublishing>true</skipPublishing>
+							<autoPublish>false</autoPublish>
+						</configuration>
+					</plugin>
+					<!-- Generate and attaches a source JAR required by Maven Central for easier code browsing and debugging -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>${maven-source-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Generates and attaches a Javadoc JAR required by Maven Central; disables doclint and offline link checks to avoid build failures -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>${maven-javadoc-plugin.version}</version>
+						<configuration>
+							<additionalJOption>-Xdoclint:none</additionalJOption>
+							<detectOfflineLinks>false</detectOfflineLinks>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Sign artifacts with GPG as required by Maven Central for trusted distribution -->
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
@@ -378,6 +375,7 @@
 								</goals>
 								<phase>verify</phase>
 								<configuration>
+									<!-- Required for CI/CD environments to allow GPG passphrase input via terminal -->
 									<gpgArguments>
 										<arg>--pinentry-mode</arg>
 										<arg>loopback</arg>
@@ -386,21 +384,16 @@
 							</execution>
 						</executions>
 					</plugin>
+					<!-- Automates version bumping and Git tagging during release -->
 					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>${nexus-staging-maven-plugin.version}</version>
-						<extensions>true</extensions>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-release-plugin</artifactId>
+						<version>${maven-release-plugin.version}</version>
 						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
+							<autoVersionSubmodules>true</autoVersionSubmodules>
+							<tagNameFormat>dept44-release-@{project.version}</tagNameFormat>
+							<goals>deploy</goals>
 						</configuration>
-					</plugin>
-					<plugin>
-						<groupId>com.diffplug.spotless</groupId>
-						<artifactId>spotless-maven-plugin</artifactId>
-						<version>${spotless-maven-plugin-version}</version>
 					</plugin>
 				</plugins>
 			</build>

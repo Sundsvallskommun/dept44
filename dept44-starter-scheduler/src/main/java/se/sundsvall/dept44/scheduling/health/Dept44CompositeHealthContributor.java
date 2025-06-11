@@ -11,10 +11,11 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
- * Composite health contributor for schedulers using the {@link Dept44Scheduled} annotation.
+ * Composite health contributor for schedulers using the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled}
+ * annotation.
  * <p>
- * This class implements the {@link CompositeHealthContributor} interface to provide health status for scheduled tasks.
- * It aggregates health indicators for all scheduled tasks.
+ * This class implements the {@link org.springframework.boot.actuate.health.CompositeHealthContributor} interface to
+ * provide health status for scheduled tasks. It aggregates health indicators for all scheduled tasks.
  * </p>
  * <p>
  * The health status is determined by the health status of the individual tasks:
@@ -40,10 +41,9 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 	private final Map<String, Dept44HealthIndicator> indicators = new ConcurrentHashMap<>();
 
 	/**
-	 * Get the health contributor with the specified name.
+	 * {@inheritDoc}
 	 *
-	 * @param  name the name of the health contributor to get
-	 * @return      the health contributor
+	 * Get the health contributor with the specified name.
 	 */
 	@Override
 	public HealthContributor getContributor(final String name) {
@@ -70,13 +70,13 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
 	 * Obtain an iterator over the health contributors.
 	 * <p>
 	 * This method returns an iterator over the health contributors, allowing iteration through all the
 	 * {@link NamedContributor} instances that represent the health indicators for the scheduled tasks.
 	 * </p>
-	 *
-	 * @return an iterator over the health contributors
 	 */
 	@NotNull
 	@Override

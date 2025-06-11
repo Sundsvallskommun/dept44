@@ -7,11 +7,11 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
- * Health indicator for schedulers using the {@link Dept44Scheduled} annotation.
+ * Health indicator for schedulers using the {@link se.sundsvall.dept44.scheduling.Dept44Scheduled} annotation.
  *
  * <p>
- * This class implements the {@link HealthIndicator} interface to provide health status for scheduled tasks. It
- * indicates whether the scheduled task is healthy or not based on internal state.
+ * This class implements the {@link org.springframework.boot.actuate.health.HealthIndicator} interface to provide health
+ * status for scheduled tasks. It indicates whether the scheduled task is healthy or not based on internal state.
  * </p>
  *
  * <p>
@@ -27,8 +27,8 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  * </p>
  *
  * <p>
- * The class uses {@link AtomicBoolean} to track the health and error states. The <code>reason</code> field provides
- * additional context when the health status is <code>"RESTRICTED"</code>.
+ * The class uses {@link java.util.concurrent.atomic.AtomicBoolean} to track the health and error states. The
+ * <code>reason</code> field provides additional context when the health status is <code>"RESTRICTED"</code>.
  * </p>
  *
  * @see Dept44Scheduled
@@ -41,9 +41,9 @@ public class Dept44HealthIndicator implements HealthIndicator {
 	private String reason;
 
 	/**
-	 * Get the health status.
+	 * {@inheritDoc}
 	 *
-	 * @return the health status
+	 * Get the health status.
 	 */
 	@Override
 	public Health health() {

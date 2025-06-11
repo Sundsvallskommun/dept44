@@ -9,7 +9,8 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * Custom annotation merging {@link Scheduled} and {@link SchedulerLock} for scheduling and locking tasks.
+ * Custom annotation merging {@link org.springframework.scheduling.annotation.Scheduled} and
+ * {@link net.javacrumbs.shedlock.spring.annotation.SchedulerLock} for scheduling and locking tasks.
  * <p>
  * Used by {@link se.sundsvall.dept44.scheduling.Dept44SchedulerAspect}.
  *

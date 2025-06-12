@@ -326,6 +326,7 @@
 						<version>${central-publishing-maven-plugin.version}</version>
 						<extensions>true</extensions>
 						<configuration>
+							<centralSnapshotsUrl>https://s01.oss.sonatype.org/content/repositories/snapshots/</centralSnapshotsUrl>
 							<publishingServerId>central</publishingServerId>
 							<skipPublishing>true</skipPublishing>
 							<autoPublish>false</autoPublish>

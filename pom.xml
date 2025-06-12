@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
-	<version>6.0.10-SNAPSHOT</version>
+	<version>6.0.11-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
@@ -47,11 +47,11 @@
 	<distributionManagement>
 		<repository>
 			<id>central</id>
-			<url>https://central.sonatype.com</url>
+			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 		<snapshotRepository>
 			<id>central</id>
-			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 	<properties>
@@ -84,7 +84,7 @@
 		<maven-api.version>3.9.10</maven-api.version>
 		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
 		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-		<maven-release-plugin.version>3.1.1</maven-release-plugin.version>
+		<maven-release-plugin.version>3.1.4</maven-release-plugin.version>
 		<maven-source-plugin.version>3.3.1</maven-source-plugin.version>
 		<maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
 		<maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
@@ -132,52 +132,52 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-authorization</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-models</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-logback-logserver</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webclient</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-scheduler</artifactId>
-				<version>6.0.10-SNAPSHOT</version>
+				<version>6.0.11-SNAPSHOT</version>
 			</dependency>
 			<!-- Problem -->
 			<dependency>
@@ -251,7 +251,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-build-tools</artifactId>
-					<version>6.0.10-SNAPSHOT</version>
+					<version>6.0.11-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>
@@ -265,7 +265,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-formatting-plugin</artifactId>
-					<version>6.0.10-SNAPSHOT</version>
+					<version>6.0.11-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>

@@ -47,7 +47,7 @@
 	<distributionManagement>
 		<repository>
 			<id>central</id>
-			<url>https://repo1.maven.org/maven2/</url>
+			<url>https://central.sonatype.com/</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>

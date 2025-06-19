@@ -91,8 +91,9 @@
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
-		<!-- Central Publishing -->
+		<!-- Configuration of the Central Publishing plugin -->
 		<central.skipPublishing>true</central.skipPublishing>
+		<central.autoPublish>false</central.autoPublish>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -395,7 +396,7 @@
 							<publishingServerId>central</publishingServerId>
 							<centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/</centralSnapshotsUrl>
 							<skipPublishing>${central.skipPublishing}</skipPublishing>
-							<autoPublish>false</autoPublish>
+							<autoPublish>${central.autoPublish}</autoPublish>
 						</configuration>
 					</plugin>
 					<!-- Signs artifacts with GPG before deploy -->

@@ -20,17 +20,18 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
  * timestamps for slick health tracking. Also registers a separate {@link Dept44HealthIndicator} per method so you can
  * see at a glance how
  * each scheduled task is doing on the /actuator/health endpoint.
+ * </p>
  * <p>
  * <strong>Usage:</strong>
  * <ul>
  * <li>Annotate your scheduled method with {@link Dept44Scheduled}</li>
  * <li>Add a config class that includes component scanning for "se.sundsvall.dept44.scheduling"</li>
  * </ul>
+ * </p>
  * <p>
  * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the aspect. If you
  * catch and handle exceptions in the method, they won't be caught here, and the health indicator won't be updated.
  * </p>
- * <p>
  *
  * @see Dept44Scheduled
  * @see Dept44HealthIndicator
@@ -57,6 +58,7 @@ public class Dept44SchedulerAspect {
 	 * last-success/last-failure timestamps for slick health tracking. It also registers a separate
 	 * {@link Dept44HealthIndicator} per method so you can
 	 * see at a glance how each scheduled task is doing on the /actuator/health endpoint.
+	 * </p>
 	 * <p>
 	 * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the
 	 * aspect. If you catch and handle exceptions in the method, they won't be caught here, and the health indicator won't

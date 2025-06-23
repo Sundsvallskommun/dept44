@@ -8,6 +8,28 @@
 	</parent>
 	<artifactId>dept44-service-parent</artifactId>
 	<packaging>pom</packaging>
+	<name>dept44-service-parent</name>
+	<description>A common parent for service modules, encapsulating shared configurations and dependencies for microservices.</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
 	<properties>
 		<!-- Don't make services generate source and JavaDoc JAR:s, unless overridden -->
 		<maven.source.skip>true</maven.source.skip>

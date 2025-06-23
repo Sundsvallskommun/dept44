@@ -11,6 +11,26 @@
 	<artifactId>dept44-example</artifactId>
 	<name>dept44-example</name>
 	<description>Example implementation</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
 	<properties>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
 		<maven.source.skip>false</maven.source.skip>

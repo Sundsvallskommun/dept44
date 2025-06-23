@@ -8,6 +8,28 @@
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter</artifactId>
+	<name>dept44-starter</name>
+	<description>Core Spring Boot starter module that includes essential configurations and dependencies.</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
 	<dependencies>
 		<!-- Spring Boot and Spring -->
 		<dependency>

@@ -8,6 +8,28 @@
 	</parent>
 	<artifactId>dept44-build-tools</artifactId>
 	<packaging>maven-plugin</packaging>
+	<name>dept44-build-tools</name>
+	<description>Provides essential build utilities and checks, including tools for verifying OpenAPI properties and truststore configurations.</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
 	<properties>
 		<bcpkix-jdk18on.version>1.81</bcpkix-jdk18on.version>
 	</properties>

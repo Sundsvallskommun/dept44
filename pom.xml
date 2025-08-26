@@ -66,7 +66,7 @@
 		<json-unit.version>4.1.1</json-unit.version>
 		<logback-gelf.version>6.1.1</logback-gelf.version>
 		<janino.version>3.1.12</janino.version>
-		<jsonwebtoken.version>0.12.7</jsonwebtoken.version>
+		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
 		<spring-boot-admin.version>3.5.2</spring-boot-admin.version>
 		<!-- Plugin versions -->

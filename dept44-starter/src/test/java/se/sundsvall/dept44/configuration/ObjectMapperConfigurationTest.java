@@ -2,13 +2,14 @@ package se.sundsvall.dept44.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @SpringBootTest(classes = ObjectMapperConfiguration.class)
 class ObjectMapperConfigurationTest {
@@ -17,7 +18,7 @@ class ObjectMapperConfigurationTest {
 	private YAMLMapper yamlMapper;
 
 	@Autowired
-	private JaxbAnnotationModule jaxbAnnotationModule;
+	private JakartaXmlBindAnnotationModule jakartaXmlBindAnnotationModule;
 
 	@Autowired
 	private JavaTimeModule javaTimeModule;
@@ -32,7 +33,7 @@ class ObjectMapperConfigurationTest {
 
 	@Test
 	void jaxbAnnotationModuleIsAutowired() {
-		assertThat(jaxbAnnotationModule).isNotNull();
+		assertThat(jakartaXmlBindAnnotationModule).isNotNull();
 	}
 
 	@Test

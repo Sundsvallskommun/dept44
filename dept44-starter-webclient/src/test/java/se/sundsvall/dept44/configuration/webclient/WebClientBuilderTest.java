@@ -112,7 +112,7 @@ class WebClientBuilderTest {
 		assertThat(webClient).extracting("defaultHeaders").isNull();
 		assertThat(webClient).extracting("builder").extracting("baseUrl").asString().isEqualTo(BASE_URL);
 		assertThat(webClient).extracting("builder").extracting("filters").asInstanceOf(LIST)
-			.hasSize(2)
+			.hasSize(4)
 			.hasAtLeastOneElementOfType(RequestIdExchangeFilterFunction.class)
 			.hasAtLeastOneElementOfType(ServerOAuth2AuthorizedClientExchangeFilterFunction.class);
 	}

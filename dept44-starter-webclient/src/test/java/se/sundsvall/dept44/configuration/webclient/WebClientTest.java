@@ -10,6 +10,10 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.zalando.logbook.LogbookCreator.builder;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -22,12 +26,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.Strategy;
-
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 class WebClientTest {
 
@@ -110,12 +108,12 @@ class WebClientTest {
 
 		ServerResponse response = builder.build().get().retrieve().bodyToMono(ServerResponse.class).block();
 
-    	assertThat(response.getValue()).isEqualTo("mockedResponse");
-    	RecordedRequest request = mockServer.takeRequest();
-    	
-    	assertThat(request).isNotNull();
-    	assertThat(request.getHeader(AUTHORIZATION)).isEqualTo("Basic dXNlck5hbWU6cGFzc3dvcmQ=");
-    }
+		assertThat(response.getValue()).isEqualTo("mockedResponse");
+		RecordedRequest request = mockServer.takeRequest();
+
+		assertThat(request).isNotNull();
+		assertThat(request.getHeader(AUTHORIZATION)).isEqualTo("Basic dXNlck5hbWU6cGFzc3dvcmQ=");
+	}
 
 	@Test
 	void testRequestWithLogbookEnabled() throws Exception {

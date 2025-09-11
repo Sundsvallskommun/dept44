@@ -62,8 +62,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the base URL.
 	 *
-	 * @param baseUrl the base URL
-	 * @return this builder
+	 * @param  baseUrl the base URL
+	 * @return         this builder
 	 */
 	public WebClientBuilder withBaseUrl(final String baseUrl) {
 		this.baseUrl = requireNotBlank(baseUrl, "baseUrl cannot be null or blank");
@@ -73,9 +73,9 @@ public class WebClientBuilder {
 	/**
 	 * Sets Basic authentication details.
 	 *
-	 * @param username the Basic authentication username
-	 * @param password the Basic authentication password
-	 * @return this builder
+	 * @param  username the Basic authentication username
+	 * @param  password the Basic authentication password
+	 * @return          this builder
 	 */
 	public WebClientBuilder withBasicAuthentication(final String username, final String password) {
 		requireNotBlank(username, "username cannot be null or blank");
@@ -87,8 +87,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the OAuth2 client registration.
 	 *
-	 * @param clientRegistration the OAuth2 client registration
-	 * @return this builder
+	 * @param  clientRegistration the OAuth2 client registration
+	 * @return                    this builder
 	 */
 	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration) {
 		return withOAuth2ClientRegistration(clientRegistration, Set.of("device_" + UUID.randomUUID()));
@@ -97,9 +97,9 @@ public class WebClientBuilder {
 	/**
 	 * Sets the OAuth2 client registration.
 	 *
-	 * @param clientRegistration the OAuth2 client registration
-	 * @param extraScopes extra scopes for the OAuth2 client registration
-	 * @return this builder
+	 * @param  clientRegistration the OAuth2 client registration
+	 * @param  extraScopes        extra scopes for the OAuth2 client registration
+	 * @return                    this builder
 	 */
 	public WebClientBuilder withOAuth2ClientRegistration(final ClientRegistration clientRegistration,
 		final Set<String> extraScopes) {
@@ -118,8 +118,7 @@ public class WebClientBuilder {
 		return withCustomizer(builder -> builder
 			.filter(retryFilterFunction())
 			.filter(oauth2RetryFilter(clientService, clientRegistrationWithScopes.getRegistrationId()))
-			.filter(createOAuth2Filter(clientRegistrations, clientService, clientRegistrationWithScopes.getRegistrationId()))
-		);
+			.filter(createOAuth2Filter(clientRegistrations, clientService, clientRegistrationWithScopes.getRegistrationId())));
 	}
 
 	private Set<String> getScopes(final ClientRegistration clientRegistration) {
@@ -134,7 +133,7 @@ public class WebClientBuilder {
 	 *
 	 * @param  name   the header (name)
 	 * @param  values the header values
-	 * @return this builder
+	 * @return        this builder
 	 */
 	public WebClientBuilder withDefaultHeader(final String name, final String... values) {
 		requireNotBlank(name, "name cannot be null or blank");
@@ -146,8 +145,8 @@ public class WebClientBuilder {
 	/**
 	 * Adds a filter (function).
 	 *
-	 * @param filter the filter (function)
-	 * @return this builder
+	 * @param  filter the filter (function)
+	 * @return        this builder
 	 */
 	public WebClientBuilder withFilter(final ExchangeFilterFunction filter) {
 		requireNonNull(filter, "filter cannot be null");
@@ -158,9 +157,9 @@ public class WebClientBuilder {
 	/**
 	 * Adds a default HTTP status handler.
 	 *
-	 * @param statusPredicate a predicate to match HTTP status codes with
-	 * @param handlerFunction a function to map the response to an error signal
-	 * @return this builder
+	 * @param  statusPredicate a predicate to match HTTP status codes with
+	 * @param  handlerFunction a function to map the response to an error signal
+	 * @return                 this builder
 	 */
 	public WebClientBuilder withStatusHandler(final Predicate<HttpStatusCode> statusPredicate,
 		final Function<ClientResponse, Mono<? extends Throwable>> handlerFunction) {
@@ -173,8 +172,8 @@ public class WebClientBuilder {
 	/**
 	 * Adds a customizer.
 	 *
-	 * @param customizer the customizer
-	 * @return this builder
+	 * @param  customizer the customizer
+	 * @return            this builder
 	 */
 	public WebClientBuilder withCustomizer(final Customizer customizer) {
 		requireNonNull(customizer, "customizer cannot be null");
@@ -186,8 +185,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the Logbook instance to use for payload logging.
 	 *
-	 * @param logbook the Logbook instance
-	 * @return this builder
+	 * @param  logbook the Logbook instance
+	 * @return         this builder
 	 */
 	public WebClientBuilder withLogbook(final Logbook logbook) {
 		this.logbook = logbook;
@@ -197,8 +196,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the connect timeout (defaults to 10 seconds).
 	 *
-	 * @param connectTimeout the connect timeout
-	 * @return this builder
+	 * @param  connectTimeout the connect timeout
+	 * @return                this builder
 	 */
 	public WebClientBuilder withConnectTimeout(final Duration connectTimeout) {
 		this.connectTimeout = requireNonNull(connectTimeout, "connectTimeout may not be null.");
@@ -208,8 +207,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the read timeout (defaults to 60 seconds).
 	 *
-	 * @param readTimeout the read timeout
-	 * @return this builder
+	 * @param  readTimeout the read timeout
+	 * @return             this builder
 	 */
 	public WebClientBuilder withReadTimeout(final Duration readTimeout) {
 		this.readTimeout = requireNonNull(readTimeout, "readTimeout may not be null.");
@@ -219,8 +218,8 @@ public class WebClientBuilder {
 	/**
 	 * Sets the write timeout (defaults to 60 seconds).
 	 *
-	 * @param writeTimeout the write timeout
-	 * @return this builder
+	 * @param  writeTimeout the write timeout
+	 * @return              this builder
 	 */
 	public WebClientBuilder withWriteTimeout(final Duration writeTimeout) {
 		this.writeTimeout = requireNonNull(writeTimeout, "writeTimeout may not be null.");

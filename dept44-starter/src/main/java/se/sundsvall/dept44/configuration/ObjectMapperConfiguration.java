@@ -1,15 +1,12 @@
 package se.sundsvall.dept44.configuration;
 
-import com.fasterxml.jackson.datatype.jsonp.JSONPModule;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
-
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
 
 @Configuration
@@ -34,7 +31,8 @@ public class ObjectMapperConfiguration {
 	/**
 	 * Customizes the ObjectMapper-builder.
 	 *
-	 * The customizations implemented here are: - Disabling of the default json-attribute string length limit of 20 000 000 chars.
+	 * The customizations implemented here are: - Disabling of the default json-attribute string length limit of 20 000 000
+	 * chars.
 	 *
 	 * @return Jackson2ObjectMapperBuilderCustomizer.
 	 */

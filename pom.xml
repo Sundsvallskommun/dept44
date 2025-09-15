@@ -64,7 +64,7 @@
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<google-guava.version>33.4.8-jre</google-guava.version>
 		<json-unit.version>4.1.1</json-unit.version>
-		<logback-gelf.version>6.1.1</logback-gelf.version>
+		<logback-gelf.version>6.1.2</logback-gelf.version>
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->

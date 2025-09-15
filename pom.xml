@@ -68,7 +68,7 @@
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>3.5.2</spring-boot-admin.version>
+		<spring-boot-admin.version>3.5.3</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<maven-api.version>3.9.11</maven-api.version>
 		<maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>

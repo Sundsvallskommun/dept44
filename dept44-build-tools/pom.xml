@@ -31,7 +31,7 @@
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<properties>
-		<bcpkix-jdk18on.version>1.81</bcpkix-jdk18on.version>
+		<bcpkix-jdk18on.version>1.82</bcpkix-jdk18on.version>
 	</properties>
 	<dependencies>
 		<dependency>

@@ -26,9 +26,6 @@ import se.sundsvall.petinventory.service.scheduler.PetSchedulerWorker;
 
 @SpringBootTest(properties = {
 	"scheduler.pet-scheduler.cron=* * * * * *", // Setup to execute every second
-	"spring.flyway.enabled=true",
-	"spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
-	"spring.datasource.url=jdbc:tc:mariadb:10.6.4:////",
 	"server.shutdown=immediate",
 	"spring.lifecycle.timeout-per-shutdown-phase=0s"
 })
@@ -111,5 +108,4 @@ class PetSchedulerIT {
 			return Mockito.mock(PetSchedulerWorker.class);
 		}
 	}
-
 }

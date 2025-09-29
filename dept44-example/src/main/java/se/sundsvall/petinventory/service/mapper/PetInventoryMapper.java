@@ -2,7 +2,7 @@ package se.sundsvall.petinventory.service.mapper;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
+import static org.apache.commons.lang3.ObjectUtils.getIfNull;
 
 import generated.swagger.io.petstore.Pet;
 import java.util.List;
@@ -21,7 +21,7 @@ public final class PetInventoryMapper {
 			.map(p -> PetInventoryItem.create()
 				.withId(p.getId())
 				.withPrice(p.getPrice())
-				.withType(defaultIfNull(p.getType(), "UNKNOWN").toString())
+				.withType(getIfNull(p.getType(), "UNKNOWN").toString())
 				.withClientId(Optional.ofNullable(Identifier.get()).map(Identifier::getValue).orElse(null)))
 			.orElse(null);
 	}

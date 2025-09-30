@@ -34,10 +34,6 @@
 		<!-- Don't make services generate source and JavaDoc JAR:s, unless overridden -->
 		<maven.source.skip>true</maven.source.skip>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
-		<!-- The Nexus/Docker repository -->
-		<docker.repository>evil.sundsvall.se</docker.repository>
-		<!-- Default Jenkins pipeline properties -->
-		<exposed.app.port>8080</exposed.app.port>
 	</properties>
 	<dependencies>
 		<!-- Framework -->

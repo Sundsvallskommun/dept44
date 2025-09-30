@@ -54,7 +54,7 @@
 		<downloadSources>true</downloadSources>
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
-		<commons-lang3.version>3.18.0</commons-lang3.version>
+		<commons-lang3.version>3.19.0</commons-lang3.version>
 		<logbook.version>3.12.3</logbook.version>
 		<problem.version>0.27.1</problem.version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->

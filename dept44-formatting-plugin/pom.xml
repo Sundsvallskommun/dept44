@@ -4,10 +4,10 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-parent</artifactId>
-		<version>6.0.13-SNAPSHOT</version>
+		<version>6.0.13</version>
 	</parent>
 	<artifactId>dept44-formatting-plugin</artifactId>
-	<version>6.0.13-SNAPSHOT</version>
+	<version>6.0.13</version>
 	<packaging>maven-plugin</packaging>
 	<name>dept44-formatting-plugin</name>
 	<description>Maven plugin for consistent code formatting.</description>
@@ -28,7 +28,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
 		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>dept44-release-6.0.13</tag>
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<dependencies>

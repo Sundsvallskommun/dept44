@@ -24,6 +24,7 @@ class CertificateTest {
 	private static final String FAIL_MESSAGE = "Certificate '%s' expiration date is less than %s months from now (%s) and needs to be replaced";
 	private static final int MONTHS_UNTIL_EXPIRATION = 1;
 
+	// TODO: Remove this after November 2025
 	private static final Set<String> EXPIRATION_EXCLUDE_LIST = Set.of(
 		"KaravanenHwCa01.validto-2025-11-13.cer",
 		"PersonalHwCa01.validto-2025-11-02.cer",

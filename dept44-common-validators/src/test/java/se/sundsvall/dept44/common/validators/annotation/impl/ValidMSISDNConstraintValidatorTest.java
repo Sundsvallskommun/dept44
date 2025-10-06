@@ -25,7 +25,7 @@ class ValidMSISDNConstraintValidatorTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"+46701234567", "+46721234567", "+46731234567", "+46761234567", "+46791234567", "+123456789012345", "+1234"
+		"+46701740605", "+46721234567", "+46731234567", "+46761234567", "+46791234567", "+123456789012345", "+1234"
 	})
 	void validMSISDN(final String number) {
 
@@ -39,7 +39,7 @@ class ValidMSISDNConstraintValidatorTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"not-valid", "46701234567", "+06701234567", "+1234567890123456", "+123"
+		"not-valid", "46701740605", "+06701234567", "+1234567890123456", "+123"
 	})
 	void invalidMSISDN(final String number) {
 
@@ -80,7 +80,7 @@ class ValidMSISDNConstraintValidatorTest {
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN (example: +46701234567). Regular expression: ^\\+[1-9][\\d]{3,14}$");
+		assertThat(validator.getMessage()).isEqualTo("must be a valid MSISDN (example: +46701740605). Regular expression: ^\\+[1-9][\\d]{3,14}$");
 
 		verifyNoInteractions(annotationMock);
 	}

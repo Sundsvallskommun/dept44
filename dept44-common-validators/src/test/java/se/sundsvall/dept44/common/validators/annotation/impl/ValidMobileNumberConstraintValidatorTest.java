@@ -26,8 +26,8 @@ class ValidMobileNumberConstraintValidatorTest {
 
 		validator.initialize(annotationMock);
 
-		assertThat(validator.isValid("0701234567")).isTrue();
-		assertThat(validator.isValid("0701234567", null)).isTrue();
+		assertThat(validator.isValid("0701740605")).isTrue();
+		assertThat(validator.isValid("0701740605", null)).isTrue();
 
 		verify(annotationMock).nullable();
 	}

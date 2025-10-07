@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>6.0.14</version>
+		<version>6.0.15-SNAPSHOT</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-scheduler</artifactId>
@@ -27,7 +27,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
 		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
-		<tag>dept44-release-6.0.14</tag>
+		<tag>HEAD</tag>
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<properties>

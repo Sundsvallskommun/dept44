@@ -92,6 +92,29 @@
 				<configuration>
 					<goalPrefix>dept44</goalPrefix>
 				</configuration>
+				<!-- Temporary workaround for https://github.com/apache/maven-plugin-tools/issues/955 remove with 3.15.2 release-->
+				<dependencies>
+					<dependency>
+						<groupId>org.ow2.asm</groupId>
+						<artifactId>asm</artifactId>
+						<version>9.8</version>
+					</dependency>
+					<dependency>
+						<groupId>org.ow2.asm</groupId>
+						<artifactId>asm-util</artifactId>
+						<version>9.8</version>
+					</dependency>
+					<dependency>
+						<groupId>org.ow2.asm</groupId>
+						<artifactId>asm-tree</artifactId>
+						<version>9.8</version>
+					</dependency>
+					<dependency>
+						<groupId>org.ow2.asm</groupId>
+						<artifactId>asm-analysis</artifactId>
+						<version>9.8</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>

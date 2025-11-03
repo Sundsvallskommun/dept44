@@ -8,19 +8,19 @@ import java.util.Objects;
 @Schema(description = "Pet inventory item model")
 public class PetInventoryItem {
 
-	@Schema(description = "Pet ID", example = "1")
+	@Schema(description = "Pet ID", examples = "1")
 	private Long id;
 
-	@Schema(description = "Pet price", example = "1.50")
+	@Schema(description = "Pet price", examples = "1.50")
 	private Float price;
 
-	@Schema(description = "Pet name", example = "Daisy")
+	@Schema(description = "Pet name", examples = "Daisy")
 	private String name;
 
-	@Schema(description = "Pet type", example = "DOG")
+	@Schema(description = "Pet type", examples = "DOG")
 	private String type;
 
-	@Schema(description = "Client ID", example = "joe01doe")
+	@Schema(description = "Client ID", examples = "joe01doe")
 	private String clientId;
 
 	@ArraySchema(schema = @Schema(implementation = PetImage.class))

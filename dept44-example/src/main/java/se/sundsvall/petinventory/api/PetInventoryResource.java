@@ -67,7 +67,7 @@ class PetInventoryResource {
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<PetInventoryItem> getPetInventoryItem(@PathVariable(name = "id") final long id) {
+	ResponseEntity<PetInventoryItem> getPetInventoryItem(@PathVariable final long id) {
 		return ok(petInventoryService.getPetInventoryItem(id));
 	}
 
@@ -80,7 +80,7 @@ class PetInventoryResource {
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<Void> addPetImage(@PathVariable(name = "id") final long id, @RequestPart("file") final MultipartFile multipartFile) {
+	ResponseEntity<Void> addPetImage(@PathVariable final long id, @RequestPart("file") final MultipartFile multipartFile) {
 		final var petImageId = petInventoryService.savePetImage(id, multipartFile);
 		return created(fromPath("/pet-inventory-items/{id}/images/{pictureId}").buildAndExpand(id, petImageId).toUri())
 			.header(CONTENT_TYPE, ALL_VALUE)
@@ -96,7 +96,7 @@ class PetInventoryResource {
 		@ApiResponse(responseCode = "500", description = "Internal Server error", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class))),
 		@ApiResponse(responseCode = "502", description = "Bad Gateway", content = @Content(mediaType = APPLICATION_PROBLEM_JSON_VALUE, schema = @Schema(implementation = Problem.class)))
 	})
-	ResponseEntity<byte[]> getPetImage(@PathVariable(name = "id") final long id, @PathVariable(name = "imageId") final long imageId) {
+	ResponseEntity<byte[]> getPetImage(@PathVariable final long id, @PathVariable final long imageId) {
 		final var petImage = petInventoryService.getPetImage(id, imageId);
 		return ok()
 			.header(CONTENT_DISPOSITION, CONTENT_DISPOSITION_HEADER_VALUE.formatted(petImage.getFileName()))

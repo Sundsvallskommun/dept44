@@ -6,13 +6,13 @@ import java.util.Objects;
 @Schema(description = "Pet image model")
 public class PetImage {
 
-	@Schema(description = "Pet image ID", example = "1")
+	@Schema(description = "Pet image ID", examples = "1")
 	private Long id;
 
-	@Schema(description = "File name", example = "image.jpg")
+	@Schema(description = "File name", examples = "image.jpg")
 	private String fileName;
 
-	@Schema(description = "Mime type", example = "image/jpeg")
+	@Schema(description = "Mime type", examples = "image/jpeg")
 	private String mimeType;
 
 	public static PetImage create() {

@@ -21,21 +21,7 @@ import se.sundsvall.petinventory.Application;
 class EndpointsIT extends AbstractAppTest {
 
 	@Test
-	void test01_apiDocs() {
-
-		// Call
-		setupCall()
-			.withServicePath("/api-docs")
-			.withHeader(ACCEPT, APPLICATION_JSON_VALUE)
-			.withHttpMethod(GET)
-			.withExpectedResponseStatus(OK)
-			.withExpectedResponse("response.json")
-			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
-			.sendRequestAndVerifyResponse();
-	}
-
-	@Test
-	void test02_health() {
+	void test01_health() {
 
 		// Call
 		setupCall()
@@ -49,7 +35,7 @@ class EndpointsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test03_info() {
+	void test02_info() {
 
 		// Call
 		setupCall()
@@ -63,7 +49,7 @@ class EndpointsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test04_heapdump() {
+	void test03_heapdump() {
 
 		// Call
 		setupCall()
@@ -77,7 +63,7 @@ class EndpointsIT extends AbstractAppTest {
 	}
 
 	@Test
-	void test05_threaddump() {
+	void test04_threaddump() {
 
 		// Call
 		setupCall()

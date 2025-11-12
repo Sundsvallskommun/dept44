@@ -17,3 +17,5 @@ on:
 jobs:
   shared-workflows:
     uses: Sundsvallskommun/.github/.github/workflows/java-maven-ci.yml@main
+    with:
+      java: "25"

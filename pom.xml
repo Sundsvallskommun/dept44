@@ -45,12 +45,12 @@
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<spring-boot.version>3.5.7</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<maven.compiler.release>${java.version}</maven.compiler.release>
+		<maven.compiler.proc>full</maven.compiler.proc>
 		<downloadSources>true</downloadSources>
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
@@ -86,6 +86,8 @@
 		<openapi-generator-maven-plugin.version>7.17.0</openapi-generator-maven-plugin.version>
 		<spotless-maven-plugin-version>3.0.0</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
+		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
+		<lombok.version>1.18.40</lombok.version>
 		<central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
@@ -235,11 +237,21 @@
 				<artifactId>janino</artifactId>
 				<version>${janino.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>${lombok.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<build>
 		<pluginManagement>
 			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>${maven-compiler-plugin.version}</version>
+				</plugin>
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-build-tools</artifactId>

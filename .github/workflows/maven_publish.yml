@@ -10,4 +10,6 @@ on:
 jobs:
   shared-workflows:
     uses: Sundsvallskommun/.github/.github/workflows/java-maven-publish.yml@main
+    with:
+      java: "25"
     secrets: inherit

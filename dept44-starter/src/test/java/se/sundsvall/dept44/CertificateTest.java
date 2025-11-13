@@ -9,7 +9,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,12 +22,6 @@ class CertificateTest {
 	private static final String CERTIFICATE_SUFFIX_PATTERN = "^.*(\\.cer|\\.crt)$";
 	private static final String FAIL_MESSAGE = "Certificate '%s' expiration date is less than %s months from now (%s) and needs to be replaced";
 	private static final int MONTHS_UNTIL_EXPIRATION = 1;
-
-	// TODO: Remove this after November 2025
-	private static final Set<String> EXPIRATION_EXCLUDE_LIST = Set.of(
-		"KaravanenHwCa01.validto-2025-11-13.cer",
-		"PersonalHwCa01.validto-2025-11-02.cer",
-		"StadsbackenHwCa01.validto-2025-11-02.cer");
 
 	private CertificateFactory certificateFactory;
 	private final Calendar calendar = Calendar.getInstance();
@@ -55,7 +48,6 @@ class CertificateTest {
 		return Stream.of(new ClassPathResource(CERTIFICATE_PATH).getFile().listFiles())
 			.map(File::getName)
 			.filter(name -> name.matches(CERTIFICATE_SUFFIX_PATTERN))
-			.filter(name -> !EXPIRATION_EXCLUDE_LIST.contains(name))
 			.map(Arguments::of);
 	}
 }

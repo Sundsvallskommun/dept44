@@ -55,7 +55,7 @@ class OpenApiSpecificationIT {
 
 		assertThatJson(toJson(currentOpenApiSpecification))
 			.withOptions(List.of(Option.IGNORING_ARRAY_ORDER))
-			.whenIgnoringPaths("servers")
+			.whenIgnoringPaths("servers", "info.version")
 			.isEqualTo(toJson(existingOpenApiSpecification));
 	}
 

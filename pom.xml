@@ -46,7 +46,7 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
-		<spring-boot.version>3.5.7</spring-boot.version>
+		<spring-boot.version>4.0.0</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.release>${java.version}</maven.compiler.release>

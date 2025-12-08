@@ -31,10 +31,10 @@ public abstract class AbstractParameterPagingAndSortingBase extends AbstractPara
 		super(100);
 	}
 
-	@ArraySchema(schema = @Schema(description = "The properties to sort on", example = "propertyName"))
+	@ArraySchema(schema = @Schema(description = "The properties to sort on", examples = "propertyName"))
 	protected List<String> sortBy;
 
-	@Schema(description = "The sort order direction", example = "ASC", enumAsRef = true)
+	@Schema(description = "The sort order direction", examples = "ASC", enumAsRef = true)
 	protected Sort.Direction sortDirection = DEFAULT_DIRECTION;
 
 	@JsonIgnore

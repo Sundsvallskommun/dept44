@@ -26,11 +26,11 @@ public abstract class AbstractParameterPagingBase {
 		this.limit = 100;
 	}
 
-	@Schema(description = "Page number", example = "1", minimum = "1", defaultValue = "1")
+	@Schema(description = "Page number", examples = "1", minimum = "1", defaultValue = "1")
 	@Min(1)
 	protected int page = 1;
 
-	@Schema(description = "Result size per page. Maximum allowed value is dynamically configured", minimum = "1", example = "15")
+	@Schema(description = "Result size per page. Maximum allowed value is dynamically configured", minimum = "1", examples = "15")
 	@Min(1)
 	@MaxPagingLimit
 	protected int limit;

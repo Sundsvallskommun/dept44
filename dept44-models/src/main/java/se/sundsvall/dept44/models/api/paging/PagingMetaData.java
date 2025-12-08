@@ -16,19 +16,19 @@ import lombok.Data;
 @Schema(description = "PagingMetaData model")
 public class PagingMetaData {
 
-	@Schema(description = "Current page", example = "5", accessMode = READ_ONLY)
+	@Schema(description = "Current page", examples = "5", accessMode = READ_ONLY)
 	private int page;
 
-	@Schema(description = "Displayed objects per page", example = "20", accessMode = READ_ONLY)
+	@Schema(description = "Displayed objects per page", examples = "20", accessMode = READ_ONLY)
 	private int limit;
 
-	@Schema(description = "Displayed objects on current page", example = "13", accessMode = READ_ONLY)
+	@Schema(description = "Displayed objects on current page", examples = "13", accessMode = READ_ONLY)
 	private int count;
 
-	@Schema(description = "Total amount of hits based on provided search parameters", example = "98", accessMode = READ_ONLY)
+	@Schema(description = "Total amount of hits based on provided search parameters", examples = "98", accessMode = READ_ONLY)
 	private long totalRecords;
 
-	@Schema(description = "Total amount of pages based on provided search parameters", example = "23", accessMode = READ_ONLY)
+	@Schema(description = "Total amount of pages based on provided search parameters", examples = "23", accessMode = READ_ONLY)
 	private int totalPages;
 
 	public static PagingMetaData create() {

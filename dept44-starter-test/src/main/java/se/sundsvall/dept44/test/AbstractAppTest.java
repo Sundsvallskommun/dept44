@@ -26,11 +26,13 @@ import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -59,6 +61,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
+import wiremock.com.github.jknack.handlebars.Handlebars;
 
 public abstract class AbstractAppTest {
 
@@ -381,12 +384,13 @@ public abstract class AbstractAppTest {
 		assertThat(response.getStatusCode()).isEqualTo(expectedResponseStatus);
 		if (nonNull(expectedResponseBody)) {
 			final var responseContentType = response.getHeaders().getContentType();
+			final var renderedExpectedBody = renderHandlebarsForExpectedResponseBody();
 			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
-				assertJsonEquals(expectedResponseBody, responseBody);
+				assertJsonEquals(renderedExpectedBody, responseBody);
 			} else {
 				// Compare as text
-				assertThat(expectedResponseBody).isEqualToIgnoringWhitespace(responseBody);
+				assertThat(renderedExpectedBody).isEqualToIgnoringWhitespace(responseBody);
 			}
 		}
 		if (nonNull(expectedResponseBinary)) {
@@ -480,6 +484,41 @@ public abstract class AbstractAppTest {
 
 	public String getTestDirectoryPath() {
 		return this.testDirectoryPath;
+	}
+
+	private String renderHandlebarsForExpectedResponseBody() {
+		if (isNull(expectedResponseBody) || !expectedResponseBody.contains("{{")) {
+			return expectedResponseBody;
+		}
+
+		try {
+			var handlebars = new Handlebars();
+
+			// Register WireMocks helpers (now, randomValue, etc.)
+			for (var helper : WireMockHelpers.values()) {
+				handlebars.registerHelper(helper.name(), helper);
+			}
+
+			var template = handlebars.compileInline(expectedResponseBody);
+
+			// Create model for "request"
+			var context = new HashMap<String, Object>();
+			if (nonNull(requestBody)) {
+				try {
+					// Convert requestBody to map to be able to use dot-notation : {{request.body.field}}
+					var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
+					});
+					context.put("request", Map.of("body", bodyMap));
+				} catch (Exception e) {
+					// If requestBody is not JSON, skipp body-mapping
+					logger.debug("Could not parse request body as JSON for Handlebars context");
+				}
+			}
+
+			return template.apply(context);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Handlebars rendering failed", e);
+		}
 	}
 
 	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {

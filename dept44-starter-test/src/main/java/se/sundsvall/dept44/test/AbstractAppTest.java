@@ -502,23 +502,28 @@ public abstract class AbstractAppTest {
 			var template = handlebars.compileInline(expectedResponseBody);
 
 			// Create model for "request"
-			var context = new HashMap<String, Object>();
-			if (nonNull(requestBody)) {
-				try {
-					// Convert requestBody to map to be able to use dot-notation : {{request.body.field}}
-					var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
-					});
-					context.put("request", Map.of("body", bodyMap));
-				} catch (Exception e) {
-					// If requestBody is not JSON, skipp body-mapping
-					logger.debug("Could not parse request body as JSON for Handlebars context");
-				}
-			}
+			var context = createRequestContext();
 
 			return template.apply(context);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Handlebars rendering failed", e);
 		}
+	}
+
+	private HashMap<String, Object> createRequestContext() {
+		var context = new HashMap<String, Object>();
+		if (nonNull(requestBody)) {
+			try {
+				// Convert requestBody to map to be able to use dot-notation : {{request.body.field}}
+				var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
+				});
+				context.put("request", Map.of("body", bodyMap));
+			} catch (Exception _) {
+				// If requestBody is not JSON, skipp body-mapping
+				logger.debug("Could not parse request body as JSON for Handlebars context");
+			}
+		}
+		return context;
 	}
 
 	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {

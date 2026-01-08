@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.test;
 
+import static java.time.LocalDate.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -201,6 +202,55 @@ class AbstractAppTestTest {
 
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCall"));
+	}
+
+	@Test
+	void testHandleBarReplacement() {
+		// Setup
+		final var responseHeaders = new HttpHeaders();
+		responseHeaders.put("responseHeader", List.of("responseValue"));
+
+		var response = """
+			{
+				"id": "id-%s,
+				"responseData": "testData"
+			}
+			""".formatted(now().getYear());
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
+		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
+		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(response, responseHeaders, OK));
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+
+		// Call
+		final var instance = appTest.setupCall()
+			.withExtensions(extensionMock)
+			.withServicePath("/some/path")
+			.withHttpMethod(POST)
+			.withHeader("headerKey", "headerValue")
+			.withRequest("{\"requestData\":\"testData\"}")
+			.withExpectedResponse("""
+				{
+					"id": "id-{{now format='yyyy'}},
+					"responseData": "{{request.body.requestData}}"
+				}
+				""")
+			.withMaxVerificationDelayInSeconds(5)
+			.withExpectedResponseHeader("responseHeader", List.of("responseValue"))
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		// Verification
+		assertThat(instance).isNotNull();
+		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
+		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
+		verify(wiremockMock).findAllUnmatchedRequests();
+		verify(wiremockMock).verify(any());
+		verify(wiremockMock).resetAll();
+		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
+
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testHandleBarReplacement"));
 	}
 
 	@Test

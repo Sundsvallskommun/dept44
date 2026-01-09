@@ -22,12 +22,14 @@ import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springdoc.webmvc.api.OpenApiWebMvcResource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +47,7 @@ import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
 
+@ExtendWith(MockitoExtension.class)
 class WebConfigurationTest {
 
 	@Nested
@@ -94,7 +97,7 @@ class WebConfigurationTest {
 
 		@Test
 		void configureContentNegotiation() {
-			final var contentNegotiationConfigurer = new ContentNegotiationConfigurer(null);
+			final var contentNegotiationConfigurer = new ContentNegotiationConfigurer();
 			webConfiguration.configureContentNegotiation(contentNegotiationConfigurer);
 
 			assertThat(contentNegotiationConfigurer).isNotNull();
@@ -224,6 +227,7 @@ class WebConfigurationTest {
 
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
+	@ExtendWith(MockitoExtension.class)
 	class RequestIdFilterTest {
 
 		@MockitoBean
@@ -281,9 +285,17 @@ class WebConfigurationTest {
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.IdentifierFilter> identifierFilterRegistration;
 
+		static Stream<Arguments> argumentsProvider() {
+			return Stream.of(
+				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
+				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
+				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
+				Arguments.of("X-Sent-By", null, null));
+		}
+
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void doFilterInternal(String headerName, String headerValue, Identifier expectedIdentifier) throws IOException, ServletException {
+		void doFilterInternal(final String headerName, final String headerValue, final Identifier expectedIdentifier) throws IOException, ServletException {
 			// Arrange
 			final var identifierFilter = identifierFilterRegistration.getFilter();
 
@@ -300,14 +312,6 @@ class WebConfigurationTest {
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(headerName);
 			verifyNoMoreInteractions(httpServletRequestMock);
-		}
-
-		static Stream<Arguments> argumentsProvider() {
-			return Stream.of(
-				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
-				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
-				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
-				Arguments.of("X-Sent-By", null, null));
 		}
 	}
 
@@ -454,7 +458,7 @@ class WebConfigurationTest {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
 
-			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
+			// when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
 
 			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
 

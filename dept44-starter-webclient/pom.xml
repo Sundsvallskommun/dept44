@@ -37,6 +37,10 @@
 			<artifactId>dept44-starter</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
 		<!-- Test -->
 		<dependency>
 			<groupId>se.sundsvall.dept44</groupId>

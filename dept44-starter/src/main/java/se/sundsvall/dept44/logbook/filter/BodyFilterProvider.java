@@ -53,7 +53,7 @@ public final class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
 
 		final var jsonPathConfiguration = Configuration.builder()
 			.jsonProvider(new JacksonJsonProvider(objectMapper))
@@ -73,7 +73,7 @@ public final class BodyFilterProvider {
 					return "";
 				}
 
-				var parsedContentType = ContentType.parse(contentType);
+				final var parsedContentType = ContentType.parse(contentType);
 
 				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
 					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);

@@ -41,7 +41,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -114,8 +114,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testGetCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testGetCall"));
 
 		// Verification of reset-method
 		assertThat(appTest.reset()).hasAllNullFieldsOrPropertiesExcept(
@@ -161,8 +161,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON.toString()));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBinaryCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON.toString()));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testBinaryCall"));
 	}
 
 	@Test
@@ -200,8 +200,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCall"));
 	}
 
 	@Test
@@ -210,7 +210,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		var response = """
+		final var response = """
 			{
 				"id": "id-%s,
 				"responseData": "testData"
@@ -249,8 +249,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testHandleBarReplacement"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testHandleBarReplacement"));
 	}
 
 	@Test
@@ -290,8 +290,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(MULTIPART_FORM_DATA_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCallWithMultiPart"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(MULTIPART_FORM_DATA_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCallWithMultiPart"));
 	}
 
 	@Test
@@ -329,8 +329,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPostCallMatchesExpectedHeaderValueWithReqexp"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCallMatchesExpectedHeaderValueWithReqexp"));
 	}
 
 	@Test
@@ -378,8 +378,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testPutCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPutCall"));
 	}
 
 	@Test
@@ -413,8 +413,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testDeleteCall"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testDeleteCall"));
 	}
 
 	@Test
@@ -448,8 +448,8 @@ class AbstractAppTestTest {
 		verify(wiremockMock).resetAll();
 		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry(CONTENT_TYPE, List.of(APPLICATION_JSON_VALUE));
-		assertThat(httpEntityCaptor.getValue().getHeaders()).containsEntry("x-test-case", List.of("AppTestImplementation.testBodyReplacement"));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
+		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testBodyReplacement"));
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
 	}
 }

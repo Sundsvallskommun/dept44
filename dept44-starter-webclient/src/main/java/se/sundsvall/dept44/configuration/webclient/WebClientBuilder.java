@@ -34,18 +34,11 @@ import se.sundsvall.dept44.configuration.Constants;
 
 public class WebClientBuilder {
 
-	@FunctionalInterface
-	public interface Customizer {
-		void customize(WebClient.Builder builder);
-	}
-
 	private final List<Customizer> customizers;
 	private String baseUrl;
-
 	private Duration connectTimeout = Duration.ofSeconds(Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS);
 	private Duration readTimeout = Duration.ofSeconds(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS);
 	private Duration writeTimeout = Duration.ofSeconds(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS);
-
 	private Logbook logbook;
 
 	public WebClientBuilder() {
@@ -259,5 +252,10 @@ public class WebClientBuilder {
 					connection.addHandlerLast(new LogbookClientHandler(logbook));
 				}
 			}));
+	}
+
+	@FunctionalInterface
+	public interface Customizer {
+		void customize(WebClient.Builder builder);
 	}
 }

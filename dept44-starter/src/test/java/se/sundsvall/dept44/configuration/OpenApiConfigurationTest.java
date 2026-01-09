@@ -7,16 +7,16 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest(classes = OpenApiConfiguration.class)
 @ActiveProfiles("junit")
 class OpenApiConfigurationTest {
 
-	@Mock
+	@MockitoBean
 	private Operation operationMock;
 
 	@Autowired

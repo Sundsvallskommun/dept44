@@ -2,8 +2,8 @@ package se.sundsvall.dept44.scheduling.health;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 /**
@@ -32,8 +32,8 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  * </p>
  *
  * @see Dept44Scheduled
- * @see org.springframework.boot.actuate.health.HealthIndicator
- * @see org.springframework.boot.actuate.health.Health
+ * @see org.springframework.boot.health.contributor.HealthIndicator
+ * @see org.springframework.boot.health.contributor.Health
  */
 public class Dept44HealthIndicator implements HealthIndicator {
 	private final AtomicBoolean healthy = new AtomicBoolean(true);

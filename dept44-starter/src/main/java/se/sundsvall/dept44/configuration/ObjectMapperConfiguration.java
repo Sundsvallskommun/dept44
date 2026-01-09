@@ -1,13 +1,16 @@
 package se.sundsvall.dept44.configuration;
 
-import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import java.util.List;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import se.sundsvall.dept44.util.jacoco.ExcludeFromJacocoGeneratedCoverageReport;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 @ExcludeFromJacocoGeneratedCoverageReport
@@ -29,16 +32,31 @@ public class ObjectMapperConfiguration {
 	}
 
 	/**
-	 * Customizes the ObjectMapper-builder.
+	 * Custom JsonFactory bean with adjusted StreamReadConstraints to allow for larger strings.
 	 *
-	 * The customizations implemented here are:
-	 * - Disabling of the default json-attribute string length limit of 20 000 000 chars.
+	 * @return the customized JsonFactory
+	 */
+
+	@Bean
+	JsonFactory jsonFactory() {
+		return JsonFactory.builder()
+			.streamReadConstraints(StreamReadConstraints.builder()
+				.maxStringLength(Integer.MAX_VALUE)
+				.build())
+			.build();
+	}
+
+	/**
+	 * Custom JsonMapper bean that applies all JsonMapperBuilderCustomizers.
 	 *
-	 * @return Jackson2ObjectMapperBuilderCustomizer.
+	 * @param  jsonFactory the custom JsonFactory bean
+	 * @param  customizers the list of JsonMapperBuilderCustomizers
+	 * @return             the customized JsonMapper
 	 */
 	@Bean
-	Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-		return builder -> builder.postConfigurer(objectMapper -> objectMapper.getFactory()
-			.setStreamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()));
+	JsonMapper jsonMapper(final JsonFactory jsonFactory, final List<JsonMapperBuilderCustomizer> customizers) {
+		final JsonMapper.Builder builder = JsonMapper.builder(jsonFactory);
+		customizers.forEach(c -> c.customize(builder));
+		return builder.build();
 	}
 }

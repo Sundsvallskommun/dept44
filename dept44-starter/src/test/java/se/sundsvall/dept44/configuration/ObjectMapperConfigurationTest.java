@@ -7,8 +7,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(classes = ObjectMapperConfiguration.class)
 class ObjectMapperConfigurationTest {
@@ -23,7 +24,10 @@ class ObjectMapperConfigurationTest {
 	private JavaTimeModule javaTimeModule;
 
 	@Autowired
-	private Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer;
+	private JsonFactory jsonFactory;
+
+	@Autowired
+	private JsonMapper jsonMapper;
 
 	@Test
 	void yamlMapperIsAutowired() {
@@ -41,7 +45,12 @@ class ObjectMapperConfigurationTest {
 	}
 
 	@Test
-	void jackson2ObjectMapperBuilderCustomizerIsAutowired() {
-		assertThat(jackson2ObjectMapperBuilderCustomizer).isNotNull();
+	void jsonFactoryIsAutowired() {
+		assertThat(jsonFactory).isNotNull();
+	}
+
+	@Test
+	void jsonMapperIsAutowired() {
+		assertThat(jsonMapper).isNotNull();
 	}
 }

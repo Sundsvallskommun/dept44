@@ -1,10 +1,10 @@
 package se.sundsvall.dept44.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.actuate.health.Status.DOWN;
-import static org.springframework.boot.actuate.health.Status.OUT_OF_SERVICE;
-import static org.springframework.boot.actuate.health.Status.UNKNOWN;
-import static org.springframework.boot.actuate.health.Status.UP;
+import static org.springframework.boot.health.contributor.Status.DOWN;
+import static org.springframework.boot.health.contributor.Status.OUT_OF_SERVICE;
+import static org.springframework.boot.health.contributor.Status.UNKNOWN;
+import static org.springframework.boot.health.contributor.Status.UP;
 import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_HALF_OPEN;
 import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_OPEN;
 import static se.sundsvall.dept44.configuration.HealthConfiguration.RESTRICTED;
@@ -16,8 +16,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.health.Status;
-import org.springframework.boot.actuate.health.StatusAggregator;
+import org.springframework.boot.health.actuate.endpoint.StatusAggregator;
+import org.springframework.boot.health.contributor.Status;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(classes = HealthConfiguration.class)
@@ -26,20 +26,8 @@ class HealthConfigurationTest {
 	@Autowired(required = false)
 	private StatusAggregator statusAggregator;
 
-	@Test
-	void statusAggregatorIsAutowired() {
-		assertThat(statusAggregator).isNotNull();
-	}
-
-	@ParameterizedTest
-	@MethodSource("aggregateArguments")
-	void aggregate(Set<Status> setOfStatusesToTest, Status expectedAggregatedStatus) {
-		assertThat(statusAggregator.getAggregateStatus(setOfStatusesToTest)).isEqualTo(expectedAggregatedStatus);
-	}
-
 	/**
-	 * Return two arguments for the tests:
-	 * Set<Status> setOfStatusesToTest, Status expectedAggregatedStatus
+	 * Return two arguments for the tests: Set<Status> setOfStatusesToTest, Status expectedAggregatedStatus
 	 */
 	private static Stream<Arguments> aggregateArguments() {
 		return Stream.of(
@@ -69,5 +57,16 @@ class HealthConfigurationTest {
 
 			// Aggregate order UP highest
 			Arguments.of(Set.of(UNKNOWN, UP), UP));
+	}
+
+	@Test
+	void statusAggregatorIsAutowired() {
+		assertThat(statusAggregator).isNotNull();
+	}
+
+	@ParameterizedTest
+	@MethodSource("aggregateArguments")
+	void aggregate(final Set<Status> setOfStatusesToTest, final Status expectedAggregatedStatus) {
+		assertThat(statusAggregator.getAggregateStatus(setOfStatusesToTest)).isEqualTo(expectedAggregatedStatus);
 	}
 }

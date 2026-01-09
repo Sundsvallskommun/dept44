@@ -10,6 +10,7 @@ import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -23,6 +24,7 @@ import se.sundsvall.petinventory.Application;
 	"/db/scripts/truncate.sql",
 	"/db/scripts/testdata-it.sql"
 })
+@AutoConfigureTestRestTemplate
 class PetInventoryCircuitBreakerIT extends AbstractAppTest {
 
 	@Test

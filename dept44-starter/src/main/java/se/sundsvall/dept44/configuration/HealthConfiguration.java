@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.springframework.boot.actuate.health.Status.DOWN;
-import static org.springframework.boot.actuate.health.Status.OUT_OF_SERVICE;
-import static org.springframework.boot.actuate.health.Status.UNKNOWN;
-import static org.springframework.boot.actuate.health.Status.UP;
+import static org.springframework.boot.health.contributor.Status.DOWN;
+import static org.springframework.boot.health.contributor.Status.OUT_OF_SERVICE;
+import static org.springframework.boot.health.contributor.Status.UNKNOWN;
+import static org.springframework.boot.health.contributor.Status.UP;
 
 import java.util.Set;
-import org.springframework.boot.actuate.health.Status;
-import org.springframework.boot.actuate.health.StatusAggregator;
+import org.springframework.boot.health.actuate.endpoint.StatusAggregator;
+import org.springframework.boot.health.contributor.Status;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -49,7 +49,7 @@ public class HealthConfiguration {
 	 * @param  matchSet the set to match the provided statuses against.
 	 * @return          true if match, false otherwise.
 	 */
-	private boolean matches(Set<Status> statuses, Set<Status> matchSet) {
+	private boolean matches(final Set<Status> statuses, final Set<Status> matchSet) {
 		return statuses.stream().anyMatch(status -> matchSet.stream().anyMatch(s -> s.equals(status)));
 	}
 }

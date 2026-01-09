@@ -48,7 +48,7 @@ import net.javacrumbs.jsonunit.core.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -142,10 +142,10 @@ public abstract class AbstractAppTest {
 		setupPaths();
 
 		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
+			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY), null));
 		if (nonNull(testCaseName)) {
 			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
+				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY), null));
 		}
 
 		return this;
@@ -374,7 +374,7 @@ public abstract class AbstractAppTest {
 
 		if (nonNull(expectedResponseHeaders)) {
 			expectedResponseHeaders.forEach((key, value) -> {
-				assertThat(response.getHeaders()).containsKey(key);
+				assertThat(response.getHeaders().get(key)).as("Response should contain header: " + key).isNotNull();
 				assertThat(response.getHeaders().getValuesAsList(key))
 					.allMatch(actualHeaderValue -> value.stream()
 						.allMatch(expectedHeaderValue -> expectedHeaderValue.equalsIgnoreCase(actualHeaderValue) ||
@@ -492,30 +492,30 @@ public abstract class AbstractAppTest {
 		}
 
 		try {
-			var handlebars = new Handlebars();
+			final var handlebars = new Handlebars();
 
 			// Register WireMocks helpers (now, randomValue, etc.)
-			for (var helper : WireMockHelpers.values()) {
+			for (final var helper : WireMockHelpers.values()) {
 				handlebars.registerHelper(helper.name(), helper);
 			}
 
-			var template = handlebars.compileInline(expectedResponseBody);
+			final var template = handlebars.compileInline(expectedResponseBody);
 
 			// Create model for "request"
-			var context = createRequestContext();
+			final var context = createRequestContext();
 
 			return template.apply(context);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new UncheckedIOException("Handlebars rendering failed", e);
 		}
 	}
 
 	private HashMap<String, Object> createRequestContext() {
-		var context = new HashMap<String, Object>();
+		final var context = new HashMap<String, Object>();
 		if (nonNull(requestBody)) {
 			try {
-				// Convert requestBody to map to be able to use dot-notation : {{request.body.field}}
-				var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
+				// Convert requestBody to map to be able to use dot-notation : <code> {{request.body.field}} </code>
+				final var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
 				});
 				context.put("request", Map.of("body", bodyMap));
 			} catch (Exception _) {
@@ -572,7 +572,7 @@ public abstract class AbstractAppTest {
 		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
 			final var requestPattern = stub.getRequest();
 			wiremock.verify(
-				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
+				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern(), requestPattern.getUrlPathTemplate())));
 		});
 
 		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();

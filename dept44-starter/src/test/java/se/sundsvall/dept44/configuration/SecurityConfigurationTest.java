@@ -7,10 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +25,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 @SpringBootTest(classes = {
 	SecurityConfiguration.class, SecurityConfigurationTest.CustomWebConfiguration.class
 })
+@ExtendWith(MockitoExtension.class)
 class SecurityConfigurationTest {
 
 	@Mock
@@ -61,8 +63,6 @@ class SecurityConfigurationTest {
 			return httpSecurityMock;
 		}).when(httpSecurityMock).authorizeHttpRequests(any());
 
-		when(requestMatcherRegistryMock.requestMatchers(any(EndpointRequest.EndpointRequestMatcher.class)))
-			.thenReturn(authorizedUrlMock);
 		when(authorizedUrlMock.permitAll()).thenReturn(requestMatcherRegistryMock);
 		when(httpSecurityMock.build()).thenReturn(defaultSecurityFilterChain);
 

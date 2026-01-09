@@ -46,7 +46,7 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
-		<spring-boot.version>3.5.7</spring-boot.version>
+		<spring-boot.version>4.0.1</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
@@ -55,12 +55,12 @@
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.20.0</commons-lang3.version>
-		<logbook.version>3.12.3</logbook.version>
+		<logbook.version>4.0.0-RC.1</logbook.version>
 		<problem.version>0.27.1</problem.version>
 		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
 		<problem-spring-web.version>0.29.1</problem-spring-web.version>
-		<springdoc.version>2.8.14</springdoc.version>
-		<spring-cloud.version>2025.0.0</spring-cloud.version>
+		<springdoc.version>3.0.1</springdoc.version>
+		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<google-guava.version>33.5.0-jre</google-guava.version>
 		<json-unit.version>5.1.0</json-unit.version>
@@ -88,6 +88,8 @@
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
 		<lombok.version>1.18.42</lombok.version>
+		<spotbugs-annotations.version>4.9.7</spotbugs-annotations.version>
+		<testcontainers.version>1.20.4</testcontainers.version>
 		<central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
@@ -241,6 +243,21 @@
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<version>${lombok.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-annotations</artifactId>
+				<version>${spotbugs-annotations.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven.plugin-tools</groupId>
+				<artifactId>maven-plugin-annotations</artifactId>
+				<version>${maven-plugin-annotations.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>mariadb</artifactId>
+				<version>${testcontainers.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

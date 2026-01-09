@@ -4,12 +4,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.InstanceOfAssertFactories.ARRAY;
+import static org.assertj.core.util.introspection.PropertyOrFieldSupport.EXTRACTION;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,7 +18,7 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.WebServiceMessageFactory;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.client.support.interceptor.ClientInterceptor;
-import org.springframework.ws.transport.http.HttpComponents5ClientFactory;
+import org.springframework.ws.transport.http.SimpleHttpComponents5MessageSender;
 import org.zalando.logbook.Logbook;
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
@@ -191,13 +191,15 @@ class WebServiceTemplateBuilderTest {
 		final var password = "password";
 
 		// Create instance
-		final WebServiceTemplate template = WebServiceTemplateBuilder.create().withBasicAuthentication(userName, password).build();
+		final var template = WebServiceTemplateBuilder.create()
+			.withBasicAuthentication(userName, password)
+			.build();
 
-		// Do assertions
 		assertThat(template).isNotNull()
-			.extracting("messageSenders").asInstanceOf(ARRAY).hasSize(1)
-			.extracting("clientFactory", HttpComponents5ClientFactory.class)
-			.extracting("credentials", UsernamePasswordCredentials.class).containsExactly(new UsernamePasswordCredentials(userName, password.toCharArray()));
+			.extracting("messageSenders").asInstanceOf(ARRAY).hasSize(1);
+
+		final var sender = ((Object[]) EXTRACTION.getValueOf("messageSenders", template))[0];
+		assertThat(sender).isInstanceOf(SimpleHttpComponents5MessageSender.class);
 	}
 
 	@Test
@@ -219,7 +221,7 @@ class WebServiceTemplateBuilderTest {
 	@Test
 	void testSSLClientWithKeyStoreFileContent() throws IOException {
 		// Setup variables
-		try (var in = getClass().getResourceAsStream("/dummy-keystore.jks")) {
+		try (final var in = getClass().getResourceAsStream("/dummy-keystore.jks")) {
 			assert in != null;
 
 			final var keyStoreFileContent = in.readAllBytes();

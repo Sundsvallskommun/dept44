@@ -3,10 +3,10 @@ package se.sundsvall.dept44.scheduling.health;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.actuate.health.CompositeHealthContributor;
-import org.springframework.boot.actuate.health.HealthContributor;
-import org.springframework.boot.actuate.health.NamedContributor;
+import java.util.stream.Stream;
+import org.springframework.boot.health.contributor.CompositeHealthContributor;
+import org.springframework.boot.health.contributor.HealthContributor;
+import org.springframework.boot.health.contributor.HealthContributors;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
@@ -30,9 +30,8 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
  *
  * @see Dept44Scheduled
  * @see Dept44HealthIndicator
- * @see org.springframework.boot.actuate.health.CompositeHealthContributor
- * @see org.springframework.boot.actuate.health.HealthContributor
- * @see org.springframework.boot.actuate.health.NamedContributor
+ * @see org.springframework.boot.health.contributor.CompositeHealthContributor
+ * @see org.springframework.boot.health.contributor.HealthContributor
  */
 @Component("dept44CompositeSchedulerHealthContributor")
 public class Dept44CompositeHealthContributor implements CompositeHealthContributor {
@@ -70,19 +69,23 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 	}
 
 	/**
-	 * Obtain an iterator over the health contributors.
+	 * Get an iterator over the health contributors.
 	 * <p>
 	 * This method returns an iterator over the health contributors, allowing iteration through all the
-	 * {@link NamedContributor} instances that represent the health indicators for the scheduled tasks.
+	 * {@link HealthContributors} instances that represent the health indicators for the scheduled tasks.
 	 * </p>
 	 *
 	 * @return an iterator over the health contributors
 	 */
-	@NotNull
 	@Override
-	public Iterator<NamedContributor<HealthContributor>> iterator() {
+	public Iterator<HealthContributors.Entry> iterator() {
 		return indicators.entrySet().stream()
-			.map(entry -> NamedContributor.of(entry.getKey(), (HealthContributor) entry.getValue()))
+			.map(e -> new HealthContributors.Entry(e.getKey(), e.getValue()))
 			.iterator();
+	}
+
+	@Override
+	public Stream<Entry> stream() {
+		return Stream.empty();
 	}
 }

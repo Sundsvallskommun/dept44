@@ -88,7 +88,7 @@
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
 		<lombok.version>1.18.42</lombok.version>
-		<central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
+		<central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>

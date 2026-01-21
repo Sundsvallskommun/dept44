@@ -1,0 +1,36 @@
+package se.sundsvall.dept44.problem.violations;
+
+import java.util.Collections;
+import java.util.List;
+import se.sundsvall.dept44.problem.ProblemResponse;
+
+/**
+ * A ProblemResponse that includes constraint violations.
+ * This class is used for JSON serialization of ConstraintViolationProblem
+ * without the serialization issues that come with ThrowableProblem.
+ */
+public class ConstraintViolationProblemResponse extends ProblemResponse {
+
+	private final List<Violation> violations;
+
+	/**
+	 * Create a ConstraintViolationProblemResponse from a ConstraintViolationProblem.
+	 *
+	 * @param problem the constraint violation problem to copy from
+	 */
+	public ConstraintViolationProblemResponse(final ConstraintViolationProblem problem) {
+		super(problem);
+		this.violations = problem.getViolations() != null
+			? List.copyOf(problem.getViolations())
+			: Collections.emptyList();
+	}
+
+	/**
+	 * Get the list of violations.
+	 *
+	 * @return an unmodifiable list of violations
+	 */
+	public List<Violation> getViolations() {
+		return violations;
+	}
+}

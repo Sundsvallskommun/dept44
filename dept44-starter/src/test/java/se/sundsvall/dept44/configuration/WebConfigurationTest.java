@@ -42,7 +42,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
@@ -295,7 +295,7 @@ class WebConfigurationTest {
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void doFilterInternal(final String headerName, final String headerValue, final Identifier expectedIdentifier) throws IOException, ServletException {
+		void doFilterInternal(final String headerName, final String headerValue) throws IOException, ServletException {
 			// Arrange
 			final var identifierFilter = identifierFilterRegistration.getFilter();
 
@@ -458,12 +458,9 @@ class WebConfigurationTest {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
 
-			// when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
-
 			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
 		}
 	}
 }

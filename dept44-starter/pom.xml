@@ -77,6 +77,11 @@
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
 		</dependency>
+		<dependency>
+			<!-- Jackson 3 YAML support for JacksonYamlHttpMessageConverter -->
+			<groupId>tools.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+		</dependency>
 		<!-- Logbook -->
 		<dependency>
 			<groupId>org.zalando</groupId>
@@ -85,23 +90,6 @@
 		<dependency>
 			<groupId>org.zalando</groupId>
 			<artifactId>logbook-spring-boot-webflux-autoconfigure</artifactId>
-		</dependency>
-		<!-- Problem -->
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>problem</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>jackson-datatype-problem</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>problem-gson</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>problem-spring-web-starter</artifactId>
 		</dependency>
 		<!-- SpringDoc -->
 		<dependency>
@@ -121,7 +109,7 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
 		</dependency>
-		<!-- Resilience4j Circuitbreaker (health-indicators) -->
+		<!-- Resilience4j Circuit-breaker (health-indicators) -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>

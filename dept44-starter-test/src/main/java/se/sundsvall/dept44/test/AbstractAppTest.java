@@ -61,6 +61,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
+import org.wiremock.spring.InjectWireMock;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockPathResolver;
 import wiremock.com.github.jknack.handlebars.Handlebars;
 
 public abstract class AbstractAppTest {
@@ -77,7 +79,7 @@ public abstract class AbstractAppTest {
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 	@Autowired
 	protected TestRestTemplate restTemplate;
-	@Autowired
+	@InjectWireMock
 	protected WireMockServer wiremock;
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
@@ -123,15 +125,9 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest setupPaths() {
-		// Fetch test case name.
 		testCaseName = getTestMethodName();
-
-		mappingPath = wiremock.getOptions().filesRoot().getPath();
-		if (!mappingPath.endsWith("/")) {
-			mappingPath += "/";
-		}
-
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault().getSeparator();
+		mappingPath = WireMockPathResolver.resolveMappingPath(wiremock, getClass());
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + testCaseName + FileSystems.getDefault().getSeparator();
 
 		return this;
 	}
@@ -141,11 +137,14 @@ public abstract class AbstractAppTest {
 		initializeJsonAssert();
 		setupPaths();
 
+		// Load common mappings and test-specific mappings
+		final String commonMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY);
 		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY), null));
+			new ClasspathFileSource(commonMappingsPath), null));
 		if (nonNull(testCaseName)) {
+			final String testMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY);
 			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY), null));
+				new ClasspathFileSource(testMappingsPath), null));
 		}
 
 		return this;
@@ -185,7 +184,7 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Set expected response header.
+	 * Set the expected response header.
 	 *
 	 * @param  expectedHeaderKey   the expected header key.
 	 * @param  expectedHeaderValue the list of expected header values, as regular expressions.
@@ -202,7 +201,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method takes a JSON response string or a file name where the response can be read from.
 	 *
-	 * @param  expectedResponse raw json response string or filename where the response can be read from
+	 * @param  expectedResponse raw JSON response string or filename where the response can be read from
 	 * @return                  AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponse(final String expectedResponse) {
@@ -221,7 +220,7 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  expectedResponseFile the filename where the binary response can be read from.
 	 * @return                      AbstractAppTest
-	 * @throws IOException          if file can't be read.
+	 * @throws IOException          if a file can't be read.
 	 */
 	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
 		final var file = ResourceUtils.getFile(testDirectoryPath + expectedResponseFile);
@@ -247,12 +246,12 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method adds options to be used when assertion of json is done, for example IGNORING_EXTRA_ARRAY_ITEMS. By default,
-	 * the test will compare arrays with option to ignore array order. If the need to use maximum strictness in JsonAssert -
-	 * send in null or
-	 * an empty list to just reset options to JsonAsserts default ones.
+	 * Method adds options to be used when assertion of JSON is done, for example, IGNORING_EXTRA_ARRAY_ITEMS. By default,
+	 * the test will compare arrays with an option to ignore array order. If they need to use maximum strictness in
+	 * JsonAssert - send in
+	 * null or an empty list to just reset options to JsonAsserts default ones.
 	 *
-	 * @param  options list of options to use when doing the json assertion or null/empty list for resetting to JsonAssert
+	 * @param  options list of options to use when doing the JSON assertion or null/empty list for resetting to JsonAssert
 	 *                 defaults (strict comparison)
 	 * @return         AbstractAppTest
 	 */
@@ -291,7 +290,7 @@ public abstract class AbstractAppTest {
 	 * Method replaces sections in request matching sent in string with sent in replacement string. Observe that the
 	 * withRequest method must be called before for this method to have any effect.
 	 *
-	 * @param  matchingString    the string to match in request body
+	 * @param  matchingString    the string to match in the request body
 	 * @param  replacementString the string to replace with
 	 * @return                   AbstractAppTest
 	 */
@@ -348,7 +347,7 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Set max verification delay in seconds. I.e. the maximum time to spend while verifying a condition.
+	 * Set max verification delay in seconds. I.e., the maximum time to spend while verifying a condition.
 	 *
 	 * @param  maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
 	 * @return                               AbstractAppTest
@@ -367,7 +366,7 @@ public abstract class AbstractAppTest {
 
 		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
 
-		// Call service and fetch response.
+		// Call service and fetch a response.
 		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
 		responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		responseHeaders = response.getHeaders();
@@ -457,7 +456,7 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  <T>           Response type.
 	 * @param  typeReference the type reference to map response to
-	 * @return               response mapped to given type reference
+	 * @return               response mapped to a given type reference
 	 */
 	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
 		return JSON_MAPPER.readValue(responseBody, typeReference);
@@ -501,7 +500,7 @@ public abstract class AbstractAppTest {
 
 			final var template = handlebars.compileInline(expectedResponseBody);
 
-			// Create model for "request"
+			// Create a model for "request"
 			final var context = createRequestContext();
 
 			return template.apply(context);
@@ -514,7 +513,7 @@ public abstract class AbstractAppTest {
 		final var context = new HashMap<String, Object>();
 		if (nonNull(requestBody)) {
 			try {
-				// Convert requestBody to map to be able to use dot-notation : <code> {{request.body.field}} </code>
+				// Convert requestBody to map to be able to use dot-notation: <code> {{request.body.field}} </code>
 				final var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
 				});
 				context.put("request", Map.of("body", bodyMap));
@@ -543,7 +542,7 @@ public abstract class AbstractAppTest {
 	private String fromFile(final String filePath) {
 		try {
 			return readString(getFile(filePath).toPath());
-		} catch (final IOException e) {
+		} catch (final IOException _) {
 			return null;
 		}
 	}
@@ -557,12 +556,12 @@ public abstract class AbstractAppTest {
 	}
 
 	private void initializeJsonAssert() {
-		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e. 1.0 == 1.000)
+		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e., 1.0 == 1.000)
 		JsonAssert.setOptions(Option.IGNORING_ARRAY_ORDER);
 	}
 
 	/**
-	 * Verifies that all setup stubs setup have been called.
+	 * Verifies that all setup stubs setup has been called.
 	 *
 	 * @return                       true if verification succeeds.
 	 * @throws VerificationException if verification fails

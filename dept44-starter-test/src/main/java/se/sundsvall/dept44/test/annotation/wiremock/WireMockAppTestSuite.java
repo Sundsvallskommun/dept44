@@ -7,6 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.test.context.ActiveProfiles;
@@ -14,7 +15,7 @@ import org.wiremock.spring.ConfigureWireMock;
 import org.wiremock.spring.EnableWireMock;
 
 /**
- * Auto-configure WireMock on a dynamic/random port, loading mappings from the classpath using the provided value(s).
+ * Autoconfigure WireMock on a dynamic/random port, loading mappings from the classpath using the provided value(s).
  */
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
@@ -22,12 +23,13 @@ import org.wiremock.spring.EnableWireMock;
 @ConfigureWireMock
 @EnableWireMock
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 @ActiveProfiles("it")
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public @interface WireMockAppTestSuite {
 
 	@AliasFor(annotation = ConfigureWireMock.class, attribute = "filesUnderClasspath")
-	String[] files();
+	String files();
 
 	@AliasFor(annotation = SpringBootTest.class, attribute = "classes")
 	Class<?>[] classes();

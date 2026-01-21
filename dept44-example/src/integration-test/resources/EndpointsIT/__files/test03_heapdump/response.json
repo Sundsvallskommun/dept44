@@ -1,5 +1,6 @@
 {
 	"detail": "No endpoint GET /actuator/heapdump.",
+	"instance": "/actuator/heapdump",
 	"title": "Not Found",
 	"status": 404
 }

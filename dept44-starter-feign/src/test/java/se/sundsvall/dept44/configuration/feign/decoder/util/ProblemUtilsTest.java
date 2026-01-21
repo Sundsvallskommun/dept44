@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.configuration.feign.decoder.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.zalando.problem.Status.BAD_REQUEST;
+import static se.sundsvall.dept44.problem.Status.BAD_REQUEST;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.zalando.problem.DefaultProblem;
-import org.zalando.problem.violations.ConstraintViolationProblem;
-import org.zalando.problem.violations.Violation;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
+import se.sundsvall.dept44.problem.violations.Violation;
 
 class ProblemUtilsTest {
 
@@ -25,7 +25,7 @@ class ProblemUtilsTest {
 		final var problem = ProblemUtils.toProblem(constraintViolationProblem);
 
 		// Assert
-		assertThat(problem).isExactlyInstanceOf(DefaultProblem.class);
+		assertThat(problem).isExactlyInstanceOf(ThrowableProblem.class);
 		assertThat(problem.getDetail()).isEqualTo("field1: error1, field2: error2, field3: error3");
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");

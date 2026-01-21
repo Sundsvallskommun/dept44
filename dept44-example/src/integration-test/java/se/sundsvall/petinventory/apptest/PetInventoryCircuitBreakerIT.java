@@ -8,8 +8,12 @@ import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
@@ -27,16 +31,28 @@ import se.sundsvall.petinventory.Application;
 @AutoConfigureTestRestTemplate
 class PetInventoryCircuitBreakerIT extends AbstractAppTest {
 
+	@Autowired
+	private CircuitBreakerRegistry circuitBreakerRegistry;
+
+	@BeforeEach
+	void resetCircuitBreaker() {
+		// Reset all circuit breakers to ensure a clean state for each test
+		circuitBreakerRegistry.getAllCircuitBreakers()
+			.forEach(CircuitBreaker::reset);
+	}
+
 	@Test
 	void test01_triggerCircuitBreaker() {
 
-		// Verify that health is "UP".
+		// Verify circuit breaker is CLOSED using the /actuator/circuitbreakers endpoint
+		// Note: In Spring Boot 4, circuitBreakers are not included in /actuator/health due to
+		// Resilience4j compatibility issues. Using a dedicated endpoint instead.
 		setupCall()
-			.withServicePath("/actuator/health")
+			.withServicePath("/actuator/circuitbreakers")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withJsonAssertOptions(List.of(IGNORING_EXTRA_FIELDS))
-			.withExpectedResponse("health-ok-response.json")
+			.withExpectedResponse("circuitbreaker-closed-response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
 			.sendRequest();
 
@@ -55,17 +71,17 @@ class PetInventoryCircuitBreakerIT extends AbstractAppTest {
 			.withServicePath("/pet-inventory-items")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(INTERNAL_SERVER_ERROR)
-			.withExpectedResponse("circuitbreaker-open-response.json")
+			.withExpectedResponse("circuitbreaker-open-error-response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
 			.sendRequest();
 
-		// Verify that health is "RESTRICTED".
+		// Verify circuit breaker is OPEN using the /actuator/circuitbreakers endpoint
 		setupCall()
-			.withServicePath("/actuator/health")
+			.withServicePath("/actuator/circuitbreakers")
 			.withHttpMethod(GET)
 			.withExpectedResponseStatus(OK)
 			.withJsonAssertOptions(List.of(IGNORING_EXTRA_FIELDS))
-			.withExpectedResponse("health-restricted-response.json")
+			.withExpectedResponse("circuitbreaker-open-response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
 			.sendRequest();
 	}

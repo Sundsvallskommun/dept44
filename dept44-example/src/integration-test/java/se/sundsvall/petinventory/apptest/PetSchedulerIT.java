@@ -27,7 +27,8 @@ import se.sundsvall.petinventory.service.scheduler.PetSchedulerWorker;
 @SpringBootTest(properties = {
 	"scheduler.pet-scheduler.cron=* * * * * *", // Setup to execute every second
 	"server.shutdown=immediate",
-	"spring.lifecycle.timeout-per-shutdown-phase=0s"
+	"spring.lifecycle.timeout-per-shutdown-phase=0s",
+	"wiremock.server.port=8089" // Provide default port to satisfy URL validation
 })
 @ActiveProfiles("it")
 class PetSchedulerIT {

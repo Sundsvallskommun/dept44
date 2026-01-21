@@ -1,5 +1,16 @@
 {
-	"title": "Internal Server Error",
-	"status": 500,
-	"detail": "CircuitBreaker 'petstore' is OPEN and does not permit further calls"
+	"circuitBreakers": {
+		"petstore": {
+			"bufferedCalls": 5,
+			"failedCalls": 5,
+			"failureRate": "100.0%",
+			"failureRateThreshold": "50.0%",
+			"notPermittedCalls": 1,
+			"slowCallRate": "0.0%",
+			"slowCallRateThreshold": "100.0%",
+			"slowCalls": 0,
+			"slowFailedCalls": 0,
+			"state": "OPEN"
+		}
+	}
 }

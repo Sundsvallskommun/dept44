@@ -26,9 +26,9 @@ import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.invoker.HttpExchangeAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 import reactor.core.publisher.Mono;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.Status;
 
 @ExtendWith(MockitoExtension.class)
 class WebClientBuilderTest {

@@ -1,16 +1,15 @@
 package se.sundsvall.dept44.exception;
 
-import org.zalando.problem.AbstractThrowableProblem;
-import org.zalando.problem.StatusType;
+import se.sundsvall.dept44.problem.AbstractThrowableProblem;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.StatusType;
 
 /**
- * A ThrowableProblem to be used in case in case of server side problems (i.e. HTTP 5xx).
+ * A ThrowableProblem to be used in case of server side problems (i.e., HTTP 5xx).
  */
 public class ServerProblem extends AbstractThrowableProblem {
 
-	private static final long serialVersionUID = 3240800702346463958L;
-
-	public ServerProblem(StatusType status, String detail) {
-		super(DEFAULT_TYPE, status.getReasonPhrase(), status, detail);
+	public ServerProblem(final StatusType status, final String detail) {
+		super(Problem.DEFAULT_TYPE, status.getReasonPhrase(), status, detail);
 	}
 }

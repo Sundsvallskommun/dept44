@@ -16,9 +16,9 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.zalando.problem.Status;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AccessDeniedExceptionHandler;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AuthenticationCredentialsNotFoundExceptionHandler;
+import se.sundsvall.dept44.problem.Status;
 
 class UnauthorizedExceptionHandlerConfigurationTest {
 

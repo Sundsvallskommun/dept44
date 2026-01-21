@@ -6,7 +6,6 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static se.sundsvall.dept44.problem.Status.UNAUTHORIZED;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -35,6 +34,7 @@ import se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import tools.jackson.databind.json.JsonMapper;
 
 public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 
@@ -49,20 +49,20 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private final JwtTokenUtil jwtTokenUtil;
 	private final WebAuthenticationDetailsSource webAuthenticationDetailsSource;
 	private final ApplicationContext applicationContext;
-	private final ObjectMapper objectMapper;
+	private final JsonMapper jsonMapper;
 
 	public JwtAuthorizationExtractionFilter(
 		final JwtAuthorizationProperties properties,
 		final JwtTokenUtil jwtTokenUtil,
 		final WebAuthenticationDetailsSource webAuthenticationDetailsSource,
 		final ApplicationContext applicationContext,
-		final ObjectMapper objectMapper) {
+		final JsonMapper jsonMapper) {
 
 		this.properties = properties;
 		this.jwtTokenUtil = jwtTokenUtil;
 		this.webAuthenticationDetailsSource = webAuthenticationDetailsSource;
 		this.applicationContext = applicationContext;
-		this.objectMapper = objectMapper;
+		this.jsonMapper = jsonMapper;
 	}
 
 	/**
@@ -141,7 +141,7 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 
 		response.setContentType(APPLICATION_PROBLEM_JSON_VALUE);
 		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		response.getWriter().write(objectMapper.writeValueAsString(createProblem(exception, title)));
+		response.getWriter().write(jsonMapper.writeValueAsString(createProblem(exception, title)));
 	}
 
 	private ThrowableProblem createProblem(final Exception exception, final String title) {

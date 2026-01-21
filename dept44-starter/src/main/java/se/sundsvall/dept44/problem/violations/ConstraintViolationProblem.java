@@ -9,10 +9,12 @@ import java.util.Objects;
 import se.sundsvall.dept44.problem.Status;
 import se.sundsvall.dept44.problem.StatusType;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A Problem that represents constraint violations, typically from validation errors.
  */
+@JsonDeserialize // Override the Problem interface's @JsonDeserialize(as = ThrowableProblem.class) annotation
 public class ConstraintViolationProblem extends ThrowableProblem {
 
 	/**

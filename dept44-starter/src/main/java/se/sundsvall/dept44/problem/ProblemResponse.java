@@ -3,9 +3,11 @@ package se.sundsvall.dept44.problem;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import java.net.URI;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblemResponse;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A simple POJO implementation of Problem for JSON serialization. This class is used for response bodies where we need
@@ -13,6 +15,7 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblemResponse
  * Exception and has cyclic
  * references).
  */
+@JsonDeserialize // Override the Problem interface's @JsonDeserialize annotation
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProblemResponse implements Problem {
 
@@ -95,6 +98,16 @@ public class ProblemResponse implements Problem {
 
 	public void setStatus(final StatusType status) {
 		this.status = status;
+	}
+
+	/**
+	 * Set the status from an integer status code (for JSON deserialization).
+	 *
+	 * @param statusCode the HTTP status code
+	 */
+	@JsonSetter("status")
+	public void setStatus(final Integer statusCode) {
+		this.status = statusCode != null ? Status.valueOf(statusCode) : null;
 	}
 
 	/**

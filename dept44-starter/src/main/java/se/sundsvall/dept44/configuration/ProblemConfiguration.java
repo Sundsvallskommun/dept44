@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 import se.sundsvall.dept44.problem.ProblemExceptionHandler;
 
 /**
- * Autoconfiguration for RFC 7807 Problem exception handling. Imports the global exception handler for validation and
+ * Autoconfiguration for RFC 9457 Problem exception handling. Imports the global exception handler for validation and
  * problem exceptions.
  */
 @Configuration

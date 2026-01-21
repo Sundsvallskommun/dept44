@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.CompressionException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -45,6 +44,7 @@ import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 import se.sundsvall.dept44.problem.Status;
 import se.sundsvall.dept44.problem.ThrowableProblem;
+import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationExtractionFilterTest {
@@ -67,7 +67,7 @@ class JwtAuthorizationExtractionFilterTest {
 	private PrintWriter printWriterMock;
 
 	@Mock
-	private ObjectMapper objectMapperMock;
+	private JsonMapper jsonMapperMock;
 
 	@Mock
 	private JwtTokenUtil jwtTokenUtilMock;
@@ -124,7 +124,7 @@ class JwtAuthorizationExtractionFilterTest {
 		verify(propertiesMock).getHeaderName();
 		verify(requestMock).getHeader(DEFAULT_JWT_HEADER_NAME);
 		verify(filterChainMock).doFilter(requestMock, responseMock);
-		verifyNoInteractions(jwtTokenUtilMock, objectMapperMock, webAuthenticationDetailsSourceMock);
+		verifyNoInteractions(jwtTokenUtilMock, jsonMapperMock, webAuthenticationDetailsSourceMock);
 	}
 
 	@Test
@@ -142,7 +142,7 @@ class JwtAuthorizationExtractionFilterTest {
 		verify(jwtTokenUtilMock).getRolesFromToken(jwt);
 		verify(filterChainMock).doFilter(requestMock, responseMock);
 		verifyNoMoreInteractions(jwtTokenUtilMock);
-		verifyNoInteractions(objectMapperMock, webAuthenticationDetailsSourceMock);
+		verifyNoInteractions(jsonMapperMock, webAuthenticationDetailsSourceMock);
 	}
 
 	@Test
@@ -168,7 +168,7 @@ class JwtAuthorizationExtractionFilterTest {
 			verify(securityContextMock).setAuthentication(any(Authentication.class));
 			verify(filterChainMock).doFilter(requestMock, responseMock);
 
-			verifyNoInteractions(objectMapperMock);
+			verifyNoInteractions(jsonMapperMock);
 		}
 	}
 
@@ -182,7 +182,7 @@ class JwtAuthorizationExtractionFilterTest {
 		when(requestMock.getHeader(DEFAULT_JWT_HEADER_NAME)).thenReturn(jwt);
 		when(jwtTokenUtilMock.getUsernameFromToken(jwt)).thenThrow(e);
 		when(responseMock.getWriter()).thenReturn(printWriterMock);
-		when(objectMapperMock.writeValueAsString(any())).thenReturn(problemString);
+		when(jsonMapperMock.writeValueAsString(any())).thenReturn(problemString);
 
 		try (final MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
 			filter.doFilterInternal(requestMock, responseMock, filterChainMock);
@@ -192,14 +192,14 @@ class JwtAuthorizationExtractionFilterTest {
 			verify(propertiesMock).getHeaderName();
 			verify(requestMock).getHeader(DEFAULT_JWT_HEADER_NAME);
 			verify(jwtTokenUtilMock).getUsernameFromToken(jwt);
-			verify(objectMapperMock).writeValueAsString(throwableProblemCaptor.capture());
+			verify(jsonMapperMock).writeValueAsString(throwableProblemCaptor.capture());
 			verify(printWriterMock).write(problemString);
 
 			assertThat(throwableProblemCaptor.getValue().getTitle()).isEqualTo(title);
 			assertThat(throwableProblemCaptor.getValue().getDetail()).isEqualTo(e.getMessage());
 			assertThat(throwableProblemCaptor.getValue().getStatus()).isEqualTo(Status.UNAUTHORIZED);
 
-			verifyNoMoreInteractions(jwtTokenUtilMock, objectMapperMock, printWriterMock);
+			verifyNoMoreInteractions(jwtTokenUtilMock, jsonMapperMock, printWriterMock);
 			verifyNoInteractions(webAuthenticationDetailsSourceMock, securityContextMock, filterChainMock);
 			securityContextHolderMock.verifyNoInteractions();
 		}

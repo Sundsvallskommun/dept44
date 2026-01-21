@@ -1,6 +1,5 @@
 {
-	"detail": "No endpoint GET /actuator/threaddump.",
-	"instance": "/actuator/threaddump",
+	"detail": "No handler found for GET /actuator/threaddump",
 	"title": "Not Found",
 	"status": 404
 }

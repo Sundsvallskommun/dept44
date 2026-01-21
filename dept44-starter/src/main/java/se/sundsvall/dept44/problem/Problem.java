@@ -1,12 +1,14 @@
 package se.sundsvall.dept44.problem;
 
 import java.net.URI;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * Represents an RFC 7807 Problem Details object.
+ * Represents an RFC 9457 Problem Details object.
  *
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc7807">RFC 7807</a>
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc9457">RFC 9457</a>
  */
+@JsonDeserialize(as = ProblemResponse.class)
 public interface Problem {
 
 	/**

@@ -39,7 +39,7 @@ class ThrowableProblemTest {
 
 	@Test
 	void constructorWithNullStatus() {
-		final var problem = new ThrowableProblem(null, "Title", null, "Detail", null);
+		final var problem = new ThrowableProblem(null, "Title", (StatusType) null, "Detail", null);
 
 		assertThat(problem.getStatus()).isNull();
 	}
@@ -74,7 +74,7 @@ class ThrowableProblemTest {
 
 	@Test
 	void getMessageWithNothing() {
-		final var problem = new ThrowableProblem(null, null, null, null, null);
+		final var problem = new ThrowableProblem(null, null, (StatusType) null, null, null);
 
 		assertThat(problem.getMessage()).isEqualTo("Unknown problem");
 	}

@@ -4,11 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zalando.logbook.Logbook;
 
 @SpringBootTest(classes = {
-	LogbookConfiguration.class, ObjectMapperConfiguration.class, BodyFilterProperties.class
+	JacksonAutoConfiguration.class, LogbookConfiguration.class, ObjectMapperConfiguration.class, BodyFilterProperties.class
 })
 class LogbookConfigurationTest {
 

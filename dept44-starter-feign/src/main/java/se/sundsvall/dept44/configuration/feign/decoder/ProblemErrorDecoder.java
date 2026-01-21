@@ -2,23 +2,28 @@ package se.sundsvall.dept44.configuration.feign.decoder;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import feign.Response;
 import feign.RetryableException;
 import jakarta.annotation.Nonnull;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.Status;
+import se.sundsvall.dept44.problem.StatusType;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * A Problem ErrorDecoder that allows you to process a Problem-based error response.
  * <p>
- * This decoder manages error responses based on: <a href="https://datatracker.ietf.org/doc/html/rfc7807">RFC7807</a>
+ * This decoder manages error responses based on: <a href="https://datatracker.ietf.org/doc/html/rfc9457">RFC 9457</a>
  */
 public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
-	private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
+	private static final JsonMapper JSON_MAPPER_MAPPER = JsonMapper.builder()
 		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 		.build();
 
@@ -79,10 +84,10 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		return ErrorMessage.create(integrationName, response.status(), problem).extractMessage();
 	}
 
-	private Problem extractProblem(final String body) throws IOException {
+	private Problem extractProblem(final String body) {
 		// First, try to deserialize as ConstraintViolationProblemResponse
 		try {
-			final var cvpResponse = OBJECT_MAPPER.readValue(body, ConstraintViolationProblemResponse.class);
+			final var cvpResponse = JSON_MAPPER_MAPPER.readValue(body, ConstraintViolationProblemResponse.class);
 			if (isNotEmpty(cvpResponse.violations())) {
 				// Convert violations to detail string and create a Problem
 				return toProblem(cvpResponse);
@@ -92,16 +97,16 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		}
 
 		// Fall back to DefaultProblemResponse - let the exception propagate if this also fails
-		return OBJECT_MAPPER.readValue(body, DefaultProblemResponse.class);
+		return JSON_MAPPER_MAPPER.readValue(body, DefaultProblemResponse.class);
 	}
 
 	private Problem toProblem(final ConstraintViolationProblemResponse cvpResponse) {
 		final var violationsString = cvpResponse.violations().stream()
 			.map(v -> "%s: %s".formatted(v.field(), v.message()))
-			.collect(java.util.stream.Collectors.joining(", "));
+			.collect(Collectors.joining(", "));
 
 		return Problem.builder()
-			.withStatus(cvpResponse.status() != null ? se.sundsvall.dept44.problem.Status.valueOf(cvpResponse.status()) : null)
+			.withStatus(cvpResponse.status() != null ? Status.valueOf(cvpResponse.status()) : null)
 			.withTitle(cvpResponse.title() != null ? cvpResponse.title() : "Constraint Violation")
 			.withDetail(violationsString)
 			.build();
@@ -124,6 +129,7 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 	 * A simple POJO for deserializing Problem JSON responses. This is used instead of deserializing to the Problem
 	 * interface directly.
 	 */
+	@JsonDeserialize // Override the Problem interface's @JsonDeserialize annotation
 	static class DefaultProblemResponse implements Problem {
 
 		private String type;
@@ -133,8 +139,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		private String instance;
 
 		@Override
-		public java.net.URI getType() {
-			return type != null ? java.net.URI.create(type) : Problem.DEFAULT_TYPE;
+		public URI getType() {
+			return type != null ? URI.create(type) : Problem.DEFAULT_TYPE;
 		}
 
 		public void setType(final String type) {
@@ -151,8 +157,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		}
 
 		@Override
-		public se.sundsvall.dept44.problem.StatusType getStatus() {
-			return status != null ? se.sundsvall.dept44.problem.Status.valueOf(status) : null;
+		public StatusType getStatus() {
+			return status != null ? Status.valueOf(status) : null;
 		}
 
 		public void setStatus(final Integer status) {
@@ -169,8 +175,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		}
 
 		@Override
-		public java.net.URI getInstance() {
-			return instance != null ? java.net.URI.create(instance) : null;
+		public URI getInstance() {
+			return instance != null ? URI.create(instance) : null;
 		}
 
 		public void setInstance(final String instance) {

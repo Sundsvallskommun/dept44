@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.problem;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -103,6 +104,7 @@ public enum Status implements StatusType {
 		return valueOf(httpStatus.value());
 	}
 
+	@JsonValue
 	@Override
 	public int getStatusCode() {
 		return httpStatus.value();

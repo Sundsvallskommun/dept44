@@ -17,17 +17,16 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.util.CollectionUtils.isEmpty;
 import static org.springframework.util.ResourceUtils.getFile;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
+import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,6 +62,9 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 import org.wiremock.spring.InjectWireMock;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockPathResolver;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 import wiremock.com.github.jknack.handlebars.Handlebars;
 
 public abstract class AbstractAppTest {
@@ -70,7 +72,7 @@ public abstract class AbstractAppTest {
 	private static final String FILES_DIR = "__files/";
 	private static final String COMMON_MAPPING_DIR = "/common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
-	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
@@ -100,6 +102,19 @@ public abstract class AbstractAppTest {
 	private Map<String, String> headerValues;
 	private String testDirectoryPath;
 	private String testCaseName;
+
+	private static StubMapping updateStubWithResponse(final StubMapping stub, final ResponseDefinition newResponse) {
+		final var updatedStub = new StubMapping(stub.getRequest(), newResponse);
+		updatedStub.setUuid(stub.getUuid());
+		updatedStub.setName(stub.getName());
+		updatedStub.setPriority(stub.getPriority());
+		updatedStub.setScenarioName(stub.getScenarioName());
+		updatedStub.setRequiredScenarioState(stub.getRequiredScenarioState());
+		updatedStub.setNewScenarioState(stub.getNewScenarioState());
+		updatedStub.setPostServeActions(stub.getPostServeActions());
+		updatedStub.setMetadata(stub.getMetadata());
+		return updatedStub;
+	}
 
 	public AbstractAppTest reset() {
 		expectedResponseBodyIsNull = false;
@@ -147,7 +162,98 @@ public abstract class AbstractAppTest {
 				new ClasspathFileSource(testMappingsPath), null));
 		}
 
+		// Resolve bodyFileName references to inline body content
+		// This is a workaround for wiremock-spring-boot not properly configuring the file source
+		// when @ConfigureWireMock is used as a meta-annotation
+		resolveBodyFileNames();
+
 		return this;
+	}
+
+	/**
+	 * Resolves bodyFileName references in stub mappings to inline body content.
+	 * <p>
+	 * This is necessary because wiremock-spring-boot doesn't properly configure the file source (blob store)
+	 * when @ConfigureWireMock is used as a meta-annotation. The file source defaults to src/test/resources instead of the
+	 * path specified in
+	 *
+	 * @WireMockAppTestSuite.
+	 * </p>
+	 */
+	private void resolveBodyFileNames() {
+		final String filesBasePath = "classpath:" + mappingPath + FILES_DIR;
+
+		wiremock.listAllStubMappings().getMappings().stream()
+			.filter(stub -> nonNull(stub.getResponse()) && nonNull(stub.getResponse().getBodyFileName()))
+			.forEach(stub -> {
+				final var bodyFileName = stub.getResponse().getBodyFileName();
+				final var bodyContent = readBodyFile(filesBasePath, bodyFileName);
+
+				if (nonNull(bodyContent)) {
+					// Create a new response definition with inline body instead of bodyFileName
+					final var originalResponse = stub.getResponse();
+					final var responseBuilder = new ResponseDefinitionBuilder()
+						.withStatus(originalResponse.getStatus())
+						.withBody(bodyContent);
+
+					// Copy other response properties
+					if (nonNull(originalResponse.getHeaders())) {
+						originalResponse.getHeaders().all().forEach(
+							header -> responseBuilder.withHeader(header.key(), header.values().toArray(new String[0])));
+					}
+					if (nonNull(originalResponse.getFixedDelayMilliseconds())) {
+						responseBuilder.withFixedDelay(originalResponse.getFixedDelayMilliseconds());
+					}
+					if (nonNull(originalResponse.getDelayDistribution())) {
+						responseBuilder.withRandomDelay(originalResponse.getDelayDistribution());
+					}
+					if (nonNull(originalResponse.getFault())) {
+						responseBuilder.withFault(originalResponse.getFault());
+					}
+					if (nonNull(originalResponse.getTransformers()) && !originalResponse.getTransformers().isEmpty()) {
+						responseBuilder.withTransformers(originalResponse.getTransformers().toArray(new String[0]));
+					}
+
+					final var newResponse = responseBuilder.build();
+
+					// Create updated stub mapping
+					final var updatedStub = updateStubWithResponse(stub, newResponse);
+
+					// Replace the stub
+					wiremock.removeStub(stub);
+					wiremock.addStubMapping(updatedStub);
+
+					logger.debug("Resolved bodyFileName '{}' to inline content for stub '{}'", bodyFileName, stub.getName());
+				} else {
+					logger.warn("Could not resolve bodyFileName '{}' for stub '{}'. File not found in classpath.",
+						bodyFileName, stub.getName());
+				}
+			});
+	}
+
+	/**
+	 * Reads a body file from the classpath.
+	 *
+	 * @param  basePath     the base classpath path (e.g., "classpath: TestClass/__files/")
+	 * @param  bodyFileName the body file name from the stub mapping
+	 * @return              the file content as a string, or null if not found
+	 */
+	private String readBodyFile(final String basePath, final String bodyFileName) {
+		// Try the file path as-is first (for paths like "common/responses/file.json")
+		var content = fromFile(basePath + bodyFileName);
+		if (nonNull(content)) {
+			return content;
+		}
+
+		// Try with the test case name prefix (for paths like "testName/response/file.json")
+		if (nonNull(testCaseName)) {
+			content = fromFile(basePath + testCaseName + "/" + bodyFileName);
+			if (nonNull(content)) {
+				return content;
+			}
+		}
+
+		return null;
 	}
 
 	public AbstractAppTest withExtensions(final Extension... extensions) {
@@ -423,7 +529,7 @@ public abstract class AbstractAppTest {
 	 * @param  clazz the class to map the response body to
 	 * @return       the mapped response
 	 */
-	public <T> T getResponseBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+	public <T> T getResponseBody(final Class<T> clazz) throws JacksonException, ClassNotFoundException {
 		return andReturnBody(clazz);
 	}
 
@@ -434,20 +540,20 @@ public abstract class AbstractAppTest {
 	 * @param  typeReference the type reference to map the response body to
 	 * @return               the mapped response
 	 */
-	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JsonProcessingException {
+	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JacksonException {
 		return andReturnBody(typeReference);
 	}
 
 	/**
 	 * Returns the received server response mapped to the specified class.
 	 *
-	 * @param  <T>                     the type of the response
-	 * @param  clazz                   the class to map the response body to
-	 * @return                         the mapped response
-	 * @throws JsonProcessingException if JSON processing fails
-	 * @throws ClassNotFoundException  if the class is not found
+	 * @param  <T>                    the type of the response
+	 * @param  clazz                  the class to map the response body to
+	 * @return                        the mapped response
+	 * @throws JacksonException       if JSON processing fails
+	 * @throws ClassNotFoundException if the class is not found
 	 */
-	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+	public <T> T andReturnBody(final Class<T> clazz) throws JacksonException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(responseBody, forName(clazz.getName())));
 	}
 
@@ -458,7 +564,7 @@ public abstract class AbstractAppTest {
 	 * @param  typeReference the type reference to map response to
 	 * @return               response mapped to a given type reference
 	 */
-	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
+	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JacksonException {
 		return JSON_MAPPER.readValue(responseBody, typeReference);
 	}
 
@@ -527,12 +633,20 @@ public abstract class AbstractAppTest {
 
 	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {
 		final var httpHeaders = new HttpHeaders();
-		httpHeaders.setContentType(mediaType);
+		// Only set Content-Type when there's a body or method typically requires one.
+		// Spring Boot 4.0 rejects requests with Content-Type but without body.
+		if (nonNull(body) || methodTypicallyHasBody()) {
+			httpHeaders.setContentType(mediaType);
+		}
 		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());
 		if (!isEmpty(headerValues)) {
 			headerValues.forEach(httpHeaders::add);
 		}
 		return new HttpEntity<>(body, httpHeaders);
+	}
+
+	private boolean methodTypicallyHasBody() {
+		return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
 	}
 
 	protected String fromTestFile(final String fileName) {

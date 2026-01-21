@@ -3,9 +3,6 @@ package se.sundsvall.dept44.maven.mojo;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,11 +15,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 @Mojo(name = "check-openapi-properties", defaultPhase = LifecyclePhase.INITIALIZE)
 public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+	private static final YAMLMapper OBJECT_MAPPER = YAMLMapper.builder().build();
 	private static final String PROPERTY_FILE_PATTERN = "^application(.yaml|.yml|.properties)$";
 	private static final String YAML_FILE_EXTENSION_PATTERN = ".*(.yaml|.yml)$";
 
@@ -55,7 +54,7 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 		var openApiTitlePropertySet = false;
 		var openApiVersionPropertySet = false;
 
-		var propertyFiles = new File(getProject().getBasedir(), "src/main/resources")
+		final var propertyFiles = new File(getProject().getBasedir(), "src/main/resources")
 			.listFiles((dir, name) -> name.matches(PROPERTY_FILE_PATTERN));
 
 		// We should have some files to work with...
@@ -63,8 +62,8 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 			throw new MojoFailureException("No application properties/YAML files exist");
 		}
 
-		for (var propertyFile : propertyFiles) {
-			var properties = loadProperties(propertyFile);
+		for (final var propertyFile : propertyFiles) {
+			final var properties = loadProperties(propertyFile);
 
 			openApiEnabled = ofNullable(properties.getOrDefault("openapi.enabled", "true"))
 				.map(Object::toString)
@@ -97,8 +96,7 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 	}
 
 	/**
-	 * Checks if the given properties contains a property with the given name, and that it isn't
-	 * blank.
+	 * Checks if the given properties contains a property with the given name, and that it isn't blank.
 	 *
 	 * @param  properties the properties
 	 * @param  name       the name of the property to check
@@ -134,33 +132,34 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 			return Map.of(entry.getKey(), ofNullable(entry.getValue()).orElse(""));
 		}
 
-		var prefix = entry.getKey();
+		final var prefix = entry.getKey();
 		@SuppressWarnings("unchecked")
-		var values = (Map<String, Object>) entry.getValue();
+		final var values = (Map<String, Object>) entry.getValue();
 		// create a new Map, with prefix added to each key
-		var flattenMap = new HashMap<String, Object>();
+		final var flattenMap = new HashMap<String, Object>();
 		values.keySet().forEach(key -> flattenMap.put(prefix + "." + key, values.get(key)));
 
 		return flatten(flattenMap);
 	}
 
 	private Properties loadProperties(final File propertyFile) throws MojoFailureException {
-		var properties = new Properties();
+		final var properties = new Properties();
 		try {
 			if (propertyFile.getName().matches(YAML_FILE_EXTENSION_PATTERN)) {
 				// YAML file
-				var props = OBJECT_MAPPER.readValue(propertyFile, new TypeReference<Map<String, Object>>() {});
+				final var props = OBJECT_MAPPER.readValue(propertyFile, new TypeReference<Map<String, Object>>() {
+				});
 
 				properties.putAll(flatten(props));
 			} else {
 				// Properties file
-				try (var in = new FileInputStream(propertyFile)) {
+				try (final var in = new FileInputStream(propertyFile)) {
 					properties.load(in);
 				}
 			}
 
 			return properties;
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new MojoFailureException(String.format(
 				"Unable to load properties/YAML file %s: %s", propertyFile.getName(), e.getMessage()), e);
 		}

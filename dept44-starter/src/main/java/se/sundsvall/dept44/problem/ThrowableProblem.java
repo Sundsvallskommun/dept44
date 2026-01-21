@@ -1,16 +1,24 @@
 package se.sundsvall.dept44.problem;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.ErrorResponseException;
 
 /**
- * An exception that represents an RFC 7807 Problem Details object. Extends Spring's ErrorResponseException to integrate
+ * An exception that represents an RFC 9457 Problem Details object. Extends Spring's ErrorResponseException to integrate
  * with Spring's native error handling.
  *
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc7807">RFC 7807</a>
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc9457">RFC 9457</a>
  */
+@JsonIgnoreProperties({
+	"body", "headers", "detailMessageCode", "detailMessageArguments", "titleMessageCode",
+	"typeMessageCode", "cause", "stackTrace", "localizedMessage", "message", "suppressed",
+	"mostSpecificCause", "rootCause", "statusCode"
+})
 public class ThrowableProblem extends ErrorResponseException implements Problem {
 
 	private final URI type;
@@ -49,6 +57,25 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	 */
 	public ThrowableProblem(final URI type, final String title, final StatusType status, final String detail, final URI instance) {
 		this(type, title, status, detail, instance, null);
+	}
+
+	/**
+	 * Create a new ThrowableProblem from JSON.
+	 *
+	 * @param type     the problem type URI
+	 * @param title    the problem title
+	 * @param status   the HTTP status code as integer
+	 * @param detail   the problem detail
+	 * @param instance the problem instance URI
+	 */
+	@JsonCreator
+	public ThrowableProblem(
+		@JsonProperty("type") final URI type,
+		@JsonProperty("title") final String title,
+		@JsonProperty("status") final Integer status,
+		@JsonProperty("detail") final String detail,
+		@JsonProperty("instance") final URI instance) {
+		this(type, title, status != null ? Status.valueOf(status) : null, detail, instance, null);
 	}
 
 	private static ProblemDetail createProblemDetail(final URI type, final String title, final StatusType status, final String detail, final URI instance) {

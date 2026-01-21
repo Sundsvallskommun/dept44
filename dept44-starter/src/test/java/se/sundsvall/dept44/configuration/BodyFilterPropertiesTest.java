@@ -5,11 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(classes = {
-	LogbookConfiguration.class, BodyFilterProperties.class, ObjectMapperConfiguration.class
+	JacksonAutoConfiguration.class, LogbookConfiguration.class, BodyFilterProperties.class, ObjectMapperConfiguration.class
 })
 @ActiveProfiles("junit")
 class BodyFilterPropertiesTest {

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.test.context.ActiveProfiles;
 import org.wiremock.spring.ConfigureWireMock;
@@ -24,6 +25,7 @@ import org.wiremock.spring.EnableWireMock;
 @EnableWireMock
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
+@AutoConfigureWebTestClient
 @ActiveProfiles("it")
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public @interface WireMockAppTestSuite {

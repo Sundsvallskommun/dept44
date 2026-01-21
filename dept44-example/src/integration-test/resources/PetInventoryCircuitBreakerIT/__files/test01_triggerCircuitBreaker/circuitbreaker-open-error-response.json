@@ -1,0 +1,6 @@
+{
+	"error": "Internal Server Error",
+	"path": "/pet-inventory-items",
+	"status": 500,
+	"timestamp": "${json-unit.any-string}"
+}

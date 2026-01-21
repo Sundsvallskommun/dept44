@@ -1,31 +1,31 @@
 openapi: 3.1.0
 info:
   title: api-service-pet-inventory
-  contact: {}
+  contact: { }
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
   version: "1.0"
 servers:
-- url: http://localhost:60994
-  description: Generated server url
+  - url: http://localhost:58661
+    description: Generated server url
 tags:
-- name: Pet inventory
-  description: Pet inventory operations
+  - name: Pet inventory
+    description: Pet inventory operations
 paths:
   /pet-inventory-items/{id}/images:
     post:
       tags:
-      - Pet inventory
+        - Pet inventory
       summary: Add pet inventory item image by id
       operationId: addPetImage
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         content:
           multipart/form-data:
@@ -36,7 +36,7 @@ paths:
                   type: string
                   format: binary
               required:
-              - file
+                - file
       responses:
         "201":
           description: Successful operation
@@ -46,8 +46,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -63,7 +63,7 @@ paths:
   /pet-inventory-items:
     get:
       tags:
-      - Pet inventory
+        - Pet inventory
       summary: Get Pet inventory items
       operationId: getPetInventoryList
       responses:
@@ -81,8 +81,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -98,16 +98,16 @@ paths:
   /pet-inventory-items/{id}:
     get:
       tags:
-      - Pet inventory
+        - Pet inventory
       summary: Get Pet inventory item by id
       operationId: getPetInventoryItem
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "200":
           description: Successful operation
@@ -121,8 +121,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -138,22 +138,22 @@ paths:
   /pet-inventory-items/{id}/images/{imageId}:
     get:
       tags:
-      - Pet inventory
+        - Pet inventory
       summary: Get pet inventory item image by id
       operationId: getPetImage
       parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: imageId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
       responses:
         "201":
           description: Successful operation
@@ -168,8 +168,8 @@ paths:
             application/problem+json:
               schema:
                 oneOf:
-                - $ref: "#/components/schemas/Problem"
-                - $ref: "#/components/schemas/ConstraintViolationProblem"
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
         "500":
           description: Internal Server error
           content:
@@ -185,7 +185,7 @@ paths:
   /api-docs:
     get:
       tags:
-      - API
+        - API
       summary: OpenAPI
       operationId: getApiDocs
       responses:
@@ -203,34 +203,98 @@ components:
     Problem:
       type: object
       properties:
-        instance:
-          type: string
-          format: uri
-        type:
-          type: string
-          format: uri
-        parameters:
-          type: object
-          additionalProperties: {}
         status:
           $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
     StatusType:
       type: object
       properties:
-        reasonPhrase:
-          type: string
         statusCode:
           type: integer
           format: int32
+        reasonPhrase:
+          type: string
     ConstraintViolationProblem:
       type: object
       properties:
+        type:
+          type: string
+          format: uri
+        status:
+          $ref: "#/components/schemas/StatusType"
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Violation"
         cause:
-          $ref: "#/components/schemas/ThrowableProblem"
+          type: object
+          properties:
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
         stackTrace:
           type: array
           items:
@@ -253,27 +317,274 @@ components:
                 type: string
               nativeMethod:
                 type: boolean
-        type:
-          type: string
-          format: uri
-        status:
-          $ref: "#/components/schemas/StatusType"
-        violations:
-          type: array
-          items:
-            $ref: "#/components/schemas/Violation"
+        headers:
+          $ref: "#/components/schemas/HttpHeaders"
+        body:
+          $ref: "#/components/schemas/ProblemDetail"
         title:
           type: string
-        message:
+        detail:
           type: string
         instance:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties: {}
-        detail:
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
+        message:
           type: string
+        statusCode:
+          oneOf:
+            - $ref: "#/components/schemas/DefaultHttpStatusCode"
+            - $ref: "#/components/schemas/HttpStatus"
+        detailMessageArguments:
+          type: array
+          items: { }
+        detailMessageCode:
+          type: string
+        titleMessageCode:
+          type: string
+        typeMessageCode:
+          type: string
+        rootCause:
+          type: object
+          properties:
+            cause:
+              type: object
+              properties:
+                stackTrace:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      classLoaderName:
+                        type: string
+                      moduleName:
+                        type: string
+                      moduleVersion:
+                        type: string
+                      methodName:
+                        type: string
+                      fileName:
+                        type: string
+                      lineNumber:
+                        type: integer
+                        format: int32
+                      className:
+                        type: string
+                      nativeMethod:
+                        type: boolean
+                message:
+                  type: string
+                suppressed:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      stackTrace:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            classLoaderName:
+                              type: string
+                            moduleName:
+                              type: string
+                            moduleVersion:
+                              type: string
+                            methodName:
+                              type: string
+                            fileName:
+                              type: string
+                            lineNumber:
+                              type: integer
+                              format: int32
+                            className:
+                              type: string
+                            nativeMethod:
+                              type: boolean
+                      message:
+                        type: string
+                      localizedMessage:
+                        type: string
+                localizedMessage:
+                  type: string
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
+        mostSpecificCause:
+          type: object
+          properties:
+            cause:
+              type: object
+              properties:
+                stackTrace:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      classLoaderName:
+                        type: string
+                      moduleName:
+                        type: string
+                      moduleVersion:
+                        type: string
+                      methodName:
+                        type: string
+                      fileName:
+                        type: string
+                      lineNumber:
+                        type: integer
+                        format: int32
+                      className:
+                        type: string
+                      nativeMethod:
+                        type: boolean
+                message:
+                  type: string
+                suppressed:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      stackTrace:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            classLoaderName:
+                              type: string
+                            moduleName:
+                              type: string
+                            moduleVersion:
+                              type: string
+                            methodName:
+                              type: string
+                            fileName:
+                              type: string
+                            lineNumber:
+                              type: integer
+                              format: int32
+                            className:
+                              type: string
+                            nativeMethod:
+                              type: boolean
+                      message:
+                        type: string
+                      localizedMessage:
+                        type: string
+                localizedMessage:
+                  type: string
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
         suppressed:
           type: array
           items:
@@ -307,10 +618,390 @@ components:
                 type: string
         localizedMessage:
           type: string
+    ContentDisposition:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        filename:
+          type: string
+        charset:
+          type: string
+        inline:
+          type: boolean
+        attachment:
+          type: boolean
+        formData:
+          type: boolean
+    DefaultHttpStatusCode:
+      allOf:
+        - $ref: "#/components/schemas/HttpStatusCode"
+    HttpHeaders:
+      type: object
+      properties:
+        connection:
+          type: array
+          items:
+            type: string
+        ifModifiedSince:
+          type: integer
+          format: int64
+        contentType:
+          $ref: "#/components/schemas/MediaType"
+        contentLength:
+          type: integer
+          format: int64
+        acceptLanguage:
+          type: array
+          items:
+            type: object
+            properties:
+              range:
+                type: string
+              weight:
+                type: number
+                format: double
+        range:
+          type: array
+          items:
+            $ref: "#/components/schemas/HttpRange"
+        basicAuth:
+          type: string
+          writeOnly: true
+        accept:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaType"
+        acceptPatch:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaType"
+        acceptCharset:
+          type: array
+          items:
+            type: string
+        allow:
+          type: array
+          items:
+            $ref: "#/components/schemas/HttpMethod"
+          uniqueItems: true
+        bearerAuth:
+          type: string
+          writeOnly: true
+        cacheControl:
+          type: string
+        contentLanguage:
+          type: string
+        etag:
+          type: string
+        expires:
+          type: integer
+          format: int64
+        host:
+          type: object
+          properties:
+            hostString:
+              type: string
+            unresolved:
+              type: boolean
+            address:
+              type: object
+              properties:
+                address:
+                  type: string
+                  format: byte
+                hostAddress:
+                  type: string
+                linkLocalAddress:
+                  type: boolean
+                anyLocalAddress:
+                  type: boolean
+                hostName:
+                  type: string
+                multicastAddress:
+                  type: boolean
+                loopbackAddress:
+                  type: boolean
+                siteLocalAddress:
+                  type: boolean
+                mcglobal:
+                  type: boolean
+                mcnodeLocal:
+                  type: boolean
+                mclinkLocal:
+                  type: boolean
+                mcsiteLocal:
+                  type: boolean
+                mcorgLocal:
+                  type: boolean
+                canonicalHostName:
+                  type: string
+            port:
+              type: integer
+              format: int32
+            hostName:
+              type: string
+        ifMatch:
+          type: array
+          items:
+            type: string
+        ifNoneMatch:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          format: uri
+        origin:
+          type: string
+        pragma:
+          type: string
+        upgrade:
+          type: string
+        vary:
+          type: array
+          items:
+            type: string
+        contentDisposition:
+          $ref: "#/components/schemas/ContentDisposition"
+        acceptLanguageAsLocales:
+          type: array
+          items:
+            type: string
+        accessControlAllowCredentials:
+          type: boolean
+        accessControlAllowHeaders:
+          type: array
+          items:
+            type: string
+        accessControlAllowMethods:
+          type: array
+          items:
+            $ref: "#/components/schemas/HttpMethod"
+        accessControlAllowOrigin:
+          type: string
+        accessControlExposeHeaders:
+          type: array
+          items:
+            type: string
+        accessControlMaxAge:
+          type: integer
+          format: int64
+        accessControlRequestHeaders:
+          type: array
+          items:
+            type: string
+        accessControlRequestMethod:
+          $ref: "#/components/schemas/HttpMethod"
+        ifUnmodifiedSince:
+          type: integer
+          format: int64
+        empty:
+          type: boolean
+        all:
+          type: object
+          additionalProperties:
+            type: string
+          writeOnly: true
+        lastModified:
+          type: integer
+          format: int64
+        date:
+          type: integer
+          format: int64
+    HttpMethod: { }
+    HttpRange: { }
+    HttpStatus:
+      allOf:
+        - $ref: "#/components/schemas/HttpStatusCode"
+      enum:
+        - 100 CONTINUE
+        - 101 SWITCHING_PROTOCOLS
+        - 102 PROCESSING
+        - 103 EARLY_HINTS
+        - 200 OK
+        - 201 CREATED
+        - 202 ACCEPTED
+        - 203 NON_AUTHORITATIVE_INFORMATION
+        - 204 NO_CONTENT
+        - 205 RESET_CONTENT
+        - 206 PARTIAL_CONTENT
+        - 207 MULTI_STATUS
+        - 208 ALREADY_REPORTED
+        - 226 IM_USED
+        - 300 MULTIPLE_CHOICES
+        - 301 MOVED_PERMANENTLY
+        - 302 FOUND
+        - 303 SEE_OTHER
+        - 304 NOT_MODIFIED
+        - 307 TEMPORARY_REDIRECT
+        - 308 PERMANENT_REDIRECT
+        - 400 BAD_REQUEST
+        - 401 UNAUTHORIZED
+        - 402 PAYMENT_REQUIRED
+        - 403 FORBIDDEN
+        - 404 NOT_FOUND
+        - 405 METHOD_NOT_ALLOWED
+        - 406 NOT_ACCEPTABLE
+        - 407 PROXY_AUTHENTICATION_REQUIRED
+        - 408 REQUEST_TIMEOUT
+        - 409 CONFLICT
+        - 410 GONE
+        - 411 LENGTH_REQUIRED
+        - 412 PRECONDITION_FAILED
+        - 413 CONTENT_TOO_LARGE
+        - 413 PAYLOAD_TOO_LARGE
+        - 414 URI_TOO_LONG
+        - 415 UNSUPPORTED_MEDIA_TYPE
+        - 416 REQUESTED_RANGE_NOT_SATISFIABLE
+        - 417 EXPECTATION_FAILED
+        - 418 I_AM_A_TEAPOT
+        - 421 MISDIRECTED_REQUEST
+        - 422 UNPROCESSABLE_CONTENT
+        - 422 UNPROCESSABLE_ENTITY
+        - 423 LOCKED
+        - 424 FAILED_DEPENDENCY
+        - 425 TOO_EARLY
+        - 426 UPGRADE_REQUIRED
+        - 428 PRECONDITION_REQUIRED
+        - 429 TOO_MANY_REQUESTS
+        - 431 REQUEST_HEADER_FIELDS_TOO_LARGE
+        - 451 UNAVAILABLE_FOR_LEGAL_REASONS
+        - 500 INTERNAL_SERVER_ERROR
+        - 501 NOT_IMPLEMENTED
+        - 502 BAD_GATEWAY
+        - 503 SERVICE_UNAVAILABLE
+        - 504 GATEWAY_TIMEOUT
+        - 505 HTTP_VERSION_NOT_SUPPORTED
+        - 506 VARIANT_ALSO_NEGOTIATES
+        - 507 INSUFFICIENT_STORAGE
+        - 508 LOOP_DETECTED
+        - 509 BANDWIDTH_LIMIT_EXCEEDED
+        - 510 NOT_EXTENDED
+        - 511 NETWORK_AUTHENTICATION_REQUIRED
+    HttpStatusCode:
+      type: object
+      properties:
+        is4xxClientError:
+          type: boolean
+        is5xxServerError:
+          type: boolean
+        is1xxInformational:
+          type: boolean
+        is2xxSuccessful:
+          type: boolean
+        is3xxRedirection:
+          type: boolean
+        error:
+          type: boolean
+    MediaType:
+      type: object
+      properties:
+        type:
+          type: string
+        subtype:
+          type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        qualityValue:
+          type: number
+          format: double
+        charset:
+          type: string
+        wildcardType:
+          type: boolean
+        wildcardSubtype:
+          type: boolean
+        subtypeSuffix:
+          type: string
+        concrete:
+          type: boolean
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: { }
     ThrowableProblem:
       type: object
       properties:
-        cause: {}
+        cause:
+          type: object
+          properties:
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
         stackTrace:
           type: array
           items:
@@ -333,23 +1024,278 @@ components:
                 type: string
               nativeMethod:
                 type: boolean
-        message:
-          type: string
-        instance:
-          type: string
-          format: uri
+        status:
+          $ref: "#/components/schemas/StatusType"
+        headers:
+          $ref: "#/components/schemas/HttpHeaders"
+        body:
+          $ref: "#/components/schemas/ProblemDetail"
         type:
           type: string
           format: uri
-        parameters:
-          type: object
-          additionalProperties: {}
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
           type: string
+        instance:
+          type: string
+          format: uri
+        causeAsProblem: { }
+        message:
+          type: string
+        statusCode:
+          oneOf:
+            - $ref: "#/components/schemas/DefaultHttpStatusCode"
+            - $ref: "#/components/schemas/HttpStatus"
+        detailMessageArguments:
+          type: array
+          items: { }
+        detailMessageCode:
+          type: string
+        titleMessageCode:
+          type: string
+        typeMessageCode:
+          type: string
+        rootCause:
+          type: object
+          properties:
+            cause:
+              type: object
+              properties:
+                stackTrace:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      classLoaderName:
+                        type: string
+                      moduleName:
+                        type: string
+                      moduleVersion:
+                        type: string
+                      methodName:
+                        type: string
+                      fileName:
+                        type: string
+                      lineNumber:
+                        type: integer
+                        format: int32
+                      className:
+                        type: string
+                      nativeMethod:
+                        type: boolean
+                message:
+                  type: string
+                suppressed:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      stackTrace:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            classLoaderName:
+                              type: string
+                            moduleName:
+                              type: string
+                            moduleVersion:
+                              type: string
+                            methodName:
+                              type: string
+                            fileName:
+                              type: string
+                            lineNumber:
+                              type: integer
+                              format: int32
+                            className:
+                              type: string
+                            nativeMethod:
+                              type: boolean
+                      message:
+                        type: string
+                      localizedMessage:
+                        type: string
+                localizedMessage:
+                  type: string
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
+        mostSpecificCause:
+          type: object
+          properties:
+            cause:
+              type: object
+              properties:
+                stackTrace:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      classLoaderName:
+                        type: string
+                      moduleName:
+                        type: string
+                      moduleVersion:
+                        type: string
+                      methodName:
+                        type: string
+                      fileName:
+                        type: string
+                      lineNumber:
+                        type: integer
+                        format: int32
+                      className:
+                        type: string
+                      nativeMethod:
+                        type: boolean
+                message:
+                  type: string
+                suppressed:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      stackTrace:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            classLoaderName:
+                              type: string
+                            moduleName:
+                              type: string
+                            moduleVersion:
+                              type: string
+                            methodName:
+                              type: string
+                            fileName:
+                              type: string
+                            lineNumber:
+                              type: integer
+                              format: int32
+                            className:
+                              type: string
+                            nativeMethod:
+                              type: boolean
+                      message:
+                        type: string
+                      localizedMessage:
+                        type: string
+                localizedMessage:
+                  type: string
+            stackTrace:
+              type: array
+              items:
+                type: object
+                properties:
+                  classLoaderName:
+                    type: string
+                  moduleName:
+                    type: string
+                  moduleVersion:
+                    type: string
+                  methodName:
+                    type: string
+                  fileName:
+                    type: string
+                  lineNumber:
+                    type: integer
+                    format: int32
+                  className:
+                    type: string
+                  nativeMethod:
+                    type: boolean
+            message:
+              type: string
+            suppressed:
+              type: array
+              items:
+                type: object
+                properties:
+                  stackTrace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        classLoaderName:
+                          type: string
+                        moduleName:
+                          type: string
+                        moduleVersion:
+                          type: string
+                        methodName:
+                          type: string
+                        fileName:
+                          type: string
+                        lineNumber:
+                          type: integer
+                          format: int32
+                        className:
+                          type: string
+                        nativeMethod:
+                          type: boolean
+                  message:
+                    type: string
+                  localizedMessage:
+                    type: string
+            localizedMessage:
+              type: string
         suppressed:
           type: array
           items:
@@ -399,17 +1345,17 @@ components:
           format: int64
           description: Pet image ID
           examples:
-          - "1"
+            - "1"
         fileName:
           type: string
           description: File name
           examples:
-          - image.jpg
+            - image.jpg
         mimeType:
           type: string
           description: Mime type
           examples:
-          - image/jpeg
+            - image/jpeg
     PetInventoryItem:
       type: object
       description: Pet inventory item model
@@ -419,30 +1365,30 @@ components:
           format: int64
           description: Pet ID
           examples:
-          - "1"
+            - "1"
         price:
           type: number
           format: float
           description: Pet price
           examples:
-          - "1.50"
+            - "1.50"
         name:
           type: string
           description: Pet name
           examples:
-          - Daisy
+            - Daisy
         type:
           type: string
           description: Pet type
           examples:
-          - DOG
+            - DOG
         clientId:
           type: string
           description: Client ID
           examples:
-          - joe01doe
+            - joe01doe
         images:
           type: array
           items:
             $ref: "#/components/schemas/PetImage"
-  securitySchemes: {}
+  securitySchemes: { }

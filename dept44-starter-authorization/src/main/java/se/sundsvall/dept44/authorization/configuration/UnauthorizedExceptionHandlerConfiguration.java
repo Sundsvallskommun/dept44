@@ -1,7 +1,7 @@
 package se.sundsvall.dept44.authorization.configuration;
 
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
-import static org.zalando.problem.Status.UNAUTHORIZED;
+import static se.sundsvall.dept44.problem.Status.UNAUTHORIZED;
 
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 
 @Configuration
 @ConditionalOnProperty(name = "jwt.authorization.secret")

@@ -30,6 +30,7 @@ import org.springframework.test.context.ActiveProfiles;
 	"spring.flyway.enabled=true",
 	"spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
 	"spring.datasource.url=jdbc:tc:mariadb:10.6.4:////",
+	"spring.jpa.hibernate.ddl-auto=create",
 	"server.shutdown=immediate",
 	"spring.lifecycle.timeout-per-shutdown-phase=0s"
 })

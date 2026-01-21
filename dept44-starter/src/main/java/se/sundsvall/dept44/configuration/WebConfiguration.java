@@ -1,18 +1,16 @@
 package se.sundsvall.dept44.configuration;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.http.MediaType.TEXT_HTML;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
-import static org.zalando.problem.Status.NOT_IMPLEMENTED;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
+import static se.sundsvall.dept44.problem.Status.NOT_IMPLEMENTED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,7 +32,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.yaml.JacksonYamlHttpMessageConverter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,7 +41,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.util.ResourceUtils;
@@ -52,14 +50,12 @@ import se.sundsvall.dept44.util.ResourceUtils;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class WebConfiguration implements WebMvcConfigurer {
 
-	private final YAMLMapper yamlMapper;
 	private final int municipalityIdUriIndex;
 	private final List<String> allowedIds;
 
-	WebConfiguration(final YAMLMapper yamlMapper,
-		@Value("${mdc.municipalityId.uriIndex:1}") int municipalityIdUriIndex,
-		@Value("${municipality.allowed-ids:}") List<String> allowedIds) {
-		this.yamlMapper = yamlMapper;
+	WebConfiguration(
+		@Value("${mdc.municipalityId.uriIndex:1}") final int municipalityIdUriIndex,
+		@Value("${municipality.allowed-ids:}") final List<String> allowedIds) {
 		this.municipalityIdUriIndex = municipalityIdUriIndex;
 		this.allowedIds = allowedIds;
 	}
@@ -114,25 +110,22 @@ public class WebConfiguration implements WebMvcConfigurer {
 	}
 
 	@Override
+	@SuppressWarnings("removal")
 	public void extendMessageConverters(final List<HttpMessageConverter<?>> converters) {
-		final var yamlConverter = new MappingJackson2HttpMessageConverter(yamlMapper);
+		// Add YAML converter with custom media types
+		final var yamlConverter = new JacksonYamlHttpMessageConverter();
 		yamlConverter.setSupportedMediaTypes(List.of(APPLICATION_YAML, APPLICATION_YML));
 		converters.add(yamlConverter);
-
-		// Remove null valued attributes from response JSON
-		converters.stream()
-			.filter(MappingJackson2HttpMessageConverter.class::isInstance)
-			.map(MappingJackson2HttpMessageConverter.class::cast)
-			.forEach(c -> c.getObjectMapper().setSerializationInclusion(NON_NULL));
+		// Note: NON_NULL serialization is configured via spring.jackson.default-property-inclusion property
 	}
 
 	@Override
 	public void addInterceptors(final InterceptorRegistry registry) {
-		var municipalityIdInterceptor = new MunicipalityIdInterceptor(allowedIds, municipalityIdUriIndex);
+		final var municipalityIdInterceptor = new MunicipalityIdInterceptor(allowedIds, municipalityIdUriIndex);
 
-		// Add interceptor to check if the municipality ID is allowed.
+		// Add an interceptor to check if the municipality ID is allowed.
 		// "/{municipalityId}" - Matches all paths where the municipality placeholder is the whole path.
-		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part oft the path.
+		// "/**/{municipalityId}" - Matches all paths where the municipality placeholder is the last part of the path.
 		// "/{municipalityId}/**" - Matches all paths where the municipality placeholder is the beginning of the path.
 		// "/**/{municipalityId}/**" - Matches all paths where the municipality placeholder is in the middle of the path.
 		registry.addInterceptor(municipalityIdInterceptor)
@@ -220,7 +213,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws ServletException, IOException {
-			var identifierString = request.getHeader(Identifier.HEADER_NAME);
+			final var identifierString = request.getHeader(Identifier.HEADER_NAME);
 
 			try {
 				Identifier.set(Identifier.parse(identifierString));
@@ -248,14 +241,14 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		private final int municipalityIdUriIndex;
 
-		public MunicipalityIdFilter(int municipalityIdUriIndex) {
+		public MunicipalityIdFilter(final int municipalityIdUriIndex) {
 			this.municipalityIdUriIndex = municipalityIdUriIndex;
 		}
 
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
 			final FilterChain chain) throws ServletException, IOException {
-			var pathParams = request.getRequestURI().split("/");
+			final var pathParams = request.getRequestURI().split("/");
 			if (pathParams.length > municipalityIdUriIndex) {
 				MDC.put("municipalityId", pathParams[municipalityIdUriIndex]);
 			}

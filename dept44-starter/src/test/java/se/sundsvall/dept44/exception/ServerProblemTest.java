@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.zalando.problem.Status.BAD_GATEWAY;
+import static se.sundsvall.dept44.problem.Status.BAD_GATEWAY;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
-import org.zalando.problem.AbstractThrowableProblem;
-import org.zalando.problem.Status;
+import se.sundsvall.dept44.problem.AbstractThrowableProblem;
+import se.sundsvall.dept44.problem.Status;
 
 class ServerProblemTest {
 

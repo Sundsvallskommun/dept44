@@ -39,12 +39,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.zalando.problem.Status;
-import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+import se.sundsvall.dept44.problem.Status;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationExtractionFilterTest {
@@ -87,8 +87,19 @@ class JwtAuthorizationExtractionFilterTest {
 	@InjectMocks
 	private JwtAuthorizationExtractionFilter filter;
 
+	private static Stream<Arguments> exceptionProvider() {
+		return Stream.of(
+			Arguments.of(new IllegalArgumentException("Exception 1"), "Credentials could not be read"),
+			Arguments.of(new MalformedJwtException("Exception 2"), "Credentials could not be read"),
+			Arguments.of(new UnsupportedJwtException("Exception 3"), "Credentials could not be read"),
+			Arguments.of(new SignatureException("Exception 4"), "Invalid signature detected for credentials"),
+			Arguments.of(new WeakKeyException("Exception 5"), "The verification key's size is not secure enough for the selected algorithm"),
+			Arguments.of(new ExpiredJwtException(null, null, "Exception 6"), "Credentials has expired"),
+			Arguments.of(new CompressionException("Exception 7"), "Exception occurred when reading credentials"));
+	}
+
 	@Test
-	void shouldReturnTrueWhenAuthorizationEnabledOnApplication() throws Exception {
+	void shouldReturnTrueWhenAuthorizationEnabledOnApplication() {
 		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", new ServiceApplicationWithJwtAuthorization()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isTrue();
@@ -98,7 +109,7 @@ class JwtAuthorizationExtractionFilterTest {
 	@ValueSource(classes = {
 		PlainServiceApplication.class, PlainBean.class
 	})
-	void shouldReturnFalseWhenAuthorizationNotEnabledOnApplication(Class<?> beanClass) throws Exception {
+	void shouldReturnFalseWhenAuthorizationNotEnabledOnApplication(final Class<?> beanClass) throws Exception {
 		when(applicationContextMock.getBeansWithAnnotation(ServiceApplication.class)).thenReturn(Map.of("application", beanClass.getDeclaredConstructor().newInstance()));
 
 		assertThat(filter.shouldNotFilter(requestMock)).isFalse();
@@ -144,7 +155,7 @@ class JwtAuthorizationExtractionFilterTest {
 		when(jwtTokenUtilMock.getUsernameFromToken(jwt)).thenReturn(username);
 		when(jwtTokenUtilMock.getRolesFromToken(jwt)).thenReturn(List.of(genericGrantedAuthorityMock));
 
-		try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+		try (final MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
 			securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContextMock);
 			filter.doFilterInternal(requestMock, responseMock, filterChainMock);
 
@@ -163,7 +174,7 @@ class JwtAuthorizationExtractionFilterTest {
 
 	@ParameterizedTest
 	@MethodSource("exceptionProvider")
-	void doFilterInternalThrowsException(Exception e, String title) throws Exception {
+	void doFilterInternalThrowsException(final Exception e, final String title) throws Exception {
 		final var jwt = "jwttoken";
 		final var problemString = "problemString";
 
@@ -173,10 +184,10 @@ class JwtAuthorizationExtractionFilterTest {
 		when(responseMock.getWriter()).thenReturn(printWriterMock);
 		when(objectMapperMock.writeValueAsString(any())).thenReturn(problemString);
 
-		try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+		try (final MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
 			filter.doFilterInternal(requestMock, responseMock, filterChainMock);
 
-			ArgumentCaptor<ThrowableProblem> throwableProblemCaptor = ArgumentCaptor.forClass(ThrowableProblem.class);
+			final ArgumentCaptor<ThrowableProblem> throwableProblemCaptor = ArgumentCaptor.forClass(ThrowableProblem.class);
 
 			verify(propertiesMock).getHeaderName();
 			verify(requestMock).getHeader(DEFAULT_JWT_HEADER_NAME);
@@ -192,17 +203,6 @@ class JwtAuthorizationExtractionFilterTest {
 			verifyNoInteractions(webAuthenticationDetailsSourceMock, securityContextMock, filterChainMock);
 			securityContextHolderMock.verifyNoInteractions();
 		}
-	}
-
-	private static Stream<Arguments> exceptionProvider() {
-		return Stream.of(
-			Arguments.of(new IllegalArgumentException("Exception 1"), "Credentials could not be read"),
-			Arguments.of(new MalformedJwtException("Exception 2"), "Credentials could not be read"),
-			Arguments.of(new UnsupportedJwtException("Exception 3"), "Credentials could not be read"),
-			Arguments.of(new SignatureException("Exception 4"), "Invalid signature detected for credentials"),
-			Arguments.of(new WeakKeyException("Exception 5"), "The verification key's size is not secure enough for the selected algorithm"),
-			Arguments.of(new ExpiredJwtException(null, null, "Exception 6"), "Credentials has expired"),
-			Arguments.of(new CompressionException("Exception 7"), "Exception occurred when reading credentials"));
 	}
 
 	// Dummy classes to test annotation verification in shouldNotFilter method

@@ -27,15 +27,44 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
-import org.zalando.problem.Problem;
-import org.zalando.problem.ThrowableProblem;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
-import se.sundsvall.dept44.test.annotation.resource.Load;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 
 @ExtendWith(ResourceLoaderExtension.class)
 class ProblemErrorDecoderTest {
+
+	private static Response buildErrorResponse(final String errorBody, final int httpStatus, final Map<String, Collection<String>> headers) {
+		return Response.builder()
+			.body(errorBody, UTF_8)
+			.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
+			.status(httpStatus)
+			.headers(headers)
+			.build();
+	}
+
+	private static Stream<Arguments> toErrorDecoderReturnsCorrectThrowableType() {
+		return Stream.of(
+			Arguments.of(400, ClientProblem.class),
+			Arguments.of(401, ClientProblem.class),
+			Arguments.of(404, ClientProblem.class),
+			Arguments.of(409, ClientProblem.class),
+			Arguments.of(410, ClientProblem.class),
+			Arguments.of(500, ServerProblem.class),
+			Arguments.of(501, ServerProblem.class),
+			Arguments.of(502, ServerProblem.class),
+			Arguments.of(100, Problem.class),
+			Arguments.of(302, Problem.class));
+	}
+
+	private static Stream<Arguments> toErrorDecoderForErrorMessages() {
+		return Stream.of(
+			Arguments.of("<unknown message structure></unknown message structure>", 409, "Bad Gateway: XXX error: {status=409 Conflict, title=Unknown error}"),
+			Arguments.of(null, 401, "Bad Gateway: XXX error: {status=401 Unauthorized, title=Unauthorized}"),
+			Arguments.of("  ", 404, "Bad Gateway: XXX error: {status=404 Not Found, title=Not Found}"));
+	}
 
 	@Test
 	void testImplements() {
@@ -43,28 +72,21 @@ class ProblemErrorDecoderTest {
 		assertThat(AbstractErrorDecoder.class).isAssignableFrom(ProblemErrorDecoder.class);
 	}
 
-	@Test
-	void decodeMinimalProblem(@Load("minimalProblem.json") String errorBody) {
-
-		// Arrange
-		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var response = buildErrorResponse(errorBody, 402, null);
-
-		// Act
-		final var exception = errorDecoder.decode("test", response);
-
-		// Assert
-		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {status=402 Payment Required, title=You do not have enough credit.}");
+	private static Stream<Arguments> toDecodeProblemArguments() {
+		return Stream.of(
+			Arguments.of("minimalProblem.json", 402, "Bad Gateway: XXX error: {status=402 Payment Required, title=You do not have enough credit.}"),
+			Arguments.of("problem.json", 402, "Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=402 Payment Required, title=You do not have enough credit.}"),
+			Arguments.of("constraintViolationProblem.json", 400, "Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}"));
 	}
 
-	@Test
-	void decodeProblem(@Load("problem.json") String errorBody) {
+	@ParameterizedTest
+	@MethodSource("toDecodeProblemArguments")
+	void decodeProblem(final String resourceFile, final int httpStatus, final String expectedMessage) throws Exception {
 
 		// Arrange
+		final var errorBody = new String(getClass().getResourceAsStream("/" + resourceFile).readAllBytes(), UTF_8);
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var response = buildErrorResponse(errorBody, 402, null);
+		final var response = buildErrorResponse(errorBody, httpStatus, null);
 
 		// Act
 		final var exception = errorDecoder.decode("test", response);
@@ -72,28 +94,12 @@ class ProblemErrorDecoderTest {
 		// Assert
 		assertThat(exception)
 			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {detail=Your current balance is 30, but that costs 50., status=402 Payment Required, title=You do not have enough credit.}");
-	}
-
-	@Test
-	void decodeConstraintViolationProblem(@Load("constraintViolationProblem.json") String errorBody) {
-
-		// Arrange
-		final var errorDecoder = new ProblemErrorDecoder("XXX");
-		final var response = buildErrorResponse(errorBody, 400, null);
-
-		// Act
-		final var exception = errorDecoder.decode("test", response);
-
-		// Assert
-		assertThat(exception)
-			.isExactlyInstanceOf(ClientProblem.class)
-			.hasMessage("Bad Gateway: XXX error: {detail=property1: property1 must be valid!, property2: property2 is also invalid!!, status=400 Bad Request, title=Constraint Violation}");
+			.hasMessage(expectedMessage);
 	}
 
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderForErrorMessages")
-	void errorDecoderForErrorMessages(String body, int httpStatus, String expectedMessage) {
+	void errorDecoderForErrorMessages(final String body, final int httpStatus, final String expectedMessage) {
 
 		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
@@ -110,7 +116,7 @@ class ProblemErrorDecoderTest {
 	void errorDecoderWhenBypassResponseCodesAreSet() {
 
 		// Arrange
-		final var errorDecoder = new ProblemErrorDecoder("XXX", List.of(400, 401, 404, 418));
+		final var errorDecoder = new ProblemErrorDecoder("XXX", List.of(400, 401, 404, 409));
 		final var response = buildErrorResponse(null, 404, null); // statusCode exists in bypassList.
 
 		// Act
@@ -124,7 +130,7 @@ class ProblemErrorDecoderTest {
 
 	@ParameterizedTest
 	@MethodSource("toErrorDecoderReturnsCorrectThrowableType")
-	void errorDecoderReturnsCorrectThrowableType(int httpStatus, Class<ThrowableProblem> type) {
+	void errorDecoderReturnsCorrectThrowableType(final int httpStatus, final Class<ThrowableProblem> type) {
 
 		// Arrange
 		final var errorDecoder = new ProblemErrorDecoder("XXX");
@@ -176,35 +182,5 @@ class ProblemErrorDecoderTest {
 		assertThat(exception).isExactlyInstanceOf(RetryableException.class);
 		assertThat(exception.getMessage()).isEqualTo("Special message");
 		assertThat(exception.getCause()).isInstanceOf(ServerProblem.class);
-	}
-
-	private static Response buildErrorResponse(String errorBody, int httpStatus, Map<String, Collection<String>> headers) {
-		return Response.builder()
-			.body(errorBody, UTF_8)
-			.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
-			.status(httpStatus)
-			.headers(headers)
-			.build();
-	}
-
-	private static Stream<Arguments> toErrorDecoderReturnsCorrectThrowableType() {
-		return Stream.of(
-			Arguments.of(400, ClientProblem.class),
-			Arguments.of(401, ClientProblem.class),
-			Arguments.of(404, ClientProblem.class),
-			Arguments.of(418, ClientProblem.class),
-			Arguments.of(422, ClientProblem.class),
-			Arguments.of(500, ServerProblem.class),
-			Arguments.of(501, ServerProblem.class),
-			Arguments.of(502, ServerProblem.class),
-			Arguments.of(100, Problem.class),
-			Arguments.of(302, Problem.class));
-	}
-
-	private static Stream<Arguments> toErrorDecoderForErrorMessages() {
-		return Stream.of(
-			Arguments.of("<unknown message structure></unknown message structure>", 418, "Bad Gateway: XXX error: {status=418 I'm a teapot, title=Unknown error}"),
-			Arguments.of(null, 401, "Bad Gateway: XXX error: {status=401 Unauthorized, title=Unauthorized}"),
-			Arguments.of("  ", 404, "Bad Gateway: XXX error: {status=404 Not Found, title=Not Found}"));
 	}
 }

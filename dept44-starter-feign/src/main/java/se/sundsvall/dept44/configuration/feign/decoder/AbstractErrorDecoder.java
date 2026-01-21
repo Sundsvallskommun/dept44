@@ -6,7 +6,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.zalando.problem.Status.BAD_GATEWAY;
+import static se.sundsvall.dept44.problem.Status.BAD_GATEWAY;
 
 import feign.Response;
 import feign.RetryableException;
@@ -21,10 +21,10 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus.Series;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
+import se.sundsvall.dept44.problem.Problem;
+import se.sundsvall.dept44.problem.Status;
 
 /**
  * The base error decoder.
@@ -33,20 +33,20 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractErrorDecoder.class);
 
-	protected String integrationName;
+	protected final String integrationName;
+	protected final RetryResponseVerifier retryResponseVerifier;
 	protected List<Integer> bypassResponseCodes;
-
-	protected RetryResponseVerifier retryResponseVerifier;
 
 	/**
 	 * Creates a new ErrorDecoder with an integration name and bypass response codes.
-	 *
+	 * <p>
 	 * The integration name will be used in all Exceptions returned by the decode-method.
-	 *
+	 * <p>
 	 * The bypass response codes will be propagated as the original response code, instead of being wrapped in a
-	 * ThrowableProblem with a BAD_GATEWAY-code. I.e. if '404' is provided in the bypassResponseCode-list and the actual
-	 * response code is matching this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
-	 *
+	 * ThrowableProblem with a BAD_GATEWAY-code. I.e., if '404' is provided in the bypassResponseCode-list and the actual
+	 * response code is matching
+	 * this value, a ThrowableProblem with NotFound-code will be returned from the decode-method.
+	 * <p>
 	 * If the {@link RetryResponseVerifier} returns true a {@link RetryableException} will be thrown.
 	 *
 	 * @param integrationName       name of integration to whom the error decoder is connected
@@ -61,9 +61,9 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	/**
 	 * Creates a new ErrorDecoder with an integration name and no bypass response codes.
-	 *
+	 * <p>
 	 * The integration name will be used in all Exceptions returned by the decode-method.
-	 *
+	 * <p>
 	 * If the {@link RetryResponseVerifier} returns true a {@link RetryableException} will be thrown.
 	 *
 	 * @param integrationName       name of integration to whom the error decoder is connected
@@ -110,7 +110,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	private String extractMessage(final Response response) {
 		try {
 			// Body will be null for HTTP 401, 404, 407, etc. This is how the default decoder behaves in Feign.
-			// Some services can also return empty string as body, which should be treated the same way as null.
+			// Some services can also return an empty string as a body, which should be treated the same way as null.
 			if (isNull(response.body()) || isBlank(bodyAsString(response))) {
 				return extractAsNullBodyResponse(response);
 			}
@@ -123,7 +123,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	}
 
 	/**
-	 * Implement this method in order to create an String that represents the error.
+	 * Implement this method to create a String that represents the error.
 	 *
 	 * @param  response    the response that caused the error.
 	 * @return             a String that represents the error message returned in the response.
@@ -141,7 +141,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	}
 
 	/**
-	 * Private record to used for calculating extracted error message information.
+	 * Private record to use for calculating extracted error message information.
 	 *
 	 * @param integrationName the name of the integration (clientId)
 	 * @param errorInfo       the set of error detail information
@@ -178,7 +178,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		}
 
 		/**
-		 * Method to get error message. Message is calculated based on available data in the error message record.
+		 * Method to get an error message. Message is calculated based on available data in the error message record.
 		 *
 		 * @return a string containing the calculated error message
 		 */

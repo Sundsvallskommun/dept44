@@ -7,11 +7,11 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * The purpose with this class is to set circuitbreaker baseConfig to "default"
- * for all circuitbreaker-configs where baseconfig is null.
- *
- * This might be the case if the circuitbreaker belongs to a feign-client.
- * (spring-cloud-openfeign bundles resilience4j on it's own)
+ * The purpose with this class is to set circuitbreaker baseConfig to "default" for all circuitbreaker-configs where
+ * baseconfig is null.
+ * <p>
+ * This might be the case if the circuitbreaker belongs to a feign-client. (spring-cloud-openfeign bundles resilience4j
+ * on its own)
  */
 @Configuration
 public class DefaultCircuitBreakerPropertiesConfiguration implements BeanPostProcessor {

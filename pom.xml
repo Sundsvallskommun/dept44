@@ -56,9 +56,6 @@
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.20.0</commons-lang3.version>
 		<logbook.version>4.0.0-RC.1</logbook.version>
-		<problem.version>0.27.1</problem.version>
-		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
-		<problem-spring-web.version>0.29.1</problem-spring-web.version>
 		<springdoc.version>3.0.1</springdoc.version>
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
@@ -174,27 +171,6 @@
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-scheduler</artifactId>
 				<version>7.0.1-SNAPSHOT</version>
-			</dependency>
-			<!-- Problem -->
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>jackson-datatype-problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-gson</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-spring-web-starter</artifactId>
-				<version>${problem-spring-web.version}</version>
 			</dependency>
 			<!-- SpringDoc -->
 			<dependency>
@@ -352,7 +328,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- Automates release and tagging process -->
+			<!-- Automates a release and tagging process -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
@@ -426,7 +402,7 @@
 							<autoPublish>${central.autoPublish}</autoPublish>
 						</configuration>
 					</plugin>
-					<!-- Signs artifacts with GPG before deploy -->
+					<!-- Signs artifacts with GPG before deployment -->
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>

@@ -65,7 +65,7 @@
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>3.5.6</spring-boot-admin.version>
+		<spring-boot-admin.version>3.5.7</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<maven-api.version>3.9.12</maven-api.version>
 		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
@@ -81,7 +81,7 @@
 		<jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
 		<git-commit-id-maven-plugin.version>9.0.2</git-commit-id-maven-plugin.version>
 		<openapi-generator-maven-plugin.version>7.19.0</openapi-generator-maven-plugin.version>
-		<spotless-maven-plugin-version>3.1.0</spotless-maven-plugin-version>
+		<spotless-maven-plugin-version>3.2.0</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
 		<lombok.version>1.18.42</lombok.version>

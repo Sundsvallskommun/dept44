@@ -123,6 +123,34 @@ class WireMockPathResolverTest {
 		assertThat(result).isEmpty();
 	}
 
+	@Test
+	void resolveMappingPathWithWindowsDefaultPath() {
+		// Setup - WireMock has a Windows-style default path
+		when(wiremockMock.getOptions()).thenReturn(optionsMock);
+		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
+		when(fileSourceMock.getPath()).thenReturn("src\\test\\resources");
+
+		// Call
+		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
+
+		// Verify - should detect default path and read from annotation
+		assertThat(result).isEqualTo("TestClass/");
+	}
+
+	@Test
+	void resolveMappingPathWithWindowsCustomPath() {
+		// Setup - WireMock has Windows-style custom path
+		when(wiremockMock.getOptions()).thenReturn(optionsMock);
+		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
+		when(fileSourceMock.getPath()).thenReturn("classpath:custom\\path\\to\\files");
+
+		// Call
+		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
+
+		// Verify - should normalize backslashes to forward slashes
+		assertThat(result).isEqualTo("custom/path/to/files/");
+	}
+
 	@ParameterizedTest
 	@CsvSource({
 		"path//to//file, path/to/file",

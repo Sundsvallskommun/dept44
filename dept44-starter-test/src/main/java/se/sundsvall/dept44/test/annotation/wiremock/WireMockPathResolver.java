@@ -42,8 +42,9 @@ public final class WireMockPathResolver {
 	public static String resolveMappingPath(final WireMockServer wiremock, final Class<?> testClass) {
 		String path = wiremock.getOptions().filesRoot().getPath();
 
-		// Workaround: If WireMock is using default path, get path from annotation directly
-		if (DEFAULT_WIREMOCK_PATH.equals(path)) {
+		// Workaround: If WireMock is using the default path, get a path from annotation directly
+		// Normalize backslashes for Windows compatibility before comparing
+		if (DEFAULT_WIREMOCK_PATH.equals(path.replace('\\', '/'))) {
 			final var annotation = testClass.getAnnotation(WireMockAppTestSuite.class);
 			if (nonNull(annotation)) {
 				path = annotation.files();
@@ -64,9 +65,12 @@ public final class WireMockPathResolver {
 	}
 
 	/**
-	 * Normalizes a path by removing classpath: prefix and ensuring consistent slashes.
+	 * Normalizes a path by removing classpath: prefix and ensuring consistent forward slashes.
 	 */
 	private static String normalizePath(String path) {
+		// Convert backslashes to forward slashes for Windows compatibility
+		path = path.replace('\\', '/');
+
 		// Strip "classpath:" prefix
 		if (path.startsWith(CLASSPATH_PREFIX)) {
 			path = path.substring(CLASSPATH_PREFIX.length());

@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
@@ -31,7 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.yaml.JacksonYamlHttpMessageConverter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,6 +45,7 @@ import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.util.ResourceUtils;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -109,14 +110,15 @@ public class WebConfiguration implements WebMvcConfigurer {
 			.mediaType(TEXT_PLAIN.getSubtype(), TEXT_PLAIN);
 	}
 
-	@Override
-	@SuppressWarnings("removal")
-	public void extendMessageConverters(final List<HttpMessageConverter<?>> converters) {
-		// Add YAML converter with custom media types
-		final var yamlConverter = new JacksonYamlHttpMessageConverter();
+	@Bean
+	JacksonYamlHttpMessageConverter jacksonYamlHttpMessageConverter() {
+		final var builder = YAMLMapper.builder()
+			.changeDefaultPropertyInclusion(handler -> handler
+				.withValueInclusion(NON_NULL)
+				.withContentInclusion(NON_NULL));
+		final var yamlConverter = new JacksonYamlHttpMessageConverter(builder);
 		yamlConverter.setSupportedMediaTypes(List.of(APPLICATION_YAML, APPLICATION_YML));
-		converters.add(yamlConverter);
-		// Note: NON_NULL serialization is configured via spring.jackson.default-property-inclusion property
+		return yamlConverter;
 	}
 
 	@Override

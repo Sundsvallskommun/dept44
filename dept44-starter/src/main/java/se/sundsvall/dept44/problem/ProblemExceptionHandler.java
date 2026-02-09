@@ -3,9 +3,11 @@ package se.sundsvall.dept44.problem;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
+import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.jspecify.annotations.NonNull;
@@ -122,6 +124,20 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			.status(BAD_REQUEST)
 			.contentType(APPLICATION_PROBLEM_JSON)
 			.body(problem);
+	}
+
+	/**
+	 * Handle Resilience4j CallNotPermittedException. Thrown when a circuit breaker is open and rejects the call.
+	 */
+	@ExceptionHandler(CallNotPermittedException.class)
+	@ResponseBody
+	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception) {
+		final var problem = Problem.valueOf(Status.SERVICE_UNAVAILABLE, exception.getMessage());
+
+		return ResponseEntity
+			.status(SERVICE_UNAVAILABLE)
+			.contentType(APPLICATION_PROBLEM_JSON)
+			.body(ProblemResponse.from(problem));
 	}
 
 	/**

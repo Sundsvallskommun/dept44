@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,14 +10,14 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -37,7 +38,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
@@ -53,9 +53,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "mdc.municipalityId.enabled=true")
 	class WebConfigurationEnabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -108,11 +105,15 @@ class WebConfigurationTest {
 		}
 
 		@Test
-		void extendMessageConverters() {
-			final List<HttpMessageConverter<?>> converterList = new ArrayList<>();
-			webConfiguration.extendMessageConverters(converterList);
+		void jacksonYamlHttpMessageConverterBean() {
+			final var converter = webConfiguration.jacksonYamlHttpMessageConverter();
 
-			assertThat(converterList).isNotNull().hasSize(1);
+			assertThat(converter).isNotNull();
+			assertThat(converter.getSupportedMediaTypes()).containsExactly(APPLICATION_YAML, APPLICATION_YML);
+
+			final var inclusion = converter.getMapper().serializationConfig().getDefaultPropertyInclusion();
+			assertThat(inclusion.getValueInclusion()).isEqualTo(NON_NULL);
+			assertThat(inclusion.getContentInclusion()).isEqualTo(NON_NULL);
 		}
 
 		@Test
@@ -128,9 +129,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "openapi.enabled=false")
 	class WebConfigurationWithIndexPageControllerDisabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -163,9 +161,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "spring.main.web-application-type=reactive")
 	class WebConfigurationDisabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -203,9 +198,6 @@ class WebConfigurationTest {
 		private HttpServletRequest httpServletRequestMock;
 
 		@MockitoBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
@@ -229,9 +221,6 @@ class WebConfigurationTest {
 	@SpringBootTest(classes = WebConfiguration.class)
 	@ExtendWith(MockitoExtension.class)
 	class RequestIdFilterTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -266,9 +255,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
 	class IdentifierFilterTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -320,9 +306,6 @@ class WebConfigurationTest {
 	class DisableBrowserCacheFilterTest {
 
 		@MockitoBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -358,9 +341,6 @@ class WebConfigurationTest {
 		"mdc.municipalityId.enabled=true"
 	})
 	class MunicipalityIdFilterTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -400,9 +380,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
 	class MunicipalityIdInterceptorTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;

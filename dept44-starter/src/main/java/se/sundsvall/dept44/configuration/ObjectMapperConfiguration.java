@@ -26,6 +26,12 @@ public class ObjectMapperConfiguration {
 		return new JavaTimeModule();
 	}
 
+	/**
+	 * YAMLMapper bean. Also serves as the Jackson 2 ObjectMapper since SB4 no longer auto-configures one; needed by
+	 * LogbookConfiguration and BodyFilterProvider.
+	 *
+	 * @return the YAMLMapper (which extends ObjectMapper)
+	 */
 	@Bean
 	YAMLMapper yamlMapper() {
 		return new YAMLMapper();

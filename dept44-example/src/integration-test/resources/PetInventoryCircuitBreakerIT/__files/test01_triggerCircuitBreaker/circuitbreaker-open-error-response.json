@@ -1,5 +1,5 @@
 {
-	"title": "Service Unavailable",
+	"detail": "CircuitBreaker 'petstore' is OPEN and does not permit further calls",
 	"status": 503,
-	"detail": "${json-unit.any-string}"
+	"title": "Service Unavailable"
 }

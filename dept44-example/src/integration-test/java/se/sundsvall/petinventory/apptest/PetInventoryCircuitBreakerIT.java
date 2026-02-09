@@ -3,7 +3,7 @@ package se.sundsvall.petinventory.apptest;
 import static net.javacrumbs.jsonunit.core.Option.IGNORING_EXTRA_FIELDS;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.OK;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
@@ -70,7 +70,7 @@ class PetInventoryCircuitBreakerIT extends AbstractAppTest {
 		setupCall()
 			.withServicePath("/pet-inventory-items")
 			.withHttpMethod(GET)
-			.withExpectedResponseStatus(INTERNAL_SERVER_ERROR)
+			.withExpectedResponseStatus(SERVICE_UNAVAILABLE)
 			.withExpectedResponse("circuitbreaker-open-error-response.json")
 			.withExpectedResponseHeader(HEADER_NAME, List.of(REG_EXP_VALID_UUID))
 			.sendRequest();

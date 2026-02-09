@@ -17,6 +17,7 @@ import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
@@ -125,6 +126,26 @@ class ProblemExceptionHandlerTest {
 		assertThat(problem.getViolations())
 			.extracting(Violation::message)
 			.containsExactly("must not be blank", "must be greater than 0");
+	}
+
+	@Test
+	void handleCallNotPermittedException() {
+		// Arrange
+		final var exception = mock(CallNotPermittedException.class);
+		when(exception.getMessage()).thenReturn("CircuitBreaker 'petstore' is OPEN");
+
+		// Act
+		final var response = handler.handleCallNotPermittedException(exception);
+
+		// Assert
+		assertThat(response.getStatusCode()).isEqualTo(SERVICE_UNAVAILABLE);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var body = response.getBody();
+		assertThat(body).isNotNull();
+		assertThat(body.getStatus()).isEqualTo(Status.SERVICE_UNAVAILABLE);
+		assertThat(body.getTitle()).isEqualTo("Service Unavailable");
+		assertThat(body.getDetail()).isEqualTo("CircuitBreaker 'petstore' is OPEN");
 	}
 
 	@Test

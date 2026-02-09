@@ -1,11 +1,12 @@
 package se.sundsvall.dept44.problem.violations;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import se.sundsvall.dept44.problem.Status;
 
 class ConstraintViolationProblemTest {
 
@@ -24,13 +25,13 @@ class ConstraintViolationProblemTest {
 
 		final var problem = ConstraintViolationProblem.builder()
 			.withType(type)
-			.withStatus(Status.BAD_REQUEST)
+			.withStatus(BAD_REQUEST)
 			.withTitle("Custom Title")
 			.withViolations(violations)
 			.build();
 
 		assertThat(problem.getType()).isEqualTo(type);
-		assertThat(problem.getStatus()).isEqualTo(Status.BAD_REQUEST);
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo("Custom Title");
 		assertThat(problem.getViolations()).hasSize(2);
 	}
@@ -38,7 +39,7 @@ class ConstraintViolationProblemTest {
 	@Test
 	void builderWithDefaults() {
 		final var problem = ConstraintViolationProblem.builder()
-			.withStatus(Status.BAD_REQUEST)
+			.withStatus(BAD_REQUEST)
 			.build();
 
 		assertThat(problem.getType()).isEqualTo(ConstraintViolationProblem.TYPE);
@@ -50,10 +51,10 @@ class ConstraintViolationProblemTest {
 	void constructorWithStatusAndViolations() {
 		final var violations = List.of(new Violation("field", "error"));
 
-		final var problem = new ConstraintViolationProblem(Status.BAD_REQUEST, violations);
+		final var problem = new ConstraintViolationProblem(BAD_REQUEST, violations);
 
 		assertThat(problem.getType()).isEqualTo(ConstraintViolationProblem.TYPE);
-		assertThat(problem.getStatus()).isEqualTo(Status.BAD_REQUEST);
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo(ConstraintViolationProblem.DEFAULT_TITLE);
 		assertThat(problem.getViolations()).hasSize(1);
 	}
@@ -66,7 +67,7 @@ class ConstraintViolationProblemTest {
 		final var problem = new ConstraintViolationProblem(type, 400, violations);
 
 		assertThat(problem.getType()).isEqualTo(type);
-		assertThat(problem.getStatus()).isEqualTo(Status.BAD_REQUEST);
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getViolations()).hasSize(1);
 	}
 
@@ -81,7 +82,7 @@ class ConstraintViolationProblemTest {
 
 	@Test
 	void constructorWithNullViolations() {
-		final var problem = new ConstraintViolationProblem(Status.BAD_REQUEST, null);
+		final var problem = new ConstraintViolationProblem(BAD_REQUEST, null);
 
 		assertThat(problem.getViolations()).isEmpty();
 	}
@@ -89,7 +90,7 @@ class ConstraintViolationProblemTest {
 	@Test
 	void violationsAreImmutable() {
 		final var violations = List.of(new Violation("field", "error"));
-		final var problem = new ConstraintViolationProblem(Status.BAD_REQUEST, violations);
+		final var problem = new ConstraintViolationProblem(BAD_REQUEST, violations);
 
 		final var returnedViolations = problem.getViolations();
 
@@ -100,10 +101,10 @@ class ConstraintViolationProblemTest {
 	void equalsAndHashCode() {
 		final var violations = List.of(new Violation("field", "error"));
 
-		final var problem1 = new ConstraintViolationProblem(Status.BAD_REQUEST, violations);
-		final var problem2 = new ConstraintViolationProblem(Status.BAD_REQUEST, violations);
-		final var problem3 = new ConstraintViolationProblem(Status.NOT_FOUND, violations);
-		final var problem4 = new ConstraintViolationProblem(Status.BAD_REQUEST, List.of());
+		final var problem1 = new ConstraintViolationProblem(BAD_REQUEST, violations);
+		final var problem2 = new ConstraintViolationProblem(BAD_REQUEST, violations);
+		final var problem3 = new ConstraintViolationProblem(NOT_FOUND, violations);
+		final var problem4 = new ConstraintViolationProblem(BAD_REQUEST, List.of());
 
 		assertThat(problem1)
 			.isEqualTo(problem2).hasSameHashCodeAs(problem2)
@@ -116,28 +117,28 @@ class ConstraintViolationProblemTest {
 	@Test
 	@SuppressWarnings("EqualsWithItself")
 	void equalsSameInstance() {
-		final var problem = new ConstraintViolationProblem(Status.BAD_REQUEST, List.of());
+		final var problem = new ConstraintViolationProblem(BAD_REQUEST, List.of());
 
 		assertThat(problem.equals(problem)).isTrue();
 	}
 
 	@Test
 	void constructorWithNullType() {
-		final var problem = new ConstraintViolationProblem(null, Status.BAD_REQUEST, List.of(), null);
+		final var problem = new ConstraintViolationProblem(null, BAD_REQUEST, List.of(), null);
 
 		assertThat(problem.getType()).isEqualTo(ConstraintViolationProblem.TYPE);
 	}
 
 	@Test
 	void constructorWithNullTitle() {
-		final var problem = new ConstraintViolationProblem(null, Status.BAD_REQUEST, List.of(), null);
+		final var problem = new ConstraintViolationProblem(null, BAD_REQUEST, List.of(), null);
 
 		assertThat(problem.getTitle()).isEqualTo(ConstraintViolationProblem.DEFAULT_TITLE);
 	}
 
 	@Test
 	void constructorWithCustomTitle() {
-		final var problem = new ConstraintViolationProblem(null, Status.BAD_REQUEST, List.of(), "Custom Title");
+		final var problem = new ConstraintViolationProblem(null, BAD_REQUEST, List.of(), "Custom Title");
 
 		assertThat(problem.getTitle()).isEqualTo("Custom Title");
 	}

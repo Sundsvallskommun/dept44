@@ -1,7 +1,8 @@
 package se.sundsvall.petinventory.service;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static se.sundsvall.dept44.problem.Status.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetImages;
 
 import java.util.List;
@@ -9,7 +10,6 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.Status;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.PetImageRepository;
 import se.sundsvall.petinventory.integration.db.PetNameRepository;
@@ -63,7 +63,7 @@ public class PetInventoryService {
 
 			return petImageEntity.getId();
 		} catch (final Exception _) {
-			throw Problem.valueOf(Status.INTERNAL_SERVER_ERROR, "Could not store image!");
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Could not store image!");
 		}
 	}
 

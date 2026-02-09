@@ -1,6 +1,9 @@
 package se.sundsvall.dept44.problem;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URI;
+import org.springframework.http.HttpStatus;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
@@ -22,7 +25,7 @@ public interface Problem {
 	 * @return a new builder instance
 	 */
 	static Builder builder() {
-		return new DefaultProblem.Builder();
+		return new ThrowableProblem.Builder();
 	}
 
 	/**
@@ -32,7 +35,7 @@ public interface Problem {
 	 * @param  detail the detail message
 	 * @return        a new ThrowableProblem
 	 */
-	static ThrowableProblem valueOf(final StatusType status, final String detail) {
+	static ThrowableProblem valueOf(final HttpStatus status, final String detail) {
 		return builder()
 			.withStatus(status)
 			.withTitle(status.getReasonPhrase())
@@ -46,7 +49,7 @@ public interface Problem {
 	 * @param  status the HTTP status
 	 * @return        a new ThrowableProblem
 	 */
-	static ThrowableProblem valueOf(final StatusType status) {
+	static ThrowableProblem valueOf(final HttpStatus status) {
 		return builder()
 			.withStatus(status)
 			.withTitle(status.getReasonPhrase())
@@ -72,7 +75,19 @@ public interface Problem {
 	 *
 	 * @return the status
 	 */
-	StatusType getStatus();
+	@JsonIgnore
+	HttpStatus getStatus();
+
+	/**
+	 * Get the status as an integer for JSON serialization.
+	 *
+	 * @return the status code, or null if status is null
+	 */
+	@JsonGetter("status")
+	default Integer getStatusValue() {
+		final var s = getStatus();
+		return s != null ? s.value() : null;
+	}
 
 	/**
 	 * Get the problem detail message.
@@ -115,7 +130,7 @@ public interface Problem {
 		 * @param  status the status
 		 * @return        this builder
 		 */
-		Builder withStatus(StatusType status);
+		Builder withStatus(HttpStatus status);
 
 		/**
 		 * Set the problem detail message.

@@ -203,8 +203,6 @@ components:
     Problem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
         title:
           type: string
         detail:
@@ -215,14 +213,9 @@ components:
         type:
           type: string
           format: uri
-    StatusType:
-      type: object
-      properties:
-        statusCode:
+        status:
           type: integer
           format: int32
-        reasonPhrase:
-          type: string
     ConstraintViolationProblem:
       type: object
       properties:
@@ -230,7 +223,8 @@ components:
           type: string
           format: uri
         status:
-          $ref: "#/components/schemas/StatusType"
+          type: integer
+          format: int32
         violations:
           type: array
           items:
@@ -247,13 +241,14 @@ components:
     ThrowableProblem:
       type: object
       properties:
-        status:
-          $ref: "#/components/schemas/StatusType"
         type:
           type: string
           format: uri
         title:
           type: string
+        status:
+          type: integer
+          format: int32
         detail:
           type: string
         instance:

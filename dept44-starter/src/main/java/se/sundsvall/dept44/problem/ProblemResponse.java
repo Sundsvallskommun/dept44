@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import java.net.URI;
+import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblemResponse;
 import tools.jackson.databind.annotation.JsonDeserialize;
@@ -21,7 +22,7 @@ public class ProblemResponse implements Problem {
 
 	private URI type;
 	private String title;
-	private StatusType status;
+	private HttpStatus status;
 	private String detail;
 	private URI instance;
 
@@ -92,11 +93,11 @@ public class ProblemResponse implements Problem {
 
 	@Override
 	@JsonIgnore
-	public StatusType getStatus() {
+	public HttpStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(final StatusType status) {
+	public void setStatus(final HttpStatus status) {
 		this.status = status;
 	}
 
@@ -107,7 +108,7 @@ public class ProblemResponse implements Problem {
 	 */
 	@JsonSetter("status")
 	public void setStatus(final Integer statusCode) {
-		this.status = statusCode != null ? Status.valueOf(statusCode) : null;
+		this.status = statusCode != null ? HttpStatus.valueOf(statusCode) : null;
 	}
 
 	/**
@@ -117,7 +118,7 @@ public class ProblemResponse implements Problem {
 	 */
 	@JsonGetter("status")
 	public Integer getStatusCode() {
-		return status != null ? status.getStatusCode() : null;
+		return status != null ? status.value() : null;
 	}
 
 	@Override

@@ -1,7 +1,7 @@
 package se.sundsvall.dept44.authorization.configuration;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
-import static se.sundsvall.dept44.problem.Status.UNAUTHORIZED;
 
 import java.util.Optional;
 import org.slf4j.Logger;

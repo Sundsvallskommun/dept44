@@ -1,5 +1,5 @@
 {
-	"detail": "No handler found for GET /actuator/heapdump",
+	"detail": "No endpoint GET /actuator/heapdump.",
 	"title": "Not Found",
 	"status": 404
 }

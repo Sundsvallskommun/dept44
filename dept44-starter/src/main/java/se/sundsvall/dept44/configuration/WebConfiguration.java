@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
@@ -8,7 +9,6 @@ import static org.springframework.http.MediaType.TEXT_HTML;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
-import static se.sundsvall.dept44.problem.Status.NOT_IMPLEMENTED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;

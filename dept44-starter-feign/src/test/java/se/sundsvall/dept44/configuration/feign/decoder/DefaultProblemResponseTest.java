@@ -1,12 +1,13 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.net.URI;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder.DefaultProblemResponse;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.Status;
 
 class DefaultProblemResponseTest {
 
@@ -38,7 +39,7 @@ class DefaultProblemResponseTest {
 		final var response = new DefaultProblemResponse();
 		response.setStatus(400);
 
-		assertThat(response.getStatus()).isEqualTo(Status.BAD_REQUEST);
+		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 	}
 
 	@Test
@@ -82,7 +83,7 @@ class DefaultProblemResponseTest {
 
 		assertThat(response.getType()).isEqualTo(URI.create("https://example.com/problem"));
 		assertThat(response.getTitle()).isEqualTo("Title");
-		assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND);
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(response.getDetail()).isEqualTo("Detail");
 		assertThat(response.getInstance()).isEqualTo(URI.create("https://example.com/instance"));
 	}

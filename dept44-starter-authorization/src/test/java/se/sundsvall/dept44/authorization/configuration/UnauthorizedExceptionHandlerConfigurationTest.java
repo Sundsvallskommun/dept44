@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AccessDeniedExceptionHandler;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AuthenticationCredentialsNotFoundExceptionHandler;
-import se.sundsvall.dept44.problem.Status;
 
 class UnauthorizedExceptionHandlerConfigurationTest {
 
@@ -61,8 +60,8 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 		final var entity = new AuthenticationCredentialsNotFoundExceptionHandler().handleException(exception);
 
 		assertThat(entity.getStatusCode()).isEqualTo(UNAUTHORIZED);
-		assertThat(entity.getBody().getStatus()).isEqualTo(Status.UNAUTHORIZED);
-		assertThat(entity.getBody().getTitle()).isEqualTo(Status.UNAUTHORIZED.getReasonPhrase());
+		assertThat(entity.getBody().getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(entity.getBody().getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
 		assertThat(entity.getBody().getDetail()).isEqualTo(exceptionMessage);
 	}
 
@@ -74,8 +73,8 @@ class UnauthorizedExceptionHandlerConfigurationTest {
 		final var entity = new AccessDeniedExceptionHandler().handleException(exception);
 
 		assertThat(entity.getStatusCode()).isEqualTo(UNAUTHORIZED);
-		assertThat(entity.getBody().getStatus()).isEqualTo(Status.UNAUTHORIZED);
-		assertThat(entity.getBody().getTitle()).isEqualTo(Status.UNAUTHORIZED.getReasonPhrase());
+		assertThat(entity.getBody().getStatus()).isEqualTo(UNAUTHORIZED);
+		assertThat(entity.getBody().getTitle()).isEqualTo(UNAUTHORIZED.getReasonPhrase());
 		assertThat(entity.getBody().getDetail()).isEqualTo(exceptionMessage);
 	}
 }

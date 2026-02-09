@@ -1,7 +1,7 @@
 package se.sundsvall.dept44.configuration.feign.decoder.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static se.sundsvall.dept44.problem.Status.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;

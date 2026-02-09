@@ -1,6 +1,6 @@
 package se.sundsvall.dept44.configuration.webservicetemplate.interceptor;
 
-import static se.sundsvall.dept44.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 import java.util.Optional;
 import org.slf4j.Logger;

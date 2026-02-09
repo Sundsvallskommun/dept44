@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.problem;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -21,11 +22,10 @@ import org.springframework.web.ErrorResponseException;
 })
 public class ThrowableProblem extends ErrorResponseException implements Problem {
 
-	private final URI type;
+	// ProblemDetail auto-fills title from status and always returns a non-null status,
+	// so we keep these two fields to preserve null semantics of the public API.
 	private final String title;
-	private final StatusType status;
-	private final String detail;
-	private final URI instance;
+	private final HttpStatus status;
 
 	/**
 	 * Create a new ThrowableProblem.
@@ -37,13 +37,10 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	 * @param instance the problem instance URI
 	 * @param cause    the cause of this problem
 	 */
-	public ThrowableProblem(final URI type, final String title, final StatusType status, final String detail, final URI instance, final ThrowableProblem cause) {
-		super(status != null ? HttpStatus.valueOf(status.getStatusCode()) : HttpStatus.INTERNAL_SERVER_ERROR, createProblemDetail(type, title, status, detail, instance), cause);
-		this.type = type != null ? type : DEFAULT_TYPE;
+	public ThrowableProblem(final URI type, final String title, final HttpStatus status, final String detail, final URI instance, final ThrowableProblem cause) {
+		super(status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR, createProblemDetail(type, title, status, detail, instance), cause);
 		this.title = title;
 		this.status = status;
-		this.detail = detail;
-		this.instance = instance;
 	}
 
 	/**
@@ -55,7 +52,7 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	 * @param detail   the problem detail
 	 * @param instance the problem instance URI
 	 */
-	public ThrowableProblem(final URI type, final String title, final StatusType status, final String detail, final URI instance) {
+	public ThrowableProblem(final URI type, final String title, final HttpStatus status, final String detail, final URI instance) {
 		this(type, title, status, detail, instance, null);
 	}
 
@@ -75,11 +72,11 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 		@JsonProperty("status") final Integer status,
 		@JsonProperty("detail") final String detail,
 		@JsonProperty("instance") final URI instance) {
-		this(type, title, status != null ? Status.valueOf(status) : null, detail, instance, null);
+		this(type, title, status != null ? HttpStatus.valueOf(status) : null, detail, instance, null);
 	}
 
-	private static ProblemDetail createProblemDetail(final URI type, final String title, final StatusType status, final String detail, final URI instance) {
-		final var problemDetail = ProblemDetail.forStatus(status != null ? status.getStatusCode() : 500);
+	private static ProblemDetail createProblemDetail(final URI type, final String title, final HttpStatus status, final String detail, final URI instance) {
+		final var problemDetail = ProblemDetail.forStatus(status != null ? status.value() : 500);
 		if (type != null) {
 			problemDetail.setType(type);
 		}
@@ -97,7 +94,8 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 
 	@Override
 	public URI getType() {
-		return type;
+		final var type = getBody().getType();
+		return type != null ? type : DEFAULT_TYPE;
 	}
 
 	@Override
@@ -106,27 +104,28 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	}
 
 	@Override
-	public StatusType getStatus() {
+	@JsonIgnore
+	public HttpStatus getStatus() {
 		return status;
 	}
 
 	@Override
 	public String getDetail() {
-		return detail;
+		return getBody().getDetail();
 	}
 
 	@Override
 	public URI getInstance() {
-		return instance;
+		return getBody().getInstance();
 	}
 
 	@Override
 	public String getMessage() {
-		if (title != null && detail != null) {
-			return title + ": " + detail;
+		if (title != null && getDetail() != null) {
+			return title + ": " + getDetail();
 		}
-		if (detail != null) {
-			return detail;
+		if (getDetail() != null) {
+			return getDetail();
 		}
 		if (title != null) {
 			return title;
@@ -142,5 +141,59 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	public ThrowableProblem getCauseAsProblem() {
 		final var cause = getCause();
 		return cause instanceof final ThrowableProblem throwableProblem ? throwableProblem : null;
+	}
+
+	/**
+	 * Builder implementation for creating ThrowableProblem instances.
+	 */
+	static class Builder implements Problem.Builder {
+
+		private URI type = Problem.DEFAULT_TYPE;
+		private String title;
+		private HttpStatus status;
+		private String detail;
+		private URI instance;
+		private ThrowableProblem cause;
+
+		@Override
+		public Problem.Builder withType(final URI type) {
+			this.type = type;
+			return this;
+		}
+
+		@Override
+		public Problem.Builder withTitle(final String title) {
+			this.title = title;
+			return this;
+		}
+
+		@Override
+		public Problem.Builder withStatus(final HttpStatus status) {
+			this.status = status;
+			return this;
+		}
+
+		@Override
+		public Problem.Builder withDetail(final String detail) {
+			this.detail = detail;
+			return this;
+		}
+
+		@Override
+		public Problem.Builder withInstance(final URI instance) {
+			this.instance = instance;
+			return this;
+		}
+
+		@Override
+		public Problem.Builder withCause(final ThrowableProblem cause) {
+			this.cause = cause;
+			return this;
+		}
+
+		@Override
+		public ThrowableProblem build() {
+			return new ThrowableProblem(type, title, status, detail, instance, cause);
+		}
 	}
 }

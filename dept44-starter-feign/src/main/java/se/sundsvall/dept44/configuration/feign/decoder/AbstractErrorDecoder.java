@@ -6,7 +6,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static se.sundsvall.dept44.problem.Status.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 
 import feign.Response;
 import feign.RetryableException;
@@ -20,11 +20,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.Status;
 
 /**
  * The base error decoder.
@@ -92,7 +92,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		// Use the bypass status code if it matches the response code, otherwise BAD_GATEWAY.
 		final var status = Optional.ofNullable(bypassResponseCodes).orElse(emptyList()).stream()
 			.filter(bypassCode -> bypassCode.equals(response.status()))
-			.map(Status::valueOf)
+			.map(HttpStatus::valueOf)
 			.findAny()
 			.orElse(BAD_GATEWAY);
 
@@ -158,7 +158,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		}
 
 		static ErrorMessage create(final String integrationName, final int httpStatus) {
-			return create(integrationName, httpStatus, Map.of(KEY_TITLE, Status.valueOf(httpStatus).getReasonPhrase()));
+			return create(integrationName, httpStatus, Map.of(KEY_TITLE, HttpStatus.valueOf(httpStatus).getReasonPhrase()));
 		}
 
 		static ErrorMessage create(final String integrationName, final int httpStatus, final String title, final String detail) {
@@ -170,7 +170,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 		private static ErrorMessage create(final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
 			final SortedMap<String, Object> map = new TreeMap<>();
-			map.put(KEY_STATUS, Status.valueOf(httpStatus));
+			final var status = HttpStatus.valueOf(httpStatus);
+			map.put(KEY_STATUS, status.value() + " " + status.getReasonPhrase());
 
 			ofNullable(errorInfo).ifPresent(map::putAll);
 

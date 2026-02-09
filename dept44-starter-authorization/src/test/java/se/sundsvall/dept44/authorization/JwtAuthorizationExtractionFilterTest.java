@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,7 +43,6 @@ import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
-import se.sundsvall.dept44.problem.Status;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -197,7 +197,7 @@ class JwtAuthorizationExtractionFilterTest {
 
 			assertThat(throwableProblemCaptor.getValue().getTitle()).isEqualTo(title);
 			assertThat(throwableProblemCaptor.getValue().getDetail()).isEqualTo(e.getMessage());
-			assertThat(throwableProblemCaptor.getValue().getStatus()).isEqualTo(Status.UNAUTHORIZED);
+			assertThat(throwableProblemCaptor.getValue().getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
 
 			verifyNoMoreInteractions(jwtTokenUtilMock, jsonMapperMock, printWriterMock);
 			verifyNoInteractions(webAuthenticationDetailsSourceMock, securityContextMock, filterChainMock);

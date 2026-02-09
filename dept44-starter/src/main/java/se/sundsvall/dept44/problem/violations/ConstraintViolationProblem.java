@@ -6,8 +6,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import se.sundsvall.dept44.problem.Status;
-import se.sundsvall.dept44.problem.StatusType;
+import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
@@ -41,7 +40,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 		@JsonProperty("type") final URI type,
 		@JsonProperty("status") final Integer status,
 		@JsonProperty("violations") final List<Violation> violations) {
-		this(type, status != null ? Status.valueOf(status) : null, violations, null);
+		this(type, status != null ? HttpStatus.valueOf(status) : null, violations, null);
 	}
 
 	/**
@@ -52,7 +51,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 	 * @param violations the list of violations
 	 * @param title      the problem title
 	 */
-	public ConstraintViolationProblem(final URI type, final StatusType status, final List<Violation> violations, final String title) {
+	public ConstraintViolationProblem(final URI type, final HttpStatus status, final List<Violation> violations, final String title) {
 		super(
 			type != null ? type : TYPE,
 			title != null ? title : DEFAULT_TITLE,
@@ -69,7 +68,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 	 * @param status     the HTTP status
 	 * @param violations the list of violations
 	 */
-	public ConstraintViolationProblem(final StatusType status, final List<Violation> violations) {
+	public ConstraintViolationProblem(final HttpStatus status, final List<Violation> violations) {
 		this(TYPE, status, violations, null);
 	}
 
@@ -116,7 +115,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 	public static class Builder {
 
 		private URI type = TYPE;
-		private StatusType status;
+		private HttpStatus status;
 		private List<Violation> violations = Collections.emptyList();
 		private String title;
 
@@ -137,7 +136,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 		 * @param  status the status
 		 * @return        this builder
 		 */
-		public Builder withStatus(final StatusType status) {
+		public Builder withStatus(final HttpStatus status) {
 			this.status = status;
 			return this;
 		}

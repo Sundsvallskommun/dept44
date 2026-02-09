@@ -1,6 +1,11 @@
 package se.sundsvall.dept44.problem;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.net.URI;
 import java.util.List;
@@ -26,21 +31,21 @@ class ProblemResponseTest {
 
 	@Test
 	void constructorFromProblemWithNullType() {
-		final var problem = Problem.valueOf(Status.NOT_FOUND, "Not found");
+		final var problem = Problem.valueOf(NOT_FOUND, "Not found");
 
 		final var response = new ProblemResponse(problem);
 
 		assertThat(response.getType()).isEqualTo(Problem.DEFAULT_TYPE);
 		assertThat(response.getTypeForJson()).isNull();
 		assertThat(response.getTitle()).isEqualTo("Not Found");
-		assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND);
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(response.getStatusCode()).isEqualTo(404);
 		assertThat(response.getDetail()).isEqualTo("Not found");
 	}
 
 	@Test
 	void constructorFromProblemWithDefaultType() {
-		final var problem = new ThrowableProblem(Problem.DEFAULT_TYPE, "Bad Request", Status.BAD_REQUEST, "Invalid input", null);
+		final var problem = new ThrowableProblem(Problem.DEFAULT_TYPE, "Bad Request", BAD_REQUEST, "Invalid input", null);
 
 		final var response = new ProblemResponse(problem);
 
@@ -51,14 +56,14 @@ class ProblemResponseTest {
 	@Test
 	void constructorFromProblemWithCustomType() {
 		final var customType = URI.create("https://example.com/problem/custom");
-		final var problem = new ThrowableProblem(customType, "Custom Error", Status.INTERNAL_SERVER_ERROR, "Something went wrong", null);
+		final var problem = new ThrowableProblem(customType, "Custom Error", INTERNAL_SERVER_ERROR, "Something went wrong", null);
 
 		final var response = new ProblemResponse(problem);
 
 		assertThat(response.getType()).isEqualTo(customType);
 		assertThat(response.getTypeForJson()).isEqualTo(customType);
 		assertThat(response.getTitle()).isEqualTo("Custom Error");
-		assertThat(response.getStatus()).isEqualTo(Status.INTERNAL_SERVER_ERROR);
+		assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(response.getStatusCode()).isEqualTo(500);
 		assertThat(response.getDetail()).isEqualTo("Something went wrong");
 	}
@@ -66,7 +71,7 @@ class ProblemResponseTest {
 	@Test
 	void constructorFromProblemWithInstance() {
 		final var instance = URI.create("/api/resource/123");
-		final var problem = new ThrowableProblem(null, "Error", Status.BAD_REQUEST, "Detail", instance);
+		final var problem = new ThrowableProblem(null, "Error", BAD_REQUEST, "Detail", instance);
 
 		final var response = new ProblemResponse(problem);
 
@@ -75,12 +80,12 @@ class ProblemResponseTest {
 
 	@Test
 	void fromThrowableProblem() {
-		final var problem = Problem.valueOf(Status.NOT_FOUND, "Resource not found");
+		final var problem = Problem.valueOf(NOT_FOUND, "Resource not found");
 
 		final var response = ProblemResponse.from(problem);
 
 		assertThat(response).isInstanceOf(ProblemResponse.class).isNotInstanceOf(ConstraintViolationProblemResponse.class);
-		assertThat(response.getStatus()).isEqualTo(Status.NOT_FOUND);
+		assertThat(response.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(response.getDetail()).isEqualTo("Resource not found");
 	}
 
@@ -90,7 +95,7 @@ class ProblemResponseTest {
 			new Violation("field1", "must not be null"),
 			new Violation("field2", "must be positive"));
 		final var problem = ConstraintViolationProblem.builder()
-			.withStatus(Status.BAD_REQUEST)
+			.withStatus(BAD_REQUEST)
 			.withViolations(violations)
 			.build();
 
@@ -99,7 +104,7 @@ class ProblemResponseTest {
 		assertThat(response).isInstanceOf(ConstraintViolationProblemResponse.class);
 		final var cvResponse = (ConstraintViolationProblemResponse) response;
 		assertThat(cvResponse.getViolations()).hasSize(2);
-		assertThat(cvResponse.getStatus()).isEqualTo(Status.BAD_REQUEST);
+		assertThat(cvResponse.getStatus()).isEqualTo(BAD_REQUEST);
 	}
 
 	@Test
@@ -110,14 +115,14 @@ class ProblemResponseTest {
 
 		response.setType(customType);
 		response.setTitle("Test Title");
-		response.setStatus(Status.FORBIDDEN);
+		response.setStatus(FORBIDDEN);
 		response.setDetail("Test detail");
 		response.setInstance(instance);
 
 		assertThat(response.getType()).isEqualTo(customType);
 		assertThat(response.getTypeForJson()).isEqualTo(customType);
 		assertThat(response.getTitle()).isEqualTo("Test Title");
-		assertThat(response.getStatus()).isEqualTo(Status.FORBIDDEN);
+		assertThat(response.getStatus()).isEqualTo(FORBIDDEN);
 		assertThat(response.getStatusCode()).isEqualTo(403);
 		assertThat(response.getDetail()).isEqualTo("Test detail");
 		assertThat(response.getInstance()).isEqualTo(instance);
@@ -149,7 +154,7 @@ class ProblemResponseTest {
 	@Test
 	void getStatusCodeReturnsCodeWhenStatusIsSet() {
 		final var response = new ProblemResponse();
-		response.setStatus(Status.CONFLICT);
+		response.setStatus(CONFLICT);
 
 		assertThat(response.getStatusCode()).isEqualTo(409);
 	}

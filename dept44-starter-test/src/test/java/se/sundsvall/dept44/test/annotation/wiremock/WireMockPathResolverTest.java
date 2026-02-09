@@ -6,10 +6,12 @@ import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.common.FileSource;
 import com.github.tomakehurst.wiremock.core.Options;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -25,130 +27,29 @@ class WireMockPathResolverTest {
 	@Mock
 	private FileSource fileSourceMock;
 
-	@Test
-	void resolveMappingPathWithNonDefaultPath() {
-		// Setup - WireMock has a custom path configured
+	@ParameterizedTest
+	@MethodSource("resolveMappingPathArguments")
+	void resolveMappingPath(final String wiremockPath, final Class<?> testClass, final String expected) {
 		when(wiremockMock.getOptions()).thenReturn(optionsMock);
 		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("classpath:custom/path");
+		when(fileSourceMock.getPath()).thenReturn(wiremockPath);
 
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
+		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, testClass);
 
-		// Verify - should use WireMock's path, normalized
-		assertThat(result).isEqualTo("custom/path/");
+		assertThat(result).isEqualTo(expected);
 	}
 
-	@Test
-	void resolveMappingPathWithDefaultPathAndAnnotation() {
-		// Setup - WireMock has default path, but class has annotation
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src/test/resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
-
-		// Verify - should read from annotation and normalize
-		assertThat(result).isEqualTo("TestClass/");
-	}
-
-	@Test
-	void resolveMappingPathWithDefaultPathAndNoAnnotation() {
-		// Setup - WireMock has default path, class has no annotation
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src/test/resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, NonAnnotatedTestClass.class);
-
-		// Verify - should return normalized default path
-		assertThat(result).isEqualTo("src/test/resources/");
-	}
-
-	@Test
-	void resolveMappingPathWithClasspathPrefixInAnnotation() {
-		// Setup - WireMock has default path, annotation has classpath: prefix
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src/test/resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedWithClasspathPrefix.class);
-
-		// Verify - should strip classpath: prefix
-		assertThat(result).isEqualTo("TestWithPrefix/");
-	}
-
-	@Test
-	void resolveMappingPathWithLeadingSlashInAnnotation() {
-		// Setup - WireMock has default path, annotation has leading slash
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src/test/resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedWithLeadingSlash.class);
-
-		// Verify - should remove leading slash
-		assertThat(result).isEqualTo("LeadingSlashTest/");
-	}
-
-	@Test
-	void resolveMappingPathWithTrailingSlashInAnnotation() {
-		// Setup - WireMock has default path, annotation has trailing slash
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src/test/resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedWithTrailingSlash.class);
-
-		// Verify - should have exactly one trailing slash
-		assertThat(result).isEqualTo("TrailingSlashTest/");
-	}
-
-	@Test
-	void resolveMappingPathWithEmptyPath() {
-		// Setup - WireMock returns empty path
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, NonAnnotatedTestClass.class);
-
-		// Verify - should return empty string (no trailing slash for empty path)
-		assertThat(result).isEmpty();
-	}
-
-	@Test
-	void resolveMappingPathWithWindowsDefaultPath() {
-		// Setup - WireMock has a Windows-style default path
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("src\\test\\resources");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
-
-		// Verify - should detect default path and read from annotation
-		assertThat(result).isEqualTo("TestClass/");
-	}
-
-	@Test
-	void resolveMappingPathWithWindowsCustomPath() {
-		// Setup - WireMock has Windows-style custom path
-		when(wiremockMock.getOptions()).thenReturn(optionsMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("classpath:custom\\path\\to\\files");
-
-		// Call
-		final var result = WireMockPathResolver.resolveMappingPath(wiremockMock, AnnotatedTestClass.class);
-
-		// Verify - should normalize backslashes to forward slashes
-		assertThat(result).isEqualTo("custom/path/to/files/");
+	private static Stream<Arguments> resolveMappingPathArguments() {
+		return Stream.of(
+			Arguments.of("classpath:custom/path", AnnotatedTestClass.class, "custom/path/"),
+			Arguments.of("src/test/resources", AnnotatedTestClass.class, "TestClass/"),
+			Arguments.of("src/test/resources", NonAnnotatedTestClass.class, "src/test/resources/"),
+			Arguments.of("src/test/resources", AnnotatedWithClasspathPrefix.class, "TestWithPrefix/"),
+			Arguments.of("src/test/resources", AnnotatedWithLeadingSlash.class, "LeadingSlashTest/"),
+			Arguments.of("src/test/resources", AnnotatedWithTrailingSlash.class, "TrailingSlashTest/"),
+			Arguments.of("", NonAnnotatedTestClass.class, ""),
+			Arguments.of("src\\test\\resources", AnnotatedTestClass.class, "TestClass/"),
+			Arguments.of("classpath:custom\\path\\to\\files", AnnotatedTestClass.class, "custom/path/to/files/"));
 	}
 
 	@ParameterizedTest

@@ -9,9 +9,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.problem.Problem;
-import se.sundsvall.dept44.problem.Status;
-import se.sundsvall.dept44.problem.StatusType;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.json.JsonMapper;
@@ -106,7 +105,7 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 			.collect(Collectors.joining(", "));
 
 		return Problem.builder()
-			.withStatus(cvpResponse.status() != null ? Status.valueOf(cvpResponse.status()) : null)
+			.withStatus(cvpResponse.status() != null ? HttpStatus.valueOf(cvpResponse.status()) : null)
 			.withTitle(cvpResponse.title() != null ? cvpResponse.title() : "Constraint Violation")
 			.withDetail(violationsString)
 			.build();
@@ -157,8 +156,8 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 		}
 
 		@Override
-		public StatusType getStatus() {
-			return status != null ? Status.valueOf(status) : null;
+		public HttpStatus getStatus() {
+			return status != null ? HttpStatus.valueOf(status) : null;
 		}
 
 		public void setStatus(final Integer status) {

@@ -132,7 +132,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CallNotPermittedException.class)
 	@ResponseBody
 	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception) {
-		final var problem = Problem.valueOf(Status.SERVICE_UNAVAILABLE, exception.getMessage());
+		final var problem = Problem.valueOf(SERVICE_UNAVAILABLE, exception.getMessage());
 
 		return ResponseEntity
 			.status(SERVICE_UNAVAILABLE)

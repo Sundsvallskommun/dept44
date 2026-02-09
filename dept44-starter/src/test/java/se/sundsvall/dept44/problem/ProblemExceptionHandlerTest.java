@@ -141,7 +141,7 @@ class ProblemExceptionHandlerTest {
 
 		final var body = response.getBody();
 		assertThat(body).isNotNull();
-		assertThat(body.getStatus()).isEqualTo(Status.SERVICE_UNAVAILABLE);
+		assertThat(body.getStatus()).isEqualTo(SERVICE_UNAVAILABLE);
 		assertThat(body.getTitle()).isEqualTo("Service Unavailable");
 		assertThat(body.getDetail()).isEqualTo("CircuitBreaker 'petstore' is OPEN");
 	}

@@ -5,7 +5,7 @@
 			"failedCalls": 5,
 			"failureRate": "100.0%",
 			"failureRateThreshold": "50.0%",
-			"notPermittedCalls": "${json-unit.any-number}",
+			"notPermittedCalls": 2,
 			"slowCallRate": "0.0%",
 			"slowCallRateThreshold": "100.0%",
 			"slowCalls": 0,

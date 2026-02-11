@@ -33,6 +33,7 @@
 	</scm>
 	<properties>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
+		<maven.deploy.skip>true</maven.deploy.skip>
 		<maven.source.skip>false</maven.source.skip>
 		<maven.javadoc.skip>false</maven.javadoc.skip>
 	</properties>

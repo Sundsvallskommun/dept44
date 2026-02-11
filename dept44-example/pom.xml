@@ -9,7 +9,6 @@
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>dept44-example</artifactId>
-	<version>1.0</version>
 	<name>dept44-example</name>
 	<description>Example implementation</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>

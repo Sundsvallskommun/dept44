@@ -17,13 +17,20 @@ import org.wiremock.spring.EnableWireMock;
 
 /**
  * Autoconfigure WireMock on a dynamic/random port, loading mappings from the classpath using the provided value(s).
+ *
+ * <p>
+ * <b>Annotation ordering matters:</b> {@code @SpringBootTest} must be declared before {@code @EnableWireMock}
+ * so that {@code SpringExtension.beforeEach()} runs before {@code WireMockSpringJunitExtension.beforeEach()}.
+ * This ensures that {@code @DirtiesContext} recreates the Spring context (and its WireMock server) before
+ * {@code @InjectWireMock} resolves the server reference. Reversing the order causes a stale server reference
+ * after context recreation.
  */
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @ConfigureWireMock
-@EnableWireMock
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@EnableWireMock
 @AutoConfigureTestRestTemplate
 @AutoConfigureWebTestClient
 @ActiveProfiles("it")

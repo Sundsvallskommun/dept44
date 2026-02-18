@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-import static jakarta.validation.constraints.Pattern.Flag.CASE_INSENSITIVE;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.ArrayList;
@@ -10,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import static jakarta.validation.constraints.Pattern.Flag.CASE_INSENSITIVE;
 
 @Validated
 @ConfigurationProperties(prefix = "openapi")

@@ -1,8 +1,5 @@
 package se.sundsvall.petinventory.service.mapper;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-
 import generated.swagger.io.petstore.Pet;
 import generated.swagger.io.petstore.TypeEnum;
 import java.util.List;
@@ -11,6 +8,9 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
 import se.sundsvall.petinventory.api.model.PetImage;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class PetInventoryMapperTest {
 

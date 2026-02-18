@@ -1,11 +1,11 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static java.util.Objects.nonNull;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-
 import feign.Response;
 import java.util.regex.Pattern;
 import org.apache.hc.core5.http.HttpHeaders;
+
+import static java.util.Objects.nonNull;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 public class WSO2RetryResponseVerifier implements RetryResponseVerifier {
 

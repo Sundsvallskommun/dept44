@@ -1,5 +1,9 @@
 package se.sundsvall.dept44.models.api.paging;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
+
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
@@ -10,10 +14,6 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.Sort;
 
 class AbstractParameterPagingAndSortingBaseTest {
 

@@ -18,6 +18,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
+
 @Mojo(name = "check-openapi-properties", defaultPhase = LifecyclePhase.INITIALIZE)
 public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 

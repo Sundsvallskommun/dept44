@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.security;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.SSLContext;
@@ -11,6 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 class TruststoreTest {
 

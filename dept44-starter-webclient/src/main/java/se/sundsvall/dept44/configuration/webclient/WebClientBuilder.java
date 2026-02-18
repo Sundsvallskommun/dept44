@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
-
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -31,6 +27,10 @@ import org.zalando.logbook.netty.LogbookClientHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import se.sundsvall.dept44.configuration.Constants;
+
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
 public class WebClientBuilder {
 

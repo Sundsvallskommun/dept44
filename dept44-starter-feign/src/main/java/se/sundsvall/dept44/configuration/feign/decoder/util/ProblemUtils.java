@@ -1,12 +1,12 @@
 package se.sundsvall.dept44.configuration.feign.decoder.util;
 
-import static java.util.stream.Collectors.joining;
-
 import java.util.List;
 import java.util.Optional;
 import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
+
+import static java.util.stream.Collectors.joining;
 
 public final class ProblemUtils {
 

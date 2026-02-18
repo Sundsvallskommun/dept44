@@ -1,12 +1,5 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
-import static java.util.HashSet.newHashSet;
-import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
-
 import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPException;
@@ -44,6 +37,13 @@ import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultF
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
 import se.sundsvall.dept44.support.BasicAuthentication;
+
+import static java.util.HashSet.newHashSet;
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
 public class WebServiceTemplateBuilder {
 

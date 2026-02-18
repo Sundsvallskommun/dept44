@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +15,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.zalando.problem.Status;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AccessDeniedExceptionHandler;
 import se.sundsvall.dept44.authorization.configuration.UnauthorizedExceptionHandlerConfiguration.AuthenticationCredentialsNotFoundExceptionHandler;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 class UnauthorizedExceptionHandlerConfigurationTest {
 

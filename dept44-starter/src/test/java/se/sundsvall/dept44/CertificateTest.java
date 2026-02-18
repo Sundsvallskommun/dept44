@@ -1,8 +1,5 @@
 package se.sundsvall.dept44;
 
-import static java.util.Calendar.MONTH;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.cert.CertificateFactory;
@@ -15,6 +12,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.core.io.ClassPathResource;
+
+import static java.util.Calendar.MONTH;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CertificateTest {
 

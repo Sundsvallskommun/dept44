@@ -1,10 +1,5 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.InstanceOfAssertFactories.ARRAY;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -23,6 +18,11 @@ import org.zalando.logbook.Logbook;
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.support.BasicAuthentication;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.InstanceOfAssertFactories.ARRAY;
 
 @ExtendWith(MockitoExtension.class)
 class WebServiceTemplateBuilderTest {

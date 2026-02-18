@@ -1,16 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static feign.Request.HttpMethod.GET;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.dept44.configuration.feign.decoder.WSO2RetryResponseVerifierTest.WSO2_TOKEN_EXPIRE_HEADER_ERROR;
-
 import feign.Request;
 import feign.RequestTemplate;
 import feign.Response;
@@ -34,6 +23,17 @@ import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
+
+import static feign.Request.HttpMethod.GET;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.configuration.feign.decoder.WSO2RetryResponseVerifierTest.WSO2_TOKEN_EXPIRE_HEADER_ERROR;
 
 @ExtendWith(ResourceLoaderExtension.class)
 class JsonPathErrorDecoderTest {

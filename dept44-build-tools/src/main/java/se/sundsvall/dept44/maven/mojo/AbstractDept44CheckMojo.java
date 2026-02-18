@@ -1,14 +1,14 @@
 package se.sundsvall.dept44.maven.mojo;
 
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+
+import static java.lang.System.lineSeparator;
+import static java.util.stream.Collectors.joining;
 
 abstract class AbstractDept44CheckMojo extends AbstractMojo {
 

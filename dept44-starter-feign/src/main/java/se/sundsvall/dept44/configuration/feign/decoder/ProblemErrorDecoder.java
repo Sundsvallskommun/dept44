@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static se.sundsvall.dept44.configuration.feign.decoder.util.ProblemUtils.toProblem;
-
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import feign.Response;
 import feign.RetryableException;
@@ -13,6 +10,9 @@ import org.zalando.problem.Problem;
 import org.zalando.problem.jackson.ProblemModule;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.ConstraintViolationProblemModule;
+
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static se.sundsvall.dept44.configuration.feign.decoder.util.ProblemUtils.toProblem;
 
 /**
  * A Problem ErrorDecoder that allows you to process an Problem-based error response.

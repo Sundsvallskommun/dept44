@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.authorization.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -15,6 +12,9 @@ import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(ResourceLoaderExtension.class)
 class JwtTokenUtilTest {

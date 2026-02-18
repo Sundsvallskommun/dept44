@@ -1,12 +1,5 @@
 package se.sundsvall.dept44.security;
 
-import static java.security.KeyStore.getDefaultType;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm;
-import static org.springframework.util.CollectionUtils.isEmpty;
-
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -25,6 +18,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+import static java.security.KeyStore.getDefaultType;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 /**
  * A class that will scan the provided path for certificates and add them in an in-memory trust store.

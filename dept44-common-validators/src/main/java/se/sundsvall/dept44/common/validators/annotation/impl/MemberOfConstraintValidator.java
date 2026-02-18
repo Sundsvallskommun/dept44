@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.common.validators.annotation.impl;
 
-import static java.util.Comparator.nullsLast;
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toCollection;
-import static org.springframework.util.ReflectionUtils.findMethod;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
@@ -17,6 +11,12 @@ import java.util.function.Supplier;
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
 import se.sundsvall.dept44.common.validators.annotation.MemberOf;
 import se.sundsvall.dept44.common.validators.annotation.OneOf;
+
+import static java.util.Comparator.nullsLast;
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
+import static org.springframework.util.ReflectionUtils.findMethod;
 
 /**
  * Defines the logic to validate that a string matches a member of a given enum class.

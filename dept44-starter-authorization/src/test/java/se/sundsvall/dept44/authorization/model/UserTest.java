@@ -1,11 +1,11 @@
 package se.sundsvall.dept44.authorization.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class UserTest {
 

@@ -1,14 +1,14 @@
 package se.sundsvall.dept44.support;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import static com.google.common.base.CaseFormat.LOWER_CAMEL;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.StringUtils.hasText;
 import static se.sundsvall.dept44.support.Identifier.Type.CUSTOM;
-
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Class for managing identifier metadata in a thread-local context.

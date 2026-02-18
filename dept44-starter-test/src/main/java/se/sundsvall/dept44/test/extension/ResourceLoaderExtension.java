@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.test.extension;
 
-import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -18,6 +16,8 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import se.sundsvall.dept44.test.annotation.resource.Load;
+
+import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
 /**
  * Extension to facilitate resource loading in tests - used in conjunction with the

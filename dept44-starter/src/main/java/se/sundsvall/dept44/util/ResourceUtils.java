@@ -1,15 +1,15 @@
 package se.sundsvall.dept44.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.springframework.util.FileCopyUtils.copyToString;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import org.springframework.core.io.Resource;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.springframework.util.FileCopyUtils.copyToString;
 
 public final class ResourceUtils {
 

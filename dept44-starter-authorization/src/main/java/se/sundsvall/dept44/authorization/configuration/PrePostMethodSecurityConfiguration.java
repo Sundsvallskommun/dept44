@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import static org.springframework.util.Assert.hasText;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +8,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+
+import static org.springframework.util.Assert.hasText;
 
 @Configuration
 @EnableMethodSecurity

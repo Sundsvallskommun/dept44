@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
@@ -9,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = ObjectMapperConfiguration.class)
 class ObjectMapperConfigurationTest {

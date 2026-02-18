@@ -1,11 +1,5 @@
 package se.sundsvall.petinventory.integration.db;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.assertj.core.api.Assertions.within;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +7,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * PetNameRepository tests

@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
-
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -12,6 +8,10 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Model class to use when returning paged result with sorting. Should be added in root of response under attribute

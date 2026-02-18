@@ -1,7 +1,5 @@
 package se.sundsvall.dept44;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -18,6 +16,8 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.twdata.maven.mojoexecutor.MojoExecutor;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AbstractFormatMojo extends AbstractMojo {
 

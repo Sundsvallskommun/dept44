@@ -1,7 +1,5 @@
 package se.sundsvall.petinventory.integration.db.model;
 
-import static org.hibernate.Length.LONG32;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -19,6 +17,8 @@ import java.util.Objects;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import se.sundsvall.petinventory.integration.db.model.listener.PetImageEntityListener;
+
+import static org.hibernate.Length.LONG32;
 
 @Entity
 @Table(name = "pet_image")

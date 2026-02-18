@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.authorization.model;
 
-import static java.util.Objects.isNull;
-import static org.springframework.util.Assert.hasText;
-
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
@@ -10,6 +7,9 @@ import java.util.Objects;
 import net.minidev.json.JSONArray;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
+
+import static java.util.Objects.isNull;
+import static org.springframework.util.Assert.hasText;
 
 public class GenericGrantedAuthority implements GrantedAuthority {
 

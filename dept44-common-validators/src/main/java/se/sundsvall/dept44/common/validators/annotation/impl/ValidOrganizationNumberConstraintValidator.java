@@ -1,14 +1,14 @@
 package se.sundsvall.dept44.common.validators.annotation.impl;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static org.springframework.util.ReflectionUtils.findMethod;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
 import se.sundsvall.dept44.common.validators.annotation.ValidOrganizationNumber;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static org.springframework.util.ReflectionUtils.findMethod;
 
 /**
  * Defines the logic to validate that a string is a valid organization number.

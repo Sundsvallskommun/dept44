@@ -1,14 +1,5 @@
 package se.sundsvall.dept44.authorization;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.CompressionException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -45,6 +36,15 @@ import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthorizationExtractionFilterTest {

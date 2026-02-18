@@ -1,14 +1,14 @@
 package se.sundsvall.dept44.problem;
 
+import java.net.URI;
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-
-import java.net.URI;
-import org.junit.jupiter.api.Test;
 
 class ProblemTest {
 

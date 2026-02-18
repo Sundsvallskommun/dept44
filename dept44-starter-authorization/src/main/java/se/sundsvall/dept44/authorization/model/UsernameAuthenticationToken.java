@@ -1,12 +1,12 @@
 package se.sundsvall.dept44.authorization.model;
 
-import static java.util.Collections.emptyList;
-import static org.springframework.util.Assert.isTrue;
-
 import java.util.Collection;
 import java.util.Objects;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+
+import static java.util.Collections.emptyList;
+import static org.springframework.util.Assert.isTrue;
 
 /**
  * An {@link org.springframework.security.core.Authentication} implementation that is designed for simple presentation

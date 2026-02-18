@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
 import feign.Request;
 import feign.Response;
 import feign.codec.Decoder;
@@ -15,6 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.InputStreamResource;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class BinaryAwareDecoderTest {
 

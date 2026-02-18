@@ -1,12 +1,12 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import se.sundsvall.dept44.problem.ProblemExceptionHandler;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ProblemConfigurationTest {
 

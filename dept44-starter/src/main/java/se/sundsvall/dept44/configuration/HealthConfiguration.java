@@ -1,16 +1,16 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.springframework.boot.health.contributor.Status.DOWN;
-import static org.springframework.boot.health.contributor.Status.OUT_OF_SERVICE;
-import static org.springframework.boot.health.contributor.Status.UNKNOWN;
-import static org.springframework.boot.health.contributor.Status.UP;
-
 import java.util.Set;
 import org.springframework.boot.health.actuate.endpoint.StatusAggregator;
 import org.springframework.boot.health.contributor.Status;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+
+import static org.springframework.boot.health.contributor.Status.DOWN;
+import static org.springframework.boot.health.contributor.Status.OUT_OF_SERVICE;
+import static org.springframework.boot.health.contributor.Status.UNKNOWN;
+import static org.springframework.boot.health.contributor.Status.UP;
 
 @Configuration
 public class HealthConfiguration {

@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.util;
 
-import static java.util.Comparator.comparing;
-import static org.apache.commons.lang3.StringUtils.upperCase;
-import static org.springframework.util.ResourceUtils.getURL;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.dataformat.yaml.YAMLMapper;
+
+import static java.util.Comparator.comparing;
+import static org.apache.commons.lang3.StringUtils.upperCase;
+import static org.springframework.util.ResourceUtils.getURL;
 
 public final class MunicipalityUtils {
 

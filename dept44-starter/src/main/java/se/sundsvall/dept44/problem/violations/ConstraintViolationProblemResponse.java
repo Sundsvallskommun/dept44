@@ -1,11 +1,11 @@
 package se.sundsvall.dept44.problem.violations;
 
-import static java.util.Optional.ofNullable;
-
 import java.util.Collections;
 import java.util.List;
 import se.sundsvall.dept44.problem.ProblemResponse;
 import tools.jackson.databind.annotation.JsonDeserialize;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * A ProblemResponse that includes constraint violations. This class is used for JSON serialization of

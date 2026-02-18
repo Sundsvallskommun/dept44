@@ -1,18 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
-import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +33,19 @@ import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
 @ExtendWith(MockitoExtension.class)
 class WebConfigurationTest {

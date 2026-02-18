@@ -87,7 +87,6 @@
 		<lombok.version>1.18.42</lombok.version>
 		<spotbugs-annotations.version>4.9.7</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
-		<testcontainers.version>2.0.3</testcontainers.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
 		<coverage.branch.level>0.50</coverage.branch.level>
@@ -97,19 +96,6 @@
 	</properties>
 	<dependencyManagement>
 		<dependencies>
-			<!-- Testcontainers BOM -->
-			<dependency>
-				<groupId>org.testcontainers</groupId>
-				<artifactId>testcontainers-bom</artifactId>
-				<version>${testcontainers.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.testcontainers</groupId>
-				<artifactId>testcontainers-mariadb</artifactId>
-				<version>${testcontainers.version}</version>
-			</dependency>
 			<!-- Spring Boot dependencies BOM -->
 			<dependency>
 				<groupId>org.springframework.boot</groupId>

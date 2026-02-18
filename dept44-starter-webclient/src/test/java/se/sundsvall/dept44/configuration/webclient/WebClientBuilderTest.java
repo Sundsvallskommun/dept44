@@ -1,14 +1,5 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-
 import io.netty.channel.ChannelOption;
 import java.time.Duration;
 import java.util.Set;
@@ -29,6 +20,15 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import reactor.core.publisher.Mono;
 import se.sundsvall.dept44.problem.Problem;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
 class WebClientBuilderTest {

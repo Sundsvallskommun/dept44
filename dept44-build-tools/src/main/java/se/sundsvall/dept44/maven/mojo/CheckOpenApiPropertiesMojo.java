@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.maven.mojo;
 
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.FileInputStream;

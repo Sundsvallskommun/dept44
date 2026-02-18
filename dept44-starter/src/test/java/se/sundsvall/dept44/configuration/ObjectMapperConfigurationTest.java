@@ -1,12 +1,12 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import tools.jackson.dataformat.yaml.YAMLMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for ObjectMapperConfiguration.

@@ -1,13 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
-
 import feign.Response;
 import feign.RetryableException;
 import feign.codec.ErrorDecoder;
@@ -25,6 +17,14 @@ import org.springframework.http.HttpStatus.Series;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.problem.Problem;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 
 /**
  * The base error decoder.

@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.test.extension;
 
-import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,6 +14,8 @@ import org.junit.platform.commons.util.AnnotationUtils;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.xml.XmlMapper;
+
+import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
 /**
  * Extension to facilitate resource loading in tests - used in conjunction with the {@link Load} annotation on test

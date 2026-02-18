@@ -1,8 +1,8 @@
 package se.sundsvall.dept44.test.annotation.wiremock;
 
-import static java.util.Objects.nonNull;
-
 import com.github.tomakehurst.wiremock.WireMockServer;
+
+import static java.util.Objects.nonNull;
 
 /**
  * Resolves the WireMock files path for test classes using {@link WireMockAppTestSuite}.

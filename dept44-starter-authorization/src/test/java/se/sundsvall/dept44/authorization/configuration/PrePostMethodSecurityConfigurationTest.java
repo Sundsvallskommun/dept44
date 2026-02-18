@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
-
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +14,9 @@ import org.springframework.util.ReflectionUtils;
 import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
 import tools.jackson.databind.json.JsonMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
 @ExtendWith(MockitoExtension.class)
 class PrePostMethodSecurityConfigurationTest {

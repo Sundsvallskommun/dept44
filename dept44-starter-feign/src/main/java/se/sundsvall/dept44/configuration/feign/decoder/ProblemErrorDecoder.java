@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-
 import feign.Response;
 import feign.RetryableException;
 import jakarta.annotation.Nonnull;
@@ -14,6 +12,8 @@ import se.sundsvall.dept44.problem.Problem;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.json.JsonMapper;
+
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /**
  * A Problem ErrorDecoder that allows you to process a Problem-based error response.

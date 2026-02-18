@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.configuration.feign.decoder.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.dept44.problem.ThrowableProblem;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 class ProblemUtilsTest {
 

@@ -1,12 +1,5 @@
 package se.sundsvall.dept44.configuration.feign;
 
-import static feign.Logger.Level.FULL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.http.MediaType.ALL;
-
 import feign.QueryMapEncoder;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
@@ -31,6 +24,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.zalando.logbook.Logbook;
 import se.sundsvall.dept44.security.Truststore;
 import tools.jackson.databind.json.JsonMapper;
+
+import static feign.Logger.Level.FULL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.http.MediaType.ALL;
 
 @SpringBootTest(classes = {
 	FeignConfiguration.class,

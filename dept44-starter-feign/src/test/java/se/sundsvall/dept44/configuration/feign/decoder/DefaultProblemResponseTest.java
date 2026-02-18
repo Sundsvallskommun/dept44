@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.configuration.feign.decoder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 import java.net.URI;
 import org.junit.jupiter.api.Test;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder.DefaultProblemResponse;
 import se.sundsvall.dept44.problem.Problem;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 class DefaultProblemResponseTest {
 

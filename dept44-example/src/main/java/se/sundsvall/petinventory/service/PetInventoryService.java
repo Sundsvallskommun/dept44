@@ -1,10 +1,5 @@
 package se.sundsvall.petinventory.service;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetImages;
-
 import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
@@ -16,6 +11,11 @@ import se.sundsvall.petinventory.integration.db.PetNameRepository;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 import se.sundsvall.petinventory.integration.petstore.PetStoreClient;
 import se.sundsvall.petinventory.service.mapper.PetInventoryMapper;
+
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetImages;
 
 @Service
 public class PetInventoryService {

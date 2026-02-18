@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>7.0.1-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
+	</parent>
+	<artifactId>dept44-starter-authorization</artifactId>
+	<name>dept44-starter-authorization</name>
+	<description>Adds authorization handling utilities and pre-configured security settings.</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
+	<dependencies>
+		<!-- Framework -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<!-- Module dependencies -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>${jsonwebtoken.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>${jsonwebtoken.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-gson</artifactId>
+			<version>${jsonwebtoken.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- Test -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>${argLine}</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<phase>test</phase>
+					</execution>
+					<execution>
+						<id>check-coverage-metrics</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<phase>verify</phase>
+						<configuration>
+							<!-- Tell jacoco which file to analyze -->
+							<dataFile>${project.build.directory}/jacoco.exec</dataFile>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.line.level}</minimum>
+										</limit>
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${coverage.branch.level}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

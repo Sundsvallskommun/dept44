@@ -3,8 +3,7 @@ package se.sundsvall.dept44.scheduling.health;
 import java.util.Iterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.actuate.health.HealthContributor;
-import org.springframework.boot.actuate.health.NamedContributor;
+import org.springframework.boot.health.contributor.HealthContributors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,13 +62,13 @@ class Dept44CompositeHealthContributorTest {
 		final var indicator = healthContributor.getOrCreateIndicator(methodName);
 
 		// act
-		final Iterator<NamedContributor<HealthContributor>> iterator = healthContributor.iterator();
+		final Iterator<HealthContributors.Entry> iterator = healthContributor.iterator();
 
 		// assert
 		assertThat(iterator).isNotNull();
 		assertThat(iterator.hasNext()).isTrue();
 		final var namedContributor = iterator.next();
-		assertThat(namedContributor.getName()).isEqualTo(methodName);
-		assertThat(namedContributor.getContributor()).isEqualTo(indicator);
+		assertThat(namedContributor.name()).isEqualTo(methodName);
+		assertThat(namedContributor.contributor()).isEqualTo(indicator);
 	}
 }

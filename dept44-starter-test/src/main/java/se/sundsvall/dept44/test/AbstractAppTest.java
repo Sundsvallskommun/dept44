@@ -1,16 +1,15 @@
 package se.sundsvall.dept44.test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
+import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,7 +30,7 @@ import net.javacrumbs.jsonunit.core.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -44,6 +43,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
+import org.wiremock.spring.InjectWireMock;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockPathResolver;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 import wiremock.com.github.jknack.handlebars.Handlebars;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
@@ -68,7 +72,7 @@ public abstract class AbstractAppTest {
 	private static final String FILES_DIR = "__files/";
 	private static final String COMMON_MAPPING_DIR = "/common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
-	private static final ObjectMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
@@ -77,7 +81,7 @@ public abstract class AbstractAppTest {
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 	@Autowired
 	protected TestRestTemplate restTemplate;
-	@Autowired
+	@InjectWireMock
 	protected WireMockServer wiremock;
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
@@ -98,6 +102,19 @@ public abstract class AbstractAppTest {
 	private Map<String, String> headerValues;
 	private String testDirectoryPath;
 	private String testCaseName;
+
+	private static StubMapping updateStubWithResponse(final StubMapping stub, final ResponseDefinition newResponse) {
+		final var updatedStub = new StubMapping(stub.getRequest(), newResponse);
+		updatedStub.setUuid(stub.getUuid());
+		updatedStub.setName(stub.getName());
+		updatedStub.setPriority(stub.getPriority());
+		updatedStub.setScenarioName(stub.getScenarioName());
+		updatedStub.setRequiredScenarioState(stub.getRequiredScenarioState());
+		updatedStub.setNewScenarioState(stub.getNewScenarioState());
+		updatedStub.setPostServeActions(stub.getPostServeActions());
+		updatedStub.setMetadata(stub.getMetadata());
+		return updatedStub;
+	}
 
 	public AbstractAppTest reset() {
 		expectedResponseBodyIsNull = false;
@@ -123,15 +140,9 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest setupPaths() {
-		// Fetch test case name.
 		testCaseName = getTestMethodName();
-
-		mappingPath = wiremock.getOptions().filesRoot().getPath();
-		if (!mappingPath.endsWith("/")) {
-			mappingPath += "/";
-		}
-
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + getTestMethodName() + FileSystems.getDefault().getSeparator();
+		mappingPath = WireMockPathResolver.resolveMappingPath(wiremock, getClass());
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + testCaseName + FileSystems.getDefault().getSeparator();
 
 		return this;
 	}
@@ -141,14 +152,108 @@ public abstract class AbstractAppTest {
 		initializeJsonAssert();
 		setupPaths();
 
+		// Load common mappings and test-specific mappings
+		final String commonMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY);
 		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY)));
+			new ClasspathFileSource(commonMappingsPath), null));
 		if (nonNull(testCaseName)) {
+			final String testMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY);
 			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY)));
+				new ClasspathFileSource(testMappingsPath), null));
 		}
 
+		// Resolve bodyFileName references to inline body content
+		// This is a workaround for wiremock-spring-boot not properly configuring the file source
+		// when @ConfigureWireMock is used as a meta-annotation
+		resolveBodyFileNames();
+
 		return this;
+	}
+
+	/**
+	 * Resolves bodyFileName references in stub mappings to inline body content.
+	 * <p>
+	 * This is necessary because wiremock-spring-boot doesn't properly configure the file source (blob store)
+	 * when @ConfigureWireMock is used as a meta-annotation. The file source defaults to src/test/resources instead of the
+	 * path specified in
+	 *
+	 * @WireMockAppTestSuite.
+	 * </p>
+	 */
+	private void resolveBodyFileNames() {
+		final String filesBasePath = "classpath:" + mappingPath + FILES_DIR;
+
+		wiremock.listAllStubMappings().getMappings().stream()
+			.filter(stub -> nonNull(stub.getResponse()) && nonNull(stub.getResponse().getBodyFileName()))
+			.forEach(stub -> {
+				final var bodyFileName = stub.getResponse().getBodyFileName();
+				final var bodyContent = readBodyFile(filesBasePath, bodyFileName);
+
+				if (nonNull(bodyContent)) {
+					// Create a new response definition with inline body instead of bodyFileName
+					final var originalResponse = stub.getResponse();
+					final var responseBuilder = new ResponseDefinitionBuilder()
+						.withStatus(originalResponse.getStatus())
+						.withBody(bodyContent);
+
+					// Copy other response properties
+					if (nonNull(originalResponse.getHeaders())) {
+						originalResponse.getHeaders().all().forEach(
+							header -> responseBuilder.withHeader(header.key(), header.values().toArray(new String[0])));
+					}
+					if (nonNull(originalResponse.getFixedDelayMilliseconds())) {
+						responseBuilder.withFixedDelay(originalResponse.getFixedDelayMilliseconds());
+					}
+					if (nonNull(originalResponse.getDelayDistribution())) {
+						responseBuilder.withRandomDelay(originalResponse.getDelayDistribution());
+					}
+					if (nonNull(originalResponse.getFault())) {
+						responseBuilder.withFault(originalResponse.getFault());
+					}
+					if (nonNull(originalResponse.getTransformers()) && !originalResponse.getTransformers().isEmpty()) {
+						responseBuilder.withTransformers(originalResponse.getTransformers().toArray(new String[0]));
+					}
+
+					final var newResponse = responseBuilder.build();
+
+					// Create updated stub mapping
+					final var updatedStub = updateStubWithResponse(stub, newResponse);
+
+					// Replace the stub
+					wiremock.removeStub(stub);
+					wiremock.addStubMapping(updatedStub);
+
+					logger.debug("Resolved bodyFileName '{}' to inline content for stub '{}'", bodyFileName, stub.getName());
+				} else {
+					logger.warn("Could not resolve bodyFileName '{}' for stub '{}'. File not found in classpath.",
+						bodyFileName, stub.getName());
+				}
+			});
+	}
+
+	/**
+	 * Reads a body file from the classpath.
+	 *
+	 * @param  basePath     the base classpath path (e.g., "classpath: TestClass/__files/")
+	 * @param  bodyFileName the body file name from the stub mapping
+	 * @return              the file content as a string, or null if not found
+	 */
+	private String readBodyFile(final String basePath, final String bodyFileName) {
+		// Try the file path as-is first (for paths like "common/responses/file.json")
+		var content = fromFile(basePath + bodyFileName);
+		if (nonNull(content)) {
+			return content;
+		}
+
+		// Try with the test case name prefix (for paths like "testName/response/file.json")
+		if (nonNull(testCaseName)) {
+			content = fromFile(basePath + testCaseName + "/" + bodyFileName);
+			if (nonNull(content)) {
+				return content;
+			}
+		}
+
+		return null;
 	}
 
 	public AbstractAppTest withExtensions(final Extension... extensions) {
@@ -185,7 +290,7 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Set expected response header.
+	 * Set the expected response header.
 	 *
 	 * @param  expectedHeaderKey   the expected header key.
 	 * @param  expectedHeaderValue the list of expected header values, as regular expressions.
@@ -202,7 +307,7 @@ public abstract class AbstractAppTest {
 	/**
 	 * Method takes a JSON response string or a file name where the response can be read from.
 	 *
-	 * @param  expectedResponse raw json response string or filename where the response can be read from
+	 * @param  expectedResponse raw JSON response string or filename where the response can be read from
 	 * @return                  AbstractAppTest
 	 */
 	public AbstractAppTest withExpectedResponse(final String expectedResponse) {
@@ -221,7 +326,7 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  expectedResponseFile the filename where the binary response can be read from.
 	 * @return                      AbstractAppTest
-	 * @throws IOException          if file can't be read.
+	 * @throws IOException          if a file can't be read.
 	 */
 	public AbstractAppTest withExpectedBinaryResponse(final String expectedResponseFile) throws IOException {
 		final var file = ResourceUtils.getFile(testDirectoryPath + expectedResponseFile);
@@ -247,12 +352,12 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Method adds options to be used when assertion of json is done, for example IGNORING_EXTRA_ARRAY_ITEMS. By default,
-	 * the test will compare arrays with option to ignore array order. If the need to use maximum strictness in JsonAssert -
-	 * send in null or
-	 * an empty list to just reset options to JsonAsserts default ones.
+	 * Method adds options to be used when assertion of JSON is done, for example, IGNORING_EXTRA_ARRAY_ITEMS. By default,
+	 * the test will compare arrays with an option to ignore array order. If they need to use maximum strictness in
+	 * JsonAssert - send in
+	 * null or an empty list to just reset options to JsonAsserts default ones.
 	 *
-	 * @param  options list of options to use when doing the json assertion or null/empty list for resetting to JsonAssert
+	 * @param  options list of options to use when doing the JSON assertion or null/empty list for resetting to JsonAssert
 	 *                 defaults (strict comparison)
 	 * @return         AbstractAppTest
 	 */
@@ -291,7 +396,7 @@ public abstract class AbstractAppTest {
 	 * Method replaces sections in request matching sent in string with sent in replacement string. Observe that the
 	 * withRequest method must be called before for this method to have any effect.
 	 *
-	 * @param  matchingString    the string to match in request body
+	 * @param  matchingString    the string to match in the request body
 	 * @param  replacementString the string to replace with
 	 * @return                   AbstractAppTest
 	 */
@@ -348,7 +453,7 @@ public abstract class AbstractAppTest {
 	}
 
 	/**
-	 * Set max verification delay in seconds. I.e. the maximum time to spend while verifying a condition.
+	 * Set max verification delay in seconds. I.e., the maximum time to spend while verifying a condition.
 	 *
 	 * @param  maxVerificationDelayInSeconds the number of seconds that the verification logic will try before failing.
 	 * @return                               AbstractAppTest
@@ -367,14 +472,14 @@ public abstract class AbstractAppTest {
 
 		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
 
-		// Call service and fetch response.
+		// Call service and fetch a response.
 		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
 		responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		responseHeaders = response.getHeaders();
 
 		if (nonNull(expectedResponseHeaders)) {
 			expectedResponseHeaders.forEach((key, value) -> {
-				assertThat(response.getHeaders()).containsKey(key);
+				assertThat(response.getHeaders().get(key)).as("Response should contain header: " + key).isNotNull();
 				assertThat(response.getHeaders().getValuesAsList(key))
 					.allMatch(actualHeaderValue -> value.stream()
 						.allMatch(expectedHeaderValue -> expectedHeaderValue.equalsIgnoreCase(actualHeaderValue) ||
@@ -424,7 +529,7 @@ public abstract class AbstractAppTest {
 	 * @param  clazz the class to map the response body to
 	 * @return       the mapped response
 	 */
-	public <T> T getResponseBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+	public <T> T getResponseBody(final Class<T> clazz) throws JacksonException, ClassNotFoundException {
 		return andReturnBody(clazz);
 	}
 
@@ -435,20 +540,20 @@ public abstract class AbstractAppTest {
 	 * @param  typeReference the type reference to map the response body to
 	 * @return               the mapped response
 	 */
-	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JsonProcessingException {
+	public <T> T getResponseBody(final TypeReference<T> typeReference) throws JacksonException {
 		return andReturnBody(typeReference);
 	}
 
 	/**
 	 * Returns the received server response mapped to the specified class.
 	 *
-	 * @param  <T>                     the type of the response
-	 * @param  clazz                   the class to map the response body to
-	 * @return                         the mapped response
-	 * @throws JsonProcessingException if JSON processing fails
-	 * @throws ClassNotFoundException  if the class is not found
+	 * @param  <T>                    the type of the response
+	 * @param  clazz                  the class to map the response body to
+	 * @return                        the mapped response
+	 * @throws JacksonException       if JSON processing fails
+	 * @throws ClassNotFoundException if the class is not found
 	 */
-	public <T> T andReturnBody(final Class<T> clazz) throws JsonProcessingException, ClassNotFoundException {
+	public <T> T andReturnBody(final Class<T> clazz) throws JacksonException, ClassNotFoundException {
 		return clazz.cast(JSON_MAPPER.readValue(responseBody, forName(clazz.getName())));
 	}
 
@@ -457,9 +562,9 @@ public abstract class AbstractAppTest {
 	 *
 	 * @param  <T>           Response type.
 	 * @param  typeReference the type reference to map response to
-	 * @return               response mapped to given type reference
+	 * @return               response mapped to a given type reference
 	 */
-	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JsonProcessingException {
+	public <T> T andReturnBody(final TypeReference<T> typeReference) throws JacksonException {
 		return JSON_MAPPER.readValue(responseBody, typeReference);
 	}
 
@@ -492,30 +597,30 @@ public abstract class AbstractAppTest {
 		}
 
 		try {
-			var handlebars = new Handlebars();
+			final var handlebars = new Handlebars();
 
 			// Register WireMocks helpers (now, randomValue, etc.)
-			for (var helper : WireMockHelpers.values()) {
+			for (final var helper : WireMockHelpers.values()) {
 				handlebars.registerHelper(helper.name(), helper);
 			}
 
-			var template = handlebars.compileInline(expectedResponseBody);
+			final var template = handlebars.compileInline(expectedResponseBody);
 
-			// Create model for "request"
-			var context = createRequestContext();
+			// Create a model for "request"
+			final var context = createRequestContext();
 
 			return template.apply(context);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new UncheckedIOException("Handlebars rendering failed", e);
 		}
 	}
 
 	private HashMap<String, Object> createRequestContext() {
-		var context = new HashMap<String, Object>();
+		final var context = new HashMap<String, Object>();
 		if (nonNull(requestBody)) {
 			try {
-				// Convert requestBody to map to be able to use dot-notation : {{request.body.field}}
-				var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
+				// Convert requestBody to map to be able to use dot-notation: <code> {{request.body.field}} </code>
+				final var bodyMap = JSON_MAPPER.readValue(requestBody, new TypeReference<Map<String, Object>>() {
 				});
 				context.put("request", Map.of("body", bodyMap));
 			} catch (Exception _) {
@@ -528,12 +633,20 @@ public abstract class AbstractAppTest {
 
 	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {
 		final var httpHeaders = new HttpHeaders();
-		httpHeaders.setContentType(mediaType);
+		// Only set Content-Type when there's a body or method typically requires one.
+		// Spring Boot 4.0 rejects requests with Content-Type but without body.
+		if (nonNull(body) || methodTypicallyHasBody()) {
+			httpHeaders.setContentType(mediaType);
+		}
 		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());
 		if (!isEmpty(headerValues)) {
 			headerValues.forEach(httpHeaders::add);
 		}
 		return new HttpEntity<>(body, httpHeaders);
+	}
+
+	private boolean methodTypicallyHasBody() {
+		return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
 	}
 
 	protected String fromTestFile(final String fileName) {
@@ -543,7 +656,7 @@ public abstract class AbstractAppTest {
 	private String fromFile(final String filePath) {
 		try {
 			return readString(getFile(filePath).toPath());
-		} catch (final IOException e) {
+		} catch (final IOException _) {
 			return null;
 		}
 	}
@@ -557,12 +670,12 @@ public abstract class AbstractAppTest {
 	}
 
 	private void initializeJsonAssert() {
-		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e. 1.0 == 1.000)
+		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e., 1.0 == 1.000)
 		JsonAssert.setOptions(Option.IGNORING_ARRAY_ORDER);
 	}
 
 	/**
-	 * Verifies that all setup stubs setup have been called.
+	 * Verifies that all setup stubs setup has been called.
 	 *
 	 * @return                       true if verification succeeds.
 	 * @throws VerificationException if verification fails
@@ -572,7 +685,7 @@ public abstract class AbstractAppTest {
 		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
 			final var requestPattern = stub.getRequest();
 			wiremock.verify(
-				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern())));
+				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern(), requestPattern.getUrlPathTemplate())));
 		});
 
 		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();

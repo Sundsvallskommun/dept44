@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>7.0.2-SNAPSHOT</version>
+		<version>8.0.0-RC.0</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-test</artifactId>
@@ -36,8 +36,25 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-resttestclient</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webtestclient</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-contract-wiremock</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wiremock.integrations</groupId>
+			<artifactId>wiremock-spring-boot</artifactId>
+			<version>4.0.7</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.bean-matchers</groupId>
@@ -56,18 +73,13 @@
 			<artifactId>json-unit-assertj</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-json</artifactId>
 		</dependency>
 		<dependency>
 			<!-- XML-serialization (used by ResourceLoaderExtension) -->
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<groupId>tools.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-xml</artifactId>
-		</dependency>
-		<dependency>
-			<!-- ObjectMapper/XmlMapper extension to support OffsetDateTime in json/xml (used by ResourceLoaderExtension) -->
-			<groupId>com.fasterxml.jackson.datatype</groupId>
-			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 	</dependencies>
 	<build>

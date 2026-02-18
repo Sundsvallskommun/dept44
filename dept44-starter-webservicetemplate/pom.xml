@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>7.0.2-SNAPSHOT</version>
+		<version>8.0.0-RC.0</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-webservicetemplate</artifactId>
@@ -40,7 +40,7 @@
 		<!-- Module dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web-services</artifactId>
+			<artifactId>spring-boot-starter-webservices</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.zalando</groupId>

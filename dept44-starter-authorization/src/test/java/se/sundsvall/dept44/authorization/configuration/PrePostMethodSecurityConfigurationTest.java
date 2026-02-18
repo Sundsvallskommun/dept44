@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +13,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.ReflectionUtils;
 import se.sundsvall.dept44.authorization.JwtAuthorizationExtractionFilter;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
@@ -49,7 +49,7 @@ class PrePostMethodSecurityConfigurationTest {
 		@Mock JwtTokenUtil jwtTokenUtil,
 		@Mock WebAuthenticationDetailsSource webAuthenticationDetailsSource,
 		@Mock ApplicationContext applicationContext,
-		@Mock ObjectMapper objectMapper) {
+		@Mock JsonMapper jsonMapper) {
 
 		final var secret = "secret";
 		final JwtAuthorizationProperties jwtAuthorizationProperties = new JwtAuthorizationProperties();
@@ -57,7 +57,7 @@ class PrePostMethodSecurityConfigurationTest {
 
 		final PrePostMethodSecurityConfiguration configuration = new PrePostMethodSecurityConfiguration();
 
-		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, objectMapper))
+		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, jsonMapper))
 			.isNotNull().isInstanceOf(JwtAuthorizationExtractionFilter.class);
 		assertThat(configuration.webAuthenticationDetailsSource()).isNotNull().isInstanceOf(WebAuthenticationDetailsSource.class);
 		assertThat(configuration.jwtTokenUtil(jwtAuthorizationProperties)).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());

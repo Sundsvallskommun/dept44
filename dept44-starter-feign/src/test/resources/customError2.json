@@ -2,6 +2,6 @@
 	"errorMessage": "This is a custom error",
 	"extraInfo": {
 		"details": "This is details",
-		"status": "418 I'm a teapot"
+		"status": "409 Conflict"
 	}
 }

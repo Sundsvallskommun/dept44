@@ -12,10 +12,10 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
 
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
-import static org.zalando.problem.Status.UNAUTHORIZED;
 
 @Configuration
 @ConditionalOnProperty(name = "jwt.authorization.secret")

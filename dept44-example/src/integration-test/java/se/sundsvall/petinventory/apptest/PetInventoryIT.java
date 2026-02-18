@@ -11,9 +11,13 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
@@ -28,6 +32,16 @@ import se.sundsvall.petinventory.Application;
 	"/db/scripts/testdata-it.sql"
 })
 class PetInventoryIT extends AbstractAppTest {
+
+	@Autowired
+	private CircuitBreakerRegistry circuitBreakerRegistry;
+
+	@BeforeEach
+	void resetCircuitBreaker() {
+		// Reset all circuit breakers to ensure a clean state for each test
+		circuitBreakerRegistry.getAllCircuitBreakers()
+			.forEach(CircuitBreaker::reset);
+	}
 
 	@Test
 	void test01_getPetInventoryList() {

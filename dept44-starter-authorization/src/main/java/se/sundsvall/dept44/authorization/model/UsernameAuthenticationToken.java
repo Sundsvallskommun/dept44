@@ -5,11 +5,12 @@ import java.util.Objects;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
+import static java.util.Collections.emptyList;
 import static org.springframework.util.Assert.isTrue;
 
 /**
- * An {@link org.springframework.security.core.Authentication} implementation
- * that is designed for simple presentation of a username.
+ * An {@link org.springframework.security.core.Authentication} implementation that is designed for simple presentation
+ * of a username.
  * <p>
  * The <code>principal</code> and <code>credentials</code> should be set with an
  * <code>Object</code> that provides the respective property via its
@@ -31,8 +32,8 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	 * @param principal   the principal to set.
 	 * @param credentials the credentials to set.
 	 */
-	public UsernameAuthenticationToken(Object principal, Object credentials) {
-		super(null);
+	public UsernameAuthenticationToken(final Object principal, final Object credentials) {
+		super(emptyList());
 		this.principal = principal;
 		this.credentials = credentials;
 		setAuthenticated(false);
@@ -41,14 +42,13 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	/**
 	 * This constructor should only be used by <code>AuthenticationManager</code> or
 	 * <code>AuthenticationProvider</code> implementations that are satisfied with
-	 * producing a trusted (i.e. {@link #isAuthenticated()} = <code>true</code>)
-	 * authentication token.
+	 * producing a trusted (i.e. {@link #isAuthenticated()} = <code>true</code>) authentication token.
 	 *
 	 * @param principal   the principal to set.
 	 * @param credentials the credentials to set.
 	 * @param authorities the authorities to set.
 	 */
-	public UsernameAuthenticationToken(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
+	public UsernameAuthenticationToken(final Object principal, final Object credentials, final Collection<? extends GrantedAuthority> authorities) {
 		super(authorities);
 		this.principal = principal;
 		this.credentials = credentials;
@@ -56,26 +56,26 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	}
 
 	/**
-	 * This factory method can be safely used by any code that wishes to create a
-	 * unauthenticated <code>UsernameAuthenticationToken</code>.
+	 * This factory method can be safely used by any code that wishes to create a unauthenticated
+	 * <code>UsernameAuthenticationToken</code>.
 	 *
 	 * @param  principal   the principal to set.
 	 * @param  credentials the credentials to set.
 	 * @return             UsernameAuthenticationToken with false isAuthenticated() result
 	 */
-	public static UsernameAuthenticationToken unauthenticated(Object principal, Object credentials) {
+	public static UsernameAuthenticationToken unauthenticated(final Object principal, final Object credentials) {
 		return new UsernameAuthenticationToken(principal, credentials);
 	}
 
 	/**
-	 * This factory method can be safely used by any code that wishes to create a
-	 * authenticated <code>UsernameAuthenticationToken</code>.
+	 * This factory method can be safely used by any code that wishes to create a authenticated
+	 * <code>UsernameAuthenticationToken</code>.
 	 *
 	 * @param  principal   the principal to set.
 	 * @param  authorities the authorities to set.
 	 * @return             UsernameAuthenticationToken with true isAuthenticated() result
 	 */
-	public static UsernameAuthenticationToken authenticated(Object principal, Collection<? extends GrantedAuthority> authorities) {
+	public static UsernameAuthenticationToken authenticated(final Object principal, final Collection<? extends GrantedAuthority> authorities) {
 		return new UsernameAuthenticationToken(principal, null, authorities);
 	}
 
@@ -90,7 +90,7 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	}
 
 	@Override
-	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+	public void setAuthenticated(final boolean isAuthenticated) throws IllegalArgumentException {
 		isTrue(!isAuthenticated, "Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
 		super.setAuthenticated(false);
 	}
@@ -110,7 +110,7 @@ public class UsernameAuthenticationToken extends AbstractAuthenticationToken {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}

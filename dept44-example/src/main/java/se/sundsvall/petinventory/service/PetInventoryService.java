@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
+import se.sundsvall.dept44.problem.Problem;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.PetImageRepository;
 import se.sundsvall.petinventory.integration.db.PetNameRepository;
@@ -14,7 +13,8 @@ import se.sundsvall.petinventory.integration.petstore.PetStoreClient;
 import se.sundsvall.petinventory.service.mapper.PetInventoryMapper;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.zalando.problem.Status.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static se.sundsvall.petinventory.service.mapper.PetInventoryMapper.toPetImages;
 
 @Service
@@ -27,7 +27,7 @@ public class PetInventoryService {
 	private final PetNameRepository petNameRepository;
 	private final PetImageRepository petImageRepository;
 
-	public PetInventoryService(PetStoreClient petStoreClient, PetNameRepository petNameRepository, PetImageRepository petImageRepository) {
+	public PetInventoryService(final PetStoreClient petStoreClient, final PetNameRepository petNameRepository, final PetImageRepository petImageRepository) {
 		this.petStoreClient = petStoreClient;
 		this.petNameRepository = petNameRepository;
 		this.petImageRepository = petImageRepository;
@@ -49,7 +49,7 @@ public class PetInventoryService {
 			.toList();
 	}
 
-	public long savePetImage(long petInventoryId, MultipartFile file) {
+	public long savePetImage(final long petInventoryId, final MultipartFile file) {
 
 		final var petNameEntity = petNameRepository.findById(petInventoryId)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_PET_NOT_FOUND));
@@ -62,12 +62,12 @@ public class PetInventoryService {
 				.withPetName(petNameEntity));
 
 			return petImageEntity.getId();
-		} catch (final Exception e) {
-			throw Problem.valueOf(Status.INTERNAL_SERVER_ERROR, "Could not store image!");
+		} catch (final Exception _) {
+			throw Problem.valueOf(INTERNAL_SERVER_ERROR, "Could not store image!");
 		}
 	}
 
-	public PetImageEntity getPetImage(long id, long petImageId) {
+	public PetImageEntity getPetImage(final long id, final long petImageId) {
 
 		final var petNameEntity = petNameRepository.findById(id)
 			.orElseThrow(() -> Problem.valueOf(NOT_FOUND, ERROR_MESSAGE_PET_NOT_FOUND));

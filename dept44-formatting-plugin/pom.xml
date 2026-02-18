@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-parent</artifactId>
-		<version>7.0.2-SNAPSHOT</version>
+		<version>8.0.0-RC.0</version>
 	</parent>
 	<artifactId>dept44-formatting-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
@@ -70,10 +70,19 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
-				<version>${maven-plugin-annotations.version}</version>
+				<version>${maven-plugin-plugin.version}</version>
 				<configuration>
 					<goalPrefix>dept44-formatting</goalPrefix>
 				</configuration>
+				<executions>
+					<execution>
+						<id>default-descriptor</id>
+						<goals>
+							<goal>descriptor</goal>
+						</goals>
+						<phase>process-classes</phase>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>

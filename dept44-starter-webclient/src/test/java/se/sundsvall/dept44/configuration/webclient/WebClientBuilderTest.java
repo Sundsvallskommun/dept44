@@ -18,9 +18,8 @@ import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.invoker.HttpExchangeAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
-import org.zalando.problem.Problem;
-import org.zalando.problem.Status;
 import reactor.core.publisher.Mono;
+import se.sundsvall.dept44.problem.Problem;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
@@ -29,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ExtendWith(MockitoExtension.class)
 class WebClientBuilderTest {
@@ -133,7 +133,7 @@ class WebClientBuilderTest {
 		assertThat(webClient).extracting("defaultStatusHandlers").asInstanceOf(LIST).isEmpty();
 
 		webClient = createBuilder(false)
-			.withStatusHandler(HttpStatusCode::isError, clientResponse -> Mono.just(Problem.valueOf(Status.INTERNAL_SERVER_ERROR)))
+			.withStatusHandler(HttpStatusCode::isError, clientResponse -> Mono.just(Problem.valueOf(INTERNAL_SERVER_ERROR)))
 			.build();
 
 		assertThat(webClient).extracting("defaultStatusHandlers").asInstanceOf(LIST).hasSize(1);

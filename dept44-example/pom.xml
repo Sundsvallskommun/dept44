@@ -4,12 +4,11 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-service-parent</artifactId>
-		<version>7.0.2-SNAPSHOT</version>
+		<version>8.0.0-RC.0</version>
 		<relativePath>../dept44-service-parent</relativePath>
 	</parent>
 	<groupId>se.sundsvall</groupId>
 	<artifactId>dept44-example</artifactId>
-	<version>1.0</version>
 	<name>dept44-example</name>
 	<description>Example implementation</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>
@@ -34,6 +33,8 @@
 	</scm>
 	<properties>
 		<generated-sources-path>${project.build.directory}/generated-sources</generated-sources-path>
+		<central.skipPublishing>true</central.skipPublishing>
+		<maven.deploy.skip>true</maven.deploy.skip>
 		<maven.source.skip>false</maven.source.skip>
 		<maven.javadoc.skip>false</maven.javadoc.skip>
 	</properties>
@@ -47,8 +48,16 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>

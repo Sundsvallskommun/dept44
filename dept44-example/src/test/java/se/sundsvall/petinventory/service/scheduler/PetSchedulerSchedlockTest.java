@@ -15,7 +15,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-import static java.time.Clock.systemUTC;
 import static java.time.LocalDateTime.now;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,10 +52,14 @@ class PetSchedulerSchedlockTest {
 		// Verify lock
 		await().atMost(5, SECONDS)
 			.untilAsserted(() -> assertThat(getLockedAt("pet-scheduler"))
-				.isCloseTo(LocalDateTime.now(systemUTC()), within(10, ChronoUnit.SECONDS)));
+				.isCloseTo(getDbNow(), within(10, ChronoUnit.SECONDS)));
 
 		verify(petSchedulerWorkerMock).getPets();
 		verifyNoMoreInteractions(petSchedulerWorkerMock);
+	}
+
+	private LocalDateTime getDbNow() {
+		return jdbcTemplate.getJdbcTemplate().queryForObject("SELECT now()", LocalDateTime.class);
 	}
 
 	private LocalDateTime getLockedAt(final String name) {

@@ -1,10 +1,10 @@
 package se.sundsvall.dept44.authorization.model;
 
-import static org.springframework.util.CollectionUtils.isEmpty;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 public class User implements UserDetails {
 	private static final long serialVersionUID = -305398618677826839L;

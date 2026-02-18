@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,6 +9,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.Sort;
+
+import static org.springframework.data.domain.Sort.DEFAULT_DIRECTION;
 
 /**
  * Model class to extend when requesting paged result with sorting. Should be used as query parameters.

@@ -1,9 +1,5 @@
 package se.sundsvall.petinventory.service.mapper;
 
-import static java.util.Collections.emptyList;
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ObjectUtils.getIfNull;
-
 import generated.swagger.io.petstore.Pet;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +7,10 @@ import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.petinventory.api.model.PetImage;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
+
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ObjectUtils.getIfNull;
 
 public final class PetInventoryMapper {
 

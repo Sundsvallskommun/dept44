@@ -1,5 +1,26 @@
 package se.sundsvall.petinventory.api;
 
+import java.io.IOException;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.multipart.MultipartFile;
+import se.sundsvall.petinventory.Application;
+import se.sundsvall.petinventory.api.model.PetInventoryItem;
+import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
+import se.sundsvall.petinventory.service.PetInventoryService;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -8,34 +29,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.MediaType.ALL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
-
-import java.io.IOException;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.BodyInserters;
-import se.sundsvall.petinventory.Application;
-import se.sundsvall.petinventory.api.model.PetInventoryItem;
-import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
-import se.sundsvall.petinventory.service.PetInventoryService;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = Application.class, webEnvironment = RANDOM_PORT)
+@AutoConfigureWebTestClient
 @ActiveProfiles("junit")
 class PetInventoryResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
+
+	@Autowired
+	private WebApplicationContext webApplicationContext;
 
 	@MockitoBean
 	private PetInventoryService petInventoryServiceMock;
@@ -86,27 +94,24 @@ class PetInventoryResourceTest {
 	}
 
 	@Test
-	void postPetImage() {
+	void postPetImage() throws Exception {
 
 		// Arrange
 		final var id = 1L;
 		final var imageId = 666L;
 
-		final MultipartBodyBuilder multipartBodyBuilder = new MultipartBodyBuilder();
-		multipartBodyBuilder
-			.part("file", new ClassPathResource("files/dept44.jpg"))
-			.contentType(MediaType.MULTIPART_FORM_DATA);
+		final var file = new MockMultipartFile("file", "dept44.jpg", MediaType.IMAGE_JPEG_VALUE,
+			new ClassPathResource("files/dept44.jpg").getInputStream());
 
 		when(petInventoryServiceMock.savePetImage(anyLong(), any(MultipartFile.class))).thenReturn(imageId);
 
+		final MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
 		// Act
-		webTestClient.post().uri("/pet-inventory-items/{id}/images", id)
-			.contentType(MULTIPART_FORM_DATA)
-			.body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
-			.exchange()
-			.expectStatus().isCreated()
-			.expectHeader().contentType(ALL)
-			.expectHeader().location("/pet-inventory-items/" + id + "/images/" + imageId);
+		mockMvc.perform(multipart("/pet-inventory-items/{id}/images", id).file(file))
+			.andExpect(status().isCreated())
+			.andExpect(header().string("Content-Type", "*/*"))
+			.andExpect(header().string("Location", "/pet-inventory-items/" + id + "/images/" + imageId));
 
 		// Assert
 		verify(petInventoryServiceMock).savePetImage(eq(id), any(MultipartFile.class));

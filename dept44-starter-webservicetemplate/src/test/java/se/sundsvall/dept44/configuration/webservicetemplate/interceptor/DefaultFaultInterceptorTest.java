@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.configuration.webservicetemplate.interceptor;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -16,26 +10,27 @@ import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapEnvelope;
 import org.springframework.ws.soap.SoapFault;
 import org.springframework.ws.soap.SoapMessage;
-import org.zalando.problem.ThrowableProblem;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 class DefaultFaultInterceptorTest {
 
+	private final DefaultFaultInterceptor interceptor = new DefaultFaultInterceptor();
 	@Mock
 	private MessageContext messageContextMock;
-
 	@Mock
 	private SoapMessage soapMessageMock;
-
 	@Mock
 	private SoapEnvelope soapEnvelopeMock;
-
 	@Mock
 	private SoapBody soapBodyMock;
-
 	@Mock
 	private SoapFault soapFaultMock;
-
-	private DefaultFaultInterceptor interceptor = new DefaultFaultInterceptor();
 
 	@BeforeEach
 	void initMocks() {
@@ -67,7 +62,7 @@ class DefaultFaultInterceptorTest {
 	@Test
 	void testHandleResponseWhenFaultPresent() {
 		// Create variables
-		var faultStringOrReason = "faultStringOrReason";
+		final var faultStringOrReason = "faultStringOrReason";
 
 		// Setup mocks
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
@@ -77,7 +72,7 @@ class DefaultFaultInterceptorTest {
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
 
 		// Call and assert
-		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleResponse(messageContextMock));
+		final ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleResponse(messageContextMock));
 
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
@@ -110,7 +105,7 @@ class DefaultFaultInterceptorTest {
 	@Test
 	void testHandleFaultWhenFaultPresent() {
 		// Create variables
-		var faultStringOrReason = "faultStringOrReason";
+		final var faultStringOrReason = "faultStringOrReason";
 
 		// Setup mocks
 		when(messageContextMock.getResponse()).thenReturn(soapMessageMock);
@@ -120,7 +115,7 @@ class DefaultFaultInterceptorTest {
 		when(soapFaultMock.getFaultStringOrReason()).thenReturn(faultStringOrReason);
 
 		// Call and assert
-		ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleFault(messageContextMock));
+		final ThrowableProblem problem = assertThrows(ThrowableProblem.class, () -> interceptor.handleFault(messageContextMock));
 
 		assertThat(problem.getTitle()).isEqualTo("Error while calling SOAP-service");
 		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);

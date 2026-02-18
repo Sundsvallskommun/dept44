@@ -1,10 +1,10 @@
 package se.sundsvall.dept44.common.validators.annotation.impl;
 
-import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
-
 import jakarta.validation.constraints.NotNull;
 import java.util.function.Supplier;
 import se.sundsvall.dept44.common.validators.annotation.exception.IncompatibleAnnotationException;
+
+import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
 abstract class AbstractValidator {
 

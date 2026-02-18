@@ -1,15 +1,5 @@
 package se.sundsvall.dept44.logbook.filter;
 
-import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.ObjectUtils.anyNull;
-import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
-import static org.apache.hc.core5.http.ContentType.APPLICATION_XHTML_XML;
-import static org.apache.hc.core5.http.ContentType.APPLICATION_XML;
-import static org.apache.hc.core5.http.ContentType.TEXT_XML;
-import static org.zalando.logbook.BodyFilter.merge;
-import static org.zalando.logbook.core.BodyFilters.defaultValue;
-import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
@@ -43,6 +33,16 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
 
+import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.ObjectUtils.anyNull;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_JSON;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_XHTML_XML;
+import static org.apache.hc.core5.http.ContentType.APPLICATION_XML;
+import static org.apache.hc.core5.http.ContentType.TEXT_XML;
+import static org.zalando.logbook.BodyFilter.merge;
+import static org.zalando.logbook.core.BodyFilters.defaultValue;
+import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty;
+
 public final class BodyFilterProvider {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
@@ -53,7 +53,7 @@ public final class BodyFilterProvider {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
 	}
 
-	public static List<BodyFilter> buildJsonPathFilters(ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
+	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
 
 		final var jsonPathConfiguration = Configuration.builder()
 			.jsonProvider(new JacksonJsonProvider(objectMapper))
@@ -69,11 +69,11 @@ public final class BodyFilterProvider {
 					return body;
 				}
 
-				if ("".equals(body.trim())) {
+				if (body.trim().isEmpty()) {
 					return "";
 				}
 
-				var parsedContentType = ContentType.parse(contentType);
+				final var parsedContentType = ContentType.parse(contentType);
 
 				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
 					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
@@ -152,7 +152,7 @@ public final class BodyFilterProvider {
 					// Evaluate what charSet to use
 					final var charSet = evaluateCharset(contentType);
 
-					// Create document and xpath
+					// Create a document and xpath
 					final var builder = createDocumentBuilder(createDocumentBuilderFactory());
 					final Document document = builder.parse(new ByteArrayInputStream(body.getBytes(charSet)));
 
@@ -163,7 +163,7 @@ public final class BodyFilterProvider {
 						matches.item(i).setTextContent(replacement);
 					}
 
-					// Setup transformer to use incoming encoding and to set standalone attribute
+					// Set up a transformer to use incoming encoding and to set a standalone attribute
 					transformer.setOutputProperty(OutputKeys.ENCODING, charSet.name());
 					transformer.setOutputProperty(OutputKeys.STANDALONE, document.getXmlStandalone() ? "yes" : "no");
 
@@ -176,14 +176,15 @@ public final class BodyFilterProvider {
 				return body;
 
 			} catch (final Exception e) {
-				LOGGER.warn("An exception occured while filtering content from incoming xml request body ({}).", e.getMessage());
+				LOGGER.warn("An exception occurred while filtering content from incoming xml request body ({}).", e.getMessage());
 				return body;
 			}
 		};
 	}
 
 	private static Charset evaluateCharset(final ContentType contentType) {
-		// If incoming contentType hasn't defined any charset then UTF-8 is returned, otherwise incoming charset is returned
+		// If the incoming contentType hasn't defined any charset, then UTF-8 is returned; otherwise incoming charset is
+		// returned
 		return isNull(contentType.getCharset()) ? StandardCharsets.UTF_8 : contentType.getCharset();
 	}
 }

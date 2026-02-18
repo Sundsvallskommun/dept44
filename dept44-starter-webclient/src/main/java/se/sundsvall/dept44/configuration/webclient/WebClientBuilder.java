@@ -1,9 +1,5 @@
 package se.sundsvall.dept44.configuration.webclient;
 
-import static java.util.Optional.ofNullable;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
-
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -32,20 +28,17 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import se.sundsvall.dept44.configuration.Constants;
 
-public class WebClientBuilder {
+import static java.util.Optional.ofNullable;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
-	@FunctionalInterface
-	public interface Customizer {
-		void customize(WebClient.Builder builder);
-	}
+public class WebClientBuilder {
 
 	private final List<Customizer> customizers;
 	private String baseUrl;
-
 	private Duration connectTimeout = Duration.ofSeconds(Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS);
 	private Duration readTimeout = Duration.ofSeconds(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS);
 	private Duration writeTimeout = Duration.ofSeconds(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS);
-
 	private Logbook logbook;
 
 	public WebClientBuilder() {
@@ -259,5 +252,10 @@ public class WebClientBuilder {
 					connection.addHandlerLast(new LogbookClientHandler(logbook));
 				}
 			}));
+	}
+
+	@FunctionalInterface
+	public interface Customizer {
+		void customize(WebClient.Builder builder);
 	}
 }

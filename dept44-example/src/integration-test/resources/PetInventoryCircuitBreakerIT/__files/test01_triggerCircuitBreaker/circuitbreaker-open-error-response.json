@@ -1,0 +1,5 @@
+{
+	"detail": "CircuitBreaker 'petstore' is OPEN and does not permit further calls",
+	"status": 503,
+	"title": "Service Unavailable"
+}

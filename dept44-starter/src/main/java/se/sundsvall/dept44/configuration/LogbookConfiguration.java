@@ -1,13 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.zalando.logbook.core.Conditions.exclude;
-import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
-import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
-import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
-import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.binaryContentFilter;
-import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
-import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +30,15 @@ import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
+import tools.jackson.databind.json.JsonMapper;
+
+import static org.zalando.logbook.core.Conditions.exclude;
+import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
+import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
+import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
+import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.binaryContentFilter;
+import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
+import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content;
 
 @Configuration
 @AutoConfigureBefore(LogbookAutoConfiguration.class)
@@ -56,17 +57,16 @@ public class LogbookConfiguration {
 	 * @param loggerName              The name of the logger to use.
 	 * @param defaultExcludedPaths    The default paths to exclude from logging.
 	 * @param additionalExcludedPaths Additional paths to exclude from logging.
-	 * @param maxBodySizeToLog        The maximum size of the body to log.
-	 *                                If the size of the payload is larger than this value the log will be cut and no
-	 *                                filtering will be applied.
-	 *                                E.g. passwords will not be masked. Use only when absolutely necessary.
-	 *                                Defaults to -1 (disabled).
+	 * @param maxBodySizeToLog        The maximum size of the body to log. If the size of the payload is larger than this
+	 *                                value the log will be cut and no filtering will be applied. E.g. passwords will not be
+	 *                                masked. Use only when absolutely necessary. Defaults
+	 *                                to -1 (disabled).
 	 */
 	LogbookConfiguration(
-		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") String loggerName,
-		@Value("${logbook.default.excluded.paths}") Set<String> defaultExcludedPaths,
-		@Value("${logbook.excluded.paths:}") Set<String> additionalExcludedPaths,
-		@Value("${logbook.logs.maxBodySizeToLog:-1}") int maxBodySizeToLog) {
+		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") final String loggerName,
+		@Value("${logbook.default.excluded.paths}") final Set<String> defaultExcludedPaths,
+		@Value("${logbook.excluded.paths:}") final Set<String> additionalExcludedPaths,
+		@Value("${logbook.logs.maxBodySizeToLog:-1}") final int maxBodySizeToLog) {
 
 		this.maxBodySizeToLog = maxBodySizeToLog;
 		this.loggerName = loggerName;
@@ -77,13 +77,14 @@ public class LogbookConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	Logbook logbook(final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, BodyFilterProperties bodyFilterProperties) {
-		var builder = Logbook.builder();
+	Logbook logbook(final JsonMapper jsonMapper,
+		final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, final BodyFilterProperties bodyFilterProperties) {
+		final var builder = Logbook.builder();
 
 		setMaxBodySizeToLog(builder);
 
 		builder.sink(new DefaultSink(
-			new JsonHttpLogFormatter(objectMapper),
+			new JsonHttpLogFormatter(jsonMapper),
 			new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilters(List.of(
 				fileAttachmentFilter(),
@@ -110,7 +111,7 @@ public class LogbookConfiguration {
 			.build();
 	}
 
-	private void setMaxBodySizeToLog(LogbookCreator.Builder builder) {
+	private void setMaxBodySizeToLog(final LogbookCreator.Builder builder) {
 		if (maxBodySizeToLog > 0) {
 			builder.bodyFilter(BodyFilters.truncate(maxBodySizeToLog));
 		}

@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration.webservicetemplate.interceptor;
 
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,26 +8,28 @@ import org.springframework.ws.client.support.interceptor.ClientInterceptorAdapte
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapFault;
 import org.springframework.ws.soap.SoapMessage;
-import org.zalando.problem.Problem;
+import se.sundsvall.dept44.problem.Problem;
+
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 public class DefaultFaultInterceptor extends ClientInterceptorAdapter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DefaultFaultInterceptor.class);
 
 	@Override
-	public boolean handleFault(MessageContext messageContext) {
+	public boolean handleFault(final MessageContext messageContext) {
 		getFault(messageContext).ifPresent(this::handleSoapFault);
 
 		return true;
 	}
 
 	@Override
-	public boolean handleResponse(MessageContext messageContext) throws WebServiceClientException {
+	public boolean handleResponse(final MessageContext messageContext) throws WebServiceClientException {
 		return handleFault(messageContext);
 	}
 
-	private void handleSoapFault(SoapFault soapFault) {
-		String faultStringOrReason = soapFault.getFaultStringOrReason();
+	private void handleSoapFault(final SoapFault soapFault) {
+		final String faultStringOrReason = soapFault.getFaultStringOrReason();
 		LOG.error("Got a soap fault: {}", faultStringOrReason);
 		throw Problem.builder()
 			.withTitle("Error while calling SOAP-service")
@@ -38,9 +38,9 @@ public class DefaultFaultInterceptor extends ClientInterceptorAdapter {
 			.build();
 	}
 
-	Optional<SoapFault> getFault(MessageContext messageContext) {
-		SoapMessage soapMessage = (SoapMessage) messageContext.getResponse();
-		SoapFault soapFault = soapMessage.getEnvelope().getBody().getFault();
+	Optional<SoapFault> getFault(final MessageContext messageContext) {
+		final SoapMessage soapMessage = (SoapMessage) messageContext.getResponse();
+		final SoapFault soapFault = soapMessage.getEnvelope().getBody().getFault();
 		return Optional.ofNullable(soapFault);
 	}
 }

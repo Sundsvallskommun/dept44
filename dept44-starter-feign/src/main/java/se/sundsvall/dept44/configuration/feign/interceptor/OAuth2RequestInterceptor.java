@@ -1,10 +1,5 @@
 package se.sundsvall.dept44.configuration.feign.interceptor;
 
-import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
-
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import java.util.HashSet;
@@ -21,6 +16,11 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.util.Assert;
+
+import static java.util.Objects.isNull;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
 public class OAuth2RequestInterceptor implements RequestInterceptor {
 

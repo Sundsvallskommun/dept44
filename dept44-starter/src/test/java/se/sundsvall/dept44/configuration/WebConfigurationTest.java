@@ -1,5 +1,40 @@
 package se.sundsvall.dept44.configuration;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
+import org.springdoc.webmvc.api.OpenApiWebMvcResource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import se.sundsvall.dept44.problem.ThrowableProblem;
+import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,50 +44,15 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
+import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Stream;
-import org.assertj.core.api.InstanceOfAssertFactories;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.slf4j.MDC;
-import org.springdoc.webmvc.api.OpenApiWebMvcResource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.zalando.problem.ThrowableProblem;
-import se.sundsvall.dept44.requestid.RequestId;
-import se.sundsvall.dept44.support.Identifier;
-import se.sundsvall.dept44.support.Identifier.Type;
-
+@ExtendWith(MockitoExtension.class)
 class WebConfigurationTest {
 
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "mdc.municipalityId.enabled=true")
 	class WebConfigurationEnabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -94,7 +94,7 @@ class WebConfigurationTest {
 
 		@Test
 		void configureContentNegotiation() {
-			final var contentNegotiationConfigurer = new ContentNegotiationConfigurer(null);
+			final var contentNegotiationConfigurer = new ContentNegotiationConfigurer();
 			webConfiguration.configureContentNegotiation(contentNegotiationConfigurer);
 
 			assertThat(contentNegotiationConfigurer).isNotNull();
@@ -105,11 +105,15 @@ class WebConfigurationTest {
 		}
 
 		@Test
-		void extendMessageConverters() {
-			final List<HttpMessageConverter<?>> converterList = new ArrayList<>();
-			webConfiguration.extendMessageConverters(converterList);
+		void jacksonYamlHttpMessageConverterBean() {
+			final var converter = webConfiguration.jacksonYamlHttpMessageConverter();
 
-			assertThat(converterList).isNotNull().hasSize(1);
+			assertThat(converter).isNotNull();
+			assertThat(converter.getSupportedMediaTypes()).containsExactly(APPLICATION_YAML, APPLICATION_YML);
+
+			final var inclusion = converter.getMapper().serializationConfig().getDefaultPropertyInclusion();
+			assertThat(inclusion.getValueInclusion()).isEqualTo(NON_NULL);
+			assertThat(inclusion.getContentInclusion()).isEqualTo(NON_NULL);
 		}
 
 		@Test
@@ -125,9 +129,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "openapi.enabled=false")
 	class WebConfigurationWithIndexPageControllerDisabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -160,9 +161,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class, properties = "spring.main.web-application-type=reactive")
 	class WebConfigurationDisabledTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -200,9 +198,6 @@ class WebConfigurationTest {
 		private HttpServletRequest httpServletRequestMock;
 
 		@MockitoBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Autowired
@@ -224,10 +219,8 @@ class WebConfigurationTest {
 
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
+	@ExtendWith(MockitoExtension.class)
 	class RequestIdFilterTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -264,9 +257,6 @@ class WebConfigurationTest {
 	class IdentifierFilterTest {
 
 		@MockitoBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -281,9 +271,17 @@ class WebConfigurationTest {
 		@Autowired
 		private FilterRegistrationBean<WebConfiguration.IdentifierFilter> identifierFilterRegistration;
 
+		static Stream<Arguments> argumentsProvider() {
+			return Stream.of(
+				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
+				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
+				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
+				Arguments.of("X-Sent-By", null, null));
+		}
+
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void doFilterInternal(String headerName, String headerValue, Identifier expectedIdentifier) throws IOException, ServletException {
+		void doFilterInternal(final String headerName, final String headerValue) throws IOException, ServletException {
 			// Arrange
 			final var identifierFilter = identifierFilterRegistration.getFilter();
 
@@ -301,22 +299,11 @@ class WebConfigurationTest {
 			verify(httpServletRequestMock).getHeader(headerName);
 			verifyNoMoreInteractions(httpServletRequestMock);
 		}
-
-		static Stream<Arguments> argumentsProvider() {
-			return Stream.of(
-				Arguments.of("X-Sent-By", "joe01doe; type=adAccount", Identifier.create().withType(Type.AD_ACCOUNT).withTypeString("AD_ACCOUNT").withValue("joe01doe")),
-				Arguments.of("X-Sent-By", "fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9; type=partyId", Identifier.create().withType(Type.PARTY_ID).withTypeString("PARTY_ID").withValue("fc956c60-d6ea-4ce6-9d9c-d71f8ab91be9")),
-				Arguments.of("X-Sent-By", "xyz123; type=customType", Identifier.create().withType(Type.CUSTOM).withTypeString("customType").withValue("xyz123")),
-				Arguments.of("X-Sent-By", null, null));
-		}
 	}
 
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
 	class DisableBrowserCacheFilterTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -356,9 +343,6 @@ class WebConfigurationTest {
 	class MunicipalityIdFilterTest {
 
 		@MockitoBean
-		private YAMLMapper mockYamlMapper;
-
-		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
 		@Mock
@@ -396,9 +380,6 @@ class WebConfigurationTest {
 	@Nested
 	@SpringBootTest(classes = WebConfiguration.class)
 	class MunicipalityIdInterceptorTest {
-
-		@MockitoBean
-		private YAMLMapper mockYamlMapper;
 
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
@@ -454,12 +435,9 @@ class WebConfigurationTest {
 			final var object = new Object();
 			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
 
-			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
-
 			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
 
 			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
 		}
 	}
 }

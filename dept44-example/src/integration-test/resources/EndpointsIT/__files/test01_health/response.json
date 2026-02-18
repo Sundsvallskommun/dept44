@@ -40,26 +40,6 @@
 		"refreshScope": {
 			"status": "UP"
 		},
-		"circuitBreakers": {
-			"details": {
-				"petstore": {
-					"details": {
-						"slowCallRate": "-1.0%",
-						"failureRate": "-1.0%",
-						"failureRateThreshold": "50.0%",
-						"slowCallRateThreshold": "100.0%",
-						"failedCalls": 0,
-						"notPermittedCalls": 0,
-						"slowCalls": 0,
-						"state": "CLOSED",
-						"slowFailedCalls": 0,
-						"bufferedCalls": 0
-					},
-					"status": "UP"
-				}
-			},
-			"status": "UP"
-		},
 		"db": {
 			"details": {
 				"database": "MariaDB",
@@ -70,10 +50,21 @@
 		"ssl": {
 			"details": {
 				"validChains": [],
-				"invalidChains": []
+				"invalidChains": [],
+				"expiringChains": []
 			},
+			"status": "UP"
+		},
+		"livenessState": {
+			"status": "UP"
+		},
+		"readinessState": {
 			"status": "UP"
 		}
 	},
+	"groups": [
+		"liveness",
+		"readiness"
+	],
 	"status": "UP"
 }

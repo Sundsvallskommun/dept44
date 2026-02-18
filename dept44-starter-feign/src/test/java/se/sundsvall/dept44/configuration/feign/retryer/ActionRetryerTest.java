@@ -1,15 +1,15 @@
 package se.sundsvall.dept44.configuration.feign.retryer;
 
+import feign.Request;
+import feign.RetryableException;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import feign.Request;
-import feign.RetryableException;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 class ActionRetryerTest {
 

@@ -1,12 +1,12 @@
 package se.sundsvall.petinventory.integration.db.model.listener;
 
+import org.junit.jupiter.api.Test;
+import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
+
 import static java.time.OffsetDateTime.now;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-
-import org.junit.jupiter.api.Test;
-import se.sundsvall.petinventory.integration.db.model.PetImageEntity;
 
 class PetImageEntityListenerTest {
 

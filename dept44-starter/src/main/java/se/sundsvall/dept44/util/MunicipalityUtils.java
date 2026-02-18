@@ -1,16 +1,16 @@
 package se.sundsvall.dept44.util;
 
-import static java.util.Comparator.comparing;
-import static org.apache.commons.lang3.StringUtils.upperCase;
-import static org.springframework.util.ResourceUtils.getURL;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+
+import static java.util.Comparator.comparing;
+import static org.apache.commons.lang3.StringUtils.upperCase;
+import static org.springframework.util.ResourceUtils.getURL;
 
 public final class MunicipalityUtils {
 
@@ -20,8 +20,9 @@ public final class MunicipalityUtils {
 	private static final Map<String, Municipality> MUNICIPALITY_BY_NAME_MAP = new HashMap<>();
 
 	static {
-		try {
-			new YAMLMapper().readValue(getURL(MUNICIPALITY_DEFINITION_PATH), new TypeReference<List<Municipality>>() {}).stream()
+		try (final var inputStream = getURL(MUNICIPALITY_DEFINITION_PATH).openStream()) {
+			YAMLMapper.builder().build().readValue(inputStream, new TypeReference<List<Municipality>>() {
+			}).stream()
 				.forEach(municipality -> {
 					MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
 					MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);
@@ -84,5 +85,6 @@ public final class MunicipalityUtils {
 			.toList();
 	}
 
-	public static record Municipality(String id, String name) {}
+	public record Municipality(String id, String name) {
+	}
 }

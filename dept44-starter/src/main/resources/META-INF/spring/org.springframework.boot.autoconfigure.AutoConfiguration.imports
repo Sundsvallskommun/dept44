@@ -1,5 +1,6 @@
 se.sundsvall.dept44.configuration.ObjectMapperConfiguration
 se.sundsvall.dept44.configuration.LogbookConfiguration
+se.sundsvall.dept44.configuration.ProblemConfiguration
 se.sundsvall.dept44.configuration.WebConfiguration
 se.sundsvall.dept44.configuration.WebFluxConfiguration
 se.sundsvall.dept44.configuration.OpenApiConfiguration

@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.authorization.util;
 
-import static java.util.Collections.emptyMap;
-import static org.springframework.util.Assert.hasText;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -16,6 +13,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
+
+import static java.util.Collections.emptyMap;
+import static org.springframework.util.Assert.hasText;
 
 @Component
 public class JwtTokenUtil implements Serializable {

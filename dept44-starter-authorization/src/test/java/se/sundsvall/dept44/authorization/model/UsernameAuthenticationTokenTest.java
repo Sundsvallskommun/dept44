@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.authorization.model;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken.authenticated;
 import static se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken.unauthenticated;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 class UsernameAuthenticationTokenTest {
 

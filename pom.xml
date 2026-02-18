@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
-	<version>7.0.1-SNAPSHOT</version>
+	<version>8.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
@@ -46,7 +46,7 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
-		<spring-boot.version>3.5.7</spring-boot.version>
+		<spring-boot.version>4.0.2</spring-boot.version>
 		<project.encoding>UTF-8</project.encoding>
 		<project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
@@ -55,12 +55,9 @@
 		<downloadJavadocs>true</downloadJavadocs>
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.20.0</commons-lang3.version>
-		<logbook.version>3.12.3</logbook.version>
-		<problem.version>0.27.1</problem.version>
-		<!-- Use different versions of problem and problem-spring-XYZ libraries, because of reasons... -->
-		<problem-spring-web.version>0.29.1</problem-spring-web.version>
-		<springdoc.version>2.8.14</springdoc.version>
-		<spring-cloud.version>2025.0.0</spring-cloud.version>
+		<logbook.version>4.0.2</logbook.version>
+		<springdoc.version>3.0.1</springdoc.version>
+		<spring-cloud.version>2025.1.1</spring-cloud.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<google-guava.version>33.5.0-jre</google-guava.version>
 		<json-unit.version>5.1.0</json-unit.version>
@@ -68,7 +65,7 @@
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>3.5.7</spring-boot-admin.version>
+		<spring-boot-admin.version>4.0.0</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<maven-api.version>3.9.12</maven-api.version>
 		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -88,6 +85,7 @@
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
 		<lombok.version>1.18.42</lombok.version>
+		<spotbugs-annotations.version>4.9.8</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->
 		<coverage.line.level>0.85</coverage.line.level>
@@ -126,73 +124,52 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-authorization</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-models</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-logback-logserver</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webclient</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-scheduler</artifactId>
-				<version>7.0.1-SNAPSHOT</version>
-			</dependency>
-			<!-- Problem -->
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>jackson-datatype-problem</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-gson</artifactId>
-				<version>${problem.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.zalando</groupId>
-				<artifactId>problem-spring-web-starter</artifactId>
-				<version>${problem-spring-web.version}</version>
+				<version>8.0.1-SNAPSHOT</version>
 			</dependency>
 			<!-- SpringDoc -->
 			<dependency>
@@ -242,6 +219,16 @@
 				<artifactId>lombok</artifactId>
 				<version>${lombok.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-annotations</artifactId>
+				<version>${spotbugs-annotations.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven.plugin-tools</groupId>
+				<artifactId>maven-plugin-annotations</artifactId>
+				<version>${maven-plugin-annotations.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<build>
@@ -255,7 +242,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-build-tools</artifactId>
-					<version>7.0.1-SNAPSHOT</version>
+					<version>8.0.1-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>
@@ -269,7 +256,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-formatting-plugin</artifactId>
-					<version>7.0.1-SNAPSHOT</version>
+					<version>8.0.1-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>
@@ -335,7 +322,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- Automates release and tagging process -->
+			<!-- Automates a release and tagging process -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
@@ -409,7 +396,7 @@
 							<autoPublish>${central.autoPublish}</autoPublish>
 						</configuration>
 					</plugin>
-					<!-- Signs artifacts with GPG before deploy -->
+					<!-- Signs artifacts with GPG before deployment -->
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>

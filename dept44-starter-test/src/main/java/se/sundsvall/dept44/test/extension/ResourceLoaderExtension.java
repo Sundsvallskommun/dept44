@@ -1,12 +1,6 @@
 package se.sundsvall.dept44.test.extension;
 
-import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -18,10 +12,14 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.util.AnnotationUtils;
 import se.sundsvall.dept44.test.annotation.resource.Load;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.xml.XmlMapper;
+
+import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
 /**
- * Extension to facilitate resource loading in tests - used in conjunction with the
- * {@link Load} annotation on test method parameters. Examples:<br />
+ * Extension to facilitate resource loading in tests - used in conjunction with the {@link Load} annotation on test
+ * method parameters. Examples:<br />
  * <br />
  *
  * <p>
@@ -39,13 +37,13 @@ import se.sundsvall.dept44.test.annotation.resource.Load;
  */
 public class ResourceLoaderExtension implements ParameterResolver {
 
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-	private static final ObjectMapper XML_MAPPER = new XmlMapper().registerModule(new JavaTimeModule());
+	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final XmlMapper XML_MAPPER = XmlMapper.builder().findAndAddModules().build();
 
 	@Override
 	public boolean supportsParameter(final ParameterContext parameterContext, final ExtensionContext extensionContext)
 		throws ParameterResolutionException {
-		var parameter = parameterContext.getParameter();
+		final var parameter = parameterContext.getParameter();
 
 		return AnnotationUtils.isAnnotated(parameter, Load.class);
 	}
@@ -53,12 +51,12 @@ public class ResourceLoaderExtension implements ParameterResolver {
 	@Override
 	public Object resolveParameter(final ParameterContext parameterContext, final ExtensionContext extensionContext)
 		throws ParameterResolutionException {
-		var parameter = parameterContext.getParameter();
-		var parameterClass = parameter.getType();
+		final var parameter = parameterContext.getParameter();
+		final var parameterClass = parameter.getType();
 
 		return findAnnotation(parameter, Load.class)
 			.map(annotation -> {
-				var path = annotation.value();
+				final var path = annotation.value();
 
 				return switch (annotation.as()) {
 					case JSON -> fromJson(fromClasspath(path), parameterClass);
@@ -75,29 +73,29 @@ public class ResourceLoaderExtension implements ParameterResolver {
 	private <T> T fromXml(final String value, final Class<T> clazz) {
 		try {
 			return XML_MAPPER.readValue(value, clazz);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new IllegalStateException("Unable to deserialize parameter from XML", e);
 		}
 	}
 
 	private <T> T fromJson(final String value, final Class<T> clazz) {
 		try {
-			return OBJECT_MAPPER.readValue(value, clazz);
-		} catch (IOException e) {
+			return JSON_MAPPER.readValue(value, clazz);
+		} catch (final Exception e) {
 			throw new IllegalStateException("Unable to deserialize parameter from JSON", e);
 		}
 	}
 
 	private String fromClasspath(final String path) {
-		try (var is = getClasspathResourceAsStream(path.startsWith("/") ? path.substring(1) : path)) {
+		try (final var is = getClasspathResourceAsStream(path.startsWith("/") ? path.substring(1) : path)) {
 			return convertStreamToString(is);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			throw new IllegalArgumentException("Cannot load classpath resource: '" + path + "'", e);
 		}
 	}
 
 	private InputStream getClasspathResourceAsStream(final String resourceName) {
-		var classLoader = Thread.currentThread().getContextClassLoader();
+		final var classLoader = Thread.currentThread().getContextClassLoader();
 
 		return Optional.ofNullable(classLoader.getResourceAsStream(resourceName))
 			.orElseThrow(() -> new IllegalArgumentException("Resource not found with name: " + resourceName));

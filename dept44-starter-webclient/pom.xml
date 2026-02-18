@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>7.0.1-SNAPSHOT</version>
+		<version>8.0.1-SNAPSHOT</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter-webclient</artifactId>
@@ -36,6 +36,10 @@
 			<groupId>se.sundsvall.dept44</groupId>
 			<artifactId>dept44-starter</artifactId>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 		<!-- Test -->
 		<dependency>

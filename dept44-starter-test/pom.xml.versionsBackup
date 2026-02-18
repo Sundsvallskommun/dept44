@@ -3,12 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
-		<artifactId>dept44-parent</artifactId>
-		<version>8.0.0-SNAPSHOT</version>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>7.0.1-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
-	<artifactId>dept44-common-validators</artifactId>
-	<name>dept44-common-validators</name>
-	<description>Provides a set of common validators for data integrity and validation within services.</description>
+	<artifactId>dept44-starter-test</artifactId>
+	<name>dept44-starter-test</name>
+	<description>Testing utilities and configurations to streamline unit and integration testing.</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>
 	<licenses>
 		<license>
@@ -30,17 +31,55 @@
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<dependencies>
-		<!-- Framework -->
-		<dependency>
-			<groupId>se.sundsvall.dept44</groupId>
-			<artifactId>dept44-starter</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-resttestclient</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webtestclient</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-contract-wiremock</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wiremock.integrations</groupId>
+			<artifactId>wiremock-spring-boot</artifactId>
+			<version>4.0.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.bean-matchers</groupId>
+			<artifactId>bean-matchers</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.skyscreamer</groupId>
+			<artifactId>jsonassert</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.json-unit</groupId>
+			<artifactId>json-unit</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.json-unit</groupId>
+			<artifactId>json-unit-assertj</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-json</artifactId>
+		</dependency>
+		<dependency>
+			<!-- XML-serialization (used by ResourceLoaderExtension) -->
+			<groupId>tools.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
 	</dependencies>
 	<build>
@@ -52,11 +91,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-formatting-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
+				<!-- This instance checks coverage for this dept44-module. For service code coverage, see pom.xml in dept44-service-parent module -->
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>${jacoco-maven-plugin.version}</version>

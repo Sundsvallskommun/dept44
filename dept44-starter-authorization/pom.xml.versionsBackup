@@ -3,12 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
-		<artifactId>dept44-parent</artifactId>
-		<version>8.0.0-SNAPSHOT</version>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>7.0.1-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
-	<artifactId>dept44-common-validators</artifactId>
-	<name>dept44-common-validators</name>
-	<description>Provides a set of common validators for data integrity and validation within services.</description>
+	<artifactId>dept44-starter-authorization</artifactId>
+	<name>dept44-starter-authorization</name>
+	<description>Adds authorization handling utilities and pre-configured security settings.</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>
 	<licenses>
 		<license>
@@ -36,10 +37,28 @@
 			<artifactId>dept44-starter</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<!-- Module dependencies -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>${jsonwebtoken.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>${jsonwebtoken.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-gson</artifactId>
+			<version>${jsonwebtoken.version}</version>
+			<scope>runtime</scope>
+		</dependency>
 		<!-- Test -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -50,10 +69,6 @@
 				<configuration>
 					<argLine>${argLine}</argLine>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-formatting-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->

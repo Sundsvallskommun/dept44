@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
-		<artifactId>dept44-parent</artifactId>
-		<version>8.0.0-SNAPSHOT</version>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>7.0.1-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
-	<artifactId>dept44-common-validators</artifactId>
-	<name>dept44-common-validators</name>
-	<description>Provides a set of common validators for data integrity and validation within services.</description>
+	<artifactId>dept44-starter-webservicetemplate</artifactId>
+	<name>dept44-starter-webservicetemplate</name>
+	<description>Streamlined configuration for SOAP-based services using WebServiceTemplate.</description>
 	<url>https://github.com/Sundsvallskommun/dept44</url>
 	<licenses>
 		<license>
@@ -36,11 +37,20 @@
 			<artifactId>dept44-starter</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<!-- Test -->
+		<!-- Module dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
+			<artifactId>spring-boot-starter-webservices</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>logbook-httpclient5</artifactId>
+		</dependency>
+		<!-- Test -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-test</artifactId>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -50,10 +60,6 @@
 				<configuration>
 					<argLine>${argLine}</argLine>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>se.sundsvall.dept44</groupId>
-				<artifactId>dept44-formatting-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<!-- This instance checks coverage for this Dept-44-module. For service code coverage, see pom.xml in dept44-service-parent module -->

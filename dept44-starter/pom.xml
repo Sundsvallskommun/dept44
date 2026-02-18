@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>se.sundsvall.dept44</groupId>
 		<artifactId>dept44-starter-parent</artifactId>
-		<version>8.0.0</version>
+		<version>8.0.1-SNAPSHOT</version>
 		<relativePath>../dept44-starter-parent</relativePath>
 	</parent>
 	<artifactId>dept44-starter</artifactId>
@@ -27,7 +27,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
 		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
-		<tag>dept44-release-8.0.0</tag>
+		<tag>HEAD</tag>
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<dependencies>

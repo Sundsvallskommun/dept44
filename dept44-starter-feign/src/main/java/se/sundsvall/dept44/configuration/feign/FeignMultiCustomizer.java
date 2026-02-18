@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration.feign;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import feign.Request;
 import feign.RequestInterceptor;
 import feign.codec.Decoder;
@@ -16,6 +14,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
 import se.sundsvall.dept44.requestid.RequestId;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Chains multiple {@link FeignBuilderCustomizer} into one.

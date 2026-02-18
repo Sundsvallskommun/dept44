@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.authorization;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
-import static org.zalando.problem.Status.UNAUTHORIZED;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -35,6 +29,12 @@ import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.model.User;
 import se.sundsvall.dept44.authorization.model.UsernameAuthenticationToken;
 import se.sundsvall.dept44.authorization.util.JwtTokenUtil;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
+import static org.zalando.problem.Status.UNAUTHORIZED;
 
 public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 

@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.maven.mojo;
 
-import static java.time.format.DateTimeFormatter.ISO_DATE;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,6 +12,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+
+import static java.time.format.DateTimeFormatter.ISO_DATE;
 
 @Mojo(name = "check-truststore-validity", defaultPhase = LifecyclePhase.INITIALIZE)
 public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {

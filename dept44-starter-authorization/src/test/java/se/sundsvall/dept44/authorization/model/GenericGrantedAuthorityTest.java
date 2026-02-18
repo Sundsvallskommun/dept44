@@ -1,10 +1,10 @@
 package se.sundsvall.dept44.authorization.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GenericGrantedAuthorityTest {
 	private static final String ROLE = "ROLE";

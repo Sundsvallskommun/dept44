@@ -1,8 +1,5 @@
 package se.sundsvall.dept44.maven.mojo;
 
-import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -18,6 +15,9 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+
+import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 
 @Mojo(name = "check-openapi-properties", defaultPhase = LifecyclePhase.INITIALIZE)
 public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {

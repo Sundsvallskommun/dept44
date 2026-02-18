@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.configuration.feign.decoder.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.zalando.problem.Status.BAD_REQUEST;
-
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.DefaultProblem;
 import org.zalando.problem.violations.ConstraintViolationProblem;
 import org.zalando.problem.violations.Violation;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.zalando.problem.Status.BAD_REQUEST;
 
 class ProblemUtilsTest {
 

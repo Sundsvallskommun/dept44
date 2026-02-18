@@ -1,5 +1,13 @@
 package se.sundsvall.dept44.logbook.filter;
 
+import java.io.IOException;
+import java.util.Arrays;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.zalando.logbook.HttpHeaders;
+import org.zalando.logbook.test.MockHttpResponse;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.MediaType.ALL_VALUE;
@@ -18,14 +26,6 @@ import static org.zalando.logbook.ContentType.CONTENT_TYPE_HEADER;
 import static org.zalando.logbook.HttpHeaders.of;
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.binaryContentFilter;
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
-
-import java.io.IOException;
-import java.util.Arrays;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.zalando.logbook.HttpHeaders;
-import org.zalando.logbook.test.MockHttpResponse;
 
 class ResponseFilterDefinitionTest {
 

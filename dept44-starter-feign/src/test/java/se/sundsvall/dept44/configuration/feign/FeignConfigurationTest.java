@@ -1,11 +1,5 @@
 package se.sundsvall.dept44.configuration.feign;
 
-import static feign.Logger.Level.FULL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import feign.okhttp.OkHttpClient;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -17,6 +11,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.zalando.logbook.Logbook;
 import se.sundsvall.dept44.security.Truststore;
+
+import static feign.Logger.Level.FULL;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest(classes = {
 	FeignConfiguration.class

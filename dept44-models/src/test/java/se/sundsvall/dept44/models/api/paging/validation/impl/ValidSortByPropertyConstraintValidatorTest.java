@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.models.api.paging.validation.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import jakarta.persistence.Column;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -14,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import se.sundsvall.dept44.models.api.paging.AbstractParameterPagingAndSortingBase;
 import se.sundsvall.dept44.models.api.paging.validation.ValidSortByProperty;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest(classes = {

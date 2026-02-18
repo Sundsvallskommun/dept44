@@ -1,14 +1,5 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.actuate.health.Status.DOWN;
-import static org.springframework.boot.actuate.health.Status.OUT_OF_SERVICE;
-import static org.springframework.boot.actuate.health.Status.UNKNOWN;
-import static org.springframework.boot.actuate.health.Status.UP;
-import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_HALF_OPEN;
-import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_OPEN;
-import static se.sundsvall.dept44.configuration.HealthConfiguration.RESTRICTED;
-
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -19,6 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.actuate.health.StatusAggregator;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.boot.actuate.health.Status.DOWN;
+import static org.springframework.boot.actuate.health.Status.OUT_OF_SERVICE;
+import static org.springframework.boot.actuate.health.Status.UNKNOWN;
+import static org.springframework.boot.actuate.health.Status.UP;
+import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_HALF_OPEN;
+import static se.sundsvall.dept44.configuration.HealthConfiguration.CIRCUIT_OPEN;
+import static se.sundsvall.dept44.configuration.HealthConfiguration.RESTRICTED;
 
 @SpringBootTest(classes = HealthConfiguration.class)
 class HealthConfigurationTest {

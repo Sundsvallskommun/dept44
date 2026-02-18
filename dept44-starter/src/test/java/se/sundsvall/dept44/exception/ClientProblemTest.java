@@ -1,13 +1,13 @@
 package se.sundsvall.dept44.exception;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.zalando.problem.Status.BAD_REQUEST;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.Status;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.zalando.problem.Status.BAD_REQUEST;
 
 class ClientProblemTest {
 

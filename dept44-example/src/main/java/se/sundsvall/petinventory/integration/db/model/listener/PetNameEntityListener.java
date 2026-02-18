@@ -1,12 +1,12 @@
 package se.sundsvall.petinventory.integration.db.model.listener;
 
-import static java.time.OffsetDateTime.now;
-import static java.time.temporal.ChronoUnit.MILLIS;
-
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import java.time.ZoneId;
 import se.sundsvall.petinventory.integration.db.model.PetNameEntity;
+
+import static java.time.OffsetDateTime.now;
+import static java.time.temporal.ChronoUnit.MILLIS;
 
 public class PetNameEntityListener {
 

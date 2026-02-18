@@ -87,7 +87,9 @@
 						<eclipse>
 							<file>src/main/resources/sundsvall_formatting.xml</file>
 						</eclipse>
-						<importOrder />
+						<importOrder>
+							<order>,\#</order>
+						</importOrder>
 						<removeUnusedImports>
 							<engine>cleanthat-javaparser-unnecessaryimport</engine>
 						</removeUnusedImports>

@@ -1,10 +1,10 @@
 package se.sundsvall.dept44.configuration;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 class ConstantsTest {
 

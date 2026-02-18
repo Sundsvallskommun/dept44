@@ -1,9 +1,9 @@
 package se.sundsvall.dept44.models.api.paging;
 
-import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
+import static io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY;
 
 /**
  * Model class to use when returning paged result. Should be added in root of response under attribute "_meta".

@@ -1,7 +1,5 @@
 package se.sundsvall.dept44.configuration.webservicetemplate.interceptor;
 
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +9,8 @@ import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapFault;
 import org.springframework.ws.soap.SoapMessage;
 import org.zalando.problem.Problem;
+
+import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 
 public class DefaultFaultInterceptor extends ClientInterceptorAdapter {
 

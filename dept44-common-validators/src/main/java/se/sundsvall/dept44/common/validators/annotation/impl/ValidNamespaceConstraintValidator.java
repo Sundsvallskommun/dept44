@@ -1,14 +1,14 @@
 package se.sundsvall.dept44.common.validators.annotation.impl;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
-import static org.springframework.util.ReflectionUtils.findMethod;
-
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
 import se.sundsvall.dept44.common.validators.annotation.ValidNamespace;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
+import static org.springframework.util.ReflectionUtils.findMethod;
 
 public class ValidNamespaceConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidNamespace, String> {
 

@@ -1,11 +1,11 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
 class JwtAuthorizationPropertiesTest {
 

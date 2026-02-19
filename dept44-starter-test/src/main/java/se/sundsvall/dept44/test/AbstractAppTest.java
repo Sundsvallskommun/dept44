@@ -177,7 +177,6 @@ public abstract class AbstractAppTest {
 	 * when @ConfigureWireMock is used as a meta-annotation. The file source defaults to src/test/resources instead of the
 	 * path specified in
 	 *
-	 * @WireMockAppTestSuite.
 	 * </p>
 	 */
 	private void resolveBodyFileNames() {
@@ -188,13 +187,22 @@ public abstract class AbstractAppTest {
 			.forEach(stub -> {
 				final var bodyFileName = stub.getResponse().getBodyFileName();
 				final var bodyContent = readBodyFile(filesBasePath, bodyFileName);
+				// Try to read it as a binary file if it wasn't found as a JSON/text file (for cases where bodyFileName points to a
+				// binary file like a PDF, image, etc.)
+				final var bodyBytes = isNull(bodyContent) ? readBodyFileAsBytes(filesBasePath, bodyFileName) : new byte[0];
 
-				if (nonNull(bodyContent)) {
+				if (nonNull(bodyContent) || bodyBytes.length > 0) {
 					// Create a new response definition with inline body instead of bodyFileName
 					final var originalResponse = stub.getResponse();
 					final var responseBuilder = new ResponseDefinitionBuilder()
-						.withStatus(originalResponse.getStatus())
-						.withBody(bodyContent);
+						.withStatus(originalResponse.getStatus());
+
+					// Check if we have a regular file, or if we have a binary file.
+					if (nonNull(bodyContent)) {
+						responseBuilder.withBody(bodyContent);
+					} else {
+						responseBuilder.withBody(bodyBytes);
+					}
 
 					// Copy other response properties
 					if (nonNull(originalResponse.getHeaders())) {
@@ -254,6 +262,31 @@ public abstract class AbstractAppTest {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Reads a body file from the classpath as raw bytes (for binary files like PDFs, images, etc.).
+	 *
+	 * @param  basePath     the base classpath path (e.g., "classpath: TestClass/__files/")
+	 * @param  bodyFileName the body file name from the stub mapping
+	 * @return              the file content as a byte array, or null if not found
+	 */
+	private byte[] readBodyFileAsBytes(final String basePath, final String bodyFileName) {
+		// Try the file path as-is first
+		var content = fromFileAsBytes(basePath + bodyFileName);
+		if (content.length > 0) {
+			return content;
+		}
+
+		// Try with the test case name prefix
+		if (nonNull(testCaseName)) {
+			content = fromFileAsBytes(basePath + testCaseName + "/" + bodyFileName);
+			if (content.length > 0) {
+				return content;
+			}
+		}
+
+		return new byte[0];
 	}
 
 	public AbstractAppTest withExtensions(final Extension... extensions) {
@@ -658,6 +691,15 @@ public abstract class AbstractAppTest {
 			return readString(getFile(filePath).toPath());
 		} catch (final IOException _) {
 			return null;
+		}
+	}
+
+	private byte[] fromFileAsBytes(final String filePath) {
+		try {
+			return Files.readAllBytes(getFile(filePath).toPath());
+		} catch (final IOException _) {
+			logger.warn("Could not read file {}", filePath);
+			return new byte[0];
 		}
 	}
 

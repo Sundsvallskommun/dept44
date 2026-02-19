@@ -526,6 +526,49 @@ class AbstractAppTestTest {
 	}
 
 	@Test
+	void testResolveBodyFileNamesWithBinaryBodyFileNameFound() throws Exception {
+		// create a stub mapping with bodyFileName pointing to a binary file
+		final var responseDefinition = new ResponseDefinitionBuilder()
+			.withStatus(200)
+			.withBodyFile("testBinaryCall/dept44.jpg")
+			.withHeader("Content-Type", "image/jpeg")
+			.build();
+
+		final var stubMapping = new StubMapping(RequestPattern.everything(), responseDefinition);
+		stubMapping.setName("binary");
+
+		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
+		final var expectedBytes = Files.readAllBytes(file.toPath());
+
+		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
+		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
+		// Use an empty path so the classpath resolution uses __files/ directory
+		when(fileSourceMock.getPath()).thenReturn("");
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
+		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
+
+		// Call
+		final var instance = appTest.setupCall()
+			.withServicePath("/some/path")
+			.withHttpMethod(GET)
+			.withExpectedResponse("{}")
+			.withExpectedResponseStatus(OK)
+			.sendRequestAndVerifyResponse();
+
+		// Verification
+		assertThat(instance).isNotNull();
+
+		// Verify that stub was removed and re-added with inline binary body
+		final var stubCaptor = ArgumentCaptor.forClass(StubMapping.class);
+		verify(wiremockMock).removeStub(any(StubMapping.class));
+		verify(wiremockMock).addStubMapping(stubCaptor.capture());
+
+		final var capturedStub = stubCaptor.getValue();
+		assertThat(capturedStub.getResponse().getByteBody()).isEqualTo(expectedBytes);
+		assertThat(capturedStub.getResponse().getBodyFileName()).isNull();
+	}
+
+	@Test
 	void testResolveBodyFileNamesWithFaultResponse() {
 		// Setup - create a stub mapping with fault
 		final var responseDefinition = new ResponseDefinitionBuilder()

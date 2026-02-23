@@ -3,6 +3,8 @@ package se.sundsvall.dept44.problem;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
+import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.Ordered;
@@ -16,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -110,20 +113,35 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(BindException.class)
 	@ResponseBody
 	public ResponseEntity<ConstraintViolationProblem> handleBindException(final BindException exception) {
-		final var violations = exception.getBindingResult().getFieldErrors().stream()
-			.map(this::toViolation)
-			.toList();
+		final var allViolations = getViolations(exception);
 
 		final var problem = ConstraintViolationProblem.builder()
 			.withStatus(BAD_REQUEST)
 			.withTitle(CONSTRAINT_VIOLATION_TITLE)
-			.withViolations(violations)
+			.withViolations(allViolations)
 			.build();
 
 		return ResponseEntity
 			.status(BAD_REQUEST)
 			.contentType(APPLICATION_PROBLEM_JSON)
 			.body(problem);
+	}
+
+	/**
+	 * Extract violations from both field errors and global errors in BindException and combine them into a single list of
+	 * Violation objects.
+	 * 
+	 * @param  exception the BindException containing field and global errors
+	 * @return           a combined list of Violation objects representing all validation errors
+	 */
+	private List<Violation> getViolations(final BindException exception) {
+		final var fieldViolations = exception.getBindingResult().getFieldErrors().stream()
+			.map(this::toViolation);
+
+		final var globalViolations = exception.getBindingResult().getGlobalErrors().stream()
+			.map(this::toViolation);
+
+		return Stream.concat(fieldViolations, globalViolations).toList();
 	}
 
 	/**
@@ -181,9 +199,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	private ConstraintViolationProblem toConstraintViolationProblem(final BindException exception) {
-		final var violations = exception.getBindingResult().getFieldErrors().stream()
-			.map(this::toViolation)
-			.toList();
+		final var violations = getViolations(exception);
 
 		return ConstraintViolationProblem.builder()
 			.withStatus(BAD_REQUEST)
@@ -202,6 +218,12 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			.status(httpStatus)
 			.contentType(APPLICATION_PROBLEM_JSON)
 			.body(problem);
+	}
+
+	private Violation toViolation(final ObjectError objectError) {
+		return new Violation(
+			objectError.getObjectName(),
+			objectError.getDefaultMessage());
 	}
 
 	private Violation toViolation(final ConstraintViolation<?> constraintViolation) {

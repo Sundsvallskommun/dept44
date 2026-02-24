@@ -22,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -42,6 +43,7 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblemResponse
 import se.sundsvall.dept44.problem.violations.Violation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.GET;
@@ -124,6 +126,57 @@ class ProblemExceptionHandlerTest {
 		assertThat(problem.getViolations())
 			.extracting(Violation::message)
 			.containsExactly("must not be blank", "must be greater than 0");
+	}
+
+	@Test
+	void handleMethodArgumentNotValidExceptionWithFieldAndGlobalErrors() {
+		final var bindingResult = mock(BindingResult.class);
+		final var fieldError = new FieldError("object", "email", "must be a valid email");
+		final var globalError = new ObjectError("object", "start date must be before end date");
+		when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
+		when(bindingResult.getGlobalErrors()).thenReturn(List.of(globalError));
+
+		final var exception = new MethodArgumentNotValidException(null, bindingResult);
+
+		final var response = handler.handleMethodArgumentNotValid(exception, new HttpHeaders(), BAD_REQUEST, webRequest);
+
+		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var body = response.getBody();
+		assertThat(body).isInstanceOf(ConstraintViolationProblem.class);
+		final var problem = (ConstraintViolationProblem) body;
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(problem.getViolations()).hasSize(2);
+		assertThat(problem.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("email", "must be a valid email"),
+				tuple("object", "start date must be before end date"));
+	}
+
+	@Test
+	void handleMethodArgumentNotValidExceptionWithOnlyGlobalErrors() {
+		final var bindingResult = mock(BindingResult.class);
+		final var globalError = new ObjectError("object", "global validation failed");
+		when(bindingResult.getFieldErrors()).thenReturn(List.of());
+		when(bindingResult.getGlobalErrors()).thenReturn(List.of(globalError));
+
+		final var exception = new MethodArgumentNotValidException(null, bindingResult);
+
+		final var response = handler.handleMethodArgumentNotValid(exception, new HttpHeaders(), BAD_REQUEST, webRequest);
+
+		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+
+		final var body = response.getBody();
+		assertThat(body).isInstanceOf(ConstraintViolationProblem.class);
+		final var problem = (ConstraintViolationProblem) body;
+		assertThat(problem.getViolations()).hasSize(1);
+		assertThat(problem.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(
+				tuple("object", "global validation failed"));
 	}
 
 	@Test
@@ -303,6 +356,50 @@ class ProblemExceptionHandlerTest {
 		assertThat(problem.getViolations())
 			.extracting(Violation::field)
 			.containsExactlyInAnyOrder("name", "value");
+	}
+
+	@Test
+	void handleBindExceptionWithFieldAndGlobalErrors() {
+		final var target = new Object();
+		final var exception = new BindException(target, "target");
+		exception.addError(new FieldError("target", "name", "must not be empty"));
+		exception.addError(new ObjectError("target", "name and value must not be equal"));
+
+		final var response = handler.handleBindException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
+		assertThat(problem.getViolations()).hasSize(2);
+		assertThat(problem.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactlyInAnyOrder(
+				tuple("name", "must not be empty"),
+				tuple("target", "name and value must not be equal"));
+	}
+
+	@Test
+	void handleBindExceptionWithOnlyGlobalErrors() {
+		final var target = new Object();
+		final var exception = new BindException(target, "target");
+		exception.addError(new ObjectError("target", "global validation failed"));
+
+		final var response = handler.handleBindException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getViolations()).hasSize(1);
+		assertThat(problem.getViolations())
+			.extracting(Violation::field, Violation::message)
+			.containsExactly(
+				tuple("target", "global validation failed"));
 	}
 
 	@Test

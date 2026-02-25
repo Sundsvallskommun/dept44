@@ -19,7 +19,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 	/**
 	 * The default type URI for constraint violation problems.
 	 */
-	public static final URI TYPE = URI.create("about:blank");
+	public static final URI TYPE = URI.create("https://github.com/Sundsvallskommun/dept44/problems/constraint-violation");
 
 	/**
 	 * The default title for constraint violation problems.

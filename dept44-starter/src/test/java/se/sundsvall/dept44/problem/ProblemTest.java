@@ -103,11 +103,11 @@ class ProblemTest {
 
 	@Test
 	void notFoundWithDetailAndParameters() {
-		final var problem = Problem.notFound("Something cannot be more than {0} characters long", 12);
+		final var problem = Problem.notFound("Something was not found with id {0}", 567);
 
 		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
 		assertThat(problem.getTitle()).isEqualTo("Not Found");
-		assertThat(problem.getDetail()).isEqualTo("Something cannot be more than 12 characters long");
+		assertThat(problem.getDetail()).isEqualTo("Something was not found with id 567");
 	}
 
 	@Test

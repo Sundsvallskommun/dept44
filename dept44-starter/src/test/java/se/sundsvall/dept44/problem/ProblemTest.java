@@ -57,6 +57,114 @@ class ProblemTest {
 	}
 
 	@Test
+	void badRequest() {
+		final var problem = Problem.badRequest();
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Bad Request");
+		assertThat(problem.getDetail()).isNull();
+	}
+
+	@Test
+	void badRequestWithDetail() {
+		final var problem = Problem.badRequest("Something was wrong with the input");
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Bad Request");
+		assertThat(problem.getDetail()).isEqualTo("Something was wrong with the input");
+	}
+
+	@Test
+	void badRequestWithDetailAndParameters() {
+		final var problem = Problem.badRequest("Something cannot be more than {0} characters long", 12);
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Bad Request");
+		assertThat(problem.getDetail()).isEqualTo("Something cannot be more than 12 characters long");
+	}
+
+	@Test
+	void notFound() {
+		final var problem = Problem.notFound();
+
+		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(problem.getTitle()).isEqualTo("Not Found");
+		assertThat(problem.getDetail()).isNull();
+	}
+
+	@Test
+	void notFoundWithDetail() {
+		final var problem = Problem.notFound("Something was not found");
+
+		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(problem.getTitle()).isEqualTo("Not Found");
+		assertThat(problem.getDetail()).isEqualTo("Something was not found");
+	}
+
+	@Test
+	void notFoundWithDetailAndParameters() {
+		final var problem = Problem.notFound("Something cannot be more than {0} characters long", 12);
+
+		assertThat(problem.getStatus()).isEqualTo(NOT_FOUND);
+		assertThat(problem.getTitle()).isEqualTo("Not Found");
+		assertThat(problem.getDetail()).isEqualTo("Something cannot be more than 12 characters long");
+	}
+
+	@Test
+	void internalServerError() {
+		final var problem = Problem.internalServerError();
+
+		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(problem.getTitle()).isEqualTo("Internal Server Error");
+		assertThat(problem.getDetail()).isNull();
+	}
+
+	@Test
+	void internalServerErrorWithDetail() {
+		final var problem = Problem.internalServerError("Something went wrong");
+
+		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(problem.getTitle()).isEqualTo("Internal Server Error");
+		assertThat(problem.getDetail()).isEqualTo("Something went wrong");
+	}
+
+	@Test
+	void internalServerErrorWithDetailAndParameters() {
+		final var problem = Problem.internalServerError("Something went wrong. Try again in {0} minutes", 5);
+
+		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(problem.getTitle()).isEqualTo("Internal Server Error");
+		assertThat(problem.getDetail()).isEqualTo("Something went wrong. Try again in 5 minutes");
+	}
+
+	@Test
+	void badGateway() {
+		final var problem = Problem.badGateway();
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_GATEWAY);
+		assertThat(problem.getTitle()).isEqualTo("Bad Gateway");
+		assertThat(problem.getDetail()).isNull();
+	}
+
+	@Test
+	void badGatewayWithDetail() {
+		final var problem = Problem.badGateway("No response from some-service");
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_GATEWAY);
+		assertThat(problem.getTitle()).isEqualTo("Bad Gateway");
+		assertThat(problem.getDetail()).isEqualTo("No response from some-service");
+	}
+
+	@Test
+	void badGatewayWithDetailAndParameters() {
+		final var problem = Problem.badGateway("No response from some-service after {0} attempts", 3);
+
+		assertThat(problem.getStatus()).isEqualTo(BAD_GATEWAY);
+		assertThat(problem.getTitle()).isEqualTo("Bad Gateway");
+		assertThat(problem.getDetail()).isEqualTo("No response from some-service after 3 attempts");
+	}
+
+	@Test
 	void valueOfWithDifferentStatuses() {
 		final var badRequest = Problem.valueOf(BAD_REQUEST, "Invalid input");
 		assertThat(badRequest.getStatus()).isEqualTo(BAD_REQUEST);

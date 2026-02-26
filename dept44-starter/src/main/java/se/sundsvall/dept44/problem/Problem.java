@@ -52,7 +52,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_REQUEST, corresponding title and no detail message.
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and no detail message.
 	 *
 	 * @return a new ThrowableProblem
 	 */
@@ -61,7 +61,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_REQUEST, corresponding title and the given detail
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and the given detail
 	 * message.
 	 *
 	 * @param  detail the detail message
@@ -72,7 +72,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_REQUEST, corresponding title and a detail message
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and a detail message
 	 * formatted from the given pattern and parameters.
 	 *
 	 * @param  detailPattern the detail message pattern
@@ -84,7 +84,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc NOT_FOUND, corresponding title and no detail message.
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and no detail message.
 	 *
 	 * @return a new ThrowableProblem
 	 */
@@ -93,7 +93,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc NOT_FOUND, corresponding title and the given detail message.
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and the given detail message.
 	 *
 	 * @param  detail the detail message
 	 * @return        a new ThrowableProblem
@@ -103,7 +103,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc NOT_FOUND, corresponding title and a detail message
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and a detail message
 	 * formatted from the given pattern and parameters.
 	 *
 	 * @param  detailPattern the detail message pattern
@@ -115,7 +115,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc INTERNAL_SERVER_ERROR, corresponding title and no detail.
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and no detail.
 	 *
 	 * @return a new ThrowableProblem
 	 */
@@ -124,7 +124,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc INTERNAL_SERVER_ERROR, corresponding title and the given
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and the given
 	 * detail message.
 	 *
 	 * @param  detail the detail message
@@ -135,7 +135,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc INTERNAL_SERVER_ERROR, corresponding title and a detail
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and a detail
 	 * message formatted from the given pattern and parameters.
 	 *
 	 * @param  detailPattern the detail message pattern
@@ -147,7 +147,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_GATEWAY, corresponding title and no detail.
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and no detail.
 	 *
 	 * @return a new ThrowableProblem
 	 */
@@ -156,7 +156,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_GATEWAY, corresponding title and the given detail
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and the given detail
 	 * message.
 	 *
 	 * @param  detail the detail message
@@ -167,7 +167,7 @@ public interface Problem {
 	}
 
 	/**
-	 * Shortcut method to create a ThrowableProblem with statuc BAD_GATEWAY, corresponding title and a detail message
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and a detail message
 	 * formatted from the given pattern and parameters.
 	 *
 	 * @param  detailPattern the detail message pattern

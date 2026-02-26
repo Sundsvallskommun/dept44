@@ -12,7 +12,7 @@ class ConstraintViolationProblemTest {
 
 	@Test
 	void defaultConstants() {
-		assertThat(URI.create("about:blank")).isEqualTo(ConstraintViolationProblem.TYPE);
+		assertThat(URI.create("https://github.com/Sundsvallskommun/dept44/problems/constraint-violation")).isEqualTo(ConstraintViolationProblem.TYPE);
 		assertThat(ConstraintViolationProblem.DEFAULT_TITLE).isEqualTo("Constraint Violation");
 	}
 

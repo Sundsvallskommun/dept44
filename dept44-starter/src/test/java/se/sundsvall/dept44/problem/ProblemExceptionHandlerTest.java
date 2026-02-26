@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -49,6 +51,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.GATEWAY_TIMEOUT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
@@ -76,10 +79,12 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
-		final var problem = response.getBody();
-		assertThat(problem).isNotNull();
-		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
+		final var body = response.getBody();
+		assertThat(body).isNotNull().isInstanceOf(ConstraintViolationProblemResponse.class);
+		assertThat(body.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(body.getTitle()).isEqualTo("Constraint Violation");
+
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getViolations()).hasSize(2);
 		assertThat(problem.getViolations())
 			.extracting(Violation::field)
@@ -96,8 +101,8 @@ class ProblemExceptionHandlerTest {
 		final var response = handler.handleConstraintViolationException(exception);
 
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
-		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getBody().getViolations()).isEmpty();
+		assertThat(response.getBody()).isNotNull().isInstanceOf(ConstraintViolationProblemResponse.class);
+		assertThat(((ConstraintViolationProblemResponse) response.getBody()).getViolations()).isEmpty();
 	}
 
 	@Test
@@ -115,8 +120,8 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
 		final var body = response.getBody();
-		assertThat(body).isInstanceOf(ConstraintViolationProblem.class);
-		final var problem = (ConstraintViolationProblem) body;
+		assertThat(body).isInstanceOf(ConstraintViolationProblemResponse.class);
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(problem.getViolations()).hasSize(2);
@@ -144,8 +149,8 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
 		final var body = response.getBody();
-		assertThat(body).isInstanceOf(ConstraintViolationProblem.class);
-		final var problem = (ConstraintViolationProblem) body;
+		assertThat(body).isInstanceOf(ConstraintViolationProblemResponse.class);
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
 		assertThat(problem.getViolations()).hasSize(2);
@@ -170,8 +175,8 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
 
 		final var body = response.getBody();
-		assertThat(body).isInstanceOf(ConstraintViolationProblem.class);
-		final var problem = (ConstraintViolationProblem) body;
+		assertThat(body).isInstanceOf(ConstraintViolationProblemResponse.class);
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getViolations()).hasSize(1);
 		assertThat(problem.getViolations())
 			.extracting(Violation::field, Violation::message)
@@ -348,10 +353,12 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
-		final var problem = response.getBody();
-		assertThat(problem).isNotNull();
-		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
+		final var body = response.getBody();
+		assertThat(body).isNotNull().isInstanceOf(ConstraintViolationProblemResponse.class);
+		assertThat(body.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(body.getTitle()).isEqualTo("Constraint Violation");
+
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getViolations()).hasSize(2);
 		assertThat(problem.getViolations())
 			.extracting(Violation::field)
@@ -370,10 +377,12 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
-		final var problem = response.getBody();
-		assertThat(problem).isNotNull();
-		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
-		assertThat(problem.getTitle()).isEqualTo("Constraint Violation");
+		final var body = response.getBody();
+		assertThat(body).isNotNull().isInstanceOf(ConstraintViolationProblemResponse.class);
+		assertThat(body.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(body.getTitle()).isEqualTo("Constraint Violation");
+
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getViolations()).hasSize(2);
 		assertThat(problem.getViolations())
 			.extracting(Violation::field, Violation::message)
@@ -393,8 +402,10 @@ class ProblemExceptionHandlerTest {
 		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
 
-		final var problem = response.getBody();
-		assertThat(problem).isNotNull();
+		final var body = response.getBody();
+		assertThat(body).isNotNull().isInstanceOf(ConstraintViolationProblemResponse.class);
+
+		final var problem = (ConstraintViolationProblemResponse) body;
 		assertThat(problem.getViolations()).hasSize(1);
 		assertThat(problem.getViolations())
 			.extracting(Violation::field, Violation::message)
@@ -602,6 +613,70 @@ class ProblemExceptionHandlerTest {
 		assertThat(problem.getStatus()).isEqualTo(NOT_IMPLEMENTED);
 		assertThat(problem.getTitle()).isEqualTo("Not Implemented");
 		assertThat(problem.getDetail()).isEqualTo("This operation is not supported");
+	}
+
+	@Test
+	void handleMultipartException() {
+		final var exception = new MultipartException("Current request is not a multipart request");
+
+		final var response = handler.handleMultipartException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
+		assertThat(problem.getTitle()).isEqualTo("Bad Request");
+		assertThat(problem.getDetail()).isEqualTo("Current request is not a multipart request");
+	}
+
+	@Test
+	void handleSocketTimeoutException() {
+		final var exception = new SocketTimeoutException("Read timed out");
+
+		final var response = handler.handleSocketTimeoutException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(GATEWAY_TIMEOUT);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getStatus()).isEqualTo(GATEWAY_TIMEOUT);
+		assertThat(problem.getTitle()).isEqualTo("Gateway Timeout");
+		assertThat(problem.getDetail()).isEqualTo("Read timed out");
+	}
+
+	@Test
+	void handleGenericException() {
+		final var exception = new RuntimeException("Something unexpected happened");
+
+		final var response = handler.handleException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(problem.getTitle()).isEqualTo("Internal Server Error");
+		assertThat(problem.getDetail()).isEqualTo("Something unexpected happened");
+	}
+
+	@Test
+	void handleGenericExceptionWithNullMessage() {
+		final var exception = new NullPointerException();
+
+		final var response = handler.handleException(exception);
+
+		assertThat(response.getStatusCode()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+
+		final var problem = response.getBody();
+		assertThat(problem).isNotNull();
+		assertThat(problem.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR);
+		assertThat(problem.getTitle()).isEqualTo("Internal Server Error");
+		assertThat(problem.getDetail()).isNull();
 	}
 
 	@Test

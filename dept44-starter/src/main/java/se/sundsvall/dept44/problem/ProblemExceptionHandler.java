@@ -3,6 +3,7 @@ package se.sundsvall.dept44.problem;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
@@ -24,12 +25,15 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.dept44.problem.violations.Violation;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.GATEWAY_TIMEOUT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -81,7 +85,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 		final @NonNull MethodArgumentNotValidException ex, final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
 
 		final var problem = toConstraintViolationProblem(ex);
-		return handleExceptionInternal(ex, problem, headers, status, request);
+		return handleExceptionInternal(ex, ProblemResponse.from(problem), headers, status, request);
 	}
 
 	/**
@@ -90,7 +94,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(ConstraintViolationException.class)
 	@ResponseBody
-	public ResponseEntity<ConstraintViolationProblem> handleConstraintViolationException(final ConstraintViolationException exception) {
+	public ResponseEntity<ProblemResponse> handleConstraintViolationException(final ConstraintViolationException exception) {
 		final var violations = exception.getConstraintViolations().stream()
 			.map(this::toViolation)
 			.toList();
@@ -104,7 +108,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity
 			.status(BAD_REQUEST)
 			.contentType(APPLICATION_PROBLEM_JSON)
-			.body(problem);
+			.body(ProblemResponse.from(problem));
 	}
 
 	/**
@@ -112,7 +116,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(BindException.class)
 	@ResponseBody
-	public ResponseEntity<ConstraintViolationProblem> handleBindException(final BindException exception) {
+	public ResponseEntity<ProblemResponse> handleBindException(final BindException exception) {
 		final var allViolations = getViolations(exception);
 
 		final var problem = ConstraintViolationProblem.builder()
@@ -124,13 +128,13 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity
 			.status(BAD_REQUEST)
 			.contentType(APPLICATION_PROBLEM_JSON)
-			.body(problem);
+			.body(ProblemResponse.from(problem));
 	}
 
 	/**
 	 * Extract violations from both field errors and global errors in BindException and combine them into a single list of
 	 * Violation objects.
-	 * 
+	 *
 	 * @param  exception the BindException containing field and global errors
 	 * @return           a combined list of Violation objects representing all validation errors
 	 */
@@ -183,6 +187,34 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleUnsupportedOperationException(final UnsupportedOperationException exception) {
 		return createProblem(NOT_IMPLEMENTED, exception.getMessage());
+	}
+
+	/**
+	 * Handle MultipartException. Thrown when multipart request parsing fails (e.g. missing parts, size exceeded).
+	 */
+	@ExceptionHandler(MultipartException.class)
+	@ResponseBody
+	public ResponseEntity<Problem> handleMultipartException(final MultipartException exception) {
+		return createProblem(BAD_REQUEST, exception.getMessage());
+	}
+
+	/**
+	 * Handle SocketTimeoutException. Thrown when a downstream service call times out.
+	 */
+	@ExceptionHandler(SocketTimeoutException.class)
+	@ResponseBody
+	public ResponseEntity<Problem> handleSocketTimeoutException(final SocketTimeoutException exception) {
+		return createProblem(GATEWAY_TIMEOUT, exception.getMessage());
+	}
+
+	/**
+	 * Catch-all handler for any unhandled exception. Ensures all errors produce a Problem JSON response instead of
+	 * falling through to the Servlet container's default error handling.
+	 */
+	@ExceptionHandler(Exception.class)
+	@ResponseBody
+	public ResponseEntity<Problem> handleException(final Exception exception) {
+		return createProblem(INTERNAL_SERVER_ERROR, exception.getMessage());
 	}
 
 	private ProblemResponse toProblemResponse(final ProblemDetail pd) {

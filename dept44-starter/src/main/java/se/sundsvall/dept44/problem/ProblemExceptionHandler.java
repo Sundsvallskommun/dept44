@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -43,7 +41,6 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
  * Global exception handler for validation exceptions. Converts validation exceptions to RFC 9457 Problem responses.
  */
 @ControllerAdvice
-@Order(Ordered.HIGHEST_PRECEDENCE)
 public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final String CONSTRAINT_VIOLATION_TITLE = "Constraint Violation";
@@ -208,8 +205,8 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	/**
-	 * Catch-all handler for any unhandled exception. Ensures all errors produce a Problem JSON response instead of
-	 * falling through to the Servlet container's default error handling.
+	 * Catch-all handler for any unhandled exception. Ensures all errors produce a Problem JSON response instead of falling
+	 * through to the Servlet container's default error handling.
 	 */
 	@ExceptionHandler(Exception.class)
 	@ResponseBody

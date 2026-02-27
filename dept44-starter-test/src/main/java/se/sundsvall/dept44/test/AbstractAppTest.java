@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,12 +76,16 @@ public abstract class AbstractAppTest {
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
+	private static final String CLASSPATH_RESOURCE_SEPARATOR = "/";
 
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
+
 	@Autowired
 	protected TestRestTemplate restTemplate;
+
 	@InjectWireMock
 	protected WireMockServer wiremock;
+
 	private boolean expectedResponseBodyIsNull;
 	private int maxVerificationDelayInSeconds = DEFAULT_VERIFICATION_DELAY_IN_SECONDS;
 	private MultiValueMap<String, Object> multipartBody;
@@ -142,7 +145,7 @@ public abstract class AbstractAppTest {
 	public AbstractAppTest setupPaths() {
 		testCaseName = getTestMethodName();
 		mappingPath = WireMockPathResolver.resolveMappingPath(wiremock, getClass());
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + testCaseName + FileSystems.getDefault().getSeparator();
+		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + testCaseName + CLASSPATH_RESOURCE_SEPARATOR;
 
 		return this;
 	}

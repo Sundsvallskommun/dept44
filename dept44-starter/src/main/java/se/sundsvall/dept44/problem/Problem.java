@@ -6,6 +6,8 @@ import java.net.URI;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
+import static java.text.MessageFormat.format;
+
 /**
  * Represents an RFC 9457 Problem Details object.
  *
@@ -36,11 +38,7 @@ public interface Problem {
 	 * @return        a new ThrowableProblem
 	 */
 	static ThrowableProblem valueOf(final HttpStatus status, final String detail) {
-		return builder()
-			.withStatus(status)
-			.withTitle(status.getReasonPhrase())
-			.withDetail(detail)
-			.build();
+		return builder().withStatus(status).withTitle(status.getReasonPhrase()).withDetail(detail).build();
 	}
 
 	/**
@@ -50,10 +48,134 @@ public interface Problem {
 	 * @return        a new ThrowableProblem
 	 */
 	static ThrowableProblem valueOf(final HttpStatus status) {
-		return builder()
-			.withStatus(status)
-			.withTitle(status.getReasonPhrase())
-			.build();
+		return builder().withStatus(status).withTitle(status.getReasonPhrase()).build();
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and no detail message.
+	 *
+	 * @return a new ThrowableProblem
+	 */
+	static ThrowableProblem badRequest() {
+		return valueOf(HttpStatus.BAD_REQUEST);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and the given detail
+	 * message.
+	 *
+	 * @param  detail the detail message
+	 * @return        a new ThrowableProblem
+	 */
+	static ThrowableProblem badRequest(final String detail) {
+		return valueOf(HttpStatus.BAD_REQUEST, detail);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and a detail message
+	 * formatted from the given pattern and parameters.
+	 *
+	 * @param  detailPattern the detail message pattern
+	 * @param  parameters    the detail message parameters
+	 * @return               a new ThrowableProblem
+	 */
+	static ThrowableProblem badRequest(final String detailPattern, final Object... parameters) {
+		return valueOf(HttpStatus.BAD_REQUEST, format(detailPattern, parameters));
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and no detail message.
+	 *
+	 * @return a new ThrowableProblem
+	 */
+	static ThrowableProblem notFound() {
+		return valueOf(HttpStatus.NOT_FOUND);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and the given detail message.
+	 *
+	 * @param  detail the detail message
+	 * @return        a new ThrowableProblem
+	 */
+	static ThrowableProblem notFound(final String detail) {
+		return valueOf(HttpStatus.NOT_FOUND, detail);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and a detail message
+	 * formatted from the given pattern and parameters.
+	 *
+	 * @param  detailPattern the detail message pattern
+	 * @param  parameters    the detail message parameters
+	 * @return               a new ThrowableProblem
+	 */
+	static ThrowableProblem notFound(final String detailPattern, final Object... parameters) {
+		return valueOf(HttpStatus.NOT_FOUND, format(detailPattern, parameters));
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and no detail.
+	 *
+	 * @return a new ThrowableProblem
+	 */
+	static ThrowableProblem internalServerError() {
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and the given
+	 * detail message.
+	 *
+	 * @param  detail the detail message
+	 * @return        a new ThrowableProblem
+	 */
+	static ThrowableProblem internalServerError(final String detail) {
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, detail);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and a detail
+	 * message formatted from the given pattern and parameters.
+	 *
+	 * @param  detailPattern the detail message pattern
+	 * @param  parameters    the detail message parameters
+	 * @return               a new ThrowableProblem
+	 */
+	static ThrowableProblem internalServerError(final String detailPattern, final Object... parameters) {
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, format(detailPattern, parameters));
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and no detail.
+	 *
+	 * @return a new ThrowableProblem
+	 */
+	static ThrowableProblem badGateway() {
+		return valueOf(HttpStatus.BAD_GATEWAY);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and the given detail
+	 * message.
+	 *
+	 * @param  detail the detail message
+	 * @return        a new ThrowableProblem
+	 */
+	static ThrowableProblem badGateway(final String detail) {
+		return valueOf(HttpStatus.BAD_GATEWAY, detail);
+	}
+
+	/**
+	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and a detail message
+	 * formatted from the given pattern and parameters.
+	 *
+	 * @param  detailPattern the detail message pattern
+	 * @param  parameters    the detail message parameters
+	 * @return               a new ThrowableProblem
+	 */
+	static ThrowableProblem badGateway(final String detailPattern, final Object... parameters) {
+		return valueOf(HttpStatus.BAD_GATEWAY, format(detailPattern, parameters));
 	}
 
 	/**

@@ -63,7 +63,7 @@ public class ResourceLoaderExtension implements ParameterResolver {
 					case XML -> fromXml(fromClasspath(path), parameterClass);
 					case STRING -> Optional.of(parameterClass)
 						.filter(String.class::isAssignableFrom)
-						.map(ignored -> fromClasspath(path))
+						.map(_ -> fromClasspath(path))
 						.orElseThrow(() -> new IllegalStateException("Unable to load resource into parameter of type " + parameterClass.getName()));
 				};
 			})

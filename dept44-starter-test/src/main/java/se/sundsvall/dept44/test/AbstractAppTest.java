@@ -1,15 +1,12 @@
 package se.sundsvall.dept44.test;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
-import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -42,8 +40,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
+import org.wiremock.spring.ConfigureWireMock;
 import org.wiremock.spring.InjectWireMock;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockPathResolver;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -77,6 +75,7 @@ public abstract class AbstractAppTest {
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 	private static final String CLASSPATH_RESOURCE_SEPARATOR = "/";
+	private static final String CLASSPATH = "classpath:";
 
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
@@ -106,17 +105,22 @@ public abstract class AbstractAppTest {
 	private String testDirectoryPath;
 	private String testCaseName;
 
-	private static StubMapping updateStubWithResponse(final StubMapping stub, final ResponseDefinition newResponse) {
-		final var updatedStub = new StubMapping(stub.getRequest(), newResponse);
-		updatedStub.setUuid(stub.getUuid());
-		updatedStub.setName(stub.getName());
-		updatedStub.setPriority(stub.getPriority());
-		updatedStub.setScenarioName(stub.getScenarioName());
-		updatedStub.setRequiredScenarioState(stub.getRequiredScenarioState());
-		updatedStub.setNewScenarioState(stub.getNewScenarioState());
-		updatedStub.setPostServeActions(stub.getPostServeActions());
-		updatedStub.setMetadata(stub.getMetadata());
-		return updatedStub;
+	private static String normalizePath(final String input) {
+		var path = input.replace('\\', '/');
+
+		if (path.startsWith(CLASSPATH)) {
+			path = path.substring(CLASSPATH.length());
+		}
+		while (path.startsWith("/")) {
+			path = path.substring(1);
+		}
+		while (path.endsWith("/")) {
+			path = path.substring(0, path.length() - 1);
+		}
+		if (!path.isEmpty()) {
+			path += "/";
+		}
+		return path;
 	}
 
 	public AbstractAppTest reset() {
@@ -144,10 +148,18 @@ public abstract class AbstractAppTest {
 
 	public AbstractAppTest setupPaths() {
 		testCaseName = getTestMethodName();
-		mappingPath = WireMockPathResolver.resolveMappingPath(wiremock, getClass());
-		testDirectoryPath = "classpath:" + mappingPath + FILES_DIR + testCaseName + CLASSPATH_RESOURCE_SEPARATOR;
+		mappingPath = resolveClasspathMappingPath();
+		testDirectoryPath = CLASSPATH + mappingPath + FILES_DIR + testCaseName + CLASSPATH_RESOURCE_SEPARATOR;
 
 		return this;
+	}
+
+	private String resolveClasspathMappingPath() {
+		final var configureWireMock = AnnotatedElementUtils.findMergedAnnotation(getClass(), ConfigureWireMock.class);
+		if (configureWireMock != null && !configureWireMock.filesUnderClasspath().isEmpty()) {
+			return normalizePath(configureWireMock.filesUnderClasspath());
+		}
+		return normalizePath(wiremock.getOptions().filesRoot().getPath());
 	}
 
 	public AbstractAppTest setupCall() {
@@ -156,140 +168,14 @@ public abstract class AbstractAppTest {
 		setupPaths();
 
 		// Load common mappings and test-specific mappings
-		final String commonMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY);
 		wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-			new ClasspathFileSource(commonMappingsPath), null));
+			new ClasspathFileSource(mappingPath + FILES_DIR + COMMON_MAPPING_DIR + MAPPING_DIRECTORY), null));
 		if (nonNull(testCaseName)) {
-			final String testMappingsPath = WireMockPathResolver.removeDoubleSlashes(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY);
 			wiremock.loadMappingsUsing(new JsonFileMappingsSource(
-				new ClasspathFileSource(testMappingsPath), null));
+				new ClasspathFileSource(mappingPath + FILES_DIR + testCaseName + MAPPING_DIRECTORY), null));
 		}
-
-		// Resolve bodyFileName references to inline body content
-		// This is a workaround for wiremock-spring-boot not properly configuring the file source
-		// when @ConfigureWireMock is used as a meta-annotation
-		resolveBodyFileNames();
 
 		return this;
-	}
-
-	/**
-	 * Resolves bodyFileName references in stub mappings to inline body content.
-	 * <p>
-	 * This is necessary because wiremock-spring-boot doesn't properly configure the file source (blob store)
-	 * when @ConfigureWireMock is used as a meta-annotation. The file source defaults to src/test/resources instead of the
-	 * path specified in
-	 *
-	 * </p>
-	 */
-	private void resolveBodyFileNames() {
-		final String filesBasePath = "classpath:" + mappingPath + FILES_DIR;
-
-		wiremock.listAllStubMappings().getMappings().stream()
-			.filter(stub -> nonNull(stub.getResponse()) && nonNull(stub.getResponse().getBodyFileName()))
-			.forEach(stub -> {
-				final var bodyFileName = stub.getResponse().getBodyFileName();
-				final var bodyContent = readBodyFile(filesBasePath, bodyFileName);
-				// Try to read it as a binary file if it wasn't found as a JSON/text file (for cases where bodyFileName points to a
-				// binary file like a PDF, image, etc.)
-				final var bodyBytes = isNull(bodyContent) ? readBodyFileAsBytes(filesBasePath, bodyFileName) : new byte[0];
-
-				if (nonNull(bodyContent) || bodyBytes.length > 0) {
-					// Create a new response definition with inline body instead of bodyFileName
-					final var originalResponse = stub.getResponse();
-					final var responseBuilder = new ResponseDefinitionBuilder()
-						.withStatus(originalResponse.getStatus());
-
-					// Check if we have a regular file, or if we have a binary file.
-					if (nonNull(bodyContent)) {
-						responseBuilder.withBody(bodyContent);
-					} else {
-						responseBuilder.withBody(bodyBytes);
-					}
-
-					// Copy other response properties
-					if (nonNull(originalResponse.getHeaders())) {
-						originalResponse.getHeaders().all().forEach(
-							header -> responseBuilder.withHeader(header.key(), header.values().toArray(new String[0])));
-					}
-					if (nonNull(originalResponse.getFixedDelayMilliseconds())) {
-						responseBuilder.withFixedDelay(originalResponse.getFixedDelayMilliseconds());
-					}
-					if (nonNull(originalResponse.getDelayDistribution())) {
-						responseBuilder.withRandomDelay(originalResponse.getDelayDistribution());
-					}
-					if (nonNull(originalResponse.getFault())) {
-						responseBuilder.withFault(originalResponse.getFault());
-					}
-					if (nonNull(originalResponse.getTransformers()) && !originalResponse.getTransformers().isEmpty()) {
-						responseBuilder.withTransformers(originalResponse.getTransformers().toArray(new String[0]));
-					}
-
-					final var newResponse = responseBuilder.build();
-
-					// Create updated stub mapping
-					final var updatedStub = updateStubWithResponse(stub, newResponse);
-
-					// Replace the stub
-					wiremock.removeStub(stub);
-					wiremock.addStubMapping(updatedStub);
-
-					logger.debug("Resolved bodyFileName '{}' to inline content for stub '{}'", bodyFileName, stub.getName());
-				} else {
-					logger.warn("Could not resolve bodyFileName '{}' for stub '{}'. File not found in classpath.",
-						bodyFileName, stub.getName());
-				}
-			});
-	}
-
-	/**
-	 * Reads a body file from the classpath.
-	 *
-	 * @param  basePath     the base classpath path (e.g., "classpath: TestClass/__files/")
-	 * @param  bodyFileName the body file name from the stub mapping
-	 * @return              the file content as a string, or null if not found
-	 */
-	private String readBodyFile(final String basePath, final String bodyFileName) {
-		// Try the file path as-is first (for paths like "common/responses/file.json")
-		var content = fromFile(basePath + bodyFileName);
-		if (nonNull(content)) {
-			return content;
-		}
-
-		// Try with the test case name prefix (for paths like "testName/response/file.json")
-		if (nonNull(testCaseName)) {
-			content = fromFile(basePath + testCaseName + "/" + bodyFileName);
-			if (nonNull(content)) {
-				return content;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Reads a body file from the classpath as raw bytes (for binary files like PDFs, images, etc.).
-	 *
-	 * @param  basePath     the base classpath path (e.g., "classpath: TestClass/__files/")
-	 * @param  bodyFileName the body file name from the stub mapping
-	 * @return              the file content as a byte array, or null if not found
-	 */
-	private byte[] readBodyFileAsBytes(final String basePath, final String bodyFileName) {
-		// Try the file path as-is first
-		var content = fromFileAsBytes(basePath + bodyFileName);
-		if (content.length > 0) {
-			return content;
-		}
-
-		// Try with the test case name prefix
-		if (nonNull(testCaseName)) {
-			content = fromFileAsBytes(basePath + testCaseName + "/" + bodyFileName);
-			if (content.length > 0) {
-				return content;
-			}
-		}
-
-		return new byte[0];
 	}
 
 	public AbstractAppTest withExtensions(final Extension... extensions) {
@@ -694,15 +580,6 @@ public abstract class AbstractAppTest {
 			return readString(getFile(filePath).toPath());
 		} catch (final IOException _) {
 			return null;
-		}
-	}
-
-	private byte[] fromFileAsBytes(final String filePath) {
-		try {
-			return Files.readAllBytes(getFile(filePath).toPath());
-		} catch (final IOException _) {
-			logger.warn("Could not read file {}", filePath);
-			return new byte[0];
 		}
 	}
 

@@ -2,13 +2,8 @@ package se.sundsvall.dept44.test;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.common.FileSource;
-import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
-import com.github.tomakehurst.wiremock.http.Fault;
-import com.github.tomakehurst.wiremock.matching.RequestPattern;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
@@ -58,12 +53,6 @@ class AbstractAppTestTest {
 	private TestRestTemplate restTemplateMock;
 
 	@Mock
-	private Options optionsMock;
-
-	@Mock
-	private FileSource fileSourceMock;
-
-	@Mock
 	private WireMockServer wiremockMock;
 
 	@Mock
@@ -85,9 +74,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -139,9 +126,7 @@ class AbstractAppTestTest {
 		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
 		final var contentBytes = Files.readAllBytes(file.toPath());
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn(".");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class))).thenReturn(new ResponseEntity<>(contentBytes, responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -174,9 +159,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -218,9 +201,7 @@ class AbstractAppTestTest {
 				"responseData": "testData"
 			}
 			""".formatted(now().getYear());
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(response, responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -263,9 +244,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -303,9 +282,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("http://someurl:111222/aaa"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -342,9 +319,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
 			{
 			"key": "this-is-key",
@@ -391,9 +366,7 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -422,9 +395,7 @@ class AbstractAppTestTest {
 	@Test
 	void testBodyReplacement() {
 		// Setup
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock); // The second invocation is a cast, hence this.
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
+		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
@@ -455,171 +426,4 @@ class AbstractAppTestTest {
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
 	}
 
-	@Test
-	void testResolveBodyFileNamesWithBodyFileNameNotFound() {
-		// Setup - create a stub mapping with bodyFileName that doesn't exist
-		final var responseDefinition = new ResponseDefinitionBuilder()
-			.withStatus(200)
-			.withBodyFile("nonexistent/file.json")
-			.withHeader("Content-Type", "application/json")
-			.withFixedDelay(100)
-			.withTransformers("response-template")
-			.build();
-
-		final var stubMapping = new StubMapping(RequestPattern.everything(), responseDefinition);
-
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
-
-		// Call
-		final var instance = appTest.setupCall()
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedResponse("{}")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
-
-		// Verification
-		assertThat(instance).isNotNull();
-		// The resolveBodyFileNames method should have been called
-		// Since the file doesn't exist, it should log a warning but not fail
-		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
-	}
-
-	@Test
-	void testResolveBodyFileNamesWithBodyFileNameFound() {
-		// Setup - create a stub mapping with bodyFileName that exists in __files/common/
-		final var responseDefinition = new ResponseDefinitionBuilder()
-			.withStatus(200)
-			.withBodyFile("common/response.json")
-			.withHeader("Content-Type", "application/json")
-			.withFixedDelay(100)
-			.withTransformers("response-template")
-			.build();
-
-		final var stubMapping = new StubMapping(RequestPattern.everything(), responseDefinition);
-		stubMapping.setName("test-stub");
-
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		// Use an empty path so the classpath resolution uses __files/ directory
-		when(fileSourceMock.getPath()).thenReturn("");
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
-
-		// Call
-		final var instance = appTest.setupCall()
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedResponse("{}")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
-
-		// Verification
-		assertThat(instance).isNotNull();
-		// Verify that stub was removed and re-added with an inline body
-		verify(wiremockMock).removeStub(any(StubMapping.class));
-		verify(wiremockMock).addStubMapping(any(StubMapping.class));
-	}
-
-	@Test
-	void testResolveBodyFileNamesWithBinaryBodyFileNameFound() throws Exception {
-		// create a stub mapping with bodyFileName pointing to a binary file
-		final var responseDefinition = new ResponseDefinitionBuilder()
-			.withStatus(200)
-			.withBodyFile("testBinaryCall/dept44.jpg")
-			.withHeader("Content-Type", "image/jpeg")
-			.build();
-
-		final var stubMapping = new StubMapping(RequestPattern.everything(), responseDefinition);
-		stubMapping.setName("binary");
-
-		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
-		final var expectedBytes = Files.readAllBytes(file.toPath());
-
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		// Use an empty path so the classpath resolution uses __files/ directory
-		when(fileSourceMock.getPath()).thenReturn("");
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
-
-		// Call
-		final var instance = appTest.setupCall()
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedResponse("{}")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
-
-		// Verification
-		assertThat(instance).isNotNull();
-
-		// Verify that stub was removed and re-added with inline binary body
-		final var stubCaptor = ArgumentCaptor.forClass(StubMapping.class);
-		verify(wiremockMock).removeStub(any(StubMapping.class));
-		verify(wiremockMock).addStubMapping(stubCaptor.capture());
-
-		final var capturedStub = stubCaptor.getValue();
-		assertThat(capturedStub.getResponse().getByteBody()).isEqualTo(expectedBytes);
-		assertThat(capturedStub.getResponse().getBodyFileName()).isNull();
-	}
-
-	@Test
-	void testResolveBodyFileNamesWithFaultResponse() {
-		// Setup - create a stub mapping with fault
-		final var responseDefinition = new ResponseDefinitionBuilder()
-			.withStatus(500)
-			.withBodyFile("common/response.json")
-			.withFault(Fault.CONNECTION_RESET_BY_PEER)
-			.build();
-
-		final var stubMapping = new StubMapping(RequestPattern.everything(), responseDefinition);
-
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
-
-		// Call
-		final var instance = appTest.setupCall()
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedResponse("{}")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
-
-		// Verification
-		assertThat(instance).isNotNull();
-		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
-	}
-
-	@Test
-	void testResolveBodyFileNamesWithNullResponse() {
-		// Setup - create a stub mapping without response (edge case)
-		final var stubMapping = new StubMapping();
-
-		when(wiremockMock.getOptions()).thenReturn(optionsMock).thenReturn(wireMockConfigMock);
-		when(optionsMock.filesRoot()).thenReturn(fileSourceMock);
-		when(fileSourceMock.getPath()).thenReturn("/filepath");
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stubMapping), null));
-		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", OK));
-
-		// Call
-		final var instance = appTest.setupCall()
-			.withServicePath("/some/path")
-			.withHttpMethod(GET)
-			.withExpectedResponse("{}")
-			.withExpectedResponseStatus(OK)
-			.sendRequestAndVerifyResponse();
-
-		// Verification
-		assertThat(instance).isNotNull();
-		// Stubs with null response should be filtered out and not processed
-		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
-	}
 }

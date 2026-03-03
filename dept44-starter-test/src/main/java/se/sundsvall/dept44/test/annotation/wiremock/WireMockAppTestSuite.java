@@ -13,24 +13,29 @@ import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTest
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.test.context.ActiveProfiles;
 import org.wiremock.spring.ConfigureWireMock;
-import org.wiremock.spring.EnableWireMock;
 
 /**
  * Autoconfigure WireMock on a dynamic/random port, loading mappings from the classpath using the provided value(s).
  *
  * <p>
- * <b>Annotation ordering matters:</b> {@code @SpringBootTest} must be declared before {@code @EnableWireMock}
- * so that {@code SpringExtension.beforeEach()} runs before {@code WireMockSpringJunitExtension.beforeEach()}.
- * This ensures that {@code @DirtiesContext} recreates the Spring context (and its WireMock server) before
- * {@code @InjectWireMock} resolves the server reference. Reversing the order causes a stale server reference
- * after context recreation.
+ * The {@code files} attribute maps via {@code @AliasFor} to {@link ConfigureWireMock#filesUnderClasspath()}. A custom
+ * {@link WireMockAppTestSuiteContextCustomizerFactory} uses Spring's annotation merging to resolve this alias and
+ * create the WireMock
+ * server with the correct file source before wiremock-spring-boot's built-in factory runs.
+ *
+ * <p>
+ * {@code @EnableWireMock} is intentionally omitted — since wiremock-spring-boot 4.2.0, {@code @ConfigureWireMock}
+ * itself carries {@code @ExtendWith(WireMockSpringJunitExtension.class)}, which is sufficient to register the JUnit 5
+ * extension. Including
+ * {@code @EnableWireMock} would cause its empty {@code value} to produce a default
+ * {@code @ConfigureWireMock(name = "wiremock")} with no {@code filesUnderClasspath}, which shadows the correctly
+ * configured one via {@code addIfAbsent}.
  */
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @ConfigureWireMock
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EnableWireMock
 @AutoConfigureTestRestTemplate
 @AutoConfigureWebTestClient
 @ActiveProfiles("it")

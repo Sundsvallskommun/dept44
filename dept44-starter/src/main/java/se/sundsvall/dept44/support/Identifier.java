@@ -229,7 +229,7 @@ public class Identifier {
 		public static Type fromString(String value) {
 			try {
 				return Type.valueOf(LOWER_CAMEL.to(UPPER_UNDERSCORE, value));
-			} catch (Exception e) {
+			} catch (Exception _) {
 				return null;
 			}
 		}

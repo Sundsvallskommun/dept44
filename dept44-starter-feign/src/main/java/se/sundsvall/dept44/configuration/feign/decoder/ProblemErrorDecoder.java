@@ -22,7 +22,6 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
  */
 public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
-	// TODO: Migrate to Jackson 3 (tools.jackson) when Feign adds Jackson 3 support
 	private static final JsonMapper JSON_MAPPER_MAPPER = JsonMapper.builder()
 		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 		.build();

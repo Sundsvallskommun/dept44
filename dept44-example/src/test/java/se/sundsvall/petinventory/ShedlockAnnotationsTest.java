@@ -66,7 +66,7 @@ class ShedlockAnnotationsTest {
 				klazz = klazz.getSuperclass();
 			}
 			return Map.of(Objects.requireNonNull(candidate.getBeanClassName()), methods);
-		} catch (final ClassNotFoundException e) {
+		} catch (final ClassNotFoundException _) {
 			fail("Couldn't traverse class methods as class %s could not be found".formatted(candidate.getBeanClassName()));
 			return Collections.emptyMap();
 		}

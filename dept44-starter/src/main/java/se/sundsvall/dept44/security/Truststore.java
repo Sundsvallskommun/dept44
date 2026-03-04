@@ -197,7 +197,7 @@ public class Truststore {
 	private List<Resource> fetchResources(String path) {
 		try {
 			return asList(new PathMatchingResourcePatternResolver().getResources(path));
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			LOG.debug(MESSAGE_NO_RESOURCES_FOUND, path);
 			return emptyList();
 		}

@@ -52,7 +52,7 @@ public class ValidBase64ConstraintValidator extends AbstractValidator implements
 	private boolean isValidBase64(final String value) {
 		try {
 			BASE64_DECODER.decode(value);
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			return false;
 		}
 

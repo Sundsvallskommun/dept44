@@ -37,6 +37,8 @@
 		<module>dept44-example</module>
 		<module>dept44-formatting-plugin</module>
 		<module>dept44-starter-scheduler</module>
+		<module>dept44-starter-jpa</module>
+		<module>dept44-starter-jpa-test</module>
 	</modules>
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -170,6 +172,16 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-scheduler</artifactId>
+				<version>8.0.4-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-starter-jpa</artifactId>
+				<version>8.0.4-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-starter-jpa-test</artifactId>
 				<version>8.0.4-SNAPSHOT</version>
 			</dependency>
 			<!-- SpringDoc -->

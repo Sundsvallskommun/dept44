@@ -49,7 +49,7 @@ class SecurityConfigurationTest {
 	}
 
 	@Test
-	void authorizeRequests() throws Exception {
+	void authorizeRequests() {
 		when(httpSecurityMock.securityMatcher(any(String[].class))).thenReturn(httpSecurityMock);
 		when(httpSecurityMock.csrf(any())).thenReturn(httpSecurityMock);
 		when(requestMatcherRegistryMock.anyRequest()).thenReturn(authorizedUrlMock);

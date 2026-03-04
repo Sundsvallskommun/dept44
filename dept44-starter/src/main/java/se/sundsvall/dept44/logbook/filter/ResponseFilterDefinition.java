@@ -58,7 +58,7 @@ public class ResponseFilterDefinition {
 					if (!isText) {
 						return "<binary>";
 					}
-				} catch (final Exception e) {
+				} catch (final Exception _) {
 					// Do nothing
 				}
 			}

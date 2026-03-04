@@ -14,7 +14,7 @@ public class SecurityConfiguration {
 
 	@Bean
 	@Order(0)
-	SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
+	SecurityFilterChain filterChain(final HttpSecurity http) {
 		return http
 			.csrf(CsrfConfigurer::disable) // Disable CSRF
 			.securityMatcher("/**")

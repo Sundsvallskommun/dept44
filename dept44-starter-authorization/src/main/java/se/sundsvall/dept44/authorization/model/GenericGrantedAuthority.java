@@ -3,23 +3,30 @@ package se.sundsvall.dept44.authorization.model;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
+import java.io.Serial;
 import java.util.Objects;
 import net.minidev.json.JSONArray;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.SpringSecurityCoreVersion;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.Assert.hasText;
 
 public class GenericGrantedAuthority implements GrantedAuthority {
 
-	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
+	@Serial
+	private static final long serialVersionUID = 1L;
 
 	private static final String AUTH_ROLE_REQUIRED = "An authority role is required";
 	private static final String REQUESTED_ACCESS_REQUIRED = "A path to requested access is required";
 	private static final String INVALID_JSON_PATH = "Provided jsonpath '%s' is invalid";
 	private final String role;
 	private final DocumentContext accesses; // NOSONAR
+
+	private GenericGrantedAuthority(final String role, final String accesses) {
+		hasText(role, AUTH_ROLE_REQUIRED);
+		this.role = role;
+		this.accesses = isNull(accesses) ? null : JsonPath.parse(accesses);
+	}
 
 	public static GenericGrantedAuthority create(final String role) {
 		return new GenericGrantedAuthority(role, null);
@@ -29,10 +36,12 @@ public class GenericGrantedAuthority implements GrantedAuthority {
 		return new GenericGrantedAuthority(role, accesses);
 	}
 
-	private GenericGrantedAuthority(final String role, final String accesses) {
-		hasText(role, AUTH_ROLE_REQUIRED);
-		this.role = role;
-		this.accesses = isNull(accesses) ? null : JsonPath.parse(accesses);
+	private static void isValid(final String accessPath) {
+		try {
+			JsonPath.compile(accessPath);
+		} catch (final InvalidPathException _) {
+			throw new IllegalArgumentException(String.format(INVALID_JSON_PATH, accessPath));
+		}
 	}
 
 	@Override
@@ -57,14 +66,6 @@ public class GenericGrantedAuthority implements GrantedAuthority {
 		return hasAuthority(role) && !matches.isEmpty();
 	}
 
-	private static void isValid(final String accessPath) {
-		try {
-			JsonPath.compile(accessPath);
-		} catch (final InvalidPathException e) {
-			throw new IllegalArgumentException(String.format(INVALID_JSON_PATH, accessPath));
-		}
-	}
-
 	@Override
 	public int hashCode() {
 		return Objects.hash(accesses, role);
@@ -87,9 +88,7 @@ public class GenericGrantedAuthority implements GrantedAuthority {
 
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("GenericGrantedAuthority [role=").append(role).append(", accesses=")
-			.append(isNull(accesses) ? null : accesses.jsonString()).append("]");
-		return builder.toString();
+		return "GenericGrantedAuthority [role=" + role + ", accesses="
+			+ (isNull(accesses) ? null : accesses.jsonString()) + "]";
 	}
 }

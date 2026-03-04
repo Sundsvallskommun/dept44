@@ -37,6 +37,10 @@ across projects. Here’s an overview:
 - **`dept44-common-validators`**: Provides a set of common validators for data integrity and validation within services.
 - **`dept44-example`**: An example microservice using the Dept44 parent configurations as a reference implementation.
 - **`dept44-formatting-plugin`**: Maven plugin for consistent code formatting
+- **`dept44-starter-jpa`**: Aggregates JPA, Flyway, MariaDB driver, and Hibernate metamodel generation for
+  database-backed services.
+- **`dept44-starter-jpa-test`**: Aggregates DataJpaTest support, Testcontainers MariaDB, and Spring Boot Testcontainers
+  for testing database-backed services.
 - **`dept44-starter-scheduler`**: Streamlines scheduled task management with robust exception handling, automated health
   checks, and ShedLock integration.
 

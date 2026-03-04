@@ -46,7 +46,7 @@ public class ValidUuidConstraintValidator extends AbstractValidator implements C
 	private boolean isValidUUID(final String value) {
 		try {
 			UUID.fromString(String.valueOf(value));
-		} catch (final Exception e) {
+		} catch (final Exception _) {
 			return false;
 		}
 

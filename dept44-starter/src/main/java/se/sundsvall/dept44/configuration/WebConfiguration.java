@@ -146,19 +146,15 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		@Override
 		public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response, final Object notUsed) {
-			if (allowedIds.isEmpty()) {
-				return true;
+			if (!allowedIds.isEmpty()) {
+				final String[] pathArray = request.getRequestURI().split("/");
+
+				if (!allowedIds.contains(pathArray[municipalityIdUriIndex])) {
+					throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex]).build();
+				}
 			}
 
-			// Extracts the request URI.
-			final String path = request.getRequestURI();
-			// Split the path into parts
-			final String[] pathArray = path.split("/");
-
-			if (allowedIds.contains(pathArray[municipalityIdUriIndex])) {
-				return true;
-			}
-			throw Problem.builder().withStatus(NOT_IMPLEMENTED).withDetail("Not implemented for municipalityId: " + pathArray[municipalityIdUriIndex]).build();
+			return true;
 		}
 	}
 

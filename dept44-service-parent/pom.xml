@@ -133,7 +133,7 @@
 						<phase>integration-test</phase>
 						<configuration>
 							<reuseForks>true</reuseForks>
-							<argLine>-Dfile.encoding=${project.encoding} ${failsafeArgLine}</argLine>
+							<argLine>-Dfile.encoding=${project.encoding} ${mockito.agent} ${failsafeArgLine}</argLine>
 							<includes>
 								<include>**/IT*.java</include>
 								<include>**/*IT.java</include>
@@ -159,7 +159,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<argLine>-Dfile.encoding=${project.encoding} -Xmx256m ${surefireArgLine}</argLine>
+					<argLine>-Dfile.encoding=${project.encoding} -Xmx256m ${mockito.agent} ${surefireArgLine}</argLine>
 				</configuration>
 			</plugin>
 			<plugin>

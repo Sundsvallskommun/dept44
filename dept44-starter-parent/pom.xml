@@ -37,7 +37,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<argLine>-Dspring.main.banner-mode=off</argLine>
+					<argLine>-Dspring.main.banner-mode=off ${mockito.agent}</argLine>
 				</configuration>
 			</plugin>
 			<plugin>

@@ -55,6 +55,9 @@
 		<maven.compiler.proc>full</maven.compiler.proc>
 		<downloadSources>true</downloadSources>
 		<downloadJavadocs>true</downloadJavadocs>
+		<!-- Mockito agent for JDK 21+ compatibility -->
+		<mockito.version>5.20.0</mockito.version>
+		<mockito.agent>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</mockito.agent>
 		<!-- Dependency versions -->
 		<commons-lang3.version>3.20.0</commons-lang3.version>
 		<logbook.version>4.0.2</logbook.version>
@@ -300,7 +303,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
-					<argLine>-Dspring.main.banner-mode=off</argLine>
+					<argLine>-Dspring.main.banner-mode=off ${mockito.agent}</argLine>
 				</configuration>
 			</plugin>
 			<!-- Provides source JAR (used for publishing) -->

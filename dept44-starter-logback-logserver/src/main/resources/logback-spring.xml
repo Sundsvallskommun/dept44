@@ -8,7 +8,10 @@
     <springProperty scope="context" name="applicationName" source="spring.application.name" defaultValue="name-not-set"/>
     <springProperty scope="context" name="maxChunkSize" source="dept44.logback.logserver.maxchunksize" defaultValue="508"/>
 
-    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>isDefined("LOGSERVER_HOST") &amp;&amp; !propertyContains("dept44.logback.logserver.disabled", "true")</expression>
+    </condition>
+    <if>
         <then>
             <appender name="GELF" class="de.siegmar.logbackgelf.GelfUdpAppender">
                 <graylogHost>${LOGSERVER_HOST}</graylogHost>  <!-- Defined as environment variable -->
@@ -49,7 +52,10 @@
     <logger name="se.sundsvall" additivity="false" level="INFO">
         <appender-ref ref="CONSOLE" />
     </logger>
-    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>isDefined("LOGSERVER_HOST") &amp;&amp; !propertyContains("dept44.logback.logserver.disabled", "true")</expression>
+    </condition>
+    <if>
         <then>
             <logger name="se.sundsvall">
                 <appender-ref ref="GELF"/>
@@ -60,7 +66,10 @@
     <logger name="se.sundsvall.dept44.payload" additivity="false" level="TRACE">
         <appender-ref ref="CONSOLE" />
     </logger>
-    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>isDefined("LOGSERVER_HOST") &amp;&amp; !propertyContains("dept44.logback.logserver.disabled", "true")</expression>
+    </condition>
+    <if>
         <then>
             <logger name="se.sundsvall.dept44.payload">
                 <appender-ref ref="GELF"/>
@@ -71,7 +80,10 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
     </root>
-    <if condition='isDefined("LOGSERVER_HOST") &amp;&amp; !property("dept44.logback.logserver.disabled").contains("true")'>
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>isDefined("LOGSERVER_HOST") &amp;&amp; !propertyContains("dept44.logback.logserver.disabled", "true")</expression>
+    </condition>
+    <if>
         <then>
             <root>
                 <appender-ref ref="GELF"/>

@@ -78,7 +78,7 @@
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>${argLine}</argLine>
+					<argLine>${mockito.agent} ${argLine}</argLine>
 				</configuration>
 			</plugin>
 			<plugin>

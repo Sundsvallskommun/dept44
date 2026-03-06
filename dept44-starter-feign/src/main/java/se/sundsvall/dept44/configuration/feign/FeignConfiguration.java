@@ -5,12 +5,16 @@ import feign.Logger;
 import feign.QueryMapEncoder;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
+import feign.form.MultipartFormContentProcessor;
+import feign.form.spring.SpringFormEncoder;
 import feign.okhttp.OkHttpClient;
 import feign.optionals.OptionalDecoder;
 import java.util.List;
 import javax.net.ssl.X509TrustManager;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.cloud.openfeign.support.AbstractFormWriter;
+import org.springframework.cloud.openfeign.support.FeignEncoderProperties;
 import org.springframework.cloud.openfeign.support.FeignHttpMessageConverters;
 import org.springframework.cloud.openfeign.support.HttpMessageConverterCustomizer;
 import org.springframework.cloud.openfeign.support.PageableSpringEncoder;
@@ -69,11 +73,27 @@ public class FeignConfiguration {
 
 	/**
 	 * Feign encoder using Spring's HttpMessageConverters. Handles: - Pageable parameters as query strings (via
-	 * PageableSpringEncoder) - Multipart form-data - JSON with Jackson 3.x and configured DateTimeFeature settings
+	 * PageableSpringEncoder) - Multipart form-data (with optional AbstractFormWriter for @RequestPart JSON POJOs) - JSON
+	 * with Jackson 3.x and
+	 * configured DateTimeFeature settings
+	 * <p>
+	 * When an {@link AbstractFormWriter} bean is present (e.g. JsonFormWriter), it is registered with the
+	 * {@link SpringFormEncoder} so that @RequestPart POJO parameters are serialized as JSON parts in multipart requests.
 	 */
 	@Bean
-	Encoder feignEncoder(final ObjectProvider<FeignHttpMessageConverters> messageConverters) {
-		return new PageableSpringEncoder(new SpringEncoder(messageConverters));
+	Encoder feignEncoder(final ObjectProvider<AbstractFormWriter> formWriter, final FeignEncoderProperties encoderProperties,
+		final ObjectProvider<FeignHttpMessageConverters> messageConverters) {
+
+		final var writer = formWriter.getIfAvailable();
+		final SpringFormEncoder formEncoder;
+
+		formEncoder = new SpringFormEncoder();
+		if (writer != null) {
+			((MultipartFormContentProcessor) formEncoder.getContentProcessor(feign.form.ContentType.MULTIPART))
+				.addFirstWriter(writer);
+		}
+
+		return new PageableSpringEncoder(new SpringEncoder(formEncoder, encoderProperties, messageConverters));
 	}
 
 	/**

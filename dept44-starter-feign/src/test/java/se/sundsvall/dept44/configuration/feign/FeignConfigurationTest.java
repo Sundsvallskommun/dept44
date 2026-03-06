@@ -15,6 +15,8 @@ import org.springframework.boot.http.converter.autoconfigure.HttpMessageConverte
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.openfeign.FeignAutoConfiguration;
+import org.springframework.cloud.openfeign.support.AbstractFormWriter;
+import org.springframework.cloud.openfeign.support.FeignEncoderProperties;
 import org.springframework.cloud.openfeign.support.FeignHttpMessageConverters;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
@@ -45,6 +47,12 @@ class FeignConfigurationTest {
 
 	@Autowired
 	private FeignConfiguration configuration;
+
+	@Autowired
+	private ObjectProvider<AbstractFormWriter> formWriter;
+
+	@Autowired
+	private FeignEncoderProperties encoderProperties;
 
 	@Autowired
 	private ObjectProvider<FeignHttpMessageConverters> messageConverters;
@@ -92,7 +100,7 @@ class FeignConfigurationTest {
 
 	@Test
 	void testFeignEncoder() {
-		assertThat(configuration.feignEncoder(messageConverters)).isNotNull().isInstanceOf(Encoder.class);
+		assertThat(configuration.feignEncoder(formWriter, encoderProperties, messageConverters)).isNotNull().isInstanceOf(Encoder.class);
 	}
 
 	@Test

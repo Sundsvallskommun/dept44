@@ -1,13 +1,14 @@
 package se.sundsvall.dept44.configuration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 import org.slf4j.MDC;
@@ -42,6 +43,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.http.MediaType.APPLICATION_XML;
+import static org.springframework.http.MediaType.APPLICATION_YAML_VALUE;
 import static org.springframework.http.MediaType.TEXT_HTML;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YAML;
@@ -182,10 +184,13 @@ public class WebConfiguration implements WebMvcConfigurer {
 			return template;
 		}
 
-		@Operation(tags = "API", summary = "OpenAPI")
-		@GetMapping(value = "${springdoc.api-docs.path}", produces = "application/yaml")
-		String getApiDocs(final HttpServletRequest request) throws JsonProcessingException {
-			return new String(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()), Charset.defaultCharset());
+		@Operation(tags = "API",
+			summary = "OpenAPI",
+			responses = @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = APPLICATION_YAML_VALUE, schema = @Schema(type = "string"))))
+		@GetMapping(value = "${springdoc.api-docs.path}", produces = APPLICATION_YAML_VALUE)
+		void getApiDocs(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+			response.setContentType(APPLICATION_YAML_VALUE);
+			response.getOutputStream().write(openApiWebMvcResource.openapiYaml(request, apiDocsPath, Locale.getDefault()));
 		}
 	}
 

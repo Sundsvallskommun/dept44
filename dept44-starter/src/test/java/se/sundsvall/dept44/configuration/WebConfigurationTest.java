@@ -2,8 +2,11 @@ package se.sundsvall.dept44.configuration;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
@@ -197,6 +200,9 @@ class WebConfigurationTest {
 		@Mock
 		private HttpServletRequest httpServletRequestMock;
 
+		@Mock
+		private HttpServletResponse httpServletResponseMock;
+
 		@MockitoBean
 		private OpenApiWebMvcResource mockOpenApiWebMvcResource;
 
@@ -210,10 +216,35 @@ class WebConfigurationTest {
 
 		@Test
 		void getApiDocs() throws Exception {
-			final var yamlString = "yamlString";
-			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlString.getBytes());
-			final var apiDocs = indexPageController.getApiDocs(httpServletRequestMock);
-			assertThat(apiDocs).isNotNull().isEqualTo(yamlString);
+			final var yamlBytes = "yamlString".getBytes();
+			final var outputStream = new ByteArrayOutputStream();
+			when(mockOpenApiWebMvcResource.openapiYaml(any(), anyString(), any())).thenReturn(yamlBytes);
+			when(httpServletResponseMock.getOutputStream()).thenReturn(new ServletOutputStream() {
+				@Override
+				public void write(final int b) {
+					outputStream.write(b);
+				}
+
+				@Override
+				public void write(final byte[] b) throws IOException {
+					outputStream.write(b);
+				}
+
+				@Override
+				public boolean isReady() {
+					return true;
+				}
+
+				@Override
+				public void setWriteListener(final WriteListener listener) {
+					// Not needed for test
+				}
+			});
+
+			indexPageController.getApiDocs(httpServletRequestMock, httpServletResponseMock);
+
+			verify(httpServletResponseMock).setContentType("application/yaml");
+			assertThat(outputStream.toByteArray()).isEqualTo(yamlBytes);
 		}
 	}
 

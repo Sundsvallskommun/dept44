@@ -8,3 +8,4 @@ se.sundsvall.dept44.configuration.SecurityConfiguration
 se.sundsvall.dept44.configuration.HealthConfiguration
 se.sundsvall.dept44.configuration.DefaultCircuitBreakerPropertiesConfiguration
 se.sundsvall.dept44.configuration.TruststoreConfiguration
+se.sundsvall.dept44.configuration.SslHealthIndicatorConfiguration

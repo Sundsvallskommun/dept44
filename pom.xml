@@ -70,7 +70,7 @@
 		<janino.version>3.1.12</janino.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>4.0.1</spring-boot-admin.version>
+		<spring-boot-admin.version>4.0.2</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<wiremock-spring-boot-version>4.2.0</wiremock-spring-boot-version>
 		<maven-api.version>3.9.13</maven-api.version>

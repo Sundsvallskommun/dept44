@@ -23,6 +23,10 @@ import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static org.springframework.boot.health.contributor.Status.OUT_OF_SERVICE;
+import static org.springframework.boot.health.contributor.Status.UP;
+import static se.sundsvall.dept44.configuration.HealthConfiguration.RESTRICTED;
+
 /**
  * Replaces the default {@link org.springframework.boot.health.application.SslHealthIndicator}
  * with one that also reports {@link Status#OUT_OF_SERVICE} when certificates are expiring
@@ -86,8 +90,19 @@ class SslHealthIndicatorConfiguration {
 				}
 			}
 
-			final var healthy = invalidCertificateChains.isEmpty() && expiringCertificateChains.isEmpty();
-			builder.status(healthy ? Status.UP : Status.OUT_OF_SERVICE);
+			final var hasCertificateAboutToExpire = !expiringCertificateChains.isEmpty();
+			final var hasInvalidCertificate = !invalidCertificateChains.isEmpty();
+
+			builder.status(UP);
+
+			if (hasCertificateAboutToExpire) {
+				builder.status(RESTRICTED);
+			}
+
+			if (hasInvalidCertificate) {
+				builder.status(OUT_OF_SERVICE);
+			}
+
 			builder.withDetail("expiringChains", expiringCertificateChains);
 			builder.withDetail("invalidChains", invalidCertificateChains);
 			builder.withDetail("validChains", validCertificateChains);

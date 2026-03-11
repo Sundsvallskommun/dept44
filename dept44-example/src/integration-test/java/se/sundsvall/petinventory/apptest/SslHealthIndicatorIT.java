@@ -78,8 +78,8 @@ class SslHealthIndicatorIT extends AbstractAppTest {
 		final var mapper = JsonMapper.builder().build();
 		final var root = mapper.readTree(response.getBody());
 		
-		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-		assertThat(root.path("status").asString()).isEqualTo("OUT_OF_SERVICE");
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(root.path("status").asString()).isEqualTo("RESTRICTED");
 
 		// Get the expiring certificate chain details from the health endpoint response
 		final var expiringChains = root.path("components").path("ssl").path("details").path("expiringChains");

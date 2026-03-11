@@ -28,6 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.configuration.HealthConfiguration.RESTRICTED;
 
 @ExtendWith(MockitoExtension.class)
 class SslHealthIndicatorConfigurationTests {
@@ -104,7 +105,7 @@ class SslHealthIndicatorConfigurationTests {
 		final var indicator = configuration.sslHealthIndicator(sslInfo, properties);
 		final var health = indicator.health();
 
-		assertThat(health.getStatus()).isEqualTo(Status.OUT_OF_SERVICE);
+		assertThat(health.getStatus()).isEqualTo(RESTRICTED);
 		assertThat((List<?>) health.getDetails().get("expiringChains")).hasSize(1);
 
 		verify(properties).getCertificateValidityWarningThreshold();

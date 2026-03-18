@@ -111,8 +111,8 @@
 		</dependency>
 		<!-- Resilience4j Circuit-breaker (health-indicators) -->
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot4</artifactId>
 		</dependency>
 		<!-- Commons lang 3 -->
 		<dependency>

@@ -1,6 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
-import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerProperties;
+import io.github.resilience4j.springboot.circuitbreaker.autoconfigure.CircuitBreakerProperties;
 import java.util.Objects;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;

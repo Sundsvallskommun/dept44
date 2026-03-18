@@ -63,6 +63,7 @@
 		<logbook.version>4.0.2</logbook.version>
 		<springdoc.version>3.0.2</springdoc.version>
 		<spring-cloud.version>2025.1.1</spring-cloud.version>
+		<resilience4j.version>2.4.0</resilience4j.version>
 		<bean-matchers.version>0.14</bean-matchers.version>
 		<google-guava.version>33.5.0-jre</google-guava.version>
 		<json-unit.version>5.1.1</json-unit.version>
@@ -186,6 +187,12 @@
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-jpa-test</artifactId>
 				<version>8.0.5-SNAPSHOT</version>
+			</dependency>
+			<!-- Resilience4j -->
+			<dependency>
+				<groupId>io.github.resilience4j</groupId>
+				<artifactId>resilience4j-spring-boot4</artifactId>
+				<version>${resilience4j.version}</version>
 			</dependency>
 			<!-- SpringDoc -->
 			<dependency>

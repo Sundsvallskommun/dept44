@@ -1,6 +1,10 @@
 package se.sundsvall.dept44.support;
 
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import se.sundsvall.dept44.support.Relation.ResourceIdentifier;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
@@ -8,6 +12,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSettersExcluding;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -215,15 +220,92 @@ class RelationTest {
 		assertThat(id1).isNotEqualTo(id2);
 	}
 
+	@ParameterizedTest
+	@MethodSource("formatValidStreamArguments")
+	void formatRelation(Relation input, String expected) {
+		assertThat(input.formatRelation()).isEqualTo(expected);
+	}
+
+	@ParameterizedTest
+	@MethodSource("parseValidStreamArguments")
+	void parseValidFormatString(String input, Relation expected) {
+		assertThat(Relation.parseRelation(input)).isEqualTo(expected);
+	}
+
+	@ParameterizedTest
+	@MethodSource("parseInvalidStreamArguments")
+	void parseInvalidFormatString(String input) {
+		assertThatThrownBy(() -> Relation.parseRelation(input))
+			.isInstanceOf(IllegalArgumentException.class);
+	}
+
+	private static Stream<Arguments> formatValidStreamArguments() {
+		return Stream.of(
+			Arguments.of(Relation.create("LINK",
+				ResourceIdentifier.create("src-id", "case", "myservice", "src-ns"),
+				ResourceIdentifier.create("tgt-id", "asset", "otherservice", "tgt-ns")),
+				"LINK|src-id;case;myservice;src-ns|tgt-id;asset;otherservice;tgt-ns"),
+			Arguments.of(Relation.create("LINK",
+				ResourceIdentifier.create("src-id", "case", "myservice", null),
+				ResourceIdentifier.create("tgt-id", "asset", "otherservice", null)),
+				"LINK|src-id;case;myservice;|tgt-id;asset;otherservice;"),
+			Arguments.of(Relation.create("LINK",
+				ResourceIdentifier.create("id1", "case", "svc", "ns"),
+				ResourceIdentifier.create("id2", "asset", "svc2", "ns2")),
+				"LINK|id1;case;svc;ns|id2;asset;svc2;ns2"),
+			Arguments.of(Relation.create("LINK",
+				ResourceIdentifier.create("id1", "case", "svc", "ns"),
+				null),
+				"LINK|id1;case;svc;ns|"),
+			Arguments.of(Relation.create("LINK",
+				null,
+				ResourceIdentifier.create("id2", "asset", "svc2", "ns2")),
+				"LINK||id2;asset;svc2;ns2"),
+			Arguments.of(Relation.create(), null),
+			Arguments.of(Relation.create().withType("LINK"), null),
+			Arguments.of(Relation.create().withSource(ResourceIdentifier.create()), null),
+			Arguments.of(Relation.create().withTarget(ResourceIdentifier.create()), null));
+	}
+
+	private static Stream<Arguments> parseValidStreamArguments() {
+		return Stream.of(
+			Arguments.of("LINK|src-id;case;MY-SERVICE;src-ns|tgt-id;asset;OTHER_SERVICE;tgt-ns",
+				Relation.create("LINK",
+					ResourceIdentifier.create("src-id", "case", "myservice", "src-ns"),
+					ResourceIdentifier.create("tgt-id", "asset", "otherservice", "tgt-ns"))),
+			Arguments.of("LINK|src-id;case;myservice;|tgt-id;asset;otherservice;",
+				Relation.create("LINK",
+					ResourceIdentifier.create("src-id", "case", "myservice", null),
+					ResourceIdentifier.create("tgt-id", "asset", "otherservice", null))),
+			Arguments.of("TYPE|src-id;case;myservice;src-ns|tgt-id;asset;otherservice;tgt-ns",
+				Relation.create("TYPE",
+					ResourceIdentifier.create("src-id", "case", "myservice", "src-ns"),
+					ResourceIdentifier.create("tgt-id", "asset", "otherservice", "tgt-ns"))),
+			Arguments.of("TYPE|id1;case;svc;ns|id2;asset;svc2;ns2",
+				Relation.create("TYPE",
+					ResourceIdentifier.create("id1", "case", "svc", "ns"),
+					ResourceIdentifier.create("id2", "asset", "svc2", "ns2"))));
+	}
+
+	private static Stream<String> parseInvalidStreamArguments() {
+		return Stream.of(
+			null,
+			"",
+			"  ",
+			"LINK|only-one-section",
+			"LINK|src-id;case|tgt-id;asset;svc;ns",
+			"no-separators-at-all");
+	}
+
 	@Test
 	void testToString() {
 		final var relation = Relation.create()
-			.withType("CONNECTED")
+			.withType("LINK")
 			.withSource(ResourceIdentifier.create().withResourceId("src-id").withType("case").withService("svc").withNamespace("ns"))
-			.withTarget(ResourceIdentifier.create().withResourceId("tgt-id").withType("doc").withService("svc2"));
+			.withTarget(ResourceIdentifier.create().withResourceId("tgt-id").withType("asset").withService("svc2"));
 
-		assertThat(relation.toString()).contains("Relation", "type=CONNECTED", "source=", "target=");
+		assertThat(relation.toString()).contains("Relation", "type=LINK", "source=", "target=");
 		assertThat(relation.getSource().toString()).contains("ResourceIdentifier", "resourceId=src-id", "type=case", "service=svc", "namespace=ns");
-		assertThat(relation.getTarget().toString()).contains("ResourceIdentifier", "resourceId=tgt-id", "type=doc", "service=svc2");
+		assertThat(relation.getTarget().toString()).contains("ResourceIdentifier", "resourceId=tgt-id", "type=asset", "service=svc2");
 	}
 }

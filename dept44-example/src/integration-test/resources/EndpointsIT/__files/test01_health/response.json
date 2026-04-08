@@ -1,5 +1,25 @@
 {
 	"components": {
+		"circuitBreakers": {
+			"details": {
+				"petstore": {
+					"details": {
+						"failureRate": "${json-unit.any-string}",
+						"failureRateThreshold": "${json-unit.any-string}",
+						"slowCallRate": "${json-unit.any-string}",
+						"slowCallRateThreshold": "${json-unit.any-string}",
+						"bufferedCalls": "${json-unit.any-number}",
+						"slowCalls": "${json-unit.any-number}",
+						"slowFailedCalls": "${json-unit.any-number}",
+						"failedCalls": "${json-unit.any-number}",
+						"notPermittedCalls": "${json-unit.any-number}",
+						"state": "${json-unit.any-string}"
+					},
+					"status": "UP"
+				}
+			},
+			"status": "UP"
+		},
 		"reactiveDiscoveryClients": {
 			"components": {
 				"Simple Reactive Discovery Client": {

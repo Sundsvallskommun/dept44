@@ -96,10 +96,10 @@ public class Relation {
 	 * @return the formatted string representation
 	 */
 	public String formatRelation() {
-		if (type == null || (source == null && target == null)) {
+		if (source == null && target == null) {
 			return null;
 		}
-		return String.join(SECTION_DELIMITER, type, formatIdentifier(source), formatIdentifier(target));
+		return String.join(SECTION_DELIMITER, nullToEmpty(type), formatIdentifier(source), formatIdentifier(target));
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class Relation {
 	 * Represents a resource identifier within a relation.
 	 * <p>
 	 * A resource identifier consists of a resource ID, type, service, and namespace,
-	 * which together uniquely identify a resource in the system. Type and service
+	 * which together uniquely identify a resource. Type and service
 	 * are always stored in lowercase.
 	 */
 	public static class ResourceIdentifier {
@@ -204,7 +204,7 @@ public class Relation {
 		 * @param  resourceId the resource ID
 		 * @param  type       the type (will be stored in lowercase)
 		 * @param  service    the service (will be stored in lowercase)
-		 * @param  namespace  the namespace (may be {@code null})
+		 * @param  namespace  the namespace (maybe {@code null})
 		 * @return            a new {@link ResourceIdentifier} instance
 		 */
 		public static ResourceIdentifier create(String resourceId, String type, String service, String namespace) {

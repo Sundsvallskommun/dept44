@@ -263,8 +263,8 @@ class RelationTest {
 				"LINK||id2;asset;svc2;ns2"),
 			Arguments.of(Relation.create(), null),
 			Arguments.of(Relation.create().withType("LINK"), null),
-			Arguments.of(Relation.create().withSource(ResourceIdentifier.create()), null),
-			Arguments.of(Relation.create().withTarget(ResourceIdentifier.create()), null));
+			Arguments.of(Relation.create().withSource(ResourceIdentifier.create()), "|;;;|"),
+			Arguments.of(Relation.create().withTarget(ResourceIdentifier.create()), "||;;;"));
 	}
 
 	private static Stream<Arguments> parseValidStreamArguments() {

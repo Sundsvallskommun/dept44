@@ -94,7 +94,7 @@ public class Relation {
 	 *
 	 * @return the formatted string representation
 	 */
-	public String formatRelation() {
+	public String toRelationString() {
 		if (source == null && target == null) {
 			return null;
 		}
@@ -103,6 +103,7 @@ public class Relation {
 
 	/**
 	 * Parses a compact string format into a {@link Relation}.
+	 * Format: {@code {type}|{resourceId};{type};{service};{namespace}|{resourceId};{type};{service};{namespace}}
 	 *
 	 * @param  value                    the formatted string
 	 * @return                          a new {@link Relation} instance

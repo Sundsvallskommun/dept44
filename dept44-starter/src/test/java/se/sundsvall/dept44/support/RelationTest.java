@@ -216,7 +216,7 @@ class RelationTest {
 	@ParameterizedTest
 	@MethodSource("formatValidStreamArguments")
 	void formatRelation(Relation input, String expected) {
-		assertThat(input.formatRelation()).isEqualTo(expected);
+		assertThat(input.toRelationString()).isEqualTo(expected);
 	}
 
 	@ParameterizedTest

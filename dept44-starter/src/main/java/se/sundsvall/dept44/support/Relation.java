@@ -3,6 +3,8 @@ package se.sundsvall.dept44.support;
 import java.util.Objects;
 import java.util.Optional;
 
+import static se.sundsvall.dept44.support.Relation.ResourceIdentifier.parseIdentifier;
+
 /**
  * Class representing a relation between a source and a target resource.
  * <p>
@@ -20,13 +22,13 @@ import java.util.Optional;
  */
 public class Relation {
 
+	private static final String SECTION_DELIMITER = "|";
+	private static final String FIELD_DELIMITER = ";";
+	private static final String INVALID_RELATION_FORMAT_MESSAGE = "Invalid relation format, expected 3 sections separated by '%s' (e.g. 'LINK|1234;case;caseservice;MY_NAMESPACE|98c7b451-a14a-4f9f-91da-8834ba01eb81;asset;assetservice;OTHER_NAMESPACE') but got: %s";
+	private static final String INVALID_RESOURCE_IDENTIFIER_FORMAT_MESSAGE = "Invalid resource identifier format, expected 4 fields separated by '%s' (e.g '1234;case;caseservice;MY_NAMESPACE') but got: %s";
 	private String type;
 	private ResourceIdentifier source;
 	private ResourceIdentifier target;
-
-	public static Relation create() {
-		return new Relation();
-	}
 
 	/**
 	 * Convenience factory method that creates a fully populated {@link Relation}.
@@ -82,9 +84,6 @@ public class Relation {
 		return this;
 	}
 
-	private static final String SECTION_DELIMITER = "|";
-	private static final String FIELD_DELIMITER = ";";
-
 	/**
 	 * Serializes this {@link Relation} to a compact string format suitable for use in
 	 * HTTP query parameters or headers.
@@ -114,9 +113,9 @@ public class Relation {
 		if (value == null || value.isBlank()) {
 			throw new IllegalArgumentException("Relation format string must not be null or blank");
 		}
-		final var sections = value.split("\\|", -1);
+		final var sections = value.split(String.format("\\%s", SECTION_DELIMITER), -1);
 		if (sections.length != 3) {
-			throw new IllegalArgumentException("Invalid relation format, expected 3 sections separated by '|' but got: " + value);
+			throw new IllegalArgumentException(String.format(INVALID_RELATION_FORMAT_MESSAGE, SECTION_DELIMITER, value));
 		}
 		return Relation.create(sections[0], parseIdentifier(sections[1]), parseIdentifier(sections[2]));
 	}
@@ -134,25 +133,6 @@ public class Relation {
 
 	private static String nullToEmpty(String value) {
 		return value != null ? value : "";
-	}
-
-	private static ResourceIdentifier parseIdentifier(String section) {
-		if (section == null || section.isBlank()) {
-			return null;
-		}
-		final var fields = section.split(";", -1);
-		if (fields.length != 4) {
-			throw new IllegalArgumentException("Invalid resource identifier format, expected 4 fields separated by ';' but got: " + section);
-		}
-		return ResourceIdentifier.create(
-			emptyToNull(fields[0]),
-			emptyToNull(fields[1]),
-			emptyToNull(fields[2]),
-			emptyToNull(fields[3]));
-	}
-
-	private static String emptyToNull(String value) {
-		return value != null && !value.isEmpty() ? value : null;
 	}
 
 	@Override
@@ -194,10 +174,6 @@ public class Relation {
 		private String service;
 		private String namespace;
 
-		public static ResourceIdentifier create() {
-			return new ResourceIdentifier();
-		}
-
 		/**
 		 * Convenience factory method that creates a fully populated {@link ResourceIdentifier}.
 		 *
@@ -208,6 +184,16 @@ public class Relation {
 		 * @return            a new {@link ResourceIdentifier} instance
 		 */
 		public static ResourceIdentifier create(String resourceId, String type, String service, String namespace) {
+			if (resourceId == null || resourceId.isBlank()) {
+				throw new IllegalArgumentException("resourceId must not be null or blank");
+			}
+			if (type == null || type.isBlank()) {
+				throw new IllegalArgumentException("type must not be null or blank");
+			}
+			if (service == null || service.isBlank()) {
+				throw new IllegalArgumentException("service must not be null or blank");
+			}
+
 			return new ResourceIdentifier()
 				.withResourceId(resourceId)
 				.withType(type)
@@ -270,9 +256,27 @@ public class Relation {
 		private static String sanitize(String value) {
 			return Optional.ofNullable(value)
 				.map(String::toLowerCase)
-				.map(String::trim)
-				.map(v -> v.replace(" ", "").replace("-", "").replace("_", ""))
+				.map(v -> v.replaceAll("[\\s\\-_]+", ""))
 				.orElse(null);
+		}
+
+		static ResourceIdentifier parseIdentifier(String section) {
+			if (section == null || section.isBlank()) {
+				return null;
+			}
+			final var fields = section.split(FIELD_DELIMITER, -1);
+			if (fields.length != 4) {
+				throw new IllegalArgumentException(String.format(INVALID_RESOURCE_IDENTIFIER_FORMAT_MESSAGE, FIELD_DELIMITER, section));
+			}
+			return ResourceIdentifier.create(
+				fields[0],
+				fields[1],
+				fields[2],
+				emptyToNull(fields[3]));
+		}
+
+		private static String emptyToNull(String value) {
+			return (value != null && !value.isBlank()) ? value : null;
 		}
 
 		@Override

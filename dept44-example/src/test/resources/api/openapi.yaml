@@ -5,9 +5,9 @@ info:
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: "1.0"
+  version: 8.0.7-SNAPSHOT
 servers:
-  - url: http://localhost:53059
+  - url: http://localhost:58107
     description: Generated server url
 tags:
   - name: Pet inventory
@@ -203,9 +203,9 @@ components:
     Problem:
       type: object
       properties:
-        title:
-          type: string
         detail:
+          type: string
+        title:
           type: string
         instance:
           type: string
@@ -233,11 +233,11 @@ components:
           type: string
         detail:
           type: string
+        causeAsProblem:
+          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
     ThrowableProblem:
       type: object
       properties:
@@ -271,7 +271,7 @@ components:
           format: int64
           description: Pet image ID
           examples:
-            - "1"
+            - 1
         fileName:
           type: string
           description: File name
@@ -291,13 +291,13 @@ components:
           format: int64
           description: Pet ID
           examples:
-            - "1"
+            - 1
         price:
           type: number
           format: float
           description: Pet price
           examples:
-            - "1.50"
+            - 1.5
         name:
           type: string
           description: Pet name

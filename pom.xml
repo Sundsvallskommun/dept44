@@ -91,7 +91,7 @@
 		<spotless-maven-plugin-version>3.4.0</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
-		<lombok.version>1.18.44</lombok.version>
+		<lombok.version>1.18.46</lombok.version>
 		<spotbugs-annotations.version>4.9.8</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
 		<!-- Coverage and branch coverage settings for tests in Dept-44 -->

@@ -86,6 +86,7 @@ public class Dept44CompositeHealthContributor implements CompositeHealthContribu
 
 	@Override
 	public Stream<Entry> stream() {
-		return Stream.empty();
+		return indicators.entrySet().stream()
+			.map(e -> new HealthContributors.Entry(e.getKey(), e.getValue()));
 	}
 }

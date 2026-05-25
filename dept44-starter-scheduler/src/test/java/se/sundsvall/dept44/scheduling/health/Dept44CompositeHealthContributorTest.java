@@ -71,4 +71,20 @@ class Dept44CompositeHealthContributorTest {
 		assertThat(namedContributor.name()).isEqualTo(methodName);
 		assertThat(namedContributor.contributor()).isEqualTo(indicator);
 	}
+
+	@Test
+	void testStream() {
+		// arrange
+		final var methodName = "TestTask";
+		final var indicator = healthContributor.getOrCreateIndicator(methodName);
+
+		// act
+		final var entries = healthContributor.stream().toList();
+
+		// assert
+		assertThat(entries).singleElement().satisfies(entry -> {
+			assertThat(entry.name()).isEqualTo(methodName);
+			assertThat(entry.contributor()).isEqualTo(indicator);
+		});
+	}
 }

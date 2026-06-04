@@ -1,10 +1,16 @@
 package se.sundsvall.dept44.support;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
@@ -28,6 +34,64 @@ class IdentifierTest {
 			hasValidBeanHashCode(),
 			hasValidBeanEquals(),
 			hasValidBeanToString()));
+	}
+
+	@AfterEach
+	void cleanup() {
+		Identifier.remove();
+	}
+
+	@Test
+	void setPopulatesThreadLocalAndMdc() {
+		final var identifier = Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe");
+
+		Identifier.set(identifier);
+
+		assertThat(Identifier.get()).isEqualTo(identifier);
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_KEY)).isEqualTo("joe01doe");
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_TYPE_KEY)).isEqualTo("adAccount");
+	}
+
+	@Test
+	void setNullDoesNotPopulate() {
+		Identifier.set(null);
+
+		assertThat(Identifier.get()).isNull();
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_KEY)).isNull();
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_TYPE_KEY)).isNull();
+	}
+
+	@Test
+	void removeClearsThreadLocalAndMdc() {
+		Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe"));
+
+		Identifier.remove();
+
+		assertThat(Identifier.get()).isNull();
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_KEY)).isNull();
+		assertThat(MDC.get(Identifier.MDC_SENT_BY_TYPE_KEY)).isNull();
+	}
+
+	@Test
+	void mdcValuesAreIncludedInLogEvents() {
+		final var logger = (Logger) LoggerFactory.getLogger(IdentifierTest.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+
+		try {
+			Identifier.set(Identifier.create().withType(AD_ACCOUNT).withValue("joe01doe"));
+
+			logger.info("a log row produced while an identifier is set");
+
+			assertThat(appender.list).isNotEmpty()
+				.allSatisfy(event -> assertThat(event.getMDCPropertyMap())
+					.containsEntry(Identifier.MDC_SENT_BY_KEY, "joe01doe")
+					.containsEntry(Identifier.MDC_SENT_BY_TYPE_KEY, "adAccount"));
+		} finally {
+			logger.detachAppender(appender);
+			Identifier.remove();
+		}
 	}
 
 	@ParameterizedTest

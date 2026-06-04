@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -39,5 +41,20 @@ class RequestIdInterceptorTest {
 		// Verify mocks
 		verify(mockHttpRequest).addHeader(RequestId.HEADER_NAME, RequestId.get());
 		verifyNoInteractions(mockHttpContext);
+	}
+
+	@Test
+	void testProcessPropagatesIdentifier() {
+		try {
+			Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("joe01doe"));
+
+			new RequestIdInterceptor().process(mockHttpRequest, mockEntityDetails, mockHttpContext);
+
+			verify(mockHttpRequest).addHeader(RequestId.HEADER_NAME, RequestId.get());
+			verify(mockHttpRequest).addHeader(Identifier.HEADER_NAME, "joe01doe; type=adAccount");
+			verifyNoInteractions(mockHttpContext);
+		} finally {
+			Identifier.remove();
+		}
 	}
 }

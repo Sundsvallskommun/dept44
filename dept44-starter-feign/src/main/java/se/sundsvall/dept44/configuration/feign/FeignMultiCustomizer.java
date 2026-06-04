@@ -7,6 +7,7 @@ import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
@@ -14,6 +15,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
 import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -30,7 +32,10 @@ public class FeignMultiCustomizer {
 
 	public static FeignMultiCustomizer create() {
 		return new FeignMultiCustomizer()
-			.withRequestInterceptor(builder -> builder.header(RequestId.HEADER_NAME, RequestId.get()));
+			.withRequestInterceptor(builder -> builder.header(RequestId.HEADER_NAME, RequestId.get()))
+			.withRequestInterceptor(template -> Optional.ofNullable(Identifier.get())
+				.map(Identifier::toHeaderValue)
+				.ifPresent(value -> template.header(Identifier.HEADER_NAME, value)));
 	}
 
 	public FeignMultiCustomizer withCustomizer(final FeignBuilderCustomizer feignBuilderCustomizer) {

@@ -6,6 +6,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
+import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
@@ -170,6 +172,30 @@ class Dept44SchedulerAspectTest {
 
 		// assert
 		assertThat(healthContributor.getOrCreateIndicator("TestTask").hasErrors()).isFalse();
+	}
+
+	@Test
+	void testAroundScheduledMethodPopulatesRequestIdInMdcDuringExecution() throws Throwable {
+		// arrange
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT2M")).thenReturn("PT2M");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
+
+		// Capture the request-id that is present in the MDC while the scheduled method body executes.
+		final var requestIdDuringExecution = new AtomicReference<String>();
+		when(pjp.proceed()).thenAnswer(invocation -> {
+			requestIdDuringExecution.set(MDC.get(RequestId.MDC_REQUEST_ID_KEY));
+			return "Success";
+		});
+
+		// act
+		aspect.aroundScheduledMethod(pjp, dept44Scheduled);
+
+		// assert - the scheduled thread carries a request-id (correlation) while running...
+		assertThat(requestIdDuringExecution.get()).isNotBlank();
+		// ...and it is cleared afterwards so the scheduler thread does not leak it to the next run
+		assertThat(MDC.get(RequestId.MDC_REQUEST_ID_KEY)).isNull();
 	}
 
 	@Test

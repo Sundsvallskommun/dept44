@@ -1,11 +1,10 @@
 package se.sundsvall.dept44.async;
 
+import java.util.Map;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 import se.sundsvall.dept44.support.Identifier;
-
-import java.util.Map;
 
 /**
  * {@link TaskDecorator} that propagates the logging/correlation context of the submitting (caller) thread to the worker

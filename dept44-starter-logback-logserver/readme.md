@@ -28,7 +28,9 @@ This starter is automatically included via `dept44-service-parent`.
 - **GELF UDP appender** for sending structured logs to Graylog/ELK
 - **Conditional activation**: Only enabled when `LOGSERVER_HOST` environment variable is set
 - **Compressed messages** with configurable chunk size
-- **Rich metadata**: application name, Spring profile, container hostname, MDC data, caller info, root cause details
+- **Rich metadata**: application name, Spring profile, container hostname, instance id, service version, MDC data,
+  caller info, root cause details
+- **Per-pod tracing fields** (`instance_id`, `service_version`) on every log line, in both console and GELF output
 - **Always logs to standard out**, whether GELF is enabled or not
 
 ### Override Configuration
@@ -39,11 +41,13 @@ If needed, provide your own `logback-spring.xml` in your service to override thi
 
 ### Environment Variables
 
-|         Variable         | Required |               Description                |
-|--------------------------|----------|------------------------------------------|
-| `LOGSERVER_HOST`         | Yes      | Graylog/ELK host (enables GELF appender) |
-| `LOGSERVER_PORT`         | Yes      | Graylog/ELK port                         |
-| `SPRING_PROFILES_ACTIVE` | No       | Included as static field in log entries  |
+|         Variable         | Required |                                Description                                |
+|--------------------------|----------|---------------------------------------------------------------------------|
+| `LOGSERVER_HOST`         | Yes      | Graylog/ELK host (enables GELF appender)                                  |
+| `LOGSERVER_PORT`         | Yes      | Graylog/ELK port                                                          |
+| `SPRING_PROFILES_ACTIVE` | No       | Included as static field in log entries                                   |
+| `INSTANCE_ID`            | No       | Pod/instance id; emitted as `instance_id` (default `unknown`)             |
+| `SERVICE_VERSION`        | No       | Running service version; emitted as `service_version` (default `unknown`) |
 
 ### Properties
 
@@ -56,7 +60,36 @@ If needed, provide your own `logback-spring.xml` in your service to override thi
 
 The max chunk size is set to 508 bytes per chunk. Since GELF accepts a maximum of 128 chunks, this means it accepts a
 maximum of 508 * 128 = 65024 bytes compressed. If you notice that some events in ELK are missing, set
-`dept44.logback.logserver.maxchunksize` to a bigger value, e.g. 8192.
+`dept44.logback.logserver.maxchunksize` to a bigger value, e.g., 8192.
+
+### Per-pod tracing fields (`instance_id` / `service_version`)
+
+To trace *which pod produced a log entry* and *which version was running*, every log line carries two per-pod fields,
+sourced from environment variables set by the Helm chart:
+
+|       Field       |      Env var      |  Default  |
+|-------------------|-------------------|-----------|
+| `instance_id`     | `INSTANCE_ID`     | `unknown` |
+| `service_version` | `SERVICE_VERSION` | `unknown` |
+
+These are **per-pod constants** — the same category as `application_name`, `spring_profile` and `container_hash` — so
+they are injected as logback context properties and emitted as GELF `<staticField>` entries, **not** as per-request MDC
+values. As a result, they appear in **every** log line regardless of the producing thread (request, scheduler, async),
+in
+both the console output and the GELF/Graylog payload.
+
+When the environment variables are absent (e.g., local development), both fields fall back to `unknown`, so log lines
+remain valid. The values are typically wired up in the Helm chart, for example:
+
+```yaml
+env:
+  - name: INSTANCE_ID
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name      # the pod name
+  - name: SERVICE_VERSION
+    value: "1.2.3"                     # e.g., the image tag / release version
+```
 
 ## Key Dependencies
 

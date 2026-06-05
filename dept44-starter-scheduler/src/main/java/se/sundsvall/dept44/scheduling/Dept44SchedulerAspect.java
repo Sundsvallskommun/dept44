@@ -2,6 +2,7 @@ package se.sundsvall.dept44.scheduling;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -119,7 +120,7 @@ public class Dept44SchedulerAspect {
 		final var maxExecutionTime = environment.resolvePlaceholders(dept44Scheduled.maximumExecutionTime());
 
 		final var healthIndicator = dept44Composite.getOrCreateIndicator(name);
-		final var startTime = OffsetDateTime.now();
+		final var startTime = OffsetDateTime.now(ZoneId.systemDefault());
 		try {
 			RequestId.init();
 			MDC.put(MDC_SCHEDULER_NAME, name);
@@ -135,7 +136,7 @@ public class Dept44SchedulerAspect {
 			putCompletion(startTime, OUTCOME_FAILURE);
 			LOG.error("Scheduled method {} fail. RequestID={}", name, RequestId.get(), e);
 		} finally {
-			final var endTime = OffsetDateTime.now();
+			final var endTime = OffsetDateTime.now(ZoneId.systemDefault());
 			final var duration = Duration.between(startTime, endTime);
 			if (duration.compareTo(Duration.parse(maxExecutionTime)) > 0) {
 				MDC.put(MDC_DURATION_MS, String.valueOf(duration.toMillis()));
@@ -158,7 +159,7 @@ public class Dept44SchedulerAspect {
 	}
 
 	private static void putCompletion(final OffsetDateTime startTime, final String outcome) {
-		final var durationMs = Duration.between(startTime, OffsetDateTime.now()).toMillis();
+		final var durationMs = Duration.between(startTime, OffsetDateTime.now(ZoneId.systemDefault())).toMillis();
 		MDC.put(MDC_DURATION_MS, String.valueOf(durationMs));
 		MDC.put(MDC_OUTCOME, outcome);
 	}

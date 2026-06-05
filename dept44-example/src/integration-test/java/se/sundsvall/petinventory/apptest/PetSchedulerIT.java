@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import de.siegmar.logbackgelf.GelfEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import se.sundsvall.dept44.scheduling.Dept44SchedulerAspect;
 import se.sundsvall.petinventory.service.scheduler.PetScheduler;
 import se.sundsvall.petinventory.service.scheduler.PetSchedulerWorker;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(properties = {
 	"scheduler.pet-scheduler.cron=* * * * * *", // Setup to execute every second
@@ -33,8 +36,8 @@ import se.sundsvall.petinventory.service.scheduler.PetSchedulerWorker;
 @ActiveProfiles("it")
 class PetSchedulerIT {
 
-	final ListAppender<ILoggingEvent> petSchedulerAppender = new ListAppender<>();
-	final ListAppender<ILoggingEvent> aspectAppender = new ListAppender<>();
+	final ListAppender<ILoggingEvent> petSchedulerAppender = new MdcCapturingListAppender();
+	final ListAppender<ILoggingEvent> aspectAppender = new MdcCapturingListAppender();
 	@Autowired
 	private PetSchedulerWorker petSchedulerWorkerMock;
 
@@ -74,6 +77,35 @@ class PetSchedulerIT {
 			.extracting(ILoggingEvent::getFormattedMessage)
 			.anyMatch(message -> message.matches("Scheduled method pet-scheduler start\\. RequestID=.*"))
 			.anyMatch(message -> message.matches("Scheduled method pet-scheduler done\\. RequestID=.*"));
+
+		// Verify structured MDC fields land on the aspect's "done" log line
+		final var doneEvent = aspectAppender.list.stream()
+			.filter(event -> event.getFormattedMessage().contains("done"))
+			.findFirst()
+			.orElseThrow();
+		final var mdc = doneEvent.getMDCPropertyMap();
+		assertThat(mdc).containsEntry("schedulerName", "pet-scheduler");
+		assertThat(mdc).containsEntry("outcome", "SUCCESS");
+		assertThat(mdc.get("executionId")).isNotBlank();
+		assertThat(Long.parseLong(mdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
+
+		// Verify the same fields can be picked out by the JSON (GELF) encoder used in production
+		final var encoder = new GelfEncoder();
+		encoder.setContext(((Logger) LoggerFactory.getLogger(Dept44SchedulerAspect.class)).getLoggerContext());
+		encoder.setIncludeMdcData(true);
+		encoder.start();
+		try {
+			final var json = new String(encoder.encode(doneEvent), StandardCharsets.UTF_8);
+			final var node = JsonMapper.builder().build().readTree(json);
+			// GELF prefixes additional (MDC) fields with an underscore
+			assertThat(node.get("_schedulerName").asString()).isEqualTo("pet-scheduler");
+			assertThat(node.get("_outcome").asString()).isEqualTo("SUCCESS");
+			assertThat(node.get("_executionId").asString()).isNotBlank();
+			assertThat(node.get("_durationMs")).isNotNull();
+			assertThat(Long.parseLong(node.get("_durationMs").asString())).isGreaterThanOrEqualTo(0L);
+		} finally {
+			encoder.stop();
+		}
 	}
 
 	@Test
@@ -98,6 +130,14 @@ class PetSchedulerIT {
 			.extracting(ILoggingEvent::getFormattedMessage)
 			.anyMatch(message -> message.matches("Scheduled method pet-scheduler start\\. RequestID=.*"))
 			.anyMatch(message -> message.matches("Scheduled method pet-scheduler fail\\. RequestID=.*"));
+
+		// Verify the failure outcome lands in MDC
+		final var failEvent = aspectAppender.list.stream()
+			.filter(event -> event.getFormattedMessage().contains("fail"))
+			.findFirst()
+			.orElseThrow();
+		assertThat(failEvent.getMDCPropertyMap()).containsEntry("schedulerName", "pet-scheduler");
+		assertThat(failEvent.getMDCPropertyMap()).containsEntry("outcome", "FAILURE");
 	}
 
 	@TestConfiguration
@@ -107,6 +147,18 @@ class PetSchedulerIT {
 		@Primary
 		PetSchedulerWorker createMock() {
 			return Mockito.mock(PetSchedulerWorker.class);
+		}
+	}
+
+	/**
+	 * {@link ListAppender} that eagerly snapshots the MDC of each event as it is appended, so the MDC populated by the
+	 * aspect on the scheduler thread can be asserted from the test thread after the run has completed.
+	 */
+	private static class MdcCapturingListAppender extends ListAppender<ILoggingEvent> {
+		@Override
+		protected void append(final ILoggingEvent eventObject) {
+			eventObject.getMDCPropertyMap();
+			super.append(eventObject);
 		}
 	}
 }

@@ -2,11 +2,13 @@ package se.sundsvall.dept44.scheduling;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.requestid.RequestId;
@@ -32,6 +34,16 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
  * <strong>Note:</strong> This relies on the method using the annotation to bubble up exceptions to the aspect. If you
  * catch and handle exceptions in the method, they won't be caught here, and the health indicator won't be updated.
  * </p>
+ * <p>
+ * <strong>Structured logging:</strong> In addition to the existing free-text messages, each run populates the following
+ * MDC fields so they can be filtered as discrete fields by the JSON log encoder:
+ * <ul>
+ * <li>{@code schedulerName} – the resolved scheduler name</li>
+ * <li>{@code executionId} – unique id per run (the {@link RequestId} value)</li>
+ * <li>{@code durationMs} – execution time in milliseconds, present on every terminating log line</li>
+ * <li>{@code outcome} – one of {@code SUCCESS}, {@code FAILURE} or {@code TIMEOUT}</li>
+ * </ul>
+ * </p>
  *
  * @see Dept44Scheduled
  * @see Dept44HealthIndicator
@@ -43,6 +55,16 @@ import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 public class Dept44SchedulerAspect {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Dept44SchedulerAspect.class);
+
+	private static final String MDC_SCHEDULER_NAME = "schedulerName";
+	private static final String MDC_EXECUTION_ID = "executionId";
+	private static final String MDC_DURATION_MS = "durationMs";
+	private static final String MDC_OUTCOME = "outcome";
+
+	private static final String OUTCOME_SUCCESS = "SUCCESS";
+	private static final String OUTCOME_FAILURE = "FAILURE";
+	private static final String OUTCOME_TIMEOUT = "TIMEOUT";
+
 	private final Dept44CompositeHealthContributor dept44Composite;
 	private final Environment environment;
 
@@ -54,8 +76,9 @@ public class Dept44SchedulerAspect {
 	/**
 	 * Around advice for scheduled methods annotated with {@link Dept44Scheduled}.
 	 * <p>
-	 * This method sets a unique {@link RequestId} for each run, logs start and end of the method, and updates
-	 * last-success/last-failure timestamps for slick health tracking. It also registers a separate
+	 * This method sets a unique {@link RequestId} for each run, logs start and end of the method while populating
+	 * structured MDC fields ({@code schedulerName}, {@code executionId}, {@code durationMs}, {@code outcome}) for each
+	 * run, and updates last-success/last-failure timestamps for slick health tracking. It also registers a separate
 	 * {@link Dept44HealthIndicator} per method so you can
 	 * see at a glance how each scheduled task is doing on the /actuator/health endpoint.
 	 * </p>
@@ -97,21 +120,27 @@ public class Dept44SchedulerAspect {
 		final var maxExecutionTime = environment.resolvePlaceholders(dept44Scheduled.maximumExecutionTime());
 
 		final var healthIndicator = dept44Composite.getOrCreateIndicator(name);
-		final var startTime = OffsetDateTime.now();
+		final var startTime = OffsetDateTime.now(ZoneId.systemDefault());
 		try {
 			RequestId.init();
+			MDC.put(MDC_SCHEDULER_NAME, name);
+			MDC.put(MDC_EXECUTION_ID, RequestId.get());
 			LOG.info("Scheduled method {} start. RequestID={}", name, RequestId.get());
 			healthIndicator.resetErrors();
 			final var result = pjp.proceed();
+			putCompletion(startTime, OUTCOME_SUCCESS);
 			LOG.info("Scheduled method {} done. RequestID={}", name, RequestId.get());
 			return result;
 		} catch (final Exception e) {
 			healthIndicator.setUnhealthy(e.getMessage());
+			putCompletion(startTime, OUTCOME_FAILURE);
 			LOG.error("Scheduled method {} fail. RequestID={}", name, RequestId.get(), e);
 		} finally {
-			final var endTime = OffsetDateTime.now();
+			final var endTime = OffsetDateTime.now(ZoneId.systemDefault());
 			final var duration = Duration.between(startTime, endTime);
 			if (duration.compareTo(Duration.parse(maxExecutionTime)) > 0) {
+				MDC.put(MDC_DURATION_MS, String.valueOf(duration.toMillis()));
+				MDC.put(MDC_OUTCOME, OUTCOME_TIMEOUT);
 				LOG.warn("Scheduled method {} took too long: {} minutes. RequestID={}", name, duration.toMinutes(), RequestId.get());
 				healthIndicator.setUnhealthy("Maximum execution time exceeded");
 			}
@@ -119,8 +148,19 @@ public class Dept44SchedulerAspect {
 			if (!healthIndicator.hasErrors()) {
 				healthIndicator.setHealthy();
 			}
+
+			MDC.remove(MDC_SCHEDULER_NAME);
+			MDC.remove(MDC_EXECUTION_ID);
+			MDC.remove(MDC_DURATION_MS);
+			MDC.remove(MDC_OUTCOME);
 			RequestId.reset();
 		}
 		return null;
+	}
+
+	private static void putCompletion(final OffsetDateTime startTime, final String outcome) {
+		final var durationMs = Duration.between(startTime, OffsetDateTime.now(ZoneId.systemDefault())).toMillis();
+		MDC.put(MDC_DURATION_MS, String.valueOf(durationMs));
+		MDC.put(MDC_OUTCOME, outcome);
 	}
 }

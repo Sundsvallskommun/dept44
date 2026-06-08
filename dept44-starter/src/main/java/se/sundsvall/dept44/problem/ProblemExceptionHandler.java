@@ -164,7 +164,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception, final HttpServletRequest request) {
 		logWithContext(request, SERVICE_UNAVAILABLE.getReasonPhrase(), exception.getCausingCircuitBreakerName(),
-			() -> LOGGER.error("Circuit breaker '{}' is open, responding with {}", exception.getCausingCircuitBreakerName(), SERVICE_UNAVAILABLE.value()));
+			() -> LOGGER.warn("Circuit breaker '{}' is open, responding with {}", exception.getCausingCircuitBreakerName(), SERVICE_UNAVAILABLE.value()));
 
 		final var problem = Problem.valueOf(SERVICE_UNAVAILABLE, exception.getMessage());
 

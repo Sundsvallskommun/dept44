@@ -767,14 +767,14 @@ class ProblemExceptionHandlerTest {
 	}
 
 	@Test
-	void handleCallNotPermittedExceptionLogsErrorWithIntegrationName() {
+	void handleCallNotPermittedExceptionLogsWarnWithIntegrationName() {
 		final var exception = mock(CallNotPermittedException.class);
 		when(exception.getCausingCircuitBreakerName()).thenReturn("petstore");
 
 		handler.handleCallNotPermittedException(exception, httpServletRequest);
 
 		final var event = eventOf("Circuit breaker");
-		assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+		assertThat(event.getLevel()).isEqualTo(Level.WARN);
 		assertThat(event.getThrowableProxy()).isNull();
 		assertThat(event.getMDCPropertyMap())
 			.containsEntry("requestPath", "/2281/resource")

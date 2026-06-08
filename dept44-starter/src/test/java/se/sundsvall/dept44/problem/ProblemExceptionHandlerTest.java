@@ -1,13 +1,22 @@
 package se.sundsvall.dept44.problem;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
@@ -67,6 +76,33 @@ class ProblemExceptionHandlerTest {
 
 	private final ProblemExceptionHandler handler = new ProblemExceptionHandler();
 	private final ServletWebRequest webRequest = mock(ServletWebRequest.class);
+	private final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+
+	private Logger handlerLogger;
+	private ListAppender<ILoggingEvent> appender;
+	private Level originalLevel;
+
+	@BeforeEach
+	void setUp() {
+		// Capture the handler's log events. The MDC is snapshotted eagerly (see MdcCapturingListAppender) because the
+		// handler clears its MDC entries in a finally block before the assertions run.
+		handlerLogger = (Logger) LoggerFactory.getLogger(ProblemExceptionHandler.class);
+		originalLevel = handlerLogger.getLevel();
+		handlerLogger.setLevel(Level.TRACE);
+		appender = new MdcCapturingListAppender();
+		appender.start();
+		handlerLogger.addAppender(appender);
+
+		when(httpServletRequest.getRequestURI()).thenReturn("/2281/resource");
+		when(httpServletRequest.getMethod()).thenReturn("GET");
+	}
+
+	@AfterEach
+	void tearDown() {
+		handlerLogger.detachAppender(appender);
+		appender.stop();
+		handlerLogger.setLevel(originalLevel);
+	}
 
 	@Test
 	void handleConstraintViolationException() {
@@ -191,7 +227,7 @@ class ProblemExceptionHandlerTest {
 		when(exception.getMessage()).thenReturn("CircuitBreaker 'petstore' is OPEN");
 
 		// Act
-		final var response = handler.handleCallNotPermittedException(exception);
+		final var response = handler.handleCallNotPermittedException(exception, httpServletRequest);
 
 		// Assert
 		assertThat(response.getStatusCode()).isEqualTo(SERVICE_UNAVAILABLE);
@@ -571,7 +607,7 @@ class ProblemExceptionHandlerTest {
 	void handleAccessDeniedException() {
 		final var exception = new AccessDeniedException("Access is denied");
 
-		final var response = handler.handleAccessDeniedException(exception);
+		final var response = handler.handleAccessDeniedException(exception, httpServletRequest);
 
 		assertThat(response.getStatusCode()).isEqualTo(FORBIDDEN);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
@@ -587,7 +623,7 @@ class ProblemExceptionHandlerTest {
 	void handleAuthenticationException() {
 		final var exception = new BadCredentialsException("Bad credentials");
 
-		final var response = handler.handleAuthenticationException(exception);
+		final var response = handler.handleAuthenticationException(exception, httpServletRequest);
 
 		assertThat(response.getStatusCode()).isEqualTo(UNAUTHORIZED);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
@@ -635,7 +671,7 @@ class ProblemExceptionHandlerTest {
 	void handleSocketTimeoutException() {
 		final var exception = new SocketTimeoutException("Read timed out");
 
-		final var response = handler.handleSocketTimeoutException(exception);
+		final var response = handler.handleSocketTimeoutException(exception, httpServletRequest);
 
 		assertThat(response.getStatusCode()).isEqualTo(GATEWAY_TIMEOUT);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
@@ -651,7 +687,7 @@ class ProblemExceptionHandlerTest {
 	void handleGenericException() {
 		final var exception = new RuntimeException("Something unexpected happened");
 
-		final var response = handler.handleException(exception);
+		final var response = handler.handleException(exception, httpServletRequest);
 
 		assertThat(response.getStatusCode()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
@@ -667,7 +703,7 @@ class ProblemExceptionHandlerTest {
 	void handleGenericExceptionWithNullMessage() {
 		final var exception = new NullPointerException();
 
-		final var response = handler.handleException(exception);
+		final var response = handler.handleException(exception, httpServletRequest);
 
 		assertThat(response.getStatusCode()).isEqualTo(INTERNAL_SERVER_ERROR);
 		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
@@ -709,6 +745,126 @@ class ProblemExceptionHandlerTest {
 
 		assertThat(response).isNotNull();
 		assertThat(response.getBody()).isEqualTo(customBody);
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	// Structured logging (MDC + level) for the previously-silent 5xx/auth handlers (HYDRAN-2197)
+	// -----------------------------------------------------------------------------------------------------------------
+
+	@Test
+	void handleExceptionLogsErrorWithStacktraceAndContext() {
+		handler.handleException(new RuntimeException("boom"), httpServletRequest);
+
+		final var event = eventOf("Unhandled exception");
+		assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+		assertThat(event.getThrowableProxy()).isNotNull();
+		assertThat(event.getMDCPropertyMap())
+			.containsEntry("requestPath", "/2281/resource")
+			.containsEntry("httpMethod", "GET")
+			.containsEntry("problemTitle", "Internal Server Error");
+
+		assertMdcCleared();
+	}
+
+	@Test
+	void handleCallNotPermittedExceptionLogsErrorWithIntegrationName() {
+		final var exception = mock(CallNotPermittedException.class);
+		when(exception.getCausingCircuitBreakerName()).thenReturn("petstore");
+
+		handler.handleCallNotPermittedException(exception, httpServletRequest);
+
+		final var event = eventOf("Circuit breaker");
+		assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+		assertThat(event.getThrowableProxy()).isNull();
+		assertThat(event.getMDCPropertyMap())
+			.containsEntry("requestPath", "/2281/resource")
+			.containsEntry("httpMethod", "GET")
+			.containsEntry("problemTitle", "Service Unavailable")
+			.containsEntry("integrationName", "petstore");
+
+		assertMdcCleared();
+	}
+
+	@Test
+	void handleSocketTimeoutExceptionLogsErrorWithoutIntegrationName() {
+		handler.handleSocketTimeoutException(new SocketTimeoutException("Read timed out"), httpServletRequest);
+
+		final var event = eventOf("Downstream call timed out");
+		assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+		assertThat(event.getThrowableProxy()).isNull();
+		assertThat(event.getMDCPropertyMap())
+			.containsEntry("requestPath", "/2281/resource")
+			.containsEntry("httpMethod", "GET")
+			.containsEntry("problemTitle", "Gateway Timeout")
+			.doesNotContainKey("integrationName");
+
+		assertMdcCleared();
+	}
+
+	@Test
+	void handleAuthenticationExceptionLogsWarnWithoutPii() {
+		// The exception message carries a (fictional) PII token that must never reach the log line.
+		handler.handleAuthenticationException(new BadCredentialsException("secret-user@example.com"), httpServletRequest);
+
+		final var event = eventOf("Authentication failed");
+		assertThat(event.getLevel()).isEqualTo(Level.WARN);
+		assertThat(event.getThrowableProxy()).isNull();
+		assertThat(event.getFormattedMessage())
+			.doesNotContain("secret-user@example.com")
+			.contains("BadCredentialsException")
+			.contains("401");
+		assertThat(event.getMDCPropertyMap())
+			.containsEntry("requestPath", "/2281/resource")
+			.containsEntry("httpMethod", "GET")
+			.containsEntry("problemTitle", "Unauthorized");
+
+		assertMdcCleared();
+	}
+
+	@Test
+	void handleAccessDeniedExceptionLogsWarnWithoutPii() {
+		handler.handleAccessDeniedException(new AccessDeniedException("secret-user@example.com"), httpServletRequest);
+
+		final var event = eventOf("Access denied");
+		assertThat(event.getLevel()).isEqualTo(Level.WARN);
+		assertThat(event.getThrowableProxy()).isNull();
+		assertThat(event.getFormattedMessage())
+			.doesNotContain("secret-user@example.com")
+			.contains("AccessDeniedException")
+			.contains("403");
+		assertThat(event.getMDCPropertyMap())
+			.containsEntry("requestPath", "/2281/resource")
+			.containsEntry("httpMethod", "GET")
+			.containsEntry("problemTitle", "Forbidden");
+
+		assertMdcCleared();
+	}
+
+	private ILoggingEvent eventOf(final String messageFragment) {
+		return appender.list.stream()
+			.filter(event -> event.getFormattedMessage().contains(messageFragment))
+			.findFirst()
+			.orElseThrow();
+	}
+
+	private void assertMdcCleared() {
+		assertThat(MDC.get("requestPath")).isNull();
+		assertThat(MDC.get("httpMethod")).isNull();
+		assertThat(MDC.get("problemTitle")).isNull();
+		assertThat(MDC.get("integrationName")).isNull();
+	}
+
+	/**
+	 * {@link ListAppender} that eagerly snapshots the MDC of each event as it is appended. This is required because the
+	 * handler removes its MDC entries in a finally block, and {@link ILoggingEvent#getMDCPropertyMap()} is otherwise
+	 * resolved lazily (i.e. after the MDC has already been cleared).
+	 */
+	private static class MdcCapturingListAppender extends ListAppender<ILoggingEvent> {
+		@Override
+		protected void append(final ILoggingEvent eventObject) {
+			eventObject.getMDCPropertyMap();
+			super.append(eventObject);
+		}
 	}
 
 	// Helper method for MissingPathVariableException test

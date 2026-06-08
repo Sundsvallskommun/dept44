@@ -3,6 +3,7 @@ package se.sundsvall.dept44.configuration.feign;
 import feign.Feign;
 import feign.Request;
 import feign.RequestInterceptor;
+import feign.RequestTemplate;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
@@ -19,6 +20,9 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
 import se.sundsvall.dept44.configuration.feign.retryer.ActionRetryer;
+import se.sundsvall.dept44.requestid.RequestId;
+import se.sundsvall.dept44.support.Identifier;
+import se.sundsvall.dept44.support.Identifier.Type;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -27,6 +31,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,8 +48,51 @@ class FeignMultiCustomizerTest {
 		final var customizer = FeignMultiCustomizer.create();
 		customizer.composeCustomizersToOne().customize(builderMock);
 
-		assertThat(customizer).extracting("customizers").asInstanceOf(LIST).hasSize(1);
-		verify(builderMock).requestInterceptor(any(RequestInterceptor.class));
+		// One interceptor for x-request-id and one for X-Sent-By.
+		assertThat(customizer).extracting("customizers").asInstanceOf(LIST).hasSize(2);
+		verify(builderMock, times(2)).requestInterceptor(any(RequestInterceptor.class));
+	}
+
+	@Test
+	void testCreatePropagatesIdentifier() {
+		final var interceptorCaptor = ArgumentCaptor.forClass(RequestInterceptor.class);
+
+		FeignMultiCustomizer.create().composeCustomizersToOne().customize(builderMock);
+		verify(builderMock, times(2)).requestInterceptor(interceptorCaptor.capture());
+
+		try {
+			RequestId.init("test-request-id");
+			Identifier.set(Identifier.create().withType(Type.AD_ACCOUNT).withValue("joe01doe"));
+
+			final var template = new RequestTemplate();
+			interceptorCaptor.getAllValues().forEach(interceptor -> interceptor.apply(template));
+
+			org.assertj.core.api.Assertions.assertThat(template.headers().get(Identifier.HEADER_NAME))
+				.containsExactly("joe01doe; type=adAccount");
+		} finally {
+			Identifier.remove();
+			RequestId.reset();
+		}
+	}
+
+	@Test
+	void testCreateWithoutIdentifierOmitsHeader() {
+		final var interceptorCaptor = ArgumentCaptor.forClass(RequestInterceptor.class);
+
+		FeignMultiCustomizer.create().composeCustomizersToOne().customize(builderMock);
+		verify(builderMock, times(2)).requestInterceptor(interceptorCaptor.capture());
+
+		try {
+			RequestId.init("test-request-id");
+			// No Identifier set in the thread-local context.
+
+			final var template = new RequestTemplate();
+			interceptorCaptor.getAllValues().forEach(interceptor -> interceptor.apply(template));
+
+			org.assertj.core.api.Assertions.assertThat(template.headers()).doesNotContainKey(Identifier.HEADER_NAME);
+		} finally {
+			RequestId.reset();
+		}
 	}
 
 	@Test

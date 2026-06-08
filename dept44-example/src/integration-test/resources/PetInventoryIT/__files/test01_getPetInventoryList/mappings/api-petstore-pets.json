@@ -3,6 +3,9 @@
 		"headers": {
 			"Authorization": {
 				"equalTo": "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3"
+			},
+			"X-Sent-By": {
+				"equalTo": "joe01exotic; type=adAccount"
 			}
 		},
 		"method": "GET",

@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -312,20 +313,36 @@ class WebConfigurationTest {
 
 		@ParameterizedTest
 		@MethodSource("argumentsProvider")
-		void doFilterInternal(final String headerName, final String headerValue) throws IOException, ServletException {
+		void doFilterInternal(final String headerName, final String headerValue, final Identifier expected) throws IOException, ServletException {
 			// Arrange
 			final var identifierFilter = identifierFilterRegistration.getFilter();
 
 			when(httpServletRequestMock.getHeader(headerName)).thenReturn(headerValue);
-			doNothing().when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
+
+			// Capture the MDC content as seen by the downstream filter chain.
+			final var sentByDuringChain = new String[2];
+			doAnswer(_ -> {
+				sentByDuringChain[0] = MDC.get(Identifier.MDC_SENT_BY_KEY);
+				sentByDuringChain[1] = MDC.get(Identifier.MDC_SENT_BY_TYPE_KEY);
+				return null;
+			}).when(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 
 			assertThat(Identifier.get()).isNull();
 
 			// Act
 			identifierFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
 
-			// Assert
+			// Assert - MDC is populated during the chain and cleared afterwards
+			if (expected != null) {
+				assertThat(sentByDuringChain[0]).isEqualTo(expected.getValue());
+				assertThat(sentByDuringChain[1]).isNotNull();
+			} else {
+				assertThat(sentByDuringChain[0]).isNull();
+				assertThat(sentByDuringChain[1]).isNull();
+			}
 			assertThat(Identifier.get()).isNull();
+			assertThat(MDC.get(Identifier.MDC_SENT_BY_KEY)).isNull();
+			assertThat(MDC.get(Identifier.MDC_SENT_BY_TYPE_KEY)).isNull();
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
 			verify(httpServletRequestMock).getHeader(headerName);
 			verifyNoMoreInteractions(httpServletRequestMock);

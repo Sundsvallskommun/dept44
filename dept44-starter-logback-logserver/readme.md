@@ -51,10 +51,44 @@ If needed, provide your own `logback-spring.xml` in your service to override thi
 
 ### Properties
 
-|                Property                 | Default |              Description              |
-|-----------------------------------------|---------|---------------------------------------|
-| `dept44.logback.logserver.disabled`     | `false` | Set to `true` to disable GELF logging |
-| `dept44.logback.logserver.maxchunksize` | `508`   | Max GELF chunk size in bytes          |
+|                Property                 | Default |                       Description                       |
+|-----------------------------------------|---------|---------------------------------------------------------|
+| `dept44.logback.logserver.disabled`     | `false` | Set to `true` to disable GELF logging                   |
+| `dept44.logback.logserver.maxchunksize` | `508`   | Max GELF chunk size in bytes                            |
+| `dept44.logback.pii-masking.enabled`    | `false` | Set to `true` to mask PII in all log output (see below) |
+
+### PII masking
+
+Set `dept44.logback.pii-masking.enabled=true` to mask personally identifiable information in **every** log line -
+console and GELF - regardless of whether the producing code remembered to mask the value itself. The following are
+masked:
+
+|           Category            |             Example input              |   Masked output    |
+|-------------------------------|----------------------------------------|--------------------|
+| Swedish personal identity no. | `900101-1234`                          | `******-****`      |
+| UUID (`partyId`)              | `f47ac10b-58cc-4372-a567-0e02b2c3d479` | `f47a...`          |
+| E-mail address                | `john.doe@example.com`                 | `j***@example.com` |
+| Swedish phone number          | `070-123 45 67`                        | `***-*** ** **`    |
+
+The masking is performed by the `%maskPii` pattern conversion word (class
+`se.sundsvall.dept44.util.PiiMasker` / `se.sundsvall.dept44.logback.PiiMaskingConverter`). When disabled it renders
+identically to `%m`, so there is no behavioural change in the default configuration.
+
+> **Note:** this is distinct from `LogUtils.sanitizeForLogging`, which guards against *log injection*, not PII.
+
+**Limitations:**
+
+- Only the rendered **message** is masked. MDC values, caller data and exception/stack-trace content emitted by the GELF
+  encoder as separate fields are **not** masked.
+- **Street addresses are not masked.** Free-form addresses have no stable shape a regex can match without masking large
+  amounts of ordinary log text; mask them field-by-field at the source instead (or via Logbook JSONPath/XPath body
+  masking for HTTP payloads).
+- The personal-identity-number rule keys on the digit shape `\b\d{6}[-+]?\d{4}\b` and cannot distinguish a real
+  personnummer from any other free-standing ten-digit number, so some non-PII numbers may be masked.
+- Phone-number masking only catches structured Swedish numbers (a `+46`/`0046` prefix or an internal separator); a bare
+  digit run like `0701234567` is treated as a personal identity number.
+- A service that provides its own `logback-spring.xml` (see [Override Configuration](#override-configuration)) must
+  replicate the `<conversionRule>` and `%maskPii` patterns to keep masking.
 
 ### Chunk Size
 

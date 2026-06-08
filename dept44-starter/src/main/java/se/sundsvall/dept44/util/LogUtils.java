@@ -20,9 +20,15 @@ public final class LogUtils {
 	 * 
 	 * If the input is {@code null}, the method returns {@code null}.
 	 *
+	 * <p>
+	 * <strong>Note:</strong> this method does <em>not</em> mask personal data (PII) - it only guards against log
+	 * injection. To mask Swedish personal identity numbers, UUIDs/{@code partyId} and e-mail addresses, use
+	 * {@link se.sundsvall.dept44.util.PiiMasker#maskPii(String)}.
+	 *
 	 * @param  input the string to sanitize
 	 * @return       a sanitized version of the input string suitable for logging, or {@code null} if the input was
 	 *               {@code null}
+	 * @see          se.sundsvall.dept44.util.PiiMasker#maskPii(String)
 	 */
 	public static String sanitizeForLogging(String input) {
 		return Optional.ofNullable(input)

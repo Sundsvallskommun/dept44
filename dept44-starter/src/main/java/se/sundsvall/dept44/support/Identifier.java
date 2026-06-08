@@ -2,6 +2,7 @@ package se.sundsvall.dept44.support;
 
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.MDC;
 
 import static com.google.common.base.CaseFormat.LOWER_CAMEL;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
@@ -42,6 +43,9 @@ import static se.sundsvall.dept44.support.Identifier.Type.CUSTOM;
 public class Identifier {
 
 	public static final String HEADER_NAME = "X-Sent-By";
+
+	public static final String MDC_SENT_BY_KEY = "sent_by";
+	public static final String MDC_SENT_BY_TYPE_KEY = "sent_by_type";
 
 	private static final ThreadLocal<Identifier> THREAD_LOCAL_INSTANCE = new ThreadLocal<>();
 	private static final String TYPE_FORMAT_PREFIX = "type=";
@@ -96,12 +100,23 @@ public class Identifier {
 	}
 
 	/**
-	 * Sets the given {@link Identifier} instance into the thread-local context.
+	 * Sets the given {@link Identifier} instance into the thread-local context and populates the MDC with the
+	 * {@code sent_by} and {@code sent_by_type} keys, so the identity is included in all log records.
+	 * <p>
+	 * The MDC values are taken as-is from {@link #getValue()} and {@link #getTypeString()} without validation, so a
+	 * complete {@link Identifier} is expected. Passing a partially populated instance (e.g. missing type) will store the
+	 * corresponding {@code null} value in the MDC. Prefer {@link #parse(String)} (which returns {@code null} for
+	 * incomplete input) when constructing the instance.
 	 *
-	 * @param identifier the {@link Identifier} instance to set; if {@code null}, the thread-local value is not modified
+	 * @param identifier the {@link Identifier} instance to set; if {@code null}, neither the thread-local value nor the
+	 *                   MDC is modified
 	 */
 	public static void set(Identifier identifier) {
-		Optional.ofNullable(identifier).ifPresent(THREAD_LOCAL_INSTANCE::set);
+		Optional.ofNullable(identifier).ifPresent(id -> {
+			THREAD_LOCAL_INSTANCE.set(id);
+			MDC.put(MDC_SENT_BY_KEY, id.getValue());
+			MDC.put(MDC_SENT_BY_TYPE_KEY, id.getTypeString());
+		});
 	}
 
 	/**
@@ -114,10 +129,13 @@ public class Identifier {
 	}
 
 	/**
-	 * Removes the current {@link Identifier} instance from the thread-local context.
+	 * Removes the current {@link Identifier} instance from the thread-local context and clears the {@code sent_by} and
+	 * {@code sent_by_type} MDC keys.
 	 */
 	public static void remove() {
 		THREAD_LOCAL_INSTANCE.remove();
+		MDC.remove(MDC_SENT_BY_KEY);
+		MDC.remove(MDC_SENT_BY_TYPE_KEY);
 	}
 
 	/**

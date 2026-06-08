@@ -1,3 +1,4 @@
+se.sundsvall.dept44.async.MdcTaskDecoratorConfiguration
 se.sundsvall.dept44.configuration.ObjectMapperConfiguration
 se.sundsvall.dept44.configuration.LogbookConfiguration
 se.sundsvall.dept44.configuration.ProblemConfiguration

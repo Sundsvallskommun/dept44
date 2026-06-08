@@ -1,13 +1,18 @@
 package se.sundsvall.dept44.problem;
 
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.SocketTimeoutException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -43,7 +48,14 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 @ControllerAdvice
 public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProblemExceptionHandler.class);
+
 	private static final String CONSTRAINT_VIOLATION_TITLE = "Constraint Violation";
+
+	private static final String MDC_REQUEST_PATH = "requestPath";
+	private static final String MDC_HTTP_METHOD = "httpMethod";
+	private static final String MDC_PROBLEM_TITLE = "problemTitle";
+	private static final String MDC_INTEGRATION_NAME = "integrationName";
 
 	/**
 	 * Override the central exception handling method to convert ProblemDetail responses to our ProblemResponse format. This
@@ -150,7 +162,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(CallNotPermittedException.class)
 	@ResponseBody
-	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception) {
+	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception, final HttpServletRequest request) {
+		logWithContext(request, SERVICE_UNAVAILABLE.getReasonPhrase(), exception.getCausingCircuitBreakerName(),
+			() -> LOGGER.warn("Circuit breaker '{}' is open, responding with {}", exception.getCausingCircuitBreakerName(), SERVICE_UNAVAILABLE.value()));
+
 		final var problem = Problem.valueOf(SERVICE_UNAVAILABLE, exception.getMessage());
 
 		return ResponseEntity
@@ -164,7 +179,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(AccessDeniedException.class)
 	@ResponseBody
-	public ResponseEntity<Problem> handleAccessDeniedException(final AccessDeniedException exception) {
+	public ResponseEntity<Problem> handleAccessDeniedException(final AccessDeniedException exception, final HttpServletRequest request) {
+		logWithContext(request, FORBIDDEN.getReasonPhrase(), null,
+			() -> LOGGER.warn("Access denied ({}), responding with {}", exception.getClass().getSimpleName(), FORBIDDEN.value()));
+
 		return createProblem(FORBIDDEN, exception.getMessage());
 	}
 
@@ -173,7 +191,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(AuthenticationException.class)
 	@ResponseBody
-	public ResponseEntity<Problem> handleAuthenticationException(final AuthenticationException exception) {
+	public ResponseEntity<Problem> handleAuthenticationException(final AuthenticationException exception, final HttpServletRequest request) {
+		logWithContext(request, UNAUTHORIZED.getReasonPhrase(), null,
+			() -> LOGGER.warn("Authentication failed ({}), responding with {}", exception.getClass().getSimpleName(), UNAUTHORIZED.value()));
+
 		return createProblem(UNAUTHORIZED, exception.getMessage());
 	}
 
@@ -200,7 +221,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(SocketTimeoutException.class)
 	@ResponseBody
-	public ResponseEntity<Problem> handleSocketTimeoutException(final SocketTimeoutException exception) {
+	public ResponseEntity<Problem> handleSocketTimeoutException(final SocketTimeoutException exception, final HttpServletRequest request) {
+		logWithContext(request, GATEWAY_TIMEOUT.getReasonPhrase(), null,
+			() -> LOGGER.error("Downstream call timed out, responding with {}: {}", GATEWAY_TIMEOUT.value(), exception.getMessage()));
+
 		return createProblem(GATEWAY_TIMEOUT, exception.getMessage());
 	}
 
@@ -210,7 +234,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	 */
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
-	public ResponseEntity<Problem> handleException(final Exception exception) {
+	public ResponseEntity<Problem> handleException(final Exception exception, final HttpServletRequest request) {
+		logWithContext(request, INTERNAL_SERVER_ERROR.getReasonPhrase(), null,
+			() -> LOGGER.error("Unhandled exception caught by global handler, responding with {}", INTERNAL_SERVER_ERROR.value(), exception));
+
 		return createProblem(INTERNAL_SERVER_ERROR, exception.getMessage());
 	}
 
@@ -235,6 +262,31 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			.withTitle(CONSTRAINT_VIOLATION_TITLE)
 			.withViolations(violations)
 			.build();
+	}
+
+	/**
+	 * Put the given context on the MDC, run the log statement so the values surface as structured (and OpenSearch
+	 * filterable) fields, then remove the keys again. Cleanup is mandatory since servlet threads are pooled and would
+	 * otherwise leak these fields onto subsequent requests.
+	 *
+	 * @param request         the current request, used for path and HTTP method
+	 * @param problemTitle    the title of the Problem being returned
+	 * @param integrationName the target integration name, or {@code null} when not available
+	 * @param logStatement    the logging call to execute while the context is on the MDC
+	 */
+	private static void logWithContext(final HttpServletRequest request, final String problemTitle, final String integrationName, final Runnable logStatement) {
+		try {
+			MDC.put(MDC_REQUEST_PATH, request.getRequestURI());
+			MDC.put(MDC_HTTP_METHOD, request.getMethod());
+			MDC.put(MDC_PROBLEM_TITLE, problemTitle);
+			Optional.ofNullable(integrationName).ifPresent(name -> MDC.put(MDC_INTEGRATION_NAME, name));
+			logStatement.run();
+		} finally {
+			MDC.remove(MDC_REQUEST_PATH);
+			MDC.remove(MDC_HTTP_METHOD);
+			MDC.remove(MDC_PROBLEM_TITLE);
+			MDC.remove(MDC_INTEGRATION_NAME);
+		}
 	}
 
 	private ResponseEntity<Problem> createProblem(final HttpStatus httpStatus, final String detail) {

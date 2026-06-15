@@ -152,9 +152,11 @@ class FeignMultiCustomizerTest {
 		verify(builderMock, atLeastOnce()).requestInterceptor(oAuth2RequestInterceptorCaptor.capture());
 		verify(builderMock).retryer(any(ActionRetryer.class));
 
+		// Spring Security 7 (Spring Boot 4.1) retains empty scopes as an empty set instead of nulling them out.
+		// For the client_credentials flow this is functionally equivalent to no scopes (no scope parameter is sent).
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
 			.extracting("clientRegistration").extracting("scopes")
-			.isNull();
+			.asInstanceOf(collection(String.class)).isEmpty();
 	}
 
 	@Test

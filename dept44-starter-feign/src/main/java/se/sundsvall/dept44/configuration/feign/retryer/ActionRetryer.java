@@ -1,7 +1,11 @@
 package se.sundsvall.dept44.configuration.feign.retryer;
 
+import feign.Request;
 import feign.RetryableException;
 import feign.Retryer;
+import java.util.Collection;
+
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 public class ActionRetryer implements Retryer {
 
@@ -20,8 +24,18 @@ public class ActionRetryer implements Retryer {
 		if (attempt > maxAttempts) {
 			throw e;
 		}
-		action.execute();
+		// Pass the Authorization header of the failed request so the action only acts on the exact token that failed.
+		// This avoids evicting a token that a concurrent thread has already refreshed in the meantime.
+		action.execute(extractAuthorizationHeader(e.request()));
 		attempt++;
+	}
+
+	private static String extractAuthorizationHeader(final Request request) {
+		if (request == null || request.headers() == null) {
+			return null;
+		}
+		final Collection<String> values = request.headers().get(AUTHORIZATION);
+		return (values == null || values.isEmpty()) ? null : values.iterator().next();
 	}
 
 	@Override

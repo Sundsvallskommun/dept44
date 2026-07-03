@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -208,10 +209,13 @@ class OAuth2RequestInterceptorTest {
 	}
 
 	@Test
-	void testRemoveToken() {
+	void testRemoveTokenWhenFailedTokenMatchesCachedToken() {
 		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
 		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
 		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationMock);
+		when(oAuth2AuthorizedClientServiceMock.<OAuth2AuthorizedClient>loadAuthorizedClient("registrationId", "anonymousUser")).thenReturn(authorizedClientMock);
+		when(authorizedClientMock.getAccessToken()).thenReturn(accessTokenMock);
+		when(accessTokenMock.getTokenValue()).thenReturn("tokenValue");
 
 		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
 			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
@@ -220,11 +224,55 @@ class OAuth2RequestInterceptorTest {
 			ReflectionTestUtils.setField(interceptor, "oAuth2AuthorizedClientService", oAuth2AuthorizedClientServiceMock);
 			clearInvocations(clientRegistrationMock);
 
-			interceptor.removeToken();
+			interceptor.removeToken("Bearer tokenValue");
 		}
 
-		verify(clientRegistrationMock).getRegistrationId();
 		verify(oAuth2AuthorizedClientServiceMock).removeAuthorizedClient("registrationId", "anonymousUser");
+	}
+
+	@Test
+	void testRemoveTokenWhenFailedTokenDiffersFromCachedToken() {
+		// Simulates another thread having already refreshed the token: the cached token is no longer the one that
+		// failed, so it must NOT be evicted.
+		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationMock);
+		when(oAuth2AuthorizedClientServiceMock.<OAuth2AuthorizedClient>loadAuthorizedClient("registrationId", "anonymousUser")).thenReturn(authorizedClientMock);
+		when(authorizedClientMock.getAccessToken()).thenReturn(accessTokenMock);
+		when(accessTokenMock.getTokenValue()).thenReturn("freshTokenValue");
+
+		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+
+			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
+			ReflectionTestUtils.setField(interceptor, "oAuth2AuthorizedClientService", oAuth2AuthorizedClientServiceMock);
+			clearInvocations(clientRegistrationMock);
+
+			interceptor.removeToken("Bearer staleTokenValue");
+		}
+
+		verify(oAuth2AuthorizedClientServiceMock, never()).removeAuthorizedClient(any(), any());
+	}
+
+	@Test
+	void testRemoveTokenWhenNoCachedToken() {
+		// Simulates another thread having already evicted the token: nothing to remove.
+		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
+		when(clientRegistrationBuilderMock.scope(ArgumentMatchers.<HashSet<String>>any())).thenReturn(clientRegistrationBuilderMock);
+		when(clientRegistrationBuilderMock.build()).thenReturn(clientRegistrationMock);
+		when(oAuth2AuthorizedClientServiceMock.<OAuth2AuthorizedClient>loadAuthorizedClient("registrationId", "anonymousUser")).thenReturn(null);
+
+		try (MockedStatic<ClientRegistration> regMock = Mockito.mockStatic(ClientRegistration.class)) {
+			regMock.when(() -> ClientRegistration.withClientRegistration(any())).thenReturn(clientRegistrationBuilderMock);
+
+			OAuth2RequestInterceptor interceptor = new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET);
+			ReflectionTestUtils.setField(interceptor, "oAuth2AuthorizedClientService", oAuth2AuthorizedClientServiceMock);
+			clearInvocations(clientRegistrationMock);
+
+			interceptor.removeToken("Bearer anyToken");
+		}
+
+		verify(oAuth2AuthorizedClientServiceMock, never()).removeAuthorizedClient(any(), any());
 	}
 
 	@Test

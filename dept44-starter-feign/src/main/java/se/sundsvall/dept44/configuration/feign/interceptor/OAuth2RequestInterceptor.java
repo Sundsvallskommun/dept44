@@ -82,9 +82,32 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 		requestTemplate.header(AUTHORIZATION, String.format("Bearer %s", accessToken.getTokenValue()));
 	}
 
-	public void removeToken() {
+	/**
+	 * Evicts the cached token, but only if it is still the exact token that caused the failing request.
+	 * <p>
+	 * When several threads share this interceptor (e.g. via {@code FeignMultiCustomizer}) and a token is rejected by
+	 * WSO2, every in-flight request carrying that token triggers a retry and calls this method. An unconditional
+	 * eviction would make each queued thread remove whatever token is currently cached - including a fresh, valid token
+	 * that another thread just fetched - causing a token-refresh storm and requests failing after their single retry.
+	 * By comparing the cached token against the one that actually failed, only the first thread evicts it; the rest
+	 * become no-ops and their retry reuses the freshly fetched token.
+	 *
+	 * @param failedAuthorizationHeader the {@code Authorization} header value (e.g. {@code "Bearer <token>"}) of the
+	 *                                  request that failed
+	 */
+	public void removeToken(final String failedAuthorizationHeader) {
 		synchronized (this) {
-			oAuth2AuthorizedClientService.removeAuthorizedClient(clientRegistration.getRegistrationId(), ANONYMOUS_AUTHENTICATION.getName());
+			final var registrationId = clientRegistration.getRegistrationId();
+			final OAuth2AuthorizedClient currentClient = oAuth2AuthorizedClientService.loadAuthorizedClient(registrationId, ANONYMOUS_AUTHENTICATION.getName());
+			if (currentClient == null) {
+				// Already evicted (and possibly refreshed) by another thread - nothing to do.
+				return;
+			}
+
+			final var currentAuthorizationHeader = String.format("Bearer %s", currentClient.getAccessToken().getTokenValue());
+			if (currentAuthorizationHeader.equals(failedAuthorizationHeader)) {
+				oAuth2AuthorizedClientService.removeAuthorizedClient(registrationId, ANONYMOUS_AUTHENTICATION.getName());
+			}
 		}
 	}
 }

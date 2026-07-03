@@ -7,6 +7,7 @@ import feign.RequestInterceptor;
 import feign.RequestLine;
 import feign.RequestTemplate;
 import feign.okhttp.OkHttpClient;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +30,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.test.util.ReflectionTestUtils;
 import se.sundsvall.dept44.configuration.feign.FeignMultiCustomizer;
 import se.sundsvall.dept44.configuration.feign.decoder.ProblemErrorDecoder;
@@ -46,6 +48,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
@@ -422,6 +425,76 @@ class OAuth2RequestInterceptorTest {
 		var requests = findAll(getRequestedFor(urlPathEqualTo("/test")));
 		assertThat(requests.get(0).header("Authorization").values()).containsExactly("Bearer " + token1);
 		assertThat(requests.get(1).header("Authorization").values()).containsExactly("Bearer " + token2);
+	}
+
+	@Test
+	void testConstructorWithNullConnectTimeout() {
+		assertThat(assertThrows(IllegalArgumentException.class, () -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, null, Duration.ofSeconds(1))))
+			.hasMessage("connectTimeout cannot be null");
+	}
+
+	@Test
+	void testConstructorWithNullReadTimeout() {
+		assertThat(assertThrows(IllegalArgumentException.class, () -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, Duration.ofSeconds(1), null)))
+			.hasMessage("readTimeout cannot be null");
+	}
+
+	@Test
+	void testTokenFetchTimesOut(WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(post("/token")
+			.willReturn(ok()
+				.withHeader("Content-Type", "application/json")
+				.withFixedDelay(2000)
+				.withBody("""
+					{
+						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
+						"expires_in": 3600,
+						"token_type": "bearer"
+					}
+					""")));
+
+		int port = wmRuntimeInfo.getHttpPort();
+		var clientRegistration = ClientRegistration.withRegistrationId("test")
+			.tokenUri("http://localhost:" + port + "/token")
+			.clientSecret("secret")
+			.clientName("name")
+			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+			.clientId("clientId")
+			.build();
+
+		var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofMillis(250), Duration.ofMillis(250));
+
+		assertThatExceptionOfType(OAuth2AuthorizationException.class)
+			.isThrownBy(() -> interceptor.apply(requestTemplateMock));
+	}
+
+	@Test
+	void testTokenFetchWithinTimeout(WireMockRuntimeInfo wmRuntimeInfo) {
+		stubFor(post("/token")
+			.willReturn(ok()
+				.withHeader("Content-Type", "application/json")
+				.withBody("""
+					{
+						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
+						"expires_in": 3600,
+						"token_type": "bearer"
+					}
+					""")));
+
+		int port = wmRuntimeInfo.getHttpPort();
+		var clientRegistration = ClientRegistration.withRegistrationId("test")
+			.tokenUri("http://localhost:" + port + "/token")
+			.clientSecret("secret")
+			.clientName("name")
+			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+			.clientId("clientId")
+			.build();
+
+		var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofSeconds(5), Duration.ofSeconds(5));
+
+		interceptor.apply(requestTemplateMock);
+
+		verify(requestTemplateMock).header(HttpHeaders.AUTHORIZATION, "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3");
 	}
 
 	public interface TestApi {

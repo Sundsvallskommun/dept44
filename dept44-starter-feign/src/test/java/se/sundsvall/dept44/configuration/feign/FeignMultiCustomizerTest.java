@@ -7,6 +7,7 @@ import feign.RequestTemplate;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
+import java.time.Duration;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -174,6 +175,41 @@ class FeignMultiCustomizerTest {
 		assertThat(oAuth2RequestInterceptorCaptor.getValue())
 			.extracting("clientRegistration").extracting("scopes")
 			.asInstanceOf(collection(String.class)).hasSize(2);
+	}
+
+	@Test
+	void testWithRetryableOauth2InterceptorForClientRegistrationWithDefaultScopeAndTokenTimeouts() {
+		final var clientRegistration = createClientRegistration();
+
+		final var customizer = FeignMultiCustomizer.create()
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Duration.ofSeconds(2), Duration.ofSeconds(3)).composeCustomizersToOne();
+
+		customizer.customize(builderMock);
+
+		verify(builderMock, atLeastOnce()).requestInterceptor(oAuth2RequestInterceptorCaptor.capture());
+		verify(builderMock).retryer(any(ActionRetryer.class));
+
+		assertThat(oAuth2RequestInterceptorCaptor.getValue())
+			.extracting("clientRegistration").extracting("scopes")
+			.asInstanceOf(collection(String.class)).hasSize(1)
+			.first().matches(scope -> scope.matches("device_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"));
+	}
+
+	@Test
+	void testWithRetryableOauth2InterceptorForClientRegistrationWithExtraScopesAndTokenTimeouts() {
+		final var clientRegistration = createClientRegistration();
+
+		final var customizer = FeignMultiCustomizer.create()
+			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of("some_scope"), Duration.ofSeconds(2), Duration.ofSeconds(3)).composeCustomizersToOne();
+
+		customizer.customize(builderMock);
+
+		verify(builderMock, atLeastOnce()).requestInterceptor(oAuth2RequestInterceptorCaptor.capture());
+		verify(builderMock).retryer(any(ActionRetryer.class));
+
+		assertThat(oAuth2RequestInterceptorCaptor.getValue())
+			.extracting("clientRegistration").extracting("scopes")
+			.asInstanceOf(collection(String.class)).containsExactly("some_scope");
 	}
 
 	@Test

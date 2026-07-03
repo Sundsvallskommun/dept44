@@ -5,6 +5,7 @@ import feign.RequestInterceptor;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,8 @@ import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS;
+import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS;
 
 /**
  * Chains multiple {@link FeignBuilderCustomizer} into one.
@@ -68,6 +71,20 @@ public class FeignMultiCustomizer {
 	}
 
 	/**
+	 * Method for creating a RetryableOAuth2InterceptorForClientRegistration with default scope-set (see
+	 * {@link #withRetryableOAuth2InterceptorForClientRegistration(ClientRegistration)}) and explicit timeouts for the
+	 * calls to the token endpoint.
+	 *
+	 * @param  clientRegistration  containing authorization information for the client
+	 * @param  tokenConnectTimeout connect timeout for calls to the token endpoint
+	 * @param  tokenReadTimeout    read timeout for calls to the token endpoint
+	 * @return                     FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
+	 */
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Duration tokenConnectTimeout, final Duration tokenReadTimeout) {
+		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, Set.of("device_" + UUID.randomUUID()), tokenConnectTimeout, tokenReadTimeout);
+	}
+
+	/**
 	 * Method for creating a RetryableOAuth2InterceptorForClientRegistration with a set of extra scopes (may be empty).
 	 * Any extra scopes will be merged with the scopes defined in the clientRegistration.
 	 *
@@ -76,8 +93,25 @@ public class FeignMultiCustomizer {
 	 * @return                    FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
 	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes) {
+		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, extraScopes,
+			Duration.ofSeconds(DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS), Duration.ofSeconds(DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS));
+	}
+
+	/**
+	 * Method for creating a RetryableOAuth2InterceptorForClientRegistration with a set of extra scopes (may be empty) and
+	 * explicit timeouts for the calls to the token endpoint. Any extra scopes will be merged with the scopes defined in
+	 * the clientRegistration.
+	 *
+	 * @param  clientRegistration  containing authorization information for the client
+	 * @param  extraScopes         a set of extra scopes
+	 * @param  tokenConnectTimeout connect timeout for calls to the token endpoint
+	 * @param  tokenReadTimeout    read timeout for calls to the token endpoint
+	 * @return                     FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
+	 */
+	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes, final Duration tokenConnectTimeout,
+		final Duration tokenReadTimeout) {
 		return withCustomizer(builder -> {
-			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistration, extraScopes);
+			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistration, extraScopes, tokenConnectTimeout, tokenReadTimeout);
 			builder.requestInterceptor(oAuth2RequestInterceptor);
 			builder.retryer(new ActionRetryer(oAuth2RequestInterceptor::removeToken, 1));
 		});

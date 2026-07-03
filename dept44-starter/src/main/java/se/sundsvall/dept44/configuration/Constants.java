@@ -7,6 +7,12 @@ public final class Constants {
 	private Constants() {}
 
 	/*
+	 * Default timeout values used when fetching tokens
+	 */
+	public static final int DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS = 5;
+	public static final int DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS = 10;
+
+	/*
 	 * Default timeout values used by RestTemplate, WebClient, etc.
 	 */
 	public static final int DEFAULT_CONNECT_TIMEOUT_IN_SECONDS = 10;

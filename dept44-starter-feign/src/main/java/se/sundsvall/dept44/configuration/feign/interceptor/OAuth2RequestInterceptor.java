@@ -28,8 +28,8 @@ import org.springframework.web.client.RestClient;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static se.sundsvall.dept44.configuration.Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS;
-import static se.sundsvall.dept44.configuration.Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS;
+import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS;
+import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 
 public class OAuth2RequestInterceptor implements RequestInterceptor {
@@ -42,7 +42,7 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 	private final InMemoryOAuth2AuthorizedClientService oAuth2AuthorizedClientService;
 
 	public OAuth2RequestInterceptor(final ClientRegistration clientRegistration, Set<String> extraScopes) {
-		this(clientRegistration, extraScopes, Duration.ofSeconds(DEFAULT_CONNECT_TIMEOUT_IN_SECONDS), Duration.ofSeconds(DEFAULT_READ_TIMEOUT_IN_SECONDS));
+		this(clientRegistration, extraScopes, Duration.ofSeconds(DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS), Duration.ofSeconds(DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS));
 	}
 
 	/**

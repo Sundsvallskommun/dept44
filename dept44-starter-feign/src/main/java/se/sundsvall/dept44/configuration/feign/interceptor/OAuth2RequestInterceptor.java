@@ -2,11 +2,11 @@ package se.sundsvall.dept44.configuration.feign.interceptor;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
-import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -80,8 +80,8 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 	}
 
 	private AuthorizedClientServiceOAuth2AuthorizedClientManager createAuthorizedClientManager(
-		InMemoryClientRegistrationRepository clientRegistrationRepository,
-		InMemoryOAuth2AuthorizedClientService clientService,
+		final InMemoryClientRegistrationRepository clientRegistrationRepository,
+		final InMemoryOAuth2AuthorizedClientService clientService,
 		final Duration connectTimeout,
 		final Duration readTimeout) {
 
@@ -97,15 +97,18 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 	/**
 	 * Creates a token response client with explicit timeouts. Without them, the default request factory has no read
 	 * timeout, and a hung token endpoint would block indefinitely while the token fetch lock is held.
+	 * <p>
+	 * The request factory is created with ClientHttpRequestFactoryBuilder.detect() so the same client implementation is
+	 * picked as a default-constructed RestClient would use (e.g. Apache HttpClient when on the classpath, preserving its
+	 * redirect-following behavior), only with timeouts applied.
 	 */
 	private RestClientClientCredentialsTokenResponseClient createTokenResponseClient(final Duration connectTimeout, final Duration readTimeout) {
-		final var requestFactory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
-			.connectTimeout(connectTimeout)
-			.build());
-		requestFactory.setReadTimeout(readTimeout);
+		final var requestFactory = ClientHttpRequestFactoryBuilder.detect().build(
+			HttpClientSettings.defaults().withTimeouts(connectTimeout, readTimeout));
 
-		// The message converters and status handler mirror the defaults used by
+		// The message converters and status handler mirror the defaults set up in the constructor of
 		// RestClientClientCredentialsTokenResponseClient, which are lost when replacing its RestClient.
+		// Re-check them against that class when upgrading Spring Security.
 		final var restClient = RestClient.builder()
 			.requestFactory(requestFactory)
 			.messageConverters(converters -> {

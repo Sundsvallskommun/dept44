@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import se.sundsvall.dept44.configuration.feign.interceptor.OAuth2RequestInterceptor;
@@ -19,8 +20,6 @@ import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS;
-import static se.sundsvall.dept44.configuration.Constants.DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS;
 
 /**
  * Chains multiple {@link FeignBuilderCustomizer} into one.
@@ -93,8 +92,8 @@ public class FeignMultiCustomizer {
 	 * @return                    FeignMultiCustomizer with a configured RetryableOAuth2InterceptorForClientRegistration
 	 */
 	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes) {
-		return withRetryableOAuth2InterceptorForClientRegistration(clientRegistration, extraScopes,
-			Duration.ofSeconds(DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS), Duration.ofSeconds(DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS));
+		// Default timeouts are applied by the interceptor constructor, keeping a single source for the defaults.
+		return withRetryableOAuth2Interceptor(() -> new OAuth2RequestInterceptor(clientRegistration, extraScopes));
 	}
 
 	/**
@@ -110,8 +109,12 @@ public class FeignMultiCustomizer {
 	 */
 	public FeignMultiCustomizer withRetryableOAuth2InterceptorForClientRegistration(final ClientRegistration clientRegistration, final Set<String> extraScopes, final Duration tokenConnectTimeout,
 		final Duration tokenReadTimeout) {
+		return withRetryableOAuth2Interceptor(() -> new OAuth2RequestInterceptor(clientRegistration, extraScopes, tokenConnectTimeout, tokenReadTimeout));
+	}
+
+	private FeignMultiCustomizer withRetryableOAuth2Interceptor(final Supplier<OAuth2RequestInterceptor> interceptorSupplier) {
 		return withCustomizer(builder -> {
-			final var oAuth2RequestInterceptor = new OAuth2RequestInterceptor(clientRegistration, extraScopes, tokenConnectTimeout, tokenReadTimeout);
+			final var oAuth2RequestInterceptor = interceptorSupplier.get();
 			builder.requestInterceptor(oAuth2RequestInterceptor);
 			builder.retryer(new ActionRetryer(oAuth2RequestInterceptor::removeToken, 1));
 		});

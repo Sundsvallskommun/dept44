@@ -280,29 +280,10 @@ class OAuth2RequestInterceptorTest {
 
 	@Test
 	void testVerifyBodyContainsDeviceScope(WireMockRuntimeInfo wmRuntimeInfo) {
-		stubFor(post("/token")
-			.willReturn(ok()
-				.withHeader("Content-Type", "application/json")
-				.withBody("""
-					{
-						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
-						"expires_in": -1,
-						"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
-						"scope": "whatever",
-						"token_type": "bearer"
-					}
-					""")));
+		stubTokenEndpoint(-1, 0);
 
-		int port = wmRuntimeInfo.getHttpPort();
-		var clientRegistration = ClientRegistration.withRegistrationId("test")
-			.tokenUri("http://localhost:" + port + "/token")
-			.clientSecret("secret")
-			.clientName("name")
-			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-			.clientId("clientId")
-			.build();
-
-		var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET);
+		final var clientRegistration = createClientRegistration(wmRuntimeInfo.getHttpPort());
+		final var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET);
 
 		interceptor.apply(requestTemplateMock);
 
@@ -312,29 +293,10 @@ class OAuth2RequestInterceptorTest {
 
 	@Test
 	void testVerifyBodyDoesNotContainsDeviceScope(WireMockRuntimeInfo wmRuntimeInfo) {
-		stubFor(post("/token")
-			.willReturn(ok()
-				.withHeader("Content-Type", "application/json")
-				.withBody("""
-					{
-						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
-						"expires_in": -1,
-						"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
-						"scope": "whatever",
-						"token_type": "bearer"
-					}
-					""")));
+		stubTokenEndpoint(-1, 0);
 
-		int port = wmRuntimeInfo.getHttpPort();
-		var clientRegistration = ClientRegistration.withRegistrationId("test")
-			.tokenUri("http://localhost:" + port + "/token")
-			.clientSecret("secret")
-			.clientName("name")
-			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-			.clientId("clientId")
-			.build();
-
-		var interceptor = new OAuth2RequestInterceptor(clientRegistration, Set.of("scope1"));
+		final var clientRegistration = createClientRegistration(wmRuntimeInfo.getHttpPort());
+		final var interceptor = new OAuth2RequestInterceptor(clientRegistration, Set.of("scope1"));
 
 		interceptor.apply(requestTemplateMock);
 
@@ -391,16 +353,10 @@ class OAuth2RequestInterceptorTest {
 				.withBody("successful")));
 
 		// ===== Create feign client =====
-		int port = wmRuntimeInfo.getHttpPort();
-		var clientRegistration = ClientRegistration.withRegistrationId("test")
-			.tokenUri("http://localhost:" + port + "/token")
-			.clientSecret("secret")
-			.clientName("name")
-			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-			.clientId("clientId")
-			.build();
+		final var port = wmRuntimeInfo.getHttpPort();
+		final var clientRegistration = createClientRegistration(port);
 
-		var customizer = FeignMultiCustomizer.create()
+		final var customizer = FeignMultiCustomizer.create()
 			.withErrorDecoder(new ProblemErrorDecoder("name"))
 			.withRequestTimeoutsInSeconds(5, 5)
 			.withRetryableOAuth2InterceptorForClientRegistration(clientRegistration)
@@ -429,40 +385,24 @@ class OAuth2RequestInterceptorTest {
 
 	@Test
 	void testConstructorWithNullConnectTimeout() {
-		assertThat(assertThrows(IllegalArgumentException.class, () -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, null, Duration.ofSeconds(1))))
-			.hasMessage("connectTimeout cannot be null");
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, null, Duration.ofSeconds(1)))
+			.withMessage("connectTimeout cannot be null");
 	}
 
 	@Test
 	void testConstructorWithNullReadTimeout() {
-		assertThat(assertThrows(IllegalArgumentException.class, () -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, Duration.ofSeconds(1), null)))
-			.hasMessage("readTimeout cannot be null");
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, Duration.ofSeconds(1), null))
+			.withMessage("readTimeout cannot be null");
 	}
 
 	@Test
 	void testTokenFetchTimesOut(WireMockRuntimeInfo wmRuntimeInfo) {
-		stubFor(post("/token")
-			.willReturn(ok()
-				.withHeader("Content-Type", "application/json")
-				.withFixedDelay(2000)
-				.withBody("""
-					{
-						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
-						"expires_in": 3600,
-						"token_type": "bearer"
-					}
-					""")));
+		stubTokenEndpoint(3600, 2000);
 
-		int port = wmRuntimeInfo.getHttpPort();
-		var clientRegistration = ClientRegistration.withRegistrationId("test")
-			.tokenUri("http://localhost:" + port + "/token")
-			.clientSecret("secret")
-			.clientName("name")
-			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-			.clientId("clientId")
-			.build();
-
-		var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofMillis(250), Duration.ofMillis(250));
+		final var clientRegistration = createClientRegistration(wmRuntimeInfo.getHttpPort());
+		final var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofMillis(250), Duration.ofMillis(250));
 
 		assertThatExceptionOfType(OAuth2AuthorizationException.class)
 			.isThrownBy(() -> interceptor.apply(requestTemplateMock));
@@ -470,31 +410,40 @@ class OAuth2RequestInterceptorTest {
 
 	@Test
 	void testTokenFetchWithinTimeout(WireMockRuntimeInfo wmRuntimeInfo) {
-		stubFor(post("/token")
-			.willReturn(ok()
-				.withHeader("Content-Type", "application/json")
-				.withBody("""
-					{
-						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
-						"expires_in": 3600,
-						"token_type": "bearer"
-					}
-					""")));
+		stubTokenEndpoint(3600, 0);
 
-		int port = wmRuntimeInfo.getHttpPort();
-		var clientRegistration = ClientRegistration.withRegistrationId("test")
+		final var clientRegistration = createClientRegistration(wmRuntimeInfo.getHttpPort());
+		final var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofSeconds(5), Duration.ofSeconds(5));
+
+		interceptor.apply(requestTemplateMock);
+
+		verify(requestTemplateMock).header(HttpHeaders.AUTHORIZATION, "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3");
+	}
+
+	private static ClientRegistration createClientRegistration(final int port) {
+		return ClientRegistration.withRegistrationId("test")
 			.tokenUri("http://localhost:" + port + "/token")
 			.clientSecret("secret")
 			.clientName("name")
 			.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 			.clientId("clientId")
 			.build();
+	}
 
-		var interceptor = new OAuth2RequestInterceptor(clientRegistration, DEFAULT_SCOPESET, Duration.ofSeconds(5), Duration.ofSeconds(5));
-
-		interceptor.apply(requestTemplateMock);
-
-		verify(requestTemplateMock).header(HttpHeaders.AUTHORIZATION, "Bearer MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3");
+	private static void stubTokenEndpoint(final int expiresInSeconds, final int fixedDelayInMilliseconds) {
+		stubFor(post("/token")
+			.willReturn(ok()
+				.withHeader("Content-Type", "application/json")
+				.withFixedDelay(fixedDelayInMilliseconds)
+				.withBody("""
+					{
+						"access_token": "MTQ0NjJkZmQ5OTM2NDE1ZTZjNGZmZjI3",
+						"expires_in": %d,
+						"refresh_token": "IwOGYzYTlmM2YxOTQ5MGE3YmNmMDFkNTVk",
+						"scope": "whatever",
+						"token_type": "bearer"
+					}
+					""".formatted(expiresInSeconds))));
 	}
 
 	public interface TestApi {

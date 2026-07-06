@@ -48,6 +48,10 @@ class WSO2RetryResponseVerifierTest {
 		"Bearer realm=\"example\", error=\"insufficient_scope\", error_description=\"The request requires higher privileges\"",
 		// A new token would not fix a malformed request
 		"Bearer realm=\"example\", error=\"invalid_request\", error_description=\"The request is missing a required parameter\"",
+		// Other error codes that merely start with invalid_token must not match
+		"Bearer realm=\"example\", error=\"invalid_token_type\"",
+		// Other attributes that merely end with error must not match
+		"Bearer realm=\"example\", custom_error=\"invalid_token\"",
 		"Some other error"
 	})
 	void shouldNotReturnRetryableExceptionForNonTokenErrors(final String wwwAuthenticateHeader) {

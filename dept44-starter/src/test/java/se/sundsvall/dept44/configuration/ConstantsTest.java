@@ -10,6 +10,8 @@ class ConstantsTest {
 
 	@Test
 	void constants() {
+		assertThat(Constants.DEFAULT_TOKEN_CONNECT_TIMEOUT_IN_SECONDS).isEqualTo(5);
+		assertThat(Constants.DEFAULT_TOKEN_READ_TIMEOUT_IN_SECONDS).isEqualTo(10);
 		assertThat(Constants.DEFAULT_CONNECT_TIMEOUT_IN_SECONDS).isEqualTo(10);
 		assertThat(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS).isEqualTo(30);
 		assertThat(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS).isEqualTo(30);

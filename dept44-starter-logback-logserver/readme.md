@@ -65,7 +65,7 @@ masked:
 
 |           Category            |             Example input              |   Masked output    |
 |-------------------------------|----------------------------------------|--------------------|
-| Swedish personal identity no. | `900101-1234`                          | `******-****`      |
+| Swedish personal identity no. | `900101-1234` / `199001011234`         | `******-****`      |
 | UUID (`partyId`)              | `f47ac10b-58cc-4372-a567-0e02b2c3d479` | `f47a...`          |
 | E-mail address                | `john.doe@example.com`                 | `j***@example.com` |
 | Swedish phone number          | `070-123 45 67`                        | `***-*** ** **`    |
@@ -83,8 +83,9 @@ identically to `%m`, so there is no behavioural change in the default configurat
 - **Street addresses are not masked.** Free-form addresses have no stable shape a regex can match without masking large
   amounts of ordinary log text; mask them field-by-field at the source instead (or via Logbook JSONPath/XPath body
   masking for HTTP payloads).
-- The personal-identity-number rule keys on the digit shape `\b\d{6}[-+]?\d{4}\b` and cannot distinguish a real
-  personnummer from any other free-standing ten-digit number, so some non-PII numbers may be masked.
+- The personal-identity-number rule keys on the digit shape `\b\d{6}(?:\d{2})?[-+]?\d{4}\b` (ten-digit `NNNNNN-NNNN`
+  and twelve-digit `NNNNNNNN-NNNN` forms) and cannot distinguish a real personnummer from any other free-standing ten-
+  or twelve-digit number, so some non-PII numbers may be masked.
 - Phone-number masking only catches structured Swedish numbers (a `+46`/`0046` prefix or an internal separator); a bare
   digit run like `0701234567` is treated as a personal identity number.
 - A service that provides its own `logback-spring.xml` (see [Override Configuration](#override-configuration)) must

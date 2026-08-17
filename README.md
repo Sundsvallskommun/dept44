@@ -67,6 +67,15 @@ the [plugin documentation here](https://github.com/Sundsvallskommun/dept44/dept4
 **Note for `dept44`:** Because `dept44-formatting-plugin` is a module of the parent in this project, you need to run the
 commands manually for the plugin to take effect on the parent pom.
 
+## Logging & PII
+
+Personal data (`partyId`, personal/organisation numbers, names, e-mail, phone numbers) must never be
+logged in cleartext. Mask it with `se.sundsvall.dept44.util.PiiMasker` before logging. Note that
+`LogUtils.sanitizeForLogging` guards against *log injection* only — it does **not** hide PII.
+
+See the **[PII logging policy](docs/pii-logging-policy.md)** for the full guidance, the available
+masking methods, and the opt-in framework-level masker in `dept44-starter-logback-logserver`.
+
 ## Status
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Sundsvallskommun_dept44&metric=alert_status)](https://sonarcloud.io/summary/overall?id=Sundsvallskommun_dept44)

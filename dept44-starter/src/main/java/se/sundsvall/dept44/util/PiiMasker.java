@@ -24,10 +24,11 @@ import java.util.regex.Pattern;
  * controlled and contains PII.
  *
  * <p>
- * <strong>Limitation:</strong> the personal-identity-number matcher keys on the digit shape {@code NNNNNN[-+]?NNNN} and
- * cannot tell a real personnummer apart from any other free-standing ten-digit number (an order number, an epoch-
- * millisecond timestamp, a correlation id). Such numbers may be masked even though they are not PII. Eliminating this
- * would require a date/checksum validation that is intentionally out of scope here.
+ * <strong>Limitation:</strong> the personal-identity-number matcher keys on the digit shape of a ten-digit
+ * ({@code NNNNNN[-+]?NNNN}) or twelve-digit ({@code NNNNNNNN[-+]?NNNN}) number and cannot distinguish a real
+ * personnummer from any other free-standing ten- or twelve-digit number (an order number, an epoch-millisecond
+ * timestamp, a correlation id). Such numbers may be masked even though they are not PII. Eliminating this would require
+ * a date/checksum validation that is intentionally out of scope here.
  *
  * <p>
  * <strong>Not handled:</strong> free-form street addresses are deliberately not masked - they have no stable shape a
@@ -41,10 +42,11 @@ import java.util.regex.Pattern;
 public final class PiiMasker {
 
 	/**
-	 * Swedish personal identity number on the {@code NNNNNN[-+]?NNNN} form. The {@code \b} word boundaries keep a
-	 * ten-digit run that is part of a longer number (or token) from matching.
+	 * Swedish personal identity number on the ten-digit {@code NNNNNN[-+]?NNNN} or twelve-digit
+	 * {@code NNNNNNNN[-+]?NNNN} form (the optional {@code \d{2}} is the two-digit century prefix). The {@code \b} word
+	 * boundaries keep a run that is part of a longer number (or token) from matching.
 	 */
-	private static final Pattern PERSONAL_NUMBER_PATTERN = Pattern.compile("\\b\\d{6}[-+]?\\d{4}\\b");
+	private static final Pattern PERSONAL_NUMBER_PATTERN = Pattern.compile("\\b\\d{6}(?:\\d{2})?[-+]?\\d{4}\\b");
 
 	private static final String PERSONAL_NUMBER_MASK = "******-****";
 
@@ -91,12 +93,12 @@ public final class PiiMasker {
 	}
 
 	/**
-	 * Masks Swedish personal identity numbers on the {@code NNNNNN[-+]?NNNN} form, replacing each with
-	 * {@code ******-****}.
+	 * Masks Swedish personal identity numbers on the ten-digit {@code NNNNNN[-+]?NNNN} or twelve-digit
+	 * {@code NNNNNNNN[-+]?NNNN} form, replacing each with {@code ******-****}.
 	 *
 	 * <p>
-	 * Note the limitation described on the {@linkplain PiiMasker class}: any free-standing ten-digit number matches this
-	 * shape and will be masked, whether or not it is an actual personnummer.
+	 * Note the limitation described on the {@linkplain PiiMasker class}: any free-standing ten- or twelve-digit number
+	 * matches this shape and will be masked, whether or not it is an actual personnummer.
 	 *
 	 * @param  input the string to mask
 	 * @return       a copy with personal identity numbers masked, or {@code null} if the input was {@code null}

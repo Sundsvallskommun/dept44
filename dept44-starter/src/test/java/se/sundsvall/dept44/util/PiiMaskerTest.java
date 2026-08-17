@@ -23,10 +23,19 @@ class PiiMaskerTest {
 			Arguments.of("9001011234", "******-****"),
 			Arguments.of("900101+1234", "******-****"),
 			Arguments.of("Patient 900101-1234 admitted", "Patient ******-**** admitted"),
+			// Twelve-digit (full-century) personnummer / legalId - the form the Party service returns.
+			Arguments.of("199001011234", "******-****"),
+			Arguments.of("19900101-1234", "******-****"),
+			Arguments.of("19900101+1234", "******-****"),
+			Arguments.of("legalId 199001011234 fetched", "legalId ******-**** fetched"),
+			// A 13-digit run (e.g. an epoch-millisecond timestamp) is not a personnummer; the \b boundaries keep it from
+			// matching.
+			Arguments.of("At 1700000000000 the job ran", "At 1700000000000 the job ran"),
 			// A 14-digit run is not a personnummer; the \b boundaries keep it from matching.
 			Arguments.of("Order 12345678901234 shipped", "Order 12345678901234 shipped"),
 			Arguments.of("no digits here", "no digits here"),
-			Arguments.of("900101-1234 and 850615-4321", "******-**** and ******-****"));
+			Arguments.of("900101-1234 and 850615-4321", "******-**** and ******-****"),
+			Arguments.of("199001011234 and 850615-4321", "******-**** and ******-****"));
 	}
 
 	@ParameterizedTest
@@ -99,6 +108,8 @@ class PiiMaskerTest {
 				"User john.doe@example.com phone 070-123 45 67 partyId f47ac10b-58cc-4372-a567-0e02b2c3d479 ssn 900101-1234",
 				"User j***@example.com phone ***-*** ** ** partyId f47a... ssn ******-****"),
 			// UUID is masked first, so its twelve hexadecimal digits cannot be mistaken for a personal number.
-			Arguments.of("id 12345678-1234-1234-1234-123456789012", "id 1234..."));
+			Arguments.of("id 12345678-1234-1234-1234-123456789012", "id 1234..."),
+			// Twelve-digit legalId is masked by the personal-number rule.
+			Arguments.of("legalId 199001011234 partyId f47ac10b-58cc-4372-a567-0e02b2c3d479", "legalId ******-**** partyId f47a..."));
 	}
 }

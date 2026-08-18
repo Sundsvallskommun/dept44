@@ -47,7 +47,7 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 		try {
 			var truststoreDir = new File(getProject().getBasedir(), "src/main/resources/" + truststorePath);
 
-			var today = LocalDate.now();
+			var today = LocalDate.now(ZoneId.systemDefault());
 			var expiry = today.plusMonths(monthsUntilExpiration);
 
 			var certificateFiles = truststoreDir.listFiles(File::isFile);

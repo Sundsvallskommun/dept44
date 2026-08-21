@@ -18,14 +18,14 @@ undvikas, inte en bekvämlighet.
 
 ## Vad räknas som PII i det här sammanhanget
 
-| Kategori | Exempel | Maska? |
-|---|---|---|
-| `partyId` (UUID) | `f47ac10b-58cc-4372-a567-0e02b2c3d479` | **Ja** |
-| Personnummer / samordningsnummer / `legalId` | `900101-1234` | **Ja** |
-| E-postadress | `john.doe@example.com` | **Ja** |
-| Telefonnummer | `070-123 45 67` | **Ja** |
-| Namn, adress | `Anna Andersson`, `Storgatan 1` | **Ja** – maska vid källan (regex fångar inte fri text) |
-| Organisationsnummer | `5560000000` | Bedöm i sammanhanget – maska vid tveksamhet |
+|                   Kategori                   |                Exempel                 |                         Maska?                         |
+|----------------------------------------------|----------------------------------------|--------------------------------------------------------|
+| `partyId` (UUID)                             | `f47ac10b-58cc-4372-a567-0e02b2c3d479` | **Ja**                                                 |
+| Personnummer / samordningsnummer / `legalId` | `900101-1234`                          | **Ja**                                                 |
+| E-postadress                                 | `john.doe@example.com`                 | **Ja**                                                 |
+| Telefonnummer                                | `070-123 45 67`                        | **Ja**                                                 |
+| Namn, adress                                 | `Anna Andersson`, `Storgatan 1`        | **Ja** – maska vid källan (regex fångar inte fri text) |
+| Organisationsnummer                          | `5560000000`                           | Bedöm i sammanhanget – maska vid tveksamhet            |
 
 ## Så här gör du
 
@@ -41,13 +41,13 @@ LOG.info("Inga kontaktinställningar hittades för {} med filter {}",
 
 För ett värde vars typ är känd kan du använda en riktad metod – tydligare och billigare:
 
-| Metod | Använd för |
-|---|---|
-| `PiiMasker.maskPii(s)` | Generellt – godtycklig sträng som kan innehålla flera kategorier |
-| `PiiMasker.maskUuid(s)` | Ett `partyId`/UUID |
-| `PiiMasker.maskPersonalNumber(s)` | Ett personnummer / `legalId` |
-| `PiiMasker.maskEmail(s)` | En e-postadress |
-| `PiiMasker.maskPhoneNumber(s)` | Ett telefonnummer |
+|               Metod               |                            Använd för                            |
+|-----------------------------------|------------------------------------------------------------------|
+| `PiiMasker.maskPii(s)`            | Generellt – godtycklig sträng som kan innehålla flera kategorier |
+| `PiiMasker.maskUuid(s)`           | Ett `partyId`/UUID                                               |
+| `PiiMasker.maskPersonalNumber(s)` | Ett personnummer / `legalId`                                     |
+| `PiiMasker.maskEmail(s)`          | En e-postadress                                                  |
+| `PiiMasker.maskPhoneNumber(s)`    | Ett telefonnummer                                                |
 
 Alla metoder är null-säkra (`null` in → `null` ut).
 
@@ -95,7 +95,7 @@ Se `dept44-starter-logback-logserver/readme.md` för detaljer och begränsningar
 ## Checklista vid PR
 
 - [ ] Loggar har granskats för PII – inga `partyId`, personnummer/`legalId`, namn, e-post eller
-      telefonnummer i klartext.
+  telefonnummer i klartext.
 - [ ] Där PII loggas är värdet maskat med `PiiMasker` (inte enbart `sanitizeForLogging`).
 
 ## Referenser
@@ -103,3 +103,4 @@ Se `dept44-starter-logback-logserver/readme.md` för detaljer och begränsningar
 - `se.sundsvall.dept44.util.PiiMasker` (`dept44-starter`)
 - `se.sundsvall.dept44.util.LogUtils#sanitizeForLogging` – *endast* log injection
 - `dept44-starter-logback-logserver/readme.md` – ramverkets opt-in-maskerare
+

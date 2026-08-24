@@ -80,6 +80,9 @@ public class Truststore {
 	private static final String MESSAGE_NO_VALID_CERTIFICATES = "Could not find any valid certificates.";
 	private static final String MESSAGE_NO_RESOURCES_FOUND = "No resources found on path: '{}'";
 	private static final String MESSAGE_USAGE_INFO = "Truststore enabled, with truststore path: '{}'. Use 'dept44.truststore.path' to change path to your trusted certificates";
+	private static final String MESSAGE_REPLACES_JVM_DEFAULT = "Installed {} certificate(s) as the JVM default trust anchors. "
+		+ "These are now the ONLY trusted CAs for this process - the JDK 'cacerts' store is NOT in use. "
+		+ "To trust an additional CA (for example an external party's server certificate), add its X.509 (PEM) certificate to '{}'.";
 
 	private static final String SSL_PROTOCOL = "TLSv1.2";
 	private static final String CERTIFICATE_TYPE = "X.509";
@@ -180,6 +183,7 @@ public class Truststore {
 		});
 
 		this.trustManagerFactory.init(keyStore);
+		LOG.info(MESSAGE_REPLACES_JVM_DEFAULT, keyStore.size(), trustStorePath);
 
 		final var customSSLContext = SSLContext.getInstance(SSL_PROTOCOL);
 		customSSLContext.init(null, this.trustManagerFactory.getTrustManagers(), new SecureRandom());

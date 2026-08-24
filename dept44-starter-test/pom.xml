@@ -39,13 +39,22 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-resttestclient</artifactId>
 		</dependency>
+		<!-- TestRestTemplate needs the RestClient/HttpClient support classes at runtime -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-restclient</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-webtestclient</artifactId>
 		</dependency>
+		<!-- Provides the shaded handlebars classes used by AbstractAppTest. Scope is explicit, since
+				spring-cloud-kubernetes-dependencies manages this artifact as test-scoped. -->
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-contract-wiremock</artifactId>
+			<groupId>org.wiremock</groupId>
+			<artifactId>wiremock-standalone</artifactId>
+			<version>${wiremock.version}</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.wiremock.integrations</groupId>

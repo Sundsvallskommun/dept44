@@ -7,6 +7,7 @@ import feign.okhttp.OkHttpClient;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.ALL;
 
 @SpringBootTest(classes = {
@@ -109,6 +114,24 @@ class FeignConfigurationTest {
 	}
 
 	@Test
+	void testFeignEncoderInitializesConvertersEagerly() {
+		final var converters = mock(FeignHttpMessageConverters.class);
+
+		configuration.feignEncoder(formWriter, encoderProperties, providerOf(converters));
+
+		verify(converters).getConverters();
+	}
+
+	@Test
+	void testFeignDecoderInitializesConvertersEagerly() {
+		final var converters = mock(FeignHttpMessageConverters.class);
+
+		configuration.feignDecoder(providerOf(converters));
+
+		verify(converters).getConverters();
+	}
+
+	@Test
 	void testQueryMapEncoder() {
 		assertThat(configuration.queryMapEncoder()).isNotNull().isInstanceOf(QueryMapEncoder.class);
 	}
@@ -148,5 +171,16 @@ class FeignConfigurationTest {
 		// Verify it supports all media types
 		final var byteArrayConverter = (ByteArrayHttpMessageConverter) converters.getFirst();
 		assertThat(byteArrayConverter.getSupportedMediaTypes()).contains(ALL);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static ObjectProvider<FeignHttpMessageConverters> providerOf(final FeignHttpMessageConverters converters) {
+		final ObjectProvider<FeignHttpMessageConverters> provider = mock(ObjectProvider.class);
+		doAnswer(invocation -> {
+			invocation.getArgument(0, Consumer.class).accept(converters);
+			return null;
+		}).when(provider).ifAvailable(any());
+
+		return provider;
 	}
 }

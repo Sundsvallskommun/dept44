@@ -93,7 +93,7 @@ public class FeignConfiguration {
 				.addFirstWriter(writer);
 		}
 
-		return new PageableSpringEncoder(new SpringEncoder(formEncoder, encoderProperties, eagerlyInitialized(messageConverters)));
+		return new PageableSpringEncoder(new SpringEncoder(formEncoder, encoderProperties, messageConverters));
 	}
 
 	/**
@@ -108,27 +108,7 @@ public class FeignConfiguration {
 		return new OptionalDecoder(
 			new ResponseEntityDecoder(
 				new BinaryAwareDecoder(
-					new SpringDecoder(eagerlyInitialized(messageConverters)))));
-	}
-
-	/**
-	 * Initializes the converters held by {@link FeignHttpMessageConverters} while the client context is still being built,
-	 * i.e. while it is single-threaded.
-	 * <p>
-	 * {@code FeignHttpMessageConverters.initConvertersIfRequired()} assigns its field an empty list before it fills the
-	 * list, and neither synchronizes nor declares the field volatile. A thread reading the field within that window sees a
-	 * non-null but empty list, skips the initialization and is handed no converters at all, which makes
-	 * {@link SpringDecoder} and {@link SpringEncoder} fail with {@code 'messageConverters' must not be empty}. Both hold
-	 * the provider rather than the converters, so the initialization is otherwise triggered by the first request, where a
-	 * burst of concurrent calls against a cold client hits the window reliably.
-	 * <p>
-	 * Reported upstream as spring-cloud-openfeign
-	 * <a href="https://github.com/spring-cloud/spring-cloud-openfeign/issues/1307">#1307</a>, which is still open. Remove
-	 * this once a released version initializes the converters safely.
-	 */
-	private static ObjectProvider<FeignHttpMessageConverters> eagerlyInitialized(final ObjectProvider<FeignHttpMessageConverters> messageConverters) {
-		messageConverters.ifAvailable(FeignHttpMessageConverters::getConverters);
-		return messageConverters;
+					new SpringDecoder(messageConverters))));
 	}
 
 	@Bean

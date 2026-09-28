@@ -1,0 +1,10 @@
+{
+	"request": {
+		"method": "GET",
+		"url": "/shared-context/class"
+	},
+	"response": {
+		"status": 200,
+		"bodyFileName": "class-body.txt"
+	}
+}

@@ -2,13 +2,16 @@ package se.sundsvall.dept44.test;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
+import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.javacrumbs.jsonunit.core.Option;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,7 @@ import static java.time.LocalDate.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +70,30 @@ class AbstractAppTestTest {
 
 	@Captor
 	private ArgumentCaptor<HttpEntity<String>> httpEntityCaptor;
+
+	@Test
+	void testVerifyStubsRetriesWithinASecond() {
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		doThrow(new VerificationException("Not called yet")).doNothing().when(wiremockMock).verify(any());
+
+		final var start = System.nanoTime();
+		appTest.verifyStubs();
+
+		assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(1));
+		verify(wiremockMock, times(2)).verify(any());
+		verify(wiremockMock).resetAll();
+	}
+
+	@Test
+	void testAndVerifyThatRetriesWithinASecond() {
+		final var calls = new AtomicInteger();
+
+		final var start = System.nanoTime();
+		appTest.andVerifyThat(() -> calls.incrementAndGet() > 1);
+
+		assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(1));
+		assertThat(calls).hasValue(2);
+	}
 
 	@Test
 	void testGetCall() {

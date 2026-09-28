@@ -54,6 +54,7 @@ import static java.lang.String.format;
 import static java.nio.file.Files.readString;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
 import static net.javacrumbs.jsonunit.JsonAssert.setOptions;
@@ -72,6 +73,7 @@ public abstract class AbstractAppTest {
 	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
+	private static final int POLL_INTERVAL_IN_MILLISECONDS = 100;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 	private static final String CLASSPATH_RESOURCE_SEPARATOR = "/";
@@ -435,7 +437,7 @@ public abstract class AbstractAppTest {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
+			.pollInterval(POLL_INTERVAL_IN_MILLISECONDS, MILLISECONDS)
 			.ignoreExceptions()
 			.until(this::verifyAllStubs);
 
@@ -503,7 +505,7 @@ public abstract class AbstractAppTest {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
+			.pollInterval(POLL_INTERVAL_IN_MILLISECONDS, MILLISECONDS)
 			.until(conditionIsMet);
 
 		return this;

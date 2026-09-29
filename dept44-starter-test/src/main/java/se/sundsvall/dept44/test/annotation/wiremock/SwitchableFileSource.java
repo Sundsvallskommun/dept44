@@ -13,6 +13,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static org.springframework.util.StringUtils.trimLeadingCharacter;
+import static org.springframework.util.StringUtils.trimTrailingCharacter;
+
 /**
  * The file source of a WireMock server that several test classes share: it reads from the files of the test class that
  * is running, which {@link SharedContextTestExecutionListener} switches to before the server is reset for each test.
@@ -57,7 +60,7 @@ public final class SwitchableFileSource implements FileSource {
 	 * @param classLoader        the class loader to find it with.
 	 */
 	public static void useClasspathDirectory(final String classpathDirectory, final ClassLoader classLoader) {
-		final var name = classpathDirectory.replaceAll("^/+|/+$", "");
+		final var name = trimTrailingCharacter(trimLeadingCharacter(classpathDirectory, '/'), '/');
 		CURRENT.set(fileSystemSource(name, classLoader).orElseGet(() -> new ClasspathFileSource(classLoader, name)));
 	}
 

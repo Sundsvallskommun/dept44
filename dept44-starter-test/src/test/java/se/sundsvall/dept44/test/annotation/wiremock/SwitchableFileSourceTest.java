@@ -155,4 +155,13 @@ class SwitchableFileSourceTest {
 		assertThat(source.getPath()).isEqualTo("DoesNotExistIT");
 		assertThat(source.child("mappings").exists()).isFalse();
 	}
+
+	@Test
+	void useClasspathDirectoryIgnoresSurroundingSlashes() {
+		final var source = new SwitchableFileSource();
+
+		SwitchableFileSource.useClasspathDirectory("//DoesNotExistIT/sub//", getClass().getClassLoader());
+
+		assertThat(source.getPath()).isEqualTo("DoesNotExistIT/sub");
+	}
 }

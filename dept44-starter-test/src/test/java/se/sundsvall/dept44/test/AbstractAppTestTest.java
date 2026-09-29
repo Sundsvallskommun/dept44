@@ -12,7 +12,9 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import net.javacrumbs.jsonunit.JsonAssert;
 import net.javacrumbs.jsonunit.core.Option;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -29,7 +31,10 @@ import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
 import se.sundsvall.dept44.test.supportfiles.TestBody;
 
 import static java.time.LocalDate.now;
+import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
+import static net.javacrumbs.jsonunit.core.Option.IGNORING_EXTRA_FIELDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -70,6 +75,30 @@ class AbstractAppTestTest {
 
 	@Captor
 	private ArgumentCaptor<HttpEntity<String>> httpEntityCaptor;
+
+	@AfterEach
+	void resetJsonAssertOptions() {
+		JsonAssert.resetOptions();
+	}
+
+	@Test
+	void testSetupCallRestoresDefaultJsonAssertOptions() {
+		appTest.setupCall().withJsonAssertOptions(List.of(IGNORING_EXTRA_FIELDS));
+
+		appTest.setupCall();
+
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("{}", "{\"extra\": 1}"));
+		assertJsonEquals("[1, 2]", "[2, 1]");
+	}
+
+	@Test
+	void testWithJsonAssertOptionsResetsToStrictForNullAndEmptyList() {
+		appTest.setupCall().withJsonAssertOptions(null);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("[1, 2]", "[2, 1]"));
+
+		appTest.setupCall().withJsonAssertOptions(List.of());
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("[1, 2]", "[2, 1]"));
+	}
 
 	@Test
 	void testVerifyStubsRetriesWithinASecond() {

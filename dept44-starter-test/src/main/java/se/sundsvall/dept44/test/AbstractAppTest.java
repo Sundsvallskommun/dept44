@@ -279,7 +279,8 @@ public abstract class AbstractAppTest {
 	 * Method adds options to be used when assertion of JSON is done, for example, IGNORING_EXTRA_ARRAY_ITEMS. By default,
 	 * the test will compare arrays with an option to ignore array order. If they need to use maximum strictness in
 	 * JsonAssert - send in
-	 * null or an empty list to just reset options to JsonAsserts default ones.
+	 * null or an empty list to just reset options to JsonAsserts default ones. The options apply until the next
+	 * {@link #setupCall()}, which restores the default.
 	 *
 	 * @param  options list of options to use when doing the JSON assertion or null/empty list for resetting to JsonAssert
 	 *                 defaults (strict comparison)
@@ -289,13 +290,8 @@ public abstract class AbstractAppTest {
 		// Reset to JsonAssert strict assertion options (removing option IGNORING_ARRAY_ORDER)
 		JsonAssert.resetOptions();
 
-		if (nonNull(options)) {
-			// Set sent in assertion options
-			if (options.size() == 1) {
-				setOptions(options.getFirst());
-			} else {
-				setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
-			}
+		if (!isEmpty(options)) {
+			setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
 		}
 		return this;
 	}
@@ -595,6 +591,8 @@ public abstract class AbstractAppTest {
 
 	private void initializeJsonAssert() {
 		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e., 1.0 == 1.000)
+		// The options are global to the JVM and setOptions adds to them, so options set by an earlier call must be cleared
+		JsonAssert.resetOptions();
 		JsonAssert.setOptions(Option.IGNORING_ARRAY_ORDER);
 	}
 

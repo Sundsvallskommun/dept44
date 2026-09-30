@@ -9,7 +9,7 @@ on:
 
 jobs:
   shared-workflows:
-    uses: Sundsvallskommun/.github/.github/workflows/java-maven-publish.yml@d3a43f808d780e3a40b2ee698c83966d79b44e76 # main
+    uses: Sundsvallskommun/.github/.github/workflows/java-maven-publish.yml@3f93915774b3450605a85f1f7601be9f8a8e0f41 # main
     with:
       java: "25"
     secrets:

@@ -47,4 +47,22 @@ public @interface WireMockAppTestSuite {
 
 	@AliasFor(annotation = SpringBootTest.class, attribute = "classes")
 	Class<?>[] classes();
+
+	/**
+	 * Whether the class shares its application context, and the WireMock server in it, with the other classes that
+	 * share theirs and are otherwise configured alike. The server reads the {@link #files()} of whichever class is
+	 * running, including the default mappings it loads when it is reset before each test.
+	 * <p>
+	 * Calls the application makes to the server while the context starts, such as fetching a token, only see the files
+	 * of the class that started it. WireMock's serving of static files for requests matching no stub does not follow the
+	 * class either.
+	 * <p>
+	 * A class sharing its context also shares the state the application keeps between tests, such as caches, open
+	 * circuit breakers, busy thread pools and scheduled jobs, with the classes run before it in the same JVM. A class
+	 * that changes such state must restore it, or not share its context. Classes sharing a context must not run in
+	 * parallel with each other.
+	 *
+	 * @return true to share the application context, false for one of its own.
+	 */
+	boolean sharedContext() default false;
 }

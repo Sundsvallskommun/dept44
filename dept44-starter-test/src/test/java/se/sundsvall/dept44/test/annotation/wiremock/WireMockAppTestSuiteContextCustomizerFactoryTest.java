@@ -1,10 +1,12 @@
 package se.sundsvall.dept44.test.annotation.wiremock;
 
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import java.io.File;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.wiremock.spring.ConfigureWireMock;
+import org.wiremock.spring.WireMockConfigurationCustomizer;
 import org.wiremock.spring.internal.WireMockContextCustomizer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -120,8 +122,93 @@ class WireMockAppTestSuiteContextCustomizerFactoryTest {
 		assertThat(new File(result.filesUnderDirectory()[0])).isDirectory();
 	}
 
+	@Test
+	void createContextCustomizerForSharedClassesWithDifferentFilesIsEqual() {
+		final var first = factory.createContextCustomizer(SharedTestClass.class, Collections.emptyList());
+		final var second = factory.createContextCustomizer(OtherSharedTestClass.class, Collections.emptyList());
+
+		assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
+	}
+
+	@Test
+	void createContextCustomizerForNonSharedClassesWithDifferentFilesDiffers() {
+		final var first = factory.createContextCustomizer(ExistingPathTestClass.class, Collections.emptyList());
+		final var second = factory.createContextCustomizer(OtherExistingPathTestClass.class, Collections.emptyList());
+
+		assertThat(first).isNotEqualTo(second);
+	}
+
+	@Test
+	void createContextCustomizerForSharedAndNonSharedClassDiffers() {
+		final var shared = factory.createContextCustomizer(SharedTestClass.class, Collections.emptyList());
+		final var nonShared = factory.createContextCustomizer(ExistingPathTestClass.class, Collections.emptyList());
+
+		assertThat(shared).isNotEqualTo(nonShared);
+	}
+
+	@Test
+	void createContextCustomizerForSharedClassWithEmptyFilesIsLikeNonShared() {
+		final var shared = factory.createContextCustomizer(SharedEmptyFilesTestClass.class, Collections.emptyList());
+		final var nonShared = factory.createContextCustomizer(EmptyFilesTestClass.class, Collections.emptyList());
+
+		assertThat(shared).isEqualTo(nonShared);
+	}
+
+	@Test
+	void synthesizeSharedRemovesFilesAndAddsSwitchableFileSource() {
+		final var original = AnnotatedElementUtils.findMergedAnnotation(SharedTestClass.class, ConfigureWireMock.class);
+		assertThat(original).isNotNull();
+
+		final var result = factory.synthesizeShared(original);
+
+		assertThat(result.filesUnderClasspath()).isEmpty();
+		assertThat(result.filesUnderDirectory()).isEmpty();
+		assertThat(result.configurationCustomizers()).containsExactly(SwitchableFileSourceCustomizer.class);
+		assertThat(result.name()).isEqualTo(original.name());
+		assertThat(result.port()).isEqualTo(original.port());
+		assertThat(result.resetWireMockServer()).isEqualTo(original.resetWireMockServer());
+	}
+
+	@Test
+	void synthesizeSharedKeepsExistingCustomizers() {
+		final var original = AnnotatedElementUtils.findMergedAnnotation(CustomizedTestClass.class, ConfigureWireMock.class);
+		assertThat(original).isNotNull();
+
+		final var result = factory.synthesizeShared(original);
+
+		assertThat(result.configurationCustomizers()).containsExactly(NoopCustomizer.class, SwitchableFileSourceCustomizer.class);
+	}
+
 	@WireMockAppTestSuite(files = "classpath:/SomeTestIT/", classes = Object.class)
 	private static class AnnotatedTestClass {
+	}
+
+	@WireMockAppTestSuite(files = "classpath:/__files/", classes = Object.class, sharedContext = true)
+	private static class SharedTestClass {
+	}
+
+	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class, sharedContext = true)
+	private static class OtherSharedTestClass {
+	}
+
+	@WireMockAppTestSuite(files = "", classes = Object.class, sharedContext = true)
+	private static class SharedEmptyFilesTestClass {
+	}
+
+	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class)
+	private static class OtherExistingPathTestClass {
+	}
+
+	@ConfigureWireMock(configurationCustomizers = NoopCustomizer.class)
+	private static class CustomizedTestClass {
+	}
+
+	static class NoopCustomizer implements WireMockConfigurationCustomizer {
+
+		@Override
+		public void customize(final WireMockConfiguration configuration, final ConfigureWireMock options) {
+			// Nothing to customize
+		}
 	}
 
 	@ConfigureWireMock

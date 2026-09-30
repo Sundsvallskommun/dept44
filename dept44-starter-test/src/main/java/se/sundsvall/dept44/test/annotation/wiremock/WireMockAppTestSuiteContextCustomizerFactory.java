@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.test.annotation.wiremock;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -42,6 +43,11 @@ import org.wiremock.spring.internal.WireMockContextCustomizer;
  * instances. The resulting {@link WireMockContextCustomizer}
  * creates the WireMock server(s) with the correct file source. When the built-in factory's customizer runs second, it
  * finds the server already exists in the store and skips creation.
+ *
+ * <p>
+ * For a class with {@link WireMockAppTestSuite#sharedContext()} set, the server is configured without the files of the
+ * class and with a {@link SwitchableFileSource} instead, so that classes otherwise configured alike get the same
+ * context key and share one application context.
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class WireMockAppTestSuiteContextCustomizerFactory implements ContextCustomizerFactory {
@@ -59,15 +65,33 @@ public class WireMockAppTestSuiteContextCustomizerFactory implements ContextCust
 			return null;
 		}
 
+		final var shared = AnnotatedElementUtils.findMergedAnnotation(testClass, WireMockAppTestSuite.class).sharedContext();
+
 		final var resolved = merged.stream()
 			.map(annotation -> {
 				if (annotation.filesUnderClasspath().isEmpty())
 					return annotation;
+				if (shared)
+					return synthesizeShared(annotation);
 				return resolveToFilesystemAnnotation(annotation, testClass.getClassLoader());
 			})
 			.toList();
 
 		return new WireMockContextCustomizer(resolved);
+	}
+
+	/**
+	 * The configuration of a server shared by several test classes: no files of any one class, which would give every
+	 * class a context of its own, and a file source each test switches to the files of its class.
+	 */
+	ConfigureWireMock synthesizeShared(final ConfigureWireMock original) {
+		final var attributes = new LinkedHashMap<>(AnnotationUtils.getAnnotationAttributes(original));
+		attributes.put("filesUnderClasspath", "");
+		attributes.put("filesUnderDirectory", new String[0]);
+		final var customizers = new ArrayList<>(List.of(original.configurationCustomizers()));
+		customizers.add(SwitchableFileSourceCustomizer.class);
+		attributes.put("configurationCustomizers", customizers.toArray(Class<?>[]::new));
+		return AnnotationUtils.synthesizeAnnotation(attributes, ConfigureWireMock.class, null);
 	}
 
 	ConfigureWireMock resolveToFilesystemAnnotation(final ConfigureWireMock original, final ClassLoader classLoader) {

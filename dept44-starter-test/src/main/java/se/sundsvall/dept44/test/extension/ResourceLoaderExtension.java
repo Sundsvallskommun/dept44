@@ -26,7 +26,7 @@ import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
  * {@code @Load("myfile.txt") String s}
  * </p>
  * <p>
- * {@code @Load(value = "myfile.txt" as = Load.ResourceType.STRING) String s}
+ * {@code @Load(value = "myfile.txt", as = Load.ResourceType.STRING) String s}
  * </p>
  * <p>
  * {@code @Load(value = "somefile.json", as = Load.ResourceType.JSON) MyClass mc)}

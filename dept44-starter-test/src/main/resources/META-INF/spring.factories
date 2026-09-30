@@ -1,2 +1,4 @@
 org.springframework.test.context.ContextCustomizerFactory=\
 se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuiteContextCustomizerFactory
+org.springframework.test.context.TestExecutionListener=\
+se.sundsvall.dept44.test.annotation.wiremock.SharedContextTestExecutionListener

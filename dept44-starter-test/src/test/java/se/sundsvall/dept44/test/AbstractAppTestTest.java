@@ -2,14 +2,21 @@ package se.sundsvall.dept44.test;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
+import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import net.javacrumbs.jsonunit.JsonAssert;
 import net.javacrumbs.jsonunit.core.Option;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -17,6 +24,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,10 +33,19 @@ import org.springframework.util.ResourceUtils;
 import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
 import se.sundsvall.dept44.test.supportfiles.TestBody;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.time.LocalDate.now;
+import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
+import static net.javacrumbs.jsonunit.core.Option.IGNORING_EXTRA_FIELDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,6 +84,146 @@ class AbstractAppTestTest {
 	@Captor
 	private ArgumentCaptor<HttpEntity<String>> httpEntityCaptor;
 
+	@AfterEach
+	void resetJsonAssertOptions() {
+		JsonAssert.resetOptions();
+	}
+
+	@Test
+	void testSetupCallRestoresDefaultJsonAssertOptions() {
+		appTest.setupCall().withJsonAssertOptions(List.of(IGNORING_EXTRA_FIELDS));
+
+		appTest.setupCall();
+
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("{}", "{\"extra\": 1}"));
+		assertJsonEquals("[1, 2]", "[2, 1]");
+	}
+
+	@Test
+	void testWithJsonAssertOptionsResetsToStrictForNullAndEmptyList() {
+		appTest.setupCall().withJsonAssertOptions(null);
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("[1, 2]", "[2, 1]"));
+
+		appTest.setupCall().withJsonAssertOptions(List.of());
+		assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> assertJsonEquals("[1, 2]", "[2, 1]"));
+	}
+
+	@Test
+	void testServicePathFunctionStartsFromAnEmptyBuilderOnEveryCall() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/a?x=1")).willReturn(ok()));
+			realAppTest.setupCall()
+				.withServicePath(uriBuilder -> uriBuilder.path("/a").queryParam("x", "1").build())
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
+
+			server.stubFor(get(urlEqualTo("/b")).willReturn(ok()));
+			realAppTest.setupCall()
+				.withServicePath(uriBuilder -> uriBuilder.path("/b").build())
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
+		});
+	}
+
+	@Test
+	void testServicePathFunctionIsSentWithoutBeingEncodedAgain() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/p/%C3%A5%20%C3%A4?q=a%20b%26c")).willReturn(ok()));
+
+			realAppTest.setupCall()
+				.withServicePath(uriBuilder -> uriBuilder.path("/p/{segment}").queryParam("q", "{q}").build("å ä", "a b&c"))
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
+		});
+	}
+
+	@Test
+	void testServicePathStringReplacesAnEarlierServicePathFunction() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/string")).willReturn(ok()));
+
+			realAppTest.setupCall()
+				.withServicePath(uriBuilder -> uriBuilder.path("/function").build())
+				.withServicePath("/string")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequestAndVerifyResponse();
+		});
+	}
+
+	@Test
+	void testExpectedResponseHeaderWithSeveralValues() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/headers")).willReturn(ok().withHeader("X-Multi", "first", "second")));
+
+			realAppTest.setupCall()
+				.withServicePath("/headers")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponseHeader("X-Multi", List.of("first", "sec.*"))
+				.sendRequest();
+
+			realAppTest.setupCall()
+				.withServicePath("/headers")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponseHeader("X-Multi", List.of("first", "third"));
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
+
+			realAppTest.setupCall()
+				.withServicePath("/headers")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponseHeader("X-Multi", List.of("first"));
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
+		});
+	}
+
+	@Test
+	void testUnexpectedStatusIsReportedBeforeHeadersWithTheResponseBody() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/missing")).willReturn(notFound().withBody("{\"detail\": \"No such thing\"}")));
+
+			realAppTest.setupCall()
+				.withServicePath("/missing")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponseHeader("X-Absent", List.of("value"));
+
+			assertThatExceptionOfType(AssertionError.class)
+				.isThrownBy(realAppTest::sendRequest)
+				.withMessageContaining("No such thing")
+				.withMessageContaining("404");
+		});
+	}
+
+	@Test
+	void testVerifyStubsRetriesWithinASecond() {
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		doThrow(new VerificationException("Not called yet")).doNothing().when(wiremockMock).verify(any());
+
+		final var start = System.nanoTime();
+		appTest.verifyStubs();
+
+		assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(1));
+		verify(wiremockMock, times(2)).verify(any());
+		verify(wiremockMock).resetAll();
+	}
+
+	@Test
+	void testAndVerifyThatRetriesWithinASecond() {
+		final var calls = new AtomicInteger();
+
+		final var start = System.nanoTime();
+		appTest.andVerifyThat(() -> calls.incrementAndGet() > 1);
+
+		assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(1));
+		assertThat(calls).hasValue(2);
+	}
+
 	@Test
 	void testGetCall() {
 
@@ -75,7 +232,7 @@ class AbstractAppTestTest {
 		responseHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 
 		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
-		when(restTemplateMock.exchange(eq("/some/path/123?someParam=someValue"), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
+		when(restTemplateMock.exchange(eq(URI.create("/some/path/123?someParam=someValue")), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
 		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
 
 		// Call
@@ -96,7 +253,7 @@ class AbstractAppTestTest {
 
 		// Verification
 		assertThat(instance).isNotNull();
-		verify(restTemplateMock).exchange(eq("/some/path/123?someParam=someValue"), eq(GET), httpEntityCaptor.capture(), eq(String.class));
+		verify(restTemplateMock).exchange(eq(URI.create("/some/path/123?someParam=someValue")), eq(GET), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
 		verify(wiremockMock).verify(any());
@@ -426,4 +583,16 @@ class AbstractAppTestTest {
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
 	}
 
+	private static void runAgainstServer(final BiConsumer<WireMockServer, AppTestImplementation> test) {
+		final var server = new WireMockServer(options().dynamicPort());
+		server.start();
+		try {
+			final var realAppTest = new AppTestImplementation();
+			realAppTest.wiremock = server;
+			realAppTest.restTemplate = new TestRestTemplate(new RestTemplateBuilder().rootUri(server.baseUrl()));
+			test.accept(server, realAppTest);
+		} finally {
+			server.stop();
+		}
+	}
 }

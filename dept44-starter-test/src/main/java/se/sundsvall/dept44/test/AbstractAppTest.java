@@ -49,11 +49,11 @@ import wiremock.com.github.jknack.handlebars.Handlebars;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.matching.UrlPattern.fromOneOf;
-import static java.lang.Class.forName;
 import static java.lang.String.format;
 import static java.nio.file.Files.readString;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
 import static net.javacrumbs.jsonunit.JsonAssert.setOptions;
@@ -67,11 +67,12 @@ import static org.springframework.util.ResourceUtils.getFile;
 public abstract class AbstractAppTest {
 
 	private static final String FILES_DIR = "__files/";
-	private static final String COMMON_MAPPING_DIR = "/common";
+	private static final String COMMON_MAPPING_DIR = "common";
 	private static final String MAPPING_DIRECTORY = "/mappings";
 	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().findAndAddModules().build();
-	private static final UriBuilder URI_BUILDER = new DefaultUriBuilderFactory().builder();
+	private static final DefaultUriBuilderFactory URI_BUILDER_FACTORY = new DefaultUriBuilderFactory();
 	private static final int DEFAULT_VERIFICATION_DELAY_IN_SECONDS = 5;
+	private static final int POLL_INTERVAL_IN_MILLISECONDS = 100;
 	private static final Class<?> DEFAULT_RESPONSE_TYPE = String.class;
 	private static final MediaType DEFAULT_CONTENT_TYPE = APPLICATION_JSON;
 	private static final String CLASSPATH_RESOURCE_SEPARATOR = "/";
@@ -94,6 +95,7 @@ public abstract class AbstractAppTest {
 	private Class<?> expectedResponseType = DEFAULT_RESPONSE_TYPE;
 	private String mappingPath;
 	private String servicePath;
+	private URI serviceUri;
 	private ResponseEntity<?> response;
 	private String responseBody;
 	private HttpHeaders responseHeaders;
@@ -132,6 +134,7 @@ public abstract class AbstractAppTest {
 		expectedResponseType = DEFAULT_RESPONSE_TYPE;
 		mappingPath = null;
 		servicePath = null;
+		serviceUri = null;
 		response = null;
 		responseBody = null;
 		responseHeaders = null;
@@ -263,13 +266,28 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
+	/**
+	 * Sets the path to call, as a URI template that is expanded and encoded when the request is sent.
+	 *
+	 * @param  servicePath the path to call
+	 * @return             AbstractAppTest
+	 */
 	public AbstractAppTest withServicePath(final String servicePath) {
 		this.servicePath = servicePath;
+		this.serviceUri = null;
 		return this;
 	}
 
+	/**
+	 * Sets the path to call, as the URI built by the function. The function gets an empty builder on every call, and the
+	 * URI it returns is sent as it is, without being encoded again.
+	 *
+	 * @param  servicePathFunction function building the URI to call from an empty builder
+	 * @return                     AbstractAppTest
+	 */
 	public AbstractAppTest withServicePath(final Function<UriBuilder, URI> servicePathFunction) {
-		servicePath = servicePathFunction.apply(URI_BUILDER).toString();
+		this.serviceUri = servicePathFunction.apply(URI_BUILDER_FACTORY.builder());
+		this.servicePath = null;
 		return this;
 	}
 
@@ -277,7 +295,8 @@ public abstract class AbstractAppTest {
 	 * Method adds options to be used when assertion of JSON is done, for example, IGNORING_EXTRA_ARRAY_ITEMS. By default,
 	 * the test will compare arrays with an option to ignore array order. If they need to use maximum strictness in
 	 * JsonAssert - send in
-	 * null or an empty list to just reset options to JsonAsserts default ones.
+	 * null or an empty list to just reset options to JsonAsserts default ones. The options apply until the next
+	 * {@link #setupCall()}, which restores the default.
 	 *
 	 * @param  options list of options to use when doing the JSON assertion or null/empty list for resetting to JsonAssert
 	 *                 defaults (strict comparison)
@@ -287,13 +306,8 @@ public abstract class AbstractAppTest {
 		// Reset to JsonAssert strict assertion options (removing option IGNORING_ARRAY_ORDER)
 		JsonAssert.resetOptions();
 
-		if (nonNull(options)) {
-			// Set sent in assertion options
-			if (options.size() == 1) {
-				setOptions(options.getFirst());
-			} else {
-				setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
-			}
+		if (!isEmpty(options)) {
+			setOptions(options.getFirst(), options.subList(1, options.size()).toArray(new Option[0]));
 		}
 		return this;
 	}
@@ -390,25 +404,22 @@ public abstract class AbstractAppTest {
 	}
 
 	public AbstractAppTest sendRequest() {
-		logger.info(getTestMethodName());
+		final var testCase = currentTestCaseName();
+		logger.info(testCase);
 
-		final var requestEntity = nonNull(multipartBody) ? restTemplateRequest(contentType, multipartBody) : restTemplateRequest(contentType, requestBody);
+		final var requestEntity = restTemplateRequest(contentType, nonNull(multipartBody) ? multipartBody : requestBody, testCase);
 
 		// Call service and fetch a response.
-		response = restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
+		response = nonNull(serviceUri)
+			? restTemplate.exchange(serviceUri, method, requestEntity, expectedResponseType)
+			: restTemplate.exchange(servicePath, method, requestEntity, expectedResponseType);
 		responseBody = nonNull(response.getBody()) ? String.valueOf(response.getBody()) : null;
 		responseHeaders = response.getHeaders();
 
+		assertThat(response.getStatusCode()).as("Response status, with response body %s", responseBody).isEqualTo(expectedResponseStatus);
 		if (nonNull(expectedResponseHeaders)) {
-			expectedResponseHeaders.forEach((key, value) -> {
-				assertThat(response.getHeaders().get(key)).as("Response should contain header: " + key).isNotNull();
-				assertThat(response.getHeaders().getValuesAsList(key))
-					.allMatch(actualHeaderValue -> value.stream()
-						.allMatch(expectedHeaderValue -> expectedHeaderValue.equalsIgnoreCase(actualHeaderValue) ||
-							Pattern.matches(expectedHeaderValue, actualHeaderValue)));
-			});
+			expectedResponseHeaders.forEach(this::assertResponseHeader);
 		}
-		assertThat(response.getStatusCode()).isEqualTo(expectedResponseStatus);
 		if (nonNull(expectedResponseBody)) {
 			final var responseContentType = response.getHeaders().getContentType();
 			final var renderedExpectedBody = renderHandlebarsForExpectedResponseBody();
@@ -435,7 +446,7 @@ public abstract class AbstractAppTest {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
+			.pollInterval(POLL_INTERVAL_IN_MILLISECONDS, MILLISECONDS)
 			.ignoreExceptions()
 			.until(this::verifyAllStubs);
 
@@ -473,10 +484,10 @@ public abstract class AbstractAppTest {
 	 * @param  clazz                  the class to map the response body to
 	 * @return                        the mapped response
 	 * @throws JacksonException       if JSON processing fails
-	 * @throws ClassNotFoundException if the class is not found
+	 * @throws ClassNotFoundException never thrown by this method
 	 */
 	public <T> T andReturnBody(final Class<T> clazz) throws JacksonException, ClassNotFoundException {
-		return clazz.cast(JSON_MAPPER.readValue(responseBody, forName(clazz.getName())));
+		return JSON_MAPPER.readValue(responseBody, clazz);
 	}
 
 	/**
@@ -503,7 +514,7 @@ public abstract class AbstractAppTest {
 		await()
 			.atMost(maxVerificationDelayInSeconds, SECONDS)
 			.pollDelay(0, SECONDS)
-			.pollInterval(1, SECONDS)
+			.pollInterval(POLL_INTERVAL_IN_MILLISECONDS, MILLISECONDS)
 			.until(conditionIsMet);
 
 		return this;
@@ -553,14 +564,34 @@ public abstract class AbstractAppTest {
 		return context;
 	}
 
-	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body) {
+	/**
+	 * Asserts that every value of the response header matches one of the expected values, and every expected value
+	 * matches one of the header values, where a value matches if it is equal ignoring case or matches as a regular
+	 * expression.
+	 */
+	private void assertResponseHeader(final String key, final List<String> expectedValues) {
+		assertThat(responseHeaders.get(key)).as("Response should contain header: %s", key).isNotNull();
+		final var actualValues = responseHeaders.getValuesAsList(key);
+		assertThat(actualValues)
+			.as("Every value of response header %s should match one of %s", key, expectedValues)
+			.allMatch(actual -> expectedValues.stream().anyMatch(expected -> headerValueMatches(expected, actual)));
+		assertThat(expectedValues)
+			.as("Every expected value of response header %s should match one of %s", key, actualValues)
+			.allMatch(expected -> actualValues.stream().anyMatch(actual -> headerValueMatches(expected, actual)));
+	}
+
+	private static boolean headerValueMatches(final String expected, final String actual) {
+		return expected.equalsIgnoreCase(actual) || Pattern.matches(expected, actual);
+	}
+
+	private HttpEntity<Object> restTemplateRequest(final MediaType mediaType, final Object body, final String testCase) {
 		final var httpHeaders = new HttpHeaders();
 		// Only set Content-Type when there's a body or method typically requires one.
 		// Spring Boot 4.0 rejects requests with Content-Type but without body.
 		if (nonNull(body) || methodTypicallyHasBody()) {
 			httpHeaders.setContentType(mediaType);
 		}
-		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + getTestMethodName());
+		httpHeaders.add("x-test-case", getClass().getSimpleName() + "." + testCase);
 		if (!isEmpty(headerValues)) {
 			headerValues.forEach(httpHeaders::add);
 		}
@@ -583,6 +614,10 @@ public abstract class AbstractAppTest {
 		}
 	}
 
+	private String currentTestCaseName() {
+		return nonNull(testCaseName) ? testCaseName : getTestMethodName();
+	}
+
 	private String getTestMethodName() {
 		return Arrays.stream(Thread.currentThread().getStackTrace())
 			.map(StackTraceElement::getMethodName)
@@ -593,6 +628,8 @@ public abstract class AbstractAppTest {
 
 	private void initializeJsonAssert() {
 		JsonAssert.setTolerance(0); // Activates mathematical equivalence (i.e., 1.0 == 1.000)
+		// The options are global to the JVM and setOptions adds to them, so options set by an earlier call must be cleared
+		JsonAssert.resetOptions();
 		JsonAssert.setOptions(Option.IGNORING_ARRAY_ORDER);
 	}
 

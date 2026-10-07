@@ -131,6 +131,14 @@ class WireMockAppTestSuiteContextCustomizerFactoryTest {
 	}
 
 	@Test
+	void createContextCustomizerSharesContextByDefault() {
+		final var shared = factory.createContextCustomizer(SharedTestClass.class, Collections.emptyList());
+		final var sharedByDefault = factory.createContextCustomizer(SharedByDefaultTestClass.class, Collections.emptyList());
+
+		assertThat(sharedByDefault).isEqualTo(shared).hasSameHashCodeAs(shared);
+	}
+
+	@Test
 	void createContextCustomizerForNonSharedClassesWithDifferentFilesDiffers() {
 		final var first = factory.createContextCustomizer(ExistingPathTestClass.class, Collections.emptyList());
 		final var second = factory.createContextCustomizer(OtherExistingPathTestClass.class, Collections.emptyList());
@@ -191,11 +199,15 @@ class WireMockAppTestSuiteContextCustomizerFactoryTest {
 	private static class OtherSharedTestClass {
 	}
 
+	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class)
+	private static class SharedByDefaultTestClass {
+	}
+
 	@WireMockAppTestSuite(files = "", classes = Object.class, sharedContext = true)
 	private static class SharedEmptyFilesTestClass {
 	}
 
-	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class)
+	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class, sharedContext = false)
 	private static class OtherExistingPathTestClass {
 	}
 
@@ -215,11 +227,11 @@ class WireMockAppTestSuiteContextCustomizerFactoryTest {
 	private static class NonAnnotatedTestClass {
 	}
 
-	@WireMockAppTestSuite(files = "", classes = Object.class)
+	@WireMockAppTestSuite(files = "", classes = Object.class, sharedContext = false)
 	private static class EmptyFilesTestClass {
 	}
 
-	@WireMockAppTestSuite(files = "classpath:/__files/", classes = Object.class)
+	@WireMockAppTestSuite(files = "classpath:/__files/", classes = Object.class, sharedContext = false)
 	private static class ExistingPathTestClass {
 	}
 }

@@ -14,7 +14,7 @@ import se.sundsvall.petinventory.Application;
 /**
  * SharedContextFirstIT tests, sharing their application context with {@link SharedContextSecondIT}.
  */
-@WireMockAppTestSuite(files = "classpath:/SharedContextFirstIT/", classes = Application.class, sharedContext = true)
+@WireMockAppTestSuite(files = "classpath:/SharedContextFirstIT/", classes = Application.class)
 class SharedContextFirstIT extends AbstractAppTest {
 
 	@Autowired

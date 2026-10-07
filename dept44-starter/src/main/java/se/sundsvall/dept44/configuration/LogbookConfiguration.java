@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.Filter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,12 +13,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.util.unit.DataSize;
 import org.zalando.logbook.BodyFilter;
 import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpLogWriter;
@@ -26,15 +34,27 @@ import org.zalando.logbook.Logbook;
 import org.zalando.logbook.LogbookCreator;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
+import org.zalando.logbook.autoconfigure.LogbookProperties;
 import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
+import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
+import org.zalando.logbook.servlet.FormRequestMode;
+import org.zalando.logbook.servlet.LogbookFilter;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
+import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
+import se.sundsvall.dept44.logbook.BodylessSecurityStrategy;
+import se.sundsvall.dept44.logbook.servlet.LogbookServletFilter;
 import tools.jackson.databind.json.JsonMapper;
 
+import static jakarta.servlet.DispatcherType.ASYNC;
+import static jakarta.servlet.DispatcherType.REQUEST;
+import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.SERVLET;
 import static org.zalando.logbook.core.Conditions.exclude;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildJsonPathFilters;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.buildXPathFilters;
+import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.oversizedBodyFilter;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.passwordFilter;
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.binaryContentFilter;
 import static se.sundsvall.dept44.logbook.filter.ResponseFilterDefinition.fileAttachmentFilter;
@@ -50,6 +70,7 @@ public class LogbookConfiguration {
 	private final String loggerName;
 	private final Set<String> excludedPaths;
 	private final int maxBodySizeToLog;
+	private final long maxBodySizeToCapture;
 
 	/**
 	 * Constructor for LogbookConfiguration.
@@ -61,14 +82,19 @@ public class LogbookConfiguration {
 	 *                                value the log will be cut and no filtering will be applied. E.g. passwords will not be
 	 *                                masked. Use only when absolutely necessary. Defaults
 	 *                                to -1 (disabled).
+	 * @param maxBodySizeToCapture    The largest body that payload logging may hold in memory. Larger bodies, and binary
+	 *                                or attachment bodies of any size, are logged without their body and never copied
+	 *                                into memory. Defaults to 1MB, -1 disables the limit.
 	 */
 	LogbookConfiguration(
 		@Value("#{'${logbook.logger.name:${logbook.default.logger.name:}}'}") final String loggerName,
 		@Value("${logbook.default.excluded.paths}") final Set<String> defaultExcludedPaths,
 		@Value("${logbook.excluded.paths:}") final Set<String> additionalExcludedPaths,
-		@Value("${logbook.logs.maxBodySizeToLog:-1}") final int maxBodySizeToLog) {
+		@Value("${logbook.logs.maxBodySizeToLog:-1}") final int maxBodySizeToLog,
+		@Value("${logbook.logs.maxBodySizeToCapture:1MB}") final String maxBodySizeToCapture) {
 
 		this.maxBodySizeToLog = maxBodySizeToLog;
+		this.maxBodySizeToCapture = DataSize.parse(maxBodySizeToCapture).toBytes();
 		this.loggerName = loggerName;
 		excludedPaths = Stream.of(defaultExcludedPaths, additionalExcludedPaths)
 			.flatMap(Collection::stream)
@@ -77,9 +103,18 @@ public class LogbookConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
+	BodyCapturePolicy bodyCapturePolicy() {
+		return new BodyCapturePolicy(maxBodySizeToCapture);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
 	Logbook logbook(final JsonMapper jsonMapper,
-		final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, final BodyFilterProperties bodyFilterProperties) {
-		final var builder = Logbook.builder();
+		final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, final BodyFilterProperties bodyFilterProperties,
+		final BodyCapturePolicy bodyCapturePolicy) {
+		final var builder = Logbook.builder()
+			.strategy(new BodyCaptureStrategy(bodyCapturePolicy))
+			.bodyFilter(oversizedBodyFilter(bodyCapturePolicy));
 
 		setMaxBodySizeToLog(builder);
 
@@ -122,6 +157,57 @@ public class LogbookConfiguration {
 			.flatMap(Set::stream)
 			.map(Conditions::requestTo)
 			.toList();
+	}
+
+	/**
+	 * Replaces the servlet filters that Logbook would otherwise register, so that payload logging never copies binary,
+	 * attachment or oversized bodies into memory. The bean names and properties are Logbook's own, so
+	 * {@code logbook.filter.enabled} and {@code logbook.secure-filter.enabled} work as before.
+	 */
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnWebApplication(type = SERVLET)
+	@ConditionalOnClass(LogbookFilter.class)
+	static class ServletFilterConfiguration {
+
+		private static final String FILTER_NAME = "logbookFilter";
+		private static final String SECURE_FILTER_NAME = "secureLogbookFilter";
+
+		@Bean(FILTER_NAME)
+		@ConditionalOnProperty(name = "logbook.filter.enabled", havingValue = "true", matchIfMissing = true)
+		@ConditionalOnMissingBean(name = FILTER_NAME)
+		FilterRegistrationBean<LogbookServletFilter> logbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy,
+			final ObjectProvider<LogbookProperties> properties, final ObjectProvider<AsyncOnCompleteListenerWrapper> listenerWrapper) {
+
+			final var formRequestMode = Optional.ofNullable(properties.getIfAvailable())
+				.map(logbookProperties -> logbookProperties.getFilter().getFormRequestMode())
+				.orElseGet(FormRequestMode::fromProperties);
+
+			final var logbookFilter = new LogbookFilter(logbook)
+				.withFormRequestMode(formRequestMode)
+				.withAsyncOnCompleteListenerWrapper(listenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
+
+			return registration(new LogbookServletFilter(logbookFilter, bodyCapturePolicy), FILTER_NAME, Ordered.LOWEST_PRECEDENCE);
+		}
+
+		@Bean(SECURE_FILTER_NAME)
+		@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
+		@ConditionalOnProperty(name = "logbook.secure-filter.enabled", havingValue = "true", matchIfMissing = true)
+		@ConditionalOnMissingBean(name = SECURE_FILTER_NAME)
+		FilterRegistrationBean<LogbookFilter> secureLogbookFilter(final Logbook logbook, final ObjectProvider<AsyncOnCompleteListenerWrapper> listenerWrapper) {
+
+			final var secureLogbookFilter = new LogbookFilter(logbook, new BodylessSecurityStrategy())
+				.withAsyncOnCompleteListenerWrapper(listenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
+
+			return registration(secureLogbookFilter, SECURE_FILTER_NAME, Ordered.HIGHEST_PRECEDENCE + 1);
+		}
+
+		private static <T extends Filter> FilterRegistrationBean<T> registration(final T filter, final String name, final int order) {
+			final var registration = new FilterRegistrationBean<>(filter);
+			registration.setName(name);
+			registration.setDispatcherTypes(REQUEST, ASYNC);
+			registration.setOrder(order);
+			return registration;
+		}
 	}
 
 	/**

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
@@ -51,6 +52,21 @@ public final class BodyFilterProvider {
 
 	public static BodyFilter passwordFilter() {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
+	}
+
+	/**
+	 * Replaces a body larger than the policy allows with a short note, so that no later filter or the log formatter has
+	 * to process it. Bodies can only get here oversized when their length was unknown when capturing started, such as a
+	 * JSON response written without a Content-Length.
+	 */
+	public static BodyFilter oversizedBodyFilter(final BodyCapturePolicy policy) {
+		final var replacement = "<body omitted: larger than " + policy.getMaxBodySize() + " bytes>";
+		return (contentType, body) -> {
+			if (policy.exceedsLimit(body.length())) {
+				return replacement;
+			}
+			return body;
+		};
 	}
 
 	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {

@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.logbook.BodyFilter;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 
@@ -60,6 +61,21 @@ class BodyFilterProviderTest {
 	@Test
 	void testPasswordFilter() {
 		assertThat(BodyFilterProvider.passwordFilter()).isNotNull();
+	}
+
+	@Test
+	void testOversizedBodyFilter() {
+		final var filter = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(5));
+
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "12345")).isEqualTo("12345");
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("<body omitted: larger than 5 bytes>");
+	}
+
+	@Test
+	void testOversizedBodyFilterWithoutLimit() {
+		final var filter = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(-1));
+
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("123456");
 	}
 
 	@Test

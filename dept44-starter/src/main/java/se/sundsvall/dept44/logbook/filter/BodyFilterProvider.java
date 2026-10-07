@@ -8,11 +8,13 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -21,17 +23,19 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import org.apache.hc.core5.http.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 import org.zalando.logbook.BodyFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
@@ -49,6 +53,8 @@ public final class BodyFilterProvider {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
 	private static final String INVALID_JSON_REPLACEMENT = "<body omitted: not valid JSON, so json-path filters could not be applied>";
+	private static final String INVALID_XML_REPLACEMENT = "<body omitted: not valid XML, so xpath filters could not be applied>";
+	private static final List<String> XML_MIME_TYPES = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
 
 	private BodyFilterProvider() {}
 
@@ -109,8 +115,7 @@ public final class BodyFilterProvider {
 			return "";
 		}
 
-		final var parsedContentType = ContentType.parse(contentType);
-		if (parsedContentType == null || !parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+		if (!isJson(contentType)) {
 			return body;
 		}
 
@@ -134,12 +139,26 @@ public final class BodyFilterProvider {
 	}
 
 	public static List<BodyFilter> buildXPathFilters(final Map<String, String> xPathFilters) {
-		final TransformerFactory transformerFactory = createTransformerFactory();
-
 		return xPathFilters.entrySet()
 			.stream()
-			.map(filter -> xPath(filter.getKey(), filter.getValue(), createTransformer(transformerFactory)))
+			.map(filter -> xPath(validateXPath(filter.getKey()), filter.getValue()))
 			.toList();
+	}
+
+	/**
+	 * Compiled once, when the filters are built, so that an expression with a syntax error stops the application from
+	 * starting. A compiled expression is not thread-safe, so each body is filtered with an expression of its own.
+	 */
+	private static String validateXPath(final String xPath) {
+		if (xPath == null) {
+			throw new IllegalArgumentException("Invalid xpath 'null' in logbook.body-filters.x-path");
+		}
+		try {
+			XPathFactory.newInstance().newXPath().compile(xPath);
+			return xPath;
+		} catch (final XPathExpressionException e) {
+			throw new IllegalArgumentException("Invalid xpath '%s' in logbook.body-filters.x-path: %s".formatted(xPath, e.getMessage()), e);
+		}
 	}
 
 	static DocumentBuilder createDocumentBuilder(final DocumentBuilderFactory factory) {
@@ -181,48 +200,70 @@ public final class BodyFilterProvider {
 		}
 	}
 
-	static BodyFilter xPath(final String xPath, final String replacement, final Transformer transformer) {
-		final List<String> xmlContentTypes = List.of(APPLICATION_XHTML_XML.getMimeType(), APPLICATION_XML.getMimeType(), TEXT_XML.getMimeType());
-
-		return (contentTypeString, body) -> {
-			if (anyNull(contentTypeString, body)) {
+	static BodyFilter xPath(final String xPath, final String replacement) {
+		return (contentType, body) -> {
+			if (anyNull(contentType, body) || body.isBlank() || !isXml(contentType)) {
 				return body;
 			}
 
 			try {
-				final ContentType contentType = ContentType.parse(contentTypeString);
-				if (contentType != null && xmlContentTypes.contains(contentType.getMimeType())) {
-					// Evaluate what charSet to use
-					final var charSet = evaluateCharset(contentType);
-
-					// Create a document and xpath
-					final var builder = createDocumentBuilder(createDocumentBuilderFactory());
-					final Document document = builder.parse(new ByteArrayInputStream(body.getBytes(charSet)));
-
-					// Evaluate xpath matches and replace content
-					final XPath path = XPathFactory.newInstance().newXPath();
-					final NodeList matches = (NodeList) path.evaluate(xPath, document, XPathConstants.NODESET);
-					for (int i = 0; i < matches.getLength(); i++) {
-						matches.item(i).setTextContent(replacement);
-					}
-
-					// Set up a transformer to use incoming encoding and to set a standalone attribute
-					transformer.setOutputProperty(OutputKeys.ENCODING, charSet.name());
-					transformer.setOutputProperty(OutputKeys.STANDALONE, document.getXmlStandalone() ? "yes" : "no");
-
-					// Return filtered body as string
-					final StringWriter writer = new StringWriter();
-					transformer.transform(new DOMSource(document), new StreamResult(writer));
-					return writer.toString();
-				}
-
-				return body;
-
-			} catch (final Exception e) {
-				LOGGER.warn("An exception occurred while filtering content from incoming xml request body ({}).", e.getMessage());
-				return body;
+				return maskXPath(xPath, replacement, contentType, body);
+			} catch (final IOException | SAXException | XPathExpressionException | TransformerException | RuntimeException e) {
+				// Never fall back to the unfiltered body: it holds exactly the content these filters exist to mask
+				LOGGER.debug("Could not apply xpath filter to a body that is not valid XML ({})", e.getMessage());
+				return INVALID_XML_REPLACEMENT;
 			}
 		};
+	}
+
+	private static String maskXPath(final String xPath, final String replacement, final String contentType, final String body)
+		throws IOException, SAXException, XPathExpressionException, TransformerException {
+		final var charset = evaluateCharset(ContentType.parse(contentType));
+		final Document document = createDocumentBuilder(createDocumentBuilderFactory()).parse(new ByteArrayInputStream(body.getBytes(charset)));
+
+		final NodeList matches = (NodeList) XPathFactory.newInstance().newXPath().evaluate(xPath, document, XPathConstants.NODESET);
+		for (int i = 0; i < matches.getLength(); i++) {
+			matches.item(i).setTextContent(replacement);
+		}
+
+		// A transformer is not thread-safe, so every body gets its own
+		final var transformer = createTransformer(createTransformerFactory());
+		transformer.setOutputProperty(OutputKeys.ENCODING, charset.name());
+		transformer.setOutputProperty(OutputKeys.STANDALONE, standalone(document));
+
+		final var writer = new StringWriter();
+		transformer.transform(new DOMSource(document), new StreamResult(writer));
+		return writer.toString();
+	}
+
+	private static String standalone(final Document document) {
+		if (document.getXmlStandalone()) {
+			return "yes";
+		}
+		return "no";
+	}
+
+	private static boolean isJson(final String contentType) {
+		final var mimeType = mimeType(contentType);
+		return mimeType.equals(APPLICATION_JSON.getMimeType()) || mimeType.endsWith("+json");
+	}
+
+	private static boolean isXml(final String contentType) {
+		final var mimeType = mimeType(contentType);
+		return XML_MIME_TYPES.contains(mimeType) || mimeType.endsWith("+xml");
+	}
+
+	private static String mimeType(final String contentType) {
+		try {
+			final var parsed = ContentType.parse(contentType);
+			if (parsed == null) {
+				return "";
+			}
+			return parsed.getMimeType().toLowerCase(Locale.ROOT);
+		} catch (final RuntimeException _) {
+			// Such as a charset Java does not know: the body is still of the type before the parameters
+			return contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+		}
 	}
 
 	private static Charset evaluateCharset(final ContentType contentType) {

@@ -3,6 +3,9 @@ package se.sundsvall.dept44.logbook.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -74,7 +77,7 @@ class BodyFilterProviderTest {
 		assertThat(filter.filter(APPLICATION_JSON.toString(), "12345")).isEqualTo("12345");
 		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}");
 		assertThat(filter.filter("application/problem+json", "123456")).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}");
-		assertThat(filter.filter(TEXT_XML.toString(), "123456")).isEqualTo("<body omitted: larger than 5 bytes>");
+		assertThat(filter.filter(TEXT_XML.toString(), "123456")).isEqualTo("<bodyOmitted>larger than 5 bytes</bodyOmitted>");
 		assertThat(filter.filter(null, "123456")).isEqualTo("<body omitted: larger than 5 bytes>");
 	}
 
@@ -135,6 +138,94 @@ class BodyFilterProviderTest {
 		}
 
 		assertThatJson(result).isEqualTo(expected);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/problem+json", "APPLICATION/JSON", "application/json; charset=unknown-charset"
+	})
+	void testJsonPathFilterAppliesToEveryJsonType(final String contentType) {
+		final var jsonPath = BodyFilterProvider.buildJsonPathFilters(new ObjectMapper(), Map.of("$..secret", "***")).getFirst();
+
+		assertThat(jsonPath.filter(contentType, "{\"secret\":\"abc\"}")).isEqualTo("{\"secret\":\"***\"}");
+	}
+
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"//[", "count((", ""
+	})
+	void testBuildXPathFiltersRejectsInvalidExpression(final String xPath) {
+		final var xPathFilters = new HashMap<String, String>();
+		xPathFilters.put(xPath, "***");
+
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> BodyFilterProvider.buildXPathFilters(xPathFilters))
+			.withMessageStartingWith("Invalid xpath '%s' in logbook.body-filters.x-path".formatted(xPath));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"<a><secret>abc</secret><truncated", "text that is not xml", "<a><secret>abc</secret></b>"
+	})
+	void testXPathFilterNeverLogsInvalidXmlUnmasked(final String body) {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		assertThat(xPath.filter(APPLICATION_XML.toString(), body))
+			.isEqualTo("<body omitted: not valid XML, so xpath filters could not be applied>");
+	}
+
+	@Test
+	void testXPathFilterNeverLogsXmlWithUnknownCharsetUnmasked() {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		assertThat(xPath.filter("text/xml; charset=unknown-charset", "<a><secret>abc</secret></a>"))
+			.isEqualTo("<body omitted: not valid XML, so xpath filters could not be applied>");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", "  "
+	})
+	void testXPathFilterKeepsBlankBody(final String body) {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		assertThat(xPath.filter(TEXT_XML.toString(), body)).isEqualTo(body);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/soap+xml", "APPLICATION/XML"
+	})
+	void testXPathFilterAppliesToEveryXmlType(final String contentType) {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		assertThat(xPath.filter(contentType, "<a><secret>abc</secret></a>")).endsWith("<a><secret>***</secret></a>");
+	}
+
+	@Test
+	void testOversizedXmlBodyPassesXPathFilters() {
+		final var oversized = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(5));
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		final var result = xPath.filter(APPLICATION_XML.toString(), oversized.filter(APPLICATION_XML.toString(), "<a><secret>abcdef</secret></a>"));
+
+		assertThat(result).endsWith("<bodyOmitted>larger than 5 bytes</bodyOmitted>");
+	}
+
+	@Test
+	void testXPathFilterCanBeUsedConcurrently() throws Exception {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+		final var bodies = IntStream.range(0, 400)
+			.mapToObj(i -> (Callable<String>) () -> xPath.filter(TEXT_XML.toString(), "<a><secret>%d</secret><id>%d</id></a>".formatted(i, i)))
+			.toList();
+
+		try (final var executor = Executors.newFixedThreadPool(8)) {
+			final var results = executor.invokeAll(bodies);
+			for (int i = 0; i < results.size(); i++) {
+				assertThat(results.get(i).get()).endsWith("<a><secret>***</secret><id>%d</id></a>".formatted(i));
+			}
+		}
 	}
 
 	@Test
@@ -229,9 +320,7 @@ class BodyFilterProviderTest {
 	@MethodSource("argumentProvider")
 	void testBodyFilter(String contentType, String body, String expectedResult) {
 		final var xPath = "//replace[string-length(text()) > 0]";
-		final var transformer = BodyFilterProvider.createTransformer(BodyFilterProvider.createTransformerFactory());
-
-		final BodyFilter filter = BodyFilterProvider.xPath(xPath, "replacement", transformer);
+		final BodyFilter filter = BodyFilterProvider.xPath(xPath, "replacement");
 		assertThat(filter.filter(contentType, body)).isEqualTo(expectedResult);
 	}
 

@@ -77,13 +77,17 @@ public record BodyCapturePolicy(long maxBodySize) {
 	}
 
 	/**
-	 * The note logged in place of a body that turned out to be larger than allowed. For a JSON body the note is itself
-	 * JSON, so that json-path filters can still process it.
+	 * The note logged in place of a body that turned out to be larger than allowed. For a JSON or XML body the note is
+	 * itself JSON or XML, so that json-path and xpath filters can still process it.
 	 */
 	public String omittedNote(final String contentType) {
 		final var note = "larger than " + maxBodySize + " bytes";
-		if (contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json")) {
+		final var type = String.valueOf(contentType).toLowerCase(Locale.ROOT);
+		if (type.contains("json")) {
 			return "{\"bodyOmitted\":\"" + note + "\"}";
+		}
+		if (type.contains("xml")) {
+			return "<bodyOmitted>" + note + "</bodyOmitted>";
 		}
 		return "<body omitted: " + note + ">";
 	}

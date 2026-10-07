@@ -74,10 +74,8 @@ public class LogbookConfiguration {
 	 * @param loggerName              The name of the logger to use.
 	 * @param defaultExcludedPaths    The default paths to exclude from logging.
 	 * @param additionalExcludedPaths Additional paths to exclude from logging.
-	 * @param maxBodySizeToLog        The maximum size of the body to log. If the size of the payload is larger than this
-	 *                                value the log will be cut and no filtering will be applied. E.g. passwords will not be
-	 *                                masked. Use only when absolutely necessary. Defaults
-	 *                                to -1 (disabled).
+	 * @param maxBodySizeToLog        The maximum size of the body to log. A larger body is cut after the body filters have
+	 *                                masked it. Defaults to -1 (disabled).
 	 * @param maxBodySizeToCapture    The largest body that payload logging may hold in memory. Larger bodies, and binary
 	 *                                or attachment bodies of any size, are logged without their body and never copied
 	 *                                into memory. Defaults to 1MB, -1 disables the limit.
@@ -112,8 +110,6 @@ public class LogbookConfiguration {
 			.strategy(new BodyCaptureStrategy(bodyCapturePolicy))
 			.bodyFilter(oversizedBodyFilter(bodyCapturePolicy));
 
-		setMaxBodySizeToLog(builder);
-
 		builder.sink(new DefaultSink(
 			new JsonHttpLogFormatter(jsonMapper),
 			new NamedLoggerHttpLogWriter(loggerName)))
@@ -122,7 +118,7 @@ public class LogbookConfiguration {
 				binaryContentFilter()))
 			.bodyFilter(passwordFilter());
 
-		return builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
+		builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
 			.orElseGet(Collections::emptyList)
 			.stream()
 			.reduce(new HashMap<>(), (acc, map) -> {
@@ -137,7 +133,12 @@ public class LogbookConfiguration {
 						acc.put(map.get("key"), map.get("value"));
 						return acc;
 					})))
-			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()))
+			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()));
+
+		// Truncated last: a body cut short is no longer valid JSON or XML, so the filters above could not mask it
+		setMaxBodySizeToLog(builder);
+
+		return builder
 			.condition(exclude(getExclusions()))
 			.build();
 	}

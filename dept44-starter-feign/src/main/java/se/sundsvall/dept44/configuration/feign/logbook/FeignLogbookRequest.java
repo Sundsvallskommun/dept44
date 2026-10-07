@@ -22,19 +22,24 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
  */
 final class FeignLogbookRequest implements HttpRequest {
 
+	private static final String DEFAULT_PROTOCOL_VERSION = "HTTP/1.1";
+
 	private final URI uri;
 	private final String method;
 	private final HttpHeaders headers;
 	private final byte[] body;
 	private final Charset charset;
+	private final String protocolVersion;
 	private boolean withBody;
 
-	private FeignLogbookRequest(final URI uri, final String method, final HttpHeaders headers, final byte[] body, final Charset charset) {
+	private FeignLogbookRequest(final URI uri, final String method, final HttpHeaders headers, final byte[] body, final Charset charset,
+		final String protocolVersion) {
 		this.uri = uri;
 		this.method = method;
 		this.headers = headers;
 		this.body = body;
 		this.charset = charset;
+		this.protocolVersion = protocolVersion;
 	}
 
 	/**
@@ -47,7 +52,18 @@ final class FeignLogbookRequest implements HttpRequest {
 		if (body != null && !headers.containsKey(CONTENT_LENGTH)) {
 			headers = headers.update(CONTENT_LENGTH, String.valueOf(body.length));
 		}
-		return new FeignLogbookRequest(URI.create(request.url()), request.httpMethod().name(), headers, body, request.charset());
+		return new FeignLogbookRequest(URI.create(request.url()), request.httpMethod().name(), headers, body, request.charset(),
+			toProtocolVersion(request.protocolVersion()));
+	}
+
+	/**
+	 * Feign reports the protocol version: for a request the one it intends to use, for a response the one the HTTP client
+	 * actually negotiated.
+	 */
+	static String toProtocolVersion(final Request.ProtocolVersion protocolVersion) {
+		return Optional.ofNullable(protocolVersion)
+			.map(Request.ProtocolVersion::toString)
+			.orElse(DEFAULT_PROTOCOL_VERSION);
 	}
 
 	static HttpHeaders toLogbookHeaders(final Map<String, Collection<String>> headers) {
@@ -93,7 +109,7 @@ final class FeignLogbookRequest implements HttpRequest {
 
 	@Override
 	public String getProtocolVersion() {
-		return "HTTP/1.1";
+		return protocolVersion;
 	}
 
 	@Override

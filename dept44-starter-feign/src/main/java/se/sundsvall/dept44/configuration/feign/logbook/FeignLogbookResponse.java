@@ -10,6 +10,7 @@ import org.zalando.logbook.Origin;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static se.sundsvall.dept44.configuration.feign.logbook.FeignLogbookRequest.toLogbookHeaders;
+import static se.sundsvall.dept44.configuration.feign.logbook.FeignLogbookRequest.toProtocolVersion;
 
 /**
  * Logbook view of a Feign response, with the body that has been read for logging, if any.
@@ -20,17 +21,20 @@ final class FeignLogbookResponse implements HttpResponse {
 	private final HttpHeaders headers;
 	private final byte[] body;
 	private final Charset charset;
+	private final String protocolVersion;
 	private boolean withBody;
 
-	private FeignLogbookResponse(final int status, final HttpHeaders headers, final byte[] body, final Charset charset) {
+	private FeignLogbookResponse(final int status, final HttpHeaders headers, final byte[] body, final Charset charset, final String protocolVersion) {
 		this.status = status;
 		this.headers = headers;
 		this.body = body;
 		this.charset = charset;
+		this.protocolVersion = protocolVersion;
 	}
 
 	static FeignLogbookResponse create(final Response response, final byte[] body) {
-		return new FeignLogbookResponse(response.status(), toLogbookHeaders(response.headers()), body, response.charset());
+		return new FeignLogbookResponse(response.status(), toLogbookHeaders(response.headers()), body, response.charset(),
+			toProtocolVersion(response.protocolVersion()));
 	}
 
 	@Override
@@ -40,7 +44,7 @@ final class FeignLogbookResponse implements HttpResponse {
 
 	@Override
 	public String getProtocolVersion() {
-		return "HTTP/1.1";
+		return protocolVersion;
 	}
 
 	@Override

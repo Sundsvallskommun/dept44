@@ -62,6 +62,20 @@ class FeignLogbookMessageTest {
 	}
 
 	@Test
+	void protocolVersionComesFromFeign() {
+		final var response = Response.builder()
+			.status(200)
+			.protocolVersion(Request.ProtocolVersion.HTTP_2)
+			.request(Request.create(HttpMethod.GET, "http://host/", Map.of(), null, UTF_8, null))
+			.headers(Map.of())
+			.build();
+
+		assertThat(FeignLogbookResponse.create(response, null).getProtocolVersion()).isEqualTo("HTTP/2.0");
+		assertThat(FeignLogbookRequest.toProtocolVersion(Request.ProtocolVersion.HTTP_1_0)).isEqualTo("HTTP/1.0");
+		assertThat(FeignLogbookRequest.toProtocolVersion(null)).isEqualTo("HTTP/1.1");
+	}
+
+	@Test
 	void headersFromNull() {
 		assertThat(FeignLogbookRequest.toLogbookHeaders(null)).isEmpty();
 	}

@@ -306,13 +306,6 @@ public final class BodyFilterProvider {
 		}
 	}
 
-	private static String standalone(final Document document) {
-		if (document.getXmlStandalone()) {
-			return "yes";
-		}
-		return "no";
-	}
-
 	private static boolean isJson(final String contentType) {
 		final var mimeType = mimeType(contentType);
 		return mimeType.equals(APPLICATION_JSON.getMimeType()) || mimeType.endsWith("+json");
@@ -387,6 +380,13 @@ public final class BodyFilterProvider {
 			final var writer = new StringWriter();
 			transformer.transform(new DOMSource(document), new StreamResult(writer));
 			return writer.toString();
+		}
+
+		private static String standalone(final Document document) {
+			if (document.getXmlStandalone()) {
+				return "yes";
+			}
+			return "no";
 		}
 	}
 

@@ -64,5 +64,5 @@ public @interface WireMockAppTestSuite {
 	 *
 	 * @return true to share the application context, false for one of its own.
 	 */
-	boolean sharedContext() default false;
+	boolean sharedContext() default true;
 }

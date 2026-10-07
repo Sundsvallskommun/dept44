@@ -17,7 +17,8 @@ import se.sundsvall.petinventory.Application;
 /**
  * EndpointsIT tests.
  */
-@WireMockAppTestSuite(files = "classpath:/EndpointsIT/", classes = Application.class)
+// Health reports the circuit breakers that other test classes create and open, so it needs a context of its own
+@WireMockAppTestSuite(files = "classpath:/EndpointsIT/", classes = Application.class, sharedContext = false)
 class EndpointsIT extends AbstractAppTest {
 
 	@Test

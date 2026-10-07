@@ -49,6 +49,16 @@ class MyEndpointIT extends AbstractAppTest {
 Annotation that configures WireMock on a random port, loads stub mappings from classpath, activates the `it` Spring
 profile, and auto-configures `TestRestTemplate`.
 
+By default (`sharedContext = true`), test classes that are otherwise configured alike share one application context
+and WireMock server, which reads the `files` of whichever class is running. They also share the state the application
+keeps between tests, such as caches and circuit breakers, and must not run in parallel with each other. Use
+`sharedContext = false` for a class that needs an application context of its own, such as one that relies on the state
+the application starts with:
+
+```java
+@WireMockAppTestSuite(files = "classpath:/MyEndpoint/", classes = Application.class, sharedContext = false)
+```
+
 ### ResourceLoaderExtension
 
 JUnit 5 extension for injecting test resources via `@Load`:

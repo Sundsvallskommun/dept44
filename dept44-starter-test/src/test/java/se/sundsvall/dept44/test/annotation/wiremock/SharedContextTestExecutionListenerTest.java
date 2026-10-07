@@ -49,6 +49,15 @@ class SharedContextTestExecutionListenerTest {
 	}
 
 	@Test
+	void beforeTestMethodSwitchesToFilesOfClassSharingByDefault() {
+		when(testContextMock.getTestClass()).thenAnswer(_ -> SharedByDefaultTestClass.class);
+
+		listener.beforeTestMethod(testContextMock);
+
+		assertThat(Path.of(source.getPath())).endsWith(Path.of("test-classes", "__files", "common"));
+	}
+
+	@Test
 	void beforeTestMethodSwitchesToFilesOfEnclosingSharedClass() {
 		when(testContextMock.getTestClass()).thenAnswer(_ -> SharedTestClass.NestedTestClass.class);
 
@@ -95,7 +104,11 @@ class SharedContextTestExecutionListenerTest {
 	private static class OtherSharedTestClass {
 	}
 
-	@WireMockAppTestSuite(files = "classpath:/__files/", classes = Object.class)
+	@WireMockAppTestSuite(files = "classpath:/__files/common/", classes = Object.class)
+	private static class SharedByDefaultTestClass {
+	}
+
+	@WireMockAppTestSuite(files = "classpath:/__files/", classes = Object.class, sharedContext = false)
 	private static class NonSharedTestClass {
 	}
 

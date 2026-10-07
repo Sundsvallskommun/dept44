@@ -70,7 +70,7 @@ class BodyCapturePolicyTest {
 	@Test
 	void limit() {
 		assertThat(policy.isLimited()).isTrue();
-		assertThat(policy.getMaxBodySize()).isEqualTo(100);
+		assertThat(policy.maxBodySize()).isEqualTo(100);
 		assertThat(policy.exceedsLimit(100)).isFalse();
 		assertThat(policy.exceedsLimit(101)).isTrue();
 		assertThat(policy.exceedsLimit(-1)).isFalse();

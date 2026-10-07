@@ -17,8 +17,10 @@ import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
  * <p>
  * A body is only captured when it is textual, is not a file attachment and does not exceed the configured maximum
  * size. Everything else is logged without its body, so payload logging never holds a file in memory.
+ *
+ * @param maxBodySize the largest body, in bytes, that may be captured. A negative value disables the size limit.
  */
-public final class BodyCapturePolicy {
+public record BodyCapturePolicy(long maxBodySize) {
 
 	private static final List<MediaType> TEXT_MEDIA_TYPES = List.of(
 		MediaType.valueOf("application/yaml"),
@@ -38,19 +40,6 @@ public final class BodyCapturePolicy {
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-	private final long maxBodySize;
-
-	/**
-	 * @param maxBodySize the largest body, in bytes, that may be captured. A negative value disables the size limit.
-	 */
-	public BodyCapturePolicy(final long maxBodySize) {
-		this.maxBodySize = maxBodySize;
-	}
-
-	public long getMaxBodySize() {
-		return maxBodySize;
-	}
 
 	public boolean isLimited() {
 		return maxBodySize >= 0;

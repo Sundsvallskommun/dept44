@@ -49,7 +49,9 @@ class BodyReplayingRequestWrapperTest {
 	void nonBlockingReadsAreNotSupported() {
 		final var wrapper = new BodyReplayingRequestWrapper(new MockHttpServletRequest(), new ByteArrayInputStream(new byte[0]));
 
-		assertThatThrownBy(() -> wrapper.getInputStream().setReadListener(null)).isInstanceOf(UnsupportedOperationException.class);
+		final var input = wrapper.getInputStream();
+
+		assertThatThrownBy(() -> input.setReadListener(null)).isInstanceOf(UnsupportedOperationException.class);
 	}
 
 	@Test

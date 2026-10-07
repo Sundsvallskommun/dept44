@@ -64,7 +64,7 @@ public final class BodyFilterProvider {
 	 * For a JSON body the note is itself JSON, so that json-path filters can still process it.
 	 */
 	public static BodyFilter oversizedBodyFilter(final BodyCapturePolicy policy) {
-		final var note = "larger than " + policy.getMaxBodySize() + " bytes";
+		final var note = "larger than " + policy.maxBodySize() + " bytes";
 		final var jsonReplacement = "{\"bodyOmitted\":\"" + note + "\"}";
 		final var textReplacement = "<body omitted: " + note + ">";
 		return (contentType, body) -> {
@@ -92,37 +92,41 @@ public final class BodyFilterProvider {
 
 		return jsonPathFilters.entrySet()
 			.stream()
-			.map(filter -> merge(defaultValue(), (contentType, body) -> {
-
-				if (anyNull(contentType, body)) {
-					return body;
-				}
-
-				if (body.trim().isEmpty()) {
-					return "";
-				}
-
-				final var parsedContentType = ContentType.parse(contentType);
-
-				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
-					try {
-						final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-						final var value = documentContext.read(filter.getKey());
-						if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-							documentContext.set(filter.getKey(), filter.getValue());
-						}
-
-						return documentContext.jsonString();
-					} catch (final RuntimeException e) {
-						// Never fall back to the unfiltered body: it holds exactly the fields these filters exist to mask
-						LOGGER.debug("Could not apply json-path filter to a body that is not valid JSON ({})", e.getMessage());
-						return INVALID_JSON_REPLACEMENT;
-					}
-				}
-
-				return body;
-			}))
+			.map(filter -> merge(defaultValue(), (contentType, body) -> applyJsonPathFilter(jsonPathConfiguration, filter, contentType, body)))
 			.toList();
+	}
+
+	private static String applyJsonPathFilter(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String contentType, final String body) {
+		if (anyNull(contentType, body)) {
+			return body;
+		}
+
+		if (body.trim().isEmpty()) {
+			return "";
+		}
+
+		final var parsedContentType = ContentType.parse(contentType);
+		if (parsedContentType == null || !parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+			return body;
+		}
+
+		try {
+			return maskJsonPath(jsonPathConfiguration, filter, body);
+		} catch (final RuntimeException e) {
+			// Never fall back to the unfiltered body: it holds exactly the fields these filters exist to mask
+			LOGGER.debug("Could not apply json-path filter to a body that is not valid JSON ({})", e.getMessage());
+			return INVALID_JSON_REPLACEMENT;
+		}
+	}
+
+	private static String maskJsonPath(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String body) {
+		final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
+		final var value = documentContext.read(filter.getKey());
+		if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+			documentContext.set(filter.getKey(), filter.getValue());
+		}
+
+		return documentContext.jsonString();
 	}
 
 	public static List<BodyFilter> buildXPathFilters(final Map<String, String> xPathFilters) {

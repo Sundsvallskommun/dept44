@@ -40,7 +40,7 @@ class LogbookConfigurationTest {
 
 	@Test
 	void testBodyCapturePolicyDefaultsToOneMegabyte() {
-		assertThat(bodyCapturePolicy.getMaxBodySize()).isEqualTo(1024 * 1024);
+		assertThat(bodyCapturePolicy.maxBodySize()).isEqualTo(1024 * 1024);
 	}
 
 	@Test

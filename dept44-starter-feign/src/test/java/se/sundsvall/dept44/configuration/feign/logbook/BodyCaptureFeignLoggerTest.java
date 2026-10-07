@@ -167,7 +167,7 @@ class BodyCaptureFeignLoggerTest {
 	}
 
 	@Test
-	void failedReadClosesTheBody() throws IOException {
+	void failedReadClosesTheBody() {
 		final var body = new TrackingInputStream(bytes(10)) {
 			@Override
 			public int read(final byte[] buffer, final int offset, final int length) throws IOException {

@@ -21,7 +21,7 @@ class BodylessSecurityStrategyTest {
 	private final BodylessSecurityStrategy strategy = new BodylessSecurityStrategy();
 
 	@Test
-	void requestBodyIsNotCaptured() throws IOException {
+	void requestBodyIsNotCaptured() {
 		final var request = mock(HttpRequest.class);
 
 		strategy.process(request);

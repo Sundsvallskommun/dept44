@@ -108,7 +108,7 @@ public class Relation {
 	 * @param  value                    the formatted string
 	 * @return                          a new {@link Relation} instance
 	 * @throws IllegalArgumentException if the format is invalid
-	 * @see                             #formatRelation()
+	 * @see                             #toRelationString()
 	 */
 	public static Relation parseRelation(String value) {
 		if (value == null || value.isBlank()) {

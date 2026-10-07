@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.zalando.logbook.BodyFilter;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ObjectUtils.anyNull;
@@ -46,11 +47,25 @@ import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty
 public final class BodyFilterProvider {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
+	private static final String INVALID_JSON_REPLACEMENT = "<body omitted: not valid JSON, so json-path filters could not be applied>";
 
 	private BodyFilterProvider() {}
 
 	public static BodyFilter passwordFilter() {
 		return replaceJsonStringProperty(p -> p.toLowerCase().contains("password"), "*********");
+	}
+
+	/**
+	 * Replaces a body larger than the policy allows with a short note, so that no later filter or the log formatter has
+	 * to process it. Bodies can only get here oversized when their length was unknown when capturing started.
+	 */
+	public static BodyFilter oversizedBodyFilter(final BodyCapturePolicy policy) {
+		return (contentType, body) -> {
+			if (policy.exceedsLimit(body.length())) {
+				return policy.omittedNote(contentType);
+			}
+			return body;
+		};
 	}
 
 	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
@@ -63,31 +78,41 @@ public final class BodyFilterProvider {
 
 		return jsonPathFilters.entrySet()
 			.stream()
-			.map(filter -> merge(defaultValue(), (contentType, body) -> {
-
-				if (anyNull(contentType, body)) {
-					return body;
-				}
-
-				if (body.trim().isEmpty()) {
-					return "";
-				}
-
-				final var parsedContentType = ContentType.parse(contentType);
-
-				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
-					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-					final var value = documentContext.read(filter.getKey());
-					if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-						documentContext.set(filter.getKey(), filter.getValue());
-					}
-
-					return documentContext.jsonString();
-				}
-
-				return body;
-			}))
+			.map(filter -> merge(defaultValue(), (contentType, body) -> applyJsonPathFilter(jsonPathConfiguration, filter, contentType, body)))
 			.toList();
+	}
+
+	private static String applyJsonPathFilter(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String contentType, final String body) {
+		if (anyNull(contentType, body)) {
+			return body;
+		}
+
+		if (body.trim().isEmpty()) {
+			return "";
+		}
+
+		final var parsedContentType = ContentType.parse(contentType);
+		if (parsedContentType == null || !parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
+			return body;
+		}
+
+		try {
+			return maskJsonPath(jsonPathConfiguration, filter, body);
+		} catch (final RuntimeException e) {
+			// Never fall back to the unfiltered body: it holds exactly the fields these filters exist to mask
+			LOGGER.debug("Could not apply json-path filter to a body that is not valid JSON ({})", e.getMessage());
+			return INVALID_JSON_REPLACEMENT;
+		}
+	}
+
+	private static String maskJsonPath(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String body) {
+		final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
+		final var value = documentContext.read(filter.getKey());
+		if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+			documentContext.set(filter.getKey(), filter.getValue());
+		}
+
+		return documentContext.jsonString();
 	}
 
 	public static List<BodyFilter> buildXPathFilters(final Map<String, String> xPathFilters) {

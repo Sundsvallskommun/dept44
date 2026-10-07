@@ -88,6 +88,8 @@ class BodyCapturePolicyTest {
 	void omittedNote() {
 		assertThat(policy.omittedNote("application/json")).isEqualTo("{\"bodyOmitted\":\"larger than 100 bytes\"}");
 		assertThat(policy.omittedNote("text/plain")).isEqualTo("<body omitted: larger than 100 bytes>");
+		assertThat(policy.omittedNote("application/xml")).isEqualTo("<bodyOmitted>larger than 100 bytes</bodyOmitted>");
+		assertThat(policy.omittedNote("application/soap+xml; charset=UTF-8")).isEqualTo("<bodyOmitted>larger than 100 bytes</bodyOmitted>");
 		assertThat(policy.omittedNote(null)).isEqualTo("<body omitted: larger than 100 bytes>");
 	}
 

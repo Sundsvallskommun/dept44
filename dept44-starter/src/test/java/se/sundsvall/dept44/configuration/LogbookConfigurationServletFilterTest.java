@@ -42,6 +42,16 @@ class LogbookConfigurationServletFilterTest {
 	}
 
 	@Test
+	void invalidJsonPathFilterStopsStartup() {
+		contextRunner
+			.withPropertyValues("logbook.body-filters.json-path[0].key=$.user.", "logbook.body-filters.json-path[0].value=***")
+			.run(context -> {
+				assertThat(context).hasFailed();
+				assertThat(context.getStartupFailure()).hasStackTraceContaining("Invalid json-path '$.user.' in logbook.body-filters.json-path");
+			});
+	}
+
+	@Test
 	void captureLimitIsConfigurable() {
 		contextRunner
 			.withPropertyValues("logbook.logs.maxBodySizeToCapture=-1")

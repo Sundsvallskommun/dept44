@@ -232,9 +232,10 @@ public class WebConfiguration implements WebMvcConfigurer {
 		@Override
 		protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
 			final FilterChain chain) throws ServletException, IOException {
-			response.addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
-			response.addIntHeader(HttpHeaders.EXPIRES, 0);
-			response.addHeader(HttpHeaders.PRAGMA, "no-cache");
+			// Set, not added: Spring Security has already written its own cache headers, which these replace
+			response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+			response.setIntHeader(HttpHeaders.EXPIRES, 0);
+			response.setHeader(HttpHeaders.PRAGMA, "no-cache");
 
 			chain.doFilter(request, response);
 		}

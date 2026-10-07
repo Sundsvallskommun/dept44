@@ -146,15 +146,18 @@ public final class BodyFilterProvider {
 	}
 
 	/**
-	 * Compiled once, when the filters are built, so that an expression with a syntax error stops the application from
-	 * starting. A compiled expression is not thread-safe, so each body is filtered with an expression of its own.
+	 * Compiled once, when the filters are built, and evaluated against an empty document the way the filter evaluates it,
+	 * so that an expression the filter could never use stops the application from starting. That covers a syntax error
+	 * as well as an expression that does not select nodes, such as {@code count(//x)}. A compiled expression is not
+	 * thread-safe, so each body is filtered with an expression of its own.
 	 */
 	private static String validateXPath(final String xPath) {
 		if (xPath == null) {
 			throw new IllegalArgumentException("Invalid xpath 'null' in logbook.body-filters.x-path");
 		}
 		try {
-			XPathFactory.newInstance().newXPath().compile(xPath);
+			XPathFactory.newInstance().newXPath().compile(xPath)
+				.evaluate(createDocumentBuilder(createDocumentBuilderFactory()).newDocument(), XPathConstants.NODESET);
 			return xPath;
 		} catch (final XPathExpressionException e) {
 			throw new IllegalArgumentException("Invalid xpath '%s' in logbook.body-filters.x-path: %s".formatted(xPath, e.getMessage()), e);

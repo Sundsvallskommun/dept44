@@ -153,7 +153,7 @@ class BodyFilterProviderTest {
 	@ParameterizedTest
 	@NullSource
 	@ValueSource(strings = {
-		"//[", "count((", ""
+		"//[", "count((", "", "count(//secret)", "string(//secret)", "normalize-space(//secret)", "//secret = 'x'", "$undeclared"
 	})
 	void testBuildXPathFiltersRejectsInvalidExpression(final String xPath) {
 		final var xPathFilters = new HashMap<String, String>();

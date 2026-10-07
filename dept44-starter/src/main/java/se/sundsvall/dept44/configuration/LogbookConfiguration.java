@@ -116,7 +116,9 @@ public class LogbookConfiguration {
 			.responseFilters(List.of(
 				fileAttachmentFilter(),
 				binaryContentFilter()))
-			.bodyFilter(passwordFilter());
+			.bodyFilter(passwordFilter())
+			// Logbook's own masking of tokens and credentials, which it drops as soon as any body filter is configured
+			.bodyFilter(BodyFilters.defaultValue());
 
 		builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
 			.orElseGet(Collections::emptyList)

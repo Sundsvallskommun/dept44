@@ -7,6 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -72,6 +73,24 @@ class LogbookConfigurationBodyFilterTest {
 				.contains(masked)
 				.doesNotContain("top secret value"));
 		});
+	}
+
+	@Test
+	void logbookDefaultMaskingAppliesWithoutConfiguredFilters() {
+		new ApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, ObjectMapperConfiguration.class, LogbookConfiguration.class))
+			.withPropertyValues("logbook.default.excluded.paths=/actuator/**", "logbook.logger.name=" + LOGGER_NAME)
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+
+				context.getBean(Logbook.class)
+					.process(MockHttpRequest.create().withContentType("application/json").withBodyAsString("{\"access_token\":\"secret-token\"}"))
+					.write();
+
+				assertThat(appender.list).singleElement().satisfies(event -> assertThat(event.getFormattedMessage())
+					.contains("\"access_token\":\"XXX\"")
+					.doesNotContain("secret-token"));
+			});
 	}
 
 	private static Stream<Arguments> bodiesLargerThanMaxBodySizeToLog() {

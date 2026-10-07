@@ -6,7 +6,6 @@ import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
-import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.servlet.LogbookServletFilter;
 
@@ -27,7 +26,7 @@ class LogbookConfigurationServletFilterTest {
 		contextRunner.run(context -> {
 			assertThat(context).hasNotFailed();
 			assertThat(context.getBean("logbookFilter", FilterRegistrationBean.class).getFilter()).isInstanceOf(LogbookServletFilter.class);
-			assertThat(context.getBean("secureLogbookFilter", FilterRegistrationBean.class).getFilter()).isExactlyInstanceOf(LogbookFilter.class);
+			assertThat(context.getBean("secureLogbookFilter", FilterRegistrationBean.class).getFilter()).isInstanceOf(LogbookServletFilter.class);
 		});
 	}
 

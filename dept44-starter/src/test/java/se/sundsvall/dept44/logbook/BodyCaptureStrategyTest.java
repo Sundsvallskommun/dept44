@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.logbook;
 
-import jakarta.servlet.ServletRequest;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.zalando.logbook.HttpHeaders;
@@ -12,9 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
-import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.SKIP_BODY_CAPTURE_ATTRIBUTE;
 
 class BodyCaptureStrategyTest {
 
@@ -47,32 +44,6 @@ class BodyCaptureStrategyTest {
 		strategy.process(request);
 
 		verify(request).withoutBody();
-	}
-
-	@Test
-	void requestMarkedOversizedIsNotCaptured() throws IOException {
-		final var request = mock(HttpRequest.class, withSettings().extraInterfaces(ServletRequest.class));
-		when(request.getHeaders()).thenReturn(HttpHeaders.empty());
-		when(request.getContentType()).thenReturn("application/json");
-		when(((ServletRequest) request).getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).thenReturn(Boolean.TRUE);
-		when(request.withoutBody()).thenReturn(request);
-
-		strategy.process(request);
-
-		verify(request).withoutBody();
-		verify(request, never()).withBody();
-	}
-
-	@Test
-	void servletRequestNotMarkedIsCaptured() throws IOException {
-		final var request = mock(HttpRequest.class, withSettings().extraInterfaces(ServletRequest.class));
-		when(request.getHeaders()).thenReturn(HttpHeaders.empty());
-		when(request.getContentType()).thenReturn("application/json");
-		when(request.withBody()).thenReturn(request);
-
-		strategy.process(request);
-
-		verify(request).withBody();
 	}
 
 	@Test

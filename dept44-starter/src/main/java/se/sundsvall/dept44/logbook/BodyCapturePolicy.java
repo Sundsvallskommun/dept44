@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.zalando.logbook.HttpMessage;
 
@@ -16,7 +17,9 @@ import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
  * Decides whether the body of a request or response may be captured (held in memory) for payload logging.
  * <p>
  * A body is only captured when it is textual, is not a file attachment and does not exceed the configured maximum
- * size. Everything else is logged without its body, so payload logging never holds a file in memory.
+ * size. Everything else is logged without its body. For bodies of unknown length the size is enforced while they are
+ * read by dept44's servlet filters and Feign logger; Logbook's own WebClient and HttpClient integrations capture such a
+ * body in full before it is checked.
  *
  * @param maxBodySize the largest body, in bytes, that may be captured. A negative value disables the size limit.
  */
@@ -35,8 +38,11 @@ public record BodyCapturePolicy(long maxBodySize) {
 		MediaType.APPLICATION_PROBLEM_JSON,
 		MediaType.APPLICATION_PROBLEM_XML,
 		MediaType.APPLICATION_GRAPHQL_RESPONSE,
-		MediaType.APPLICATION_FORM_URLENCODED);
+		MediaType.APPLICATION_FORM_URLENCODED,
+		MediaType.valueOf("application/*+json"),
+		MediaType.valueOf("application/*+xml"));
 
+	private static final MediaType MULTIPART = MediaType.valueOf("multipart/*");
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
@@ -68,6 +74,34 @@ public record BodyCapturePolicy(long maxBodySize) {
 
 	public boolean allowsCapture(final String contentType, final Collection<String> contentDisposition, final long contentLength) {
 		return isTextual(contentType) && !isAttachment(contentDisposition) && !exceedsLimit(contentLength);
+	}
+
+	/**
+	 * The note logged in place of a body that turned out to be larger than allowed. For a JSON body the note is itself
+	 * JSON, so that json-path filters can still process it.
+	 */
+	public String omittedNote(final String contentType) {
+		final var note = "larger than " + maxBodySize + " bytes";
+		if (contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json")) {
+			return "{\"bodyOmitted\":\"" + note + "\"}";
+		}
+		return "<body omitted: " + note + ">";
+	}
+
+	/**
+	 * Form and multipart bodies are parsed by the servlet container from the raw request stream, which must not have
+	 * been read before. A content type that cannot be parsed might still be one of them.
+	 */
+	public static boolean isParsedByContainer(final String contentType) {
+		if (contentType == null) {
+			return false;
+		}
+		try {
+			final var mediaType = MediaType.valueOf(contentType);
+			return MediaType.APPLICATION_FORM_URLENCODED.isCompatibleWith(mediaType) || MULTIPART.isCompatibleWith(mediaType);
+		} catch (final InvalidMediaTypeException _) {
+			return true;
+		}
 	}
 
 	/**

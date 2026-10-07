@@ -5,10 +5,15 @@ import feign.RequestTemplate;
 import feign.Response;
 import feign.RetryableException;
 import feign.codec.ErrorDecoder;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -95,6 +100,78 @@ class ProblemErrorDecoderTest {
 		assertThat(exception)
 			.isExactlyInstanceOf(ClientProblem.class)
 			.hasMessage(expectedMessage);
+	}
+
+	@Test
+	void largeErrorBodyIsReadOnlyUpToTheCap() {
+
+		// Arrange
+		final var errorDecoder = new ProblemErrorDecoder("XXX");
+		final var bytesRead = new AtomicLong();
+		final var size = 5L * AbstractErrorDecoder.MAX_ERROR_BODY_SIZE;
+		final var response = Response.builder()
+			.body(new Response.Body() {
+				@Override
+				public Integer length() {
+					return null;
+				}
+
+				@Override
+				public boolean isRepeatable() {
+					return true;
+				}
+
+				@Override
+				public InputStream asInputStream() {
+					return new CountingGeneratedStream(size, bytesRead);
+				}
+
+				@Override
+				public Reader asReader(final Charset charset) {
+					return new InputStreamReader(asInputStream(), charset);
+				}
+
+				@Override
+				public void close() {
+					// Nothing to release
+				}
+			})
+			.request(Request.create(GET, "/api", emptyMap(), null, UTF_8, new RequestTemplate()))
+			.status(500)
+			.headers(emptyMap())
+			.build();
+
+		// Act
+		final var exception = errorDecoder.decode("test", response);
+
+		// Assert
+		assertThat(exception).isInstanceOf(ServerProblem.class);
+		assertThat(bytesRead.get()).isLessThanOrEqualTo(3L * AbstractErrorDecoder.MAX_ERROR_BODY_SIZE);
+	}
+
+	/**
+	 * Produces a body of the given size without holding it, and counts what is read.
+	 */
+	private static final class CountingGeneratedStream extends InputStream {
+
+		private final long size;
+		private final AtomicLong bytesRead;
+		private long position;
+
+		private CountingGeneratedStream(final long size, final AtomicLong bytesRead) {
+			this.size = size;
+			this.bytesRead = bytesRead;
+		}
+
+		@Override
+		public int read() {
+			if (position >= size) {
+				return -1;
+			}
+			position++;
+			bytesRead.incrementAndGet();
+			return 'x';
+		}
 	}
 
 	@ParameterizedTest

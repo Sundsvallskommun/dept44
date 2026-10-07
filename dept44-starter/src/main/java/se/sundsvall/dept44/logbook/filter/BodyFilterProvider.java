@@ -12,7 +12,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -58,28 +57,15 @@ public final class BodyFilterProvider {
 
 	/**
 	 * Replaces a body larger than the policy allows with a short note, so that no later filter or the log formatter has
-	 * to process it. Bodies can only get here oversized when their length was unknown when capturing started, such as a
-	 * JSON response written without a Content-Length.
-	 * <p>
-	 * For a JSON body the note is itself JSON, so that json-path filters can still process it.
+	 * to process it. Bodies can only get here oversized when their length was unknown when capturing started.
 	 */
 	public static BodyFilter oversizedBodyFilter(final BodyCapturePolicy policy) {
-		final var note = "larger than " + policy.maxBodySize() + " bytes";
-		final var jsonReplacement = "{\"bodyOmitted\":\"" + note + "\"}";
-		final var textReplacement = "<body omitted: " + note + ">";
 		return (contentType, body) -> {
-			if (!policy.exceedsLimit(body.length())) {
-				return body;
+			if (policy.exceedsLimit(body.length())) {
+				return policy.omittedNote(contentType);
 			}
-			if (isJson(contentType)) {
-				return jsonReplacement;
-			}
-			return textReplacement;
+			return body;
 		};
-	}
-
-	private static boolean isJson(final String contentType) {
-		return contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json");
 	}
 
 	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {

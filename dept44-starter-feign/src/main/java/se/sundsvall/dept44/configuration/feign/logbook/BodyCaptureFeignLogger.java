@@ -5,8 +5,10 @@ import feign.Request;
 import feign.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
 import org.zalando.logbook.Logbook;
@@ -26,18 +28,30 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
  * cannot stream. This logger reads the body only for error responses, which error decoders may read more than once, and
  * for textual bodies within the size that the {@link BodyCapturePolicy} allows. Any other response is logged without
  * its body and handed on with its body untouched.
+ * <p>
+ * An error body larger than the limit is kept in a temporary file rather than in memory, since error decoders may read
+ * it more than once.
  */
 public class BodyCaptureFeignLogger extends Logger {
 
 	private final Logbook logbook;
 	private final BodyCapturePolicy policy;
+	private final Path temporaryDirectory;
 
 	// Feign is blocking, so a request and its response are handled on the same thread
 	private final ThreadLocal<ResponseProcessingStage> stage = new ThreadLocal<>();
 
 	public BodyCaptureFeignLogger(final Logbook logbook, final BodyCapturePolicy policy) {
+		this(logbook, policy, null);
+	}
+
+	/**
+	 * @param temporaryDirectory where oversized error bodies are kept; {@code null} means the default temporary directory
+	 */
+	BodyCaptureFeignLogger(final Logbook logbook, final BodyCapturePolicy policy, final Path temporaryDirectory) {
 		this.logbook = logbook;
 		this.policy = policy;
+		this.temporaryDirectory = temporaryDirectory;
 	}
 
 	@Override
@@ -78,7 +92,7 @@ public class BodyCaptureFeignLogger extends Logger {
 			return response;
 		}
 		if (isError(response)) {
-			return rebuffer(processingStage, response);
+			return rebufferError(processingStage, response);
 		}
 		if (!policy.allowsCapture(contentType(response), response.headers().get(CONTENT_DISPOSITION), length(response))) {
 			write(processingStage, response, null);
@@ -110,23 +124,64 @@ public class BodyCaptureFeignLogger extends Logger {
 		}
 
 		final var input = response.body().asInputStream();
-		final byte[] head;
+		final var head = readHead(input, response);
+		if (!policy.exceedsLimit(head.length)) {
+			return withBuffer(processingStage, response, input, head);
+		}
+
+		write(processingStage, response, null);
+		return streaming(response, input, head);
+	}
+
+	/**
+	 * Like {@link #rebufferWithinLimit}, except that a body larger than the limit is kept in a temporary file, so that
+	 * error decoders can still read it more than once. If no temporary file can be created, the body is handed on as a
+	 * stream.
+	 */
+	private Response rebufferError(final ResponseProcessingStage processingStage, final Response response) throws IOException {
+		if (!policy.isLimited()) {
+			return rebuffer(processingStage, response);
+		}
+
+		final var input = response.body().asInputStream();
+		final var head = readHead(input, response);
+		if (!policy.exceedsLimit(head.length)) {
+			return withBuffer(processingStage, response, input, head);
+		}
+
+		write(processingStage, response, null);
+		final Path file;
 		try {
-			head = input.readNBytes(policy.readLimit());
+			file = TempFileBody.createFile(temporaryDirectory);
+		} catch (final IOException _) {
+			return streaming(response, input, head);
+		}
+		try {
+			return response.toBuilder().body(TempFileBody.fill(file, head, input)).build();
+		} finally {
+			ensureClosed(input);
+			ensureClosed(response.body());
+		}
+	}
+
+	private byte[] readHead(final InputStream input, final Response response) throws IOException {
+		try {
+			return input.readNBytes(policy.readLimit());
 		} catch (final IOException | RuntimeException e) {
 			ensureClosed(input);
 			ensureClosed(response.body());
 			throw e;
 		}
+	}
 
-		if (!policy.exceedsLimit(head.length)) {
-			ensureClosed(input);
-			ensureClosed(response.body());
-			write(processingStage, response, head);
-			return response.toBuilder().body(head).build();
-		}
+	private static Response withBuffer(final ResponseProcessingStage processingStage, final Response response, final InputStream input, final byte[] body) throws IOException {
+		ensureClosed(input);
+		ensureClosed(response.body());
+		write(processingStage, response, body);
+		return response.toBuilder().body(body).build();
+	}
 
-		write(processingStage, response, null);
+	private static Response streaming(final Response response, final InputStream input, final byte[] head) {
 		return response.toBuilder()
 			.body(new SequenceInputStream(new ByteArrayInputStream(head), input), response.body().length())
 			.build();

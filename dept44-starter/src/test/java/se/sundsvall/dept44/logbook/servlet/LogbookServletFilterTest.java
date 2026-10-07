@@ -1,11 +1,19 @@
 package se.sundsvall.dept44.logbook.servlet;
 
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.web.MockAsyncContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.zalando.logbook.Correlation;
@@ -16,9 +24,9 @@ import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.RequestFilter;
 import org.zalando.logbook.ResponseFilter;
 import org.zalando.logbook.Sink;
-import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
+import se.sundsvall.dept44.logbook.BodylessSecurityStrategy;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,28 +35,27 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
 import static org.springframework.http.HttpHeaders.TRANSFER_ENCODING;
-import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.SKIP_BODY_CAPTURE_ATTRIBUTE;
 
 /**
- * Runs the real Logbook servlet filter. A body that is not captured shows up as an empty body in the sink, because
- * Logbook never copied it.
+ * Runs the filter with a real Logbook. What the sink receives as a body is exactly what was held in memory for it.
  */
 class LogbookServletFilterTest {
 
 	private static final int LIMIT = 100;
+	private static final String OMITTED_JSON = "{\"bodyOmitted\":\"larger than 100 bytes\"}";
 
 	private final CapturingSink sink = new CapturingSink();
 	private final BodyCapturePolicy policy = new BodyCapturePolicy(LIMIT);
-	private final LogbookServletFilter filter = new LogbookServletFilter(new LogbookFilter(Logbook.builder()
+	private final LogbookServletFilter filter = new LogbookServletFilter(Logbook.builder()
 		.strategy(new BodyCaptureStrategy(policy))
 		.requestFilter(RequestFilter.none())
 		.responseFilter(ResponseFilter.none())
 		.sink(sink)
-		.build()), policy);
+		.build(), policy);
 
 	@Test
 	void smallBodiesAreCaptured() throws Exception {
-		final var request = jsonRequest(body(50));
+		final var request = request("application/json", body(50), true);
 		final var response = new MockHttpServletResponse();
 		final var received = new AtomicReference<byte[]>();
 
@@ -64,8 +71,8 @@ class LogbookServletFilterTest {
 	}
 
 	@Test
-	void largeRequestIsNotCaptured() throws Exception {
-		final var request = jsonRequest(body(LIMIT + 1));
+	void largeRequestOfKnownLengthIsNotRead() throws Exception {
+		final var request = request("application/json", body(LIMIT + 1), true);
 		final var received = new AtomicReference<byte[]>();
 
 		filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> received.set(req.getInputStream().readAllBytes()));
@@ -75,27 +82,39 @@ class LogbookServletFilterTest {
 	}
 
 	@Test
-	void largeChunkedRequestIsNotCaptured() throws Exception {
-		final var request = chunkedJsonRequest(body(LIMIT * 3));
+	void largeRequestOfUnknownLengthIsLoggedAsOmitted() throws Exception {
+		final var request = request("application/json", body(LIMIT * 3), false);
 		final var received = new AtomicReference<byte[]>();
 
 		filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> received.set(req.getInputStream().readAllBytes()));
 
 		assertThat(received.get()).isEqualTo(body(LIMIT * 3));
-		assertThat(sink.requestBody).isEmpty();
-		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
+		assertThat(sink.requestBody).isEqualTo(OMITTED_JSON);
 	}
 
 	@Test
-	void smallChunkedRequestIsCaptured() throws Exception {
-		final var request = chunkedJsonRequest(body(LIMIT));
+	void smallRequestOfUnknownLengthIsCaptured() throws Exception {
+		final var request = request("application/json", body(LIMIT), false);
 		final var received = new AtomicReference<byte[]>();
 
 		filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> received.set(req.getInputStream().readAllBytes()));
 
 		assertThat(received.get()).isEqualTo(body(LIMIT));
 		assertThat(sink.requestBody).isEqualTo(text(LIMIT));
-		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isNull();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/x-www-form-urlencoded", "multipart/form-data; boundary=abc", "not a media type"
+	})
+	void bodiesParsedByTheContainerAreNeverRead(final String contentType) throws Exception {
+		final var request = request(contentType, body(LIMIT * 3), false);
+		final var received = new AtomicReference<byte[]>();
+
+		filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> received.set(req.getInputStream().readAllBytes()));
+
+		assertThat(received.get()).isEqualTo(body(LIMIT * 3));
+		assertThat(sink.requestBody).isEmpty();
 	}
 
 	@Test
@@ -122,13 +141,29 @@ class LogbookServletFilterTest {
 	}
 
 	@Test
-	void largeResponseIsNotCaptured() throws Exception {
+	void largeResponseOfKnownLengthIsNotCaptured() throws Exception {
 		final var response = new MockHttpServletResponse();
 
 		filter.doFilter(new MockHttpServletRequest("GET", "/json"), response, (req, res) -> write(res, "application/json", body(LIMIT + 1), true));
 
 		assertThat(sink.responseBody).isEmpty();
 		assertThat(response.getContentAsByteArray()).isEqualTo(body(LIMIT + 1));
+	}
+
+	@Test
+	void largeResponseOfUnknownLengthStopsBeingCopiedAtTheLimit() throws Exception {
+		final var response = new MockHttpServletResponse();
+
+		filter.doFilter(new MockHttpServletRequest("GET", "/json"), response, (req, res) -> {
+			res.setContentType("application/json");
+			final var output = res.getOutputStream();
+			for (var chunk = 0; chunk < 3; chunk++) {
+				output.write(body(LIMIT));
+			}
+		});
+
+		assertThat(sink.responseBody).isEqualTo(OMITTED_JSON);
+		assertThat(response.getContentAsByteArray()).isEqualTo(body(LIMIT * 3));
 	}
 
 	@Test
@@ -146,39 +181,140 @@ class LogbookServletFilterTest {
 	}
 
 	@Test
+	void asynchronousResponseIsLoggedWhenItCompletes() throws Exception {
+		final var request = new MockHttpServletRequest("GET", "/stream");
+		request.setAsyncSupported(true);
+		final var response = new MockHttpServletResponse();
+
+		filter.doFilter(request, response, (req, res) -> {
+			req.startAsync(req, res);
+			write(res, "application/json", body(30), true);
+		});
+
+		assertThat(sink.responseWritten).isFalse();
+
+		// Timeouts and errors do not write anything; only completion does. A restart re-registers the listener.
+		final var asyncContext = (MockAsyncContext) request.getAsyncContext();
+		final var restarted = new MockAsyncContext(request, response);
+		for (final var listener : asyncContext.getListeners()) {
+			listener.onTimeout(null);
+			listener.onError(null);
+			listener.onStartAsync(new AsyncEvent(restarted));
+		}
+		assertThat(sink.responseWritten).isFalse();
+		assertThat(restarted.getListeners()).hasSameElementsAs(asyncContext.getListeners());
+
+		asyncContext.complete();
+
+		assertThat(sink.responseWritten).isTrue();
+		assertThat(sink.responseBody).isEqualTo(text(30));
+	}
+
+	@Test
+	void asynchronousDispatchPassesStraightThrough() throws Exception {
+		final var request = new MockHttpServletRequest("GET", "/stream");
+		request.setDispatcherType(DispatcherType.ASYNC);
+		final var response = new MockHttpServletResponse();
+		final var chain = mock(FilterChain.class);
+
+		filter.doFilter(request, response, chain);
+
+		verify(chain).doFilter(request, response);
+		assertThat(sink.requestBody).isNull();
+	}
+
+	@Test
+	void requestLogbookDoesNotProcessIsNeverRead() throws Exception {
+		final var inactive = new LogbookServletFilter(Logbook.builder()
+			.strategy(new BodyCaptureStrategy(policy))
+			.sink(new CapturingSink() {
+				@Override
+				public boolean isActive() {
+					return false;
+				}
+			})
+			.build(), policy);
+		final var request = request("application/json", body(LIMIT * 3), false);
+		final var original = request.getInputStream();
+		final var received = new AtomicReference<ServletInputStream>();
+
+		inactive.doFilter(request, new MockHttpServletResponse(), (req, res) -> received.set(req.getInputStream()));
+
+		assertThat(received.get()).isSameAs(original);
+		assertThat(received.get().readAllBytes()).isEqualTo(body(LIMIT * 3));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/merge-patch+json", "application/hal+json", "application/soap+xml"
+	})
+	void structuredSyntaxSuffixBodiesAreCaptured(final String contentType) throws Exception {
+		filter.doFilter(request(contentType, body(20), true), new MockHttpServletResponse(), (req, res) -> req.getInputStream().readAllBytes());
+
+		assertThat(sink.requestBody).isEqualTo(text(20));
+	}
+
+	@Test
+	void securityFilterWritesOnlyRejectedRequestsAndNeverCapturesBodies() throws Exception {
+		final var securityFilter = new LogbookServletFilter(Logbook.builder()
+			.requestFilter(RequestFilter.none())
+			.responseFilter(ResponseFilter.none())
+			.sink(sink)
+			.build(), policy, new BodylessSecurityStrategy());
+		final var accepted = new MockHttpServletResponse();
+
+		securityFilter.doFilter(request("application/json", body(10), true), accepted, (req, res) -> write(res, "application/json", body(10), true));
+
+		assertThat(sink.responseWritten).isFalse();
+
+		final var rejected = new MockHttpServletResponse();
+		final var received = new AtomicReference<byte[]>();
+		securityFilter.doFilter(request("application/json", body(10), true), rejected, (req, res) -> {
+			received.set(req.getInputStream().readAllBytes());
+			((HttpServletResponse) res).setStatus(401);
+			write(res, "application/problem+json", body(10), true);
+		});
+
+		assertThat(sink.responseWritten).isTrue();
+		assertThat(sink.requestBody).isEmpty();
+		assertThat(sink.responseBody).isEmpty();
+		assertThat(received.get()).isEqualTo(body(10));
+		assertThat(rejected.getContentAsByteArray()).isEqualTo(body(10));
+	}
+
+	@Test
 	void nonHttpRequestPassesThrough() throws Exception {
 		final var request = mock(ServletRequest.class);
 		final var response = mock(ServletResponse.class);
-		final var chain = mock(jakarta.servlet.FilterChain.class);
+		final var chain = mock(FilterChain.class);
 
 		filter.doFilter(request, response, chain);
 
 		verify(chain).doFilter(request, response);
 	}
 
-	private static MockHttpServletRequest jsonRequest(final byte[] content) {
-		final var request = new MockHttpServletRequest("POST", "/json");
-		request.setContentType("application/json");
-		request.setContent(content);
-		request.addHeader(CONTENT_LENGTH, content.length);
-		return request;
-	}
-
-	private static MockHttpServletRequest chunkedJsonRequest(final byte[] content) {
-		final var request = new MockHttpServletRequest("POST", "/json") {
+	private static MockHttpServletRequest request(final String contentType, final byte[] content, final boolean knownLength) {
+		final var request = new MockHttpServletRequest("POST", "/upload") {
 			@Override
 			public int getContentLength() {
+				if (knownLength) {
+					return content.length;
+				}
 				return -1;
 			}
 
 			@Override
 			public long getContentLengthLong() {
-				return -1;
+				return getContentLength();
 			}
 		};
-		request.setContentType("application/json");
+		request.setContentType(contentType);
 		request.setContent(content);
-		request.addHeader(TRANSFER_ENCODING, "chunked");
+		if (knownLength) {
+			request.addHeader(CONTENT_LENGTH, content.length);
+		} else {
+			request.addHeader(TRANSFER_ENCODING, "chunked");
+		}
 		return request;
 	}
 
@@ -200,10 +336,11 @@ class LogbookServletFilterTest {
 		return new String(body(size), UTF_8);
 	}
 
-	private static final class CapturingSink implements Sink {
+	private static class CapturingSink implements Sink {
 
 		private String requestBody;
 		private String responseBody;
+		private boolean responseWritten;
 
 		@Override
 		public void write(final Precorrelation precorrelation, final HttpRequest request) throws IOException {
@@ -213,6 +350,7 @@ class LogbookServletFilterTest {
 		@Override
 		public void write(final Correlation correlation, final HttpRequest request, final HttpResponse response) throws IOException {
 			responseBody = response.getBodyAsString();
+			responseWritten = true;
 		}
 	}
 }

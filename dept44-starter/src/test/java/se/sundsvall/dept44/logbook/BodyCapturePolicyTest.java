@@ -7,6 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.zalando.logbook.HttpHeaders;
 import org.zalando.logbook.test.MockHttpResponse;
@@ -22,7 +23,8 @@ class BodyCapturePolicyTest {
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"application/json", "application/json; charset=UTF-8", "application/problem+json", "text/plain", "text/csv", "application/xml",
-		"application/yaml", "multipart/form-data; boundary=abc", "application/x-www-form-urlencoded", "not a media type"
+		"application/yaml", "multipart/form-data; boundary=abc", "application/x-www-form-urlencoded", "not a media type",
+		"application/merge-patch+json", "application/hal+json", "application/vnd.api+json", "application/soap+xml"
 	})
 	@NullAndEmptySource
 	void isTextual(final String contentType) {
@@ -80,6 +82,30 @@ class BodyCapturePolicyTest {
 	void readLimit() {
 		assertThat(policy.readLimit()).isEqualTo(101);
 		assertThat(new BodyCapturePolicy(Long.MAX_VALUE - 1).readLimit()).isEqualTo(Integer.MAX_VALUE - 8);
+	}
+
+	@Test
+	void omittedNote() {
+		assertThat(policy.omittedNote("application/json")).isEqualTo("{\"bodyOmitted\":\"larger than 100 bytes\"}");
+		assertThat(policy.omittedNote("text/plain")).isEqualTo("<body omitted: larger than 100 bytes>");
+		assertThat(policy.omittedNote(null)).isEqualTo("<body omitted: larger than 100 bytes>");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/x-www-form-urlencoded", "multipart/form-data; boundary=abc", "multipart/mixed", "not a media type"
+	})
+	void isParsedByContainer(final String contentType) {
+		assertThat(BodyCapturePolicy.isParsedByContainer(contentType)).isTrue();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"application/json", "text/plain", "application/octet-stream"
+	})
+	@NullSource
+	void isNotParsedByContainer(final String contentType) {
+		assertThat(BodyCapturePolicy.isParsedByContainer(contentType)).isFalse();
 	}
 
 	@Test

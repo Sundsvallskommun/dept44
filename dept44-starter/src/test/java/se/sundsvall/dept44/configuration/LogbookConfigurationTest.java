@@ -8,7 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.core.Ordered;
 import org.zalando.logbook.Logbook;
-import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.servlet.LogbookServletFilter;
 
@@ -47,7 +46,7 @@ class LogbookConfigurationTest {
 	void testServletFilters() {
 		assertThat(logbookFilter.getFilter()).isInstanceOf(LogbookServletFilter.class);
 		assertThat(logbookFilter.getOrder()).isEqualTo(Ordered.LOWEST_PRECEDENCE);
-		assertThat(secureLogbookFilter.getFilter()).isInstanceOf(LogbookFilter.class);
+		assertThat(secureLogbookFilter.getFilter()).isInstanceOf(LogbookServletFilter.class);
 		assertThat(secureLogbookFilter.getOrder()).isEqualTo(Ordered.HIGHEST_PRECEDENCE + 1);
 	}
 }

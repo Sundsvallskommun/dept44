@@ -33,6 +33,11 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractErrorDecoder.class);
 
+	/**
+	 * The most of an error body that is read to find the error message.
+	 */
+	protected static final int MAX_ERROR_BODY_SIZE = 1024 * 1024;
+
 	protected final String integrationName;
 	protected final RetryResponseVerifier retryResponseVerifier;
 	protected List<Integer> bypassResponseCodes;
@@ -103,8 +108,14 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		};
 	}
 
+	/**
+	 * Reads at most the first {@value #MAX_ERROR_BODY_SIZE} bytes of the body: an error message never needs more, and a
+	 * large error body is never read into memory as a whole.
+	 */
 	protected String bodyAsString(final Response response) throws IOException {
-		return new String(response.body().asInputStream().readAllBytes(), UTF_8);
+		try (final var input = response.body().asInputStream()) {
+			return new String(input.readNBytes(MAX_ERROR_BODY_SIZE), UTF_8);
+		}
 	}
 
 	private String extractMessage(final Response response) {

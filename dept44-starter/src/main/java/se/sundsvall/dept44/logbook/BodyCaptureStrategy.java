@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.logbook;
 
-import jakarta.servlet.ServletRequest;
 import java.io.IOException;
 import org.zalando.logbook.HttpMessage;
 import org.zalando.logbook.HttpRequest;
@@ -10,16 +9,11 @@ import org.zalando.logbook.Strategy;
 /**
  * Logbook strategy that only captures bodies the {@link BodyCapturePolicy} allows.
  * <p>
- * The decision is made before Logbook starts buffering, so a body that is not captured is never held in memory.
- * Requests and responses that are not captured are still logged, without their body.
+ * The decision is made from the headers, before Logbook starts buffering, so a body that is not captured is never
+ * held in memory. Requests and responses that are not captured are still logged, without their body. A body of unknown
+ * length passes this check; the servlet wrappers and the Feign logger then bound it while it is read.
  */
 public final class BodyCaptureStrategy implements Strategy {
-
-	/**
-	 * Request attribute set when the body of a request of unknown length must not be captured: it turned out to be larger
-	 * than the policy allows, or its content type could not be parsed so its size could not be safely measured.
-	 */
-	public static final String SKIP_BODY_CAPTURE_ATTRIBUTE = BodyCaptureStrategy.class.getName() + ".SKIP_BODY_CAPTURE";
 
 	private final BodyCapturePolicy policy;
 
@@ -29,7 +23,7 @@ public final class BodyCaptureStrategy implements Strategy {
 
 	@Override
 	public HttpRequest process(final HttpRequest request) throws IOException {
-		if (isMarkedToSkip(request) || !allowsCapture(request)) {
+		if (!allowsCapture(request)) {
 			return request.withoutBody();
 		}
 		return request.withBody();
@@ -55,9 +49,5 @@ public final class BodyCaptureStrategy implements Strategy {
 		} catch (final RuntimeException _) {
 			return false;
 		}
-	}
-
-	private static boolean isMarkedToSkip(final HttpRequest request) {
-		return request instanceof final ServletRequest servletRequest && servletRequest.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE) != null;
 	}
 }

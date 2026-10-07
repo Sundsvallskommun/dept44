@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -34,13 +33,10 @@ import org.zalando.logbook.Logbook;
 import org.zalando.logbook.LogbookCreator;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
-import org.zalando.logbook.autoconfigure.LogbookProperties;
 import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
-import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
-import org.zalando.logbook.servlet.FormRequestMode;
 import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
@@ -160,9 +156,10 @@ public class LogbookConfiguration {
 	}
 
 	/**
-	 * Replaces the servlet filters that Logbook would otherwise register, so that payload logging never copies binary,
-	 * attachment or oversized bodies into memory. The bean names and properties are Logbook's own, so
-	 * {@code logbook.filter.enabled} and {@code logbook.secure-filter.enabled} work as before.
+	 * Replaces the servlet filters that Logbook would otherwise register, so that payload logging never holds more of a
+	 * body in memory than {@code logbook.logs.maxBodySizeToCapture}. The bean names and enabling properties are Logbook's
+	 * own, so {@code logbook.filter.enabled} and {@code logbook.secure-filter.enabled} work as before. Logbook's form
+	 * request mode does not apply: form and multipart request bodies are never captured.
 	 */
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnWebApplication(type = SERVLET)
@@ -175,29 +172,16 @@ public class LogbookConfiguration {
 		@Bean(FILTER_NAME)
 		@ConditionalOnProperty(name = "logbook.filter.enabled", havingValue = "true", matchIfMissing = true)
 		@ConditionalOnMissingBean(name = FILTER_NAME)
-		FilterRegistrationBean<LogbookServletFilter> logbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy,
-			final ObjectProvider<LogbookProperties> properties, final ObjectProvider<AsyncOnCompleteListenerWrapper> listenerWrapper) {
-
-			final var formRequestMode = Optional.ofNullable(properties.getIfAvailable())
-				.map(logbookProperties -> logbookProperties.getFilter().getFormRequestMode())
-				.orElseGet(FormRequestMode::fromProperties);
-
-			final var logbookFilter = new LogbookFilter(logbook)
-				.withFormRequestMode(formRequestMode)
-				.withAsyncOnCompleteListenerWrapper(listenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
-
-			return registration(new LogbookServletFilter(logbookFilter, bodyCapturePolicy), FILTER_NAME, Ordered.LOWEST_PRECEDENCE);
+		FilterRegistrationBean<LogbookServletFilter> logbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
+			return registration(new LogbookServletFilter(logbook, bodyCapturePolicy), FILTER_NAME, Ordered.LOWEST_PRECEDENCE);
 		}
 
 		@Bean(SECURE_FILTER_NAME)
 		@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 		@ConditionalOnProperty(name = "logbook.secure-filter.enabled", havingValue = "true", matchIfMissing = true)
 		@ConditionalOnMissingBean(name = SECURE_FILTER_NAME)
-		FilterRegistrationBean<LogbookFilter> secureLogbookFilter(final Logbook logbook, final ObjectProvider<AsyncOnCompleteListenerWrapper> listenerWrapper) {
-
-			final var secureLogbookFilter = new LogbookFilter(logbook, new BodylessSecurityStrategy())
-				.withAsyncOnCompleteListenerWrapper(listenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
-
+		FilterRegistrationBean<LogbookServletFilter> secureLogbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
+			final var secureLogbookFilter = new LogbookServletFilter(logbook, bodyCapturePolicy, new BodylessSecurityStrategy());
 			return registration(secureLogbookFilter, SECURE_FILTER_NAME, Ordered.HIGHEST_PRECEDENCE + 1);
 		}
 

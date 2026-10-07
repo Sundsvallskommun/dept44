@@ -111,11 +111,9 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 		// Re-check them against that class when upgrading Spring Security.
 		final var restClient = RestClient.builder()
 			.requestFactory(requestFactory)
-			.messageConverters(converters -> {
-				converters.clear();
-				converters.add(new FormHttpMessageConverter());
-				converters.add(new OAuth2AccessTokenResponseHttpMessageConverter());
-			})
+			.configureMessageConverters(converters -> converters
+				.addCustomConverter(new FormHttpMessageConverter())
+				.addCustomConverter(new OAuth2AccessTokenResponseHttpMessageConverter()))
 			.defaultStatusHandler(new OAuth2ErrorResponseErrorHandler())
 			.build();
 

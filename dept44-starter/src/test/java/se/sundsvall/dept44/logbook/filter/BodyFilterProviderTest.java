@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.zalando.logbook.BodyFilter;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.test.annotation.resource.Load;
 import se.sundsvall.dept44.test.extension.ResourceLoaderExtension;
 
@@ -60,6 +61,42 @@ class BodyFilterProviderTest {
 	@Test
 	void testPasswordFilter() {
 		assertThat(BodyFilterProvider.passwordFilter()).isNotNull();
+	}
+
+	@Test
+	void testOversizedBodyFilter() {
+		final var filter = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(5));
+
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "12345")).isEqualTo("12345");
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}");
+		assertThat(filter.filter("application/problem+json", "123456")).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}");
+		assertThat(filter.filter(TEXT_XML.toString(), "123456")).isEqualTo("<body omitted: larger than 5 bytes>");
+		assertThat(filter.filter(null, "123456")).isEqualTo("<body omitted: larger than 5 bytes>");
+	}
+
+	@Test
+	void testOversizedJsonBodyPassesJsonPathFilters() {
+		final var oversized = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(5));
+		final var jsonPath = BodyFilterProvider.buildJsonPathFilters(new ObjectMapper(), Map.of("$..content", "[base64]")).getFirst();
+
+		final var result = jsonPath.filter(APPLICATION_JSON.toString(), oversized.filter(APPLICATION_JSON.toString(), "{\"content\":\"abcdef\"}"));
+
+		assertThat(result).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}");
+	}
+
+	@Test
+	void testJsonPathFilterNeverLogsInvalidJsonUnmasked() {
+		final var jsonPath = BodyFilterProvider.buildJsonPathFilters(new ObjectMapper(), Map.of("$..secret", "***")).getFirst();
+
+		assertThat(jsonPath.filter(APPLICATION_JSON.toString(), "{\"secret\":\"abc\", trunc"))
+			.isEqualTo("<body omitted: not valid JSON, so json-path filters could not be applied>");
+	}
+
+	@Test
+	void testOversizedBodyFilterWithoutLimit() {
+		final var filter = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(-1));
+
+		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("123456");
 	}
 
 	@Test

@@ -59,8 +59,9 @@ public @interface WireMockAppTestSuite {
 	 * <p>
 	 * A class sharing its context also shares the state the application keeps between tests, such as caches, open
 	 * circuit breakers, busy thread pools and scheduled jobs, with the classes run before it in the same JVM. A class
-	 * that changes such state must restore it, or not share its context. Classes sharing a context must not run in
-	 * parallel with each other.
+	 * that changes such state must restore it, or not share its context. A class that relies on the state the
+	 * application starts with, such as one checking the health of every circuit breaker, must not share its context.
+	 * Classes sharing a context must not run in parallel with each other.
 	 *
 	 * @return true to share the application context, false for one of its own.
 	 */

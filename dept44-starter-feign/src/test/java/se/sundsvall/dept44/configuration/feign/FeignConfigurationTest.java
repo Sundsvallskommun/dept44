@@ -62,7 +62,7 @@ class FeignConfigurationTest {
 
 	@Test
 	void testMethodAnnotations() {
-		final var methodsToTest = List.of("logLevel", "logbookLogger", "okHttpClient", "feignEncoder", "feignDecoder", "queryMapEncoder", "jacksonFeignConverter", "binaryContentConverter");
+		final var methodsToTest = List.of("logLevel", "okHttpClient", "feignEncoder", "feignDecoder", "queryMapEncoder", "jacksonFeignConverter", "binaryContentConverter");
 		for (final Method method : configuration.getClass().getDeclaredMethods()) {
 			if (methodsToTest.contains(method.getName())) {
 				verifyMethodAnnotations(method);
@@ -75,10 +75,6 @@ class FeignConfigurationTest {
 		switch (method.getName()) {
 			case "logLevel", "feignEncoder", "feignDecoder", "queryMapEncoder", "jacksonFeignConverter", "binaryContentConverter" -> {
 				assertFalse(method.isAnnotationPresent(ConditionalOnBean.class));
-			}
-			case "logbookLogger" -> {
-				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));
-				assertThat(method.getAnnotation(ConditionalOnBean.class).value()).containsExactly(Logbook.class);
 			}
 			case "okHttpClient" -> {
 				assertTrue(method.isAnnotationPresent(ConditionalOnBean.class));

@@ -1,0 +1,159 @@
+package se.sundsvall.dept44.configuration.feign.logbook;
+
+import feign.Logger;
+import feign.Request;
+import feign.Response;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.SequenceInputStream;
+import java.io.UncheckedIOException;
+import java.util.Collection;
+import java.util.Optional;
+import org.zalando.logbook.Logbook;
+import org.zalando.logbook.Logbook.ResponseProcessingStage;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
+
+import static feign.Util.ensureClosed;
+import static java.lang.Math.min;
+import static java.lang.Math.toIntExact;
+import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+
+/**
+ * Feign logger that hands requests and responses to Logbook, like Logbook's own {@code FeignLogbookLogger}, without
+ * reading response bodies into memory that payload logging will not capture.
+ * <p>
+ * Logbook's logger reads every response body into a byte array before the response is decoded, so a file fetched
+ * through Feign is held in memory once more than the client itself needs, and a client returning {@link Response}
+ * cannot stream. This logger reads the body only for error responses, which error decoders may read more than once, and
+ * for textual bodies within the size that the {@link BodyCapturePolicy} allows. Any other response is logged without
+ * its body and handed on with its body untouched.
+ */
+public class BodyCaptureFeignLogger extends Logger {
+
+	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+	private final Logbook logbook;
+	private final BodyCapturePolicy policy;
+
+	// Feign is blocking, so a request and its response are handled on the same thread
+	private final ThreadLocal<ResponseProcessingStage> stage = new ThreadLocal<>();
+
+	public BodyCaptureFeignLogger(final Logbook logbook, final BodyCapturePolicy policy) {
+		this.logbook = logbook;
+		this.policy = policy;
+	}
+
+	@Override
+	protected void log(final String configKey, final String format, final Object... args) {
+		// Logging is delegated to Logbook
+	}
+
+	@Override
+	protected void logRetry(final String configKey, final Level logLevel) {
+		// Logging is delegated to Logbook
+	}
+
+	@Override
+	protected IOException logIOException(final String configKey, final Level logLevel, final IOException ioe, final long elapsedTime) {
+		stage.remove();
+		return ioe;
+	}
+
+	@Override
+	protected void logRequest(final String configKey, final Level logLevel, final Request request) {
+		try {
+			stage.set(logbook.process(FeignLogbookRequest.create(request)).write());
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	protected Response logAndRebufferResponse(final String configKey, final Level logLevel, final Response response, final long elapsedTime) throws IOException {
+		final var processingStage = stage.get();
+		stage.remove();
+
+		if (processingStage == null) {
+			return response;
+		}
+		if (response.body() == null) {
+			write(processingStage, response, null);
+			return response;
+		}
+		if (isError(response)) {
+			return rebuffer(processingStage, response);
+		}
+		if (!policy.allowsCapture(contentType(response), response.headers().get(CONTENT_DISPOSITION), length(response))) {
+			write(processingStage, response, null);
+			return response;
+		}
+		return rebufferWithinLimit(processingStage, response);
+	}
+
+	private Response rebuffer(final ResponseProcessingStage processingStage, final Response response) throws IOException {
+		final byte[] body;
+		try (final var input = response.body().asInputStream()) {
+			body = input.readAllBytes();
+		} finally {
+			ensureClosed(response.body());
+		}
+
+		write(processingStage, response, body);
+		return response.toBuilder().body(body).build();
+	}
+
+	/**
+	 * Reads at most the allowed size plus one byte. A body that fits is logged and handed on as a byte array. A body
+	 * that turns out to be larger is logged without its body and handed on as a stream, starting with the bytes already
+	 * read.
+	 */
+	private Response rebufferWithinLimit(final ResponseProcessingStage processingStage, final Response response) throws IOException {
+		if (!policy.isLimited()) {
+			return rebuffer(processingStage, response);
+		}
+
+		final var input = response.body().asInputStream();
+		final byte[] head;
+		try {
+			head = input.readNBytes(toIntExact(min(policy.getMaxBodySize() + 1, MAX_ARRAY_SIZE)));
+		} catch (final IOException | RuntimeException e) {
+			ensureClosed(input);
+			ensureClosed(response.body());
+			throw e;
+		}
+
+		if (!policy.exceedsLimit(head.length)) {
+			ensureClosed(input);
+			ensureClosed(response.body());
+			write(processingStage, response, head);
+			return response.toBuilder().body(head).build();
+		}
+
+		write(processingStage, response, null);
+		return response.toBuilder()
+			.body(new SequenceInputStream(new ByteArrayInputStream(head), input), response.body().length())
+			.build();
+	}
+
+	private static void write(final ResponseProcessingStage processingStage, final Response response, final byte[] body) throws IOException {
+		processingStage.process(FeignLogbookResponse.create(response, body)).write();
+	}
+
+	private static boolean isError(final Response response) {
+		return response.status() < 200 || response.status() >= 300;
+	}
+
+	private static String contentType(final Response response) {
+		return Optional.ofNullable(response.headers().get(CONTENT_TYPE)).stream()
+			.flatMap(Collection::stream)
+			.findFirst()
+			.orElse(null);
+	}
+
+	private static long length(final Response response) {
+		return Optional.ofNullable(response.body().length())
+			.map(Integer::longValue)
+			.orElse(-1L);
+	}
+}

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -56,8 +57,16 @@ class TempFileBodyTest {
 		final var file = TempFileBody.createFile(null);
 		try {
 			assertThat(file.getFileName().toString()).startsWith("dept44-feign-error-");
+			assertThat(Files.getPosixFilePermissions(file)).isEqualTo(PosixFilePermissions.fromString("rw-------"));
 		} finally {
 			Files.deleteIfExists(file);
 		}
+	}
+
+	@Test
+	void fileIsOwnerOnly() throws IOException {
+		final var file = TempFileBody.createFile(directory);
+
+		assertThat(Files.getPosixFilePermissions(file)).isEqualTo(PosixFilePermissions.fromString("rw-------"));
 	}
 }

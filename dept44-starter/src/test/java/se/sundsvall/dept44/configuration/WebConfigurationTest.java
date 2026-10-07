@@ -377,9 +377,9 @@ class WebConfigurationTest {
 			disableBrowserCacheFilter.doFilterInternal(httpServletRequestMock, httpServletResponseMock, filterChainMock);
 
 			verify(filterChainMock).doFilter(httpServletRequestMock, httpServletResponseMock);
-			verify(httpServletResponseMock).addHeader(HttpHeaders.CACHE_CONTROL, "no-store");
-			verify(httpServletResponseMock).addIntHeader(HttpHeaders.EXPIRES, 0);
-			verify(httpServletResponseMock).addHeader(HttpHeaders.PRAGMA, "no-cache");
+			verify(httpServletResponseMock).setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+			verify(httpServletResponseMock).setIntHeader(HttpHeaders.EXPIRES, 0);
+			verify(httpServletResponseMock).setHeader(HttpHeaders.PRAGMA, "no-cache");
 			verifyNoMoreInteractions(filterChainMock, httpServletResponseMock);
 		}
 	}

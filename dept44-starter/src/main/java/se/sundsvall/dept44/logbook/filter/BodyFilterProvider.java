@@ -2,6 +2,7 @@ package se.sundsvall.dept44.logbook.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
@@ -78,11 +79,28 @@ public final class BodyFilterProvider {
 
 		return jsonPathFilters.entrySet()
 			.stream()
-			.map(filter -> merge(defaultValue(), (contentType, body) -> applyJsonPathFilter(jsonPathConfiguration, filter, contentType, body)))
+			.map(filter -> jsonPathFilter(jsonPathConfiguration, compileJsonPath(filter.getKey()), filter.getValue()))
 			.toList();
 	}
 
-	private static String applyJsonPathFilter(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String contentType, final String body) {
+	/**
+	 * Compiled once, when the filters are built, so that a path with a syntax error stops the application from starting.
+	 * Compiled per body, it would fail on every JSON body instead, and those bodies would be logged as if they were not
+	 * valid JSON.
+	 */
+	private static JsonPath compileJsonPath(final String path) {
+		try {
+			return JsonPath.compile(path);
+		} catch (final InvalidPathException | IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid json-path '%s' in logbook.body-filters.json-path: %s".formatted(path, e.getMessage()), e);
+		}
+	}
+
+	private static BodyFilter jsonPathFilter(final Configuration jsonPathConfiguration, final JsonPath path, final String replacement) {
+		return merge(defaultValue(), (contentType, body) -> applyJsonPathFilter(jsonPathConfiguration, path, replacement, contentType, body));
+	}
+
+	private static String applyJsonPathFilter(final Configuration jsonPathConfiguration, final JsonPath path, final String replacement, final String contentType, final String body) {
 		if (anyNull(contentType, body)) {
 			return body;
 		}
@@ -97,7 +115,7 @@ public final class BodyFilterProvider {
 		}
 
 		try {
-			return maskJsonPath(jsonPathConfiguration, filter, body);
+			return maskJsonPath(jsonPathConfiguration, path, replacement, body);
 		} catch (final RuntimeException e) {
 			// Never fall back to the unfiltered body: it holds exactly the fields these filters exist to mask
 			LOGGER.debug("Could not apply json-path filter to a body that is not valid JSON ({})", e.getMessage());
@@ -105,11 +123,11 @@ public final class BodyFilterProvider {
 		}
 	}
 
-	private static String maskJsonPath(final Configuration jsonPathConfiguration, final Map.Entry<String, String> filter, final String body) {
+	private static String maskJsonPath(final Configuration jsonPathConfiguration, final JsonPath path, final String replacement, final String body) {
 		final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-		final var value = documentContext.read(filter.getKey());
+		final Object value = documentContext.read(path);
 		if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-			documentContext.set(filter.getKey(), filter.getValue());
+			documentContext.set(path, replacement);
 		}
 
 		return documentContext.jsonString();

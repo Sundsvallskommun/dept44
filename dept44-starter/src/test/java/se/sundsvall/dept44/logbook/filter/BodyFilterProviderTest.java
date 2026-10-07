@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.logbook.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.xml.XMLConstants;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -31,6 +34,7 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_XHTML_XML;
 import static org.apache.hc.core5.http.ContentType.APPLICATION_XML;
 import static org.apache.hc.core5.http.ContentType.TEXT_XML;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -97,6 +101,21 @@ class BodyFilterProviderTest {
 		final var filter = BodyFilterProvider.oversizedBodyFilter(new BodyCapturePolicy(-1));
 
 		assertThat(filter.filter(APPLICATION_JSON.toString(), "123456")).isEqualTo("123456");
+	}
+
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"$.user[ssn]", "$.user.", ""
+	})
+	void testBuildJsonPathFiltersRejectsInvalidPath(final String path) {
+		final var jsonPathFilters = new HashMap<String, String>();
+		jsonPathFilters.put(path, "***");
+		final var objectMapper = new ObjectMapper();
+
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> BodyFilterProvider.buildJsonPathFilters(objectMapper, jsonPathFilters))
+			.withMessageStartingWith("Invalid json-path '%s' in logbook.body-filters.json-path: ".formatted(path));
 	}
 
 	@Test

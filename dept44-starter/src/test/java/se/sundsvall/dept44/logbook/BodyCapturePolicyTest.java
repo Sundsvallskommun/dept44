@@ -77,6 +77,12 @@ class BodyCapturePolicyTest {
 	}
 
 	@Test
+	void readLimit() {
+		assertThat(policy.readLimit()).isEqualTo(101);
+		assertThat(new BodyCapturePolicy(Long.MAX_VALUE - 1).readLimit()).isEqualTo(Integer.MAX_VALUE - 8);
+	}
+
+	@Test
 	void noLimit() {
 		final var unlimited = new BodyCapturePolicy(-1);
 

@@ -14,8 +14,6 @@ import org.zalando.logbook.Logbook.ResponseProcessingStage;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static feign.Util.ensureClosed;
-import static java.lang.Math.min;
-import static java.lang.Math.toIntExact;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 
@@ -30,8 +28,6 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
  * its body and handed on with its body untouched.
  */
 public class BodyCaptureFeignLogger extends Logger {
-
-	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
 	private final Logbook logbook;
 	private final BodyCapturePolicy policy;
@@ -116,7 +112,7 @@ public class BodyCaptureFeignLogger extends Logger {
 		final var input = response.body().asInputStream();
 		final byte[] head;
 		try {
-			head = input.readNBytes(toIntExact(min(policy.getMaxBodySize() + 1, MAX_ARRAY_SIZE)));
+			head = input.readNBytes(policy.readLimit());
 		} catch (final IOException | RuntimeException e) {
 			ensureClosed(input);
 			ensureClosed(response.body());

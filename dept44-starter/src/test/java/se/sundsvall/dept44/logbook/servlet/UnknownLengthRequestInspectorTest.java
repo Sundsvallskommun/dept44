@@ -9,7 +9,7 @@ import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.TRANSFER_ENCODING;
-import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.OVERSIZED_REQUEST_ATTRIBUTE;
+import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.SKIP_BODY_CAPTURE_ATTRIBUTE;
 
 class UnknownLengthRequestInspectorTest {
 
@@ -41,12 +41,22 @@ class UnknownLengthRequestInspectorTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"application/x-www-form-urlencoded", "multipart/form-data; boundary=abc", "application/pdf", "not a media type"
+		"application/x-www-form-urlencoded", "multipart/form-data; boundary=abc", "application/pdf"
 	})
 	void bodiesThatAreNotCapturedAreLeftAlone(final String contentType) throws Exception {
 		final var request = unknownLengthRequest(contentType, "0123456789");
 
 		assertThat(UnknownLengthRequestInspector.inspect(request, policy)).isSameAs(request);
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isNull();
+	}
+
+	@Test
+	void unparsableContentTypeIsNotReadButMarkedToSkip() throws Exception {
+		final var request = unknownLengthRequest("not a media type", "0123456789");
+
+		assertThat(UnknownLengthRequestInspector.inspect(request, policy)).isSameAs(request);
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
+		assertThat(request.getInputStream().readAllBytes()).isEqualTo("0123456789".getBytes(UTF_8));
 	}
 
 	@Test
@@ -57,7 +67,7 @@ class UnknownLengthRequestInspectorTest {
 
 		assertThat(inspected).isNotSameAs(request);
 		assertThat(inspected.getInputStream().readAllBytes()).isEqualTo("0123456789".getBytes(UTF_8));
-		assertThat(request.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
 	}
 
 	@Test
@@ -67,7 +77,7 @@ class UnknownLengthRequestInspectorTest {
 		final var inspected = UnknownLengthRequestInspector.inspect(request, policy);
 
 		assertThat(inspected.getInputStream().readAllBytes()).isEqualTo("01234".getBytes(UTF_8));
-		assertThat(request.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).isNull();
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isNull();
 	}
 
 	@Test
@@ -78,7 +88,7 @@ class UnknownLengthRequestInspectorTest {
 
 		UnknownLengthRequestInspector.inspect(request, policy);
 
-		assertThat(request.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
 	}
 
 	private static MockHttpServletRequest unknownLengthRequest(final String contentType, final String content) {

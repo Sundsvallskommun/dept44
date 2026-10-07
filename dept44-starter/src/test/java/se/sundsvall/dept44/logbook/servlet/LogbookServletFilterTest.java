@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
 import static org.springframework.http.HttpHeaders.TRANSFER_ENCODING;
-import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.OVERSIZED_REQUEST_ATTRIBUTE;
+import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.SKIP_BODY_CAPTURE_ATTRIBUTE;
 
 /**
  * Runs the real Logbook servlet filter. A body that is not captured shows up as an empty body in the sink, because
@@ -83,7 +83,7 @@ class LogbookServletFilterTest {
 
 		assertThat(received.get()).isEqualTo(body(LIMIT * 3));
 		assertThat(sink.requestBody).isEmpty();
-		assertThat(request.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isEqualTo(Boolean.TRUE);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ class LogbookServletFilterTest {
 
 		assertThat(received.get()).isEqualTo(body(LIMIT));
 		assertThat(sink.requestBody).isEqualTo(text(LIMIT));
-		assertThat(request.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).isNull();
+		assertThat(request.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).isNull();
 	}
 
 	@Test

@@ -16,9 +16,10 @@ import org.zalando.logbook.Strategy;
 public final class BodyCaptureStrategy implements Strategy {
 
 	/**
-	 * Request attribute set when a request of unknown length turned out to be larger than the policy allows.
+	 * Request attribute set when the body of a request of unknown length must not be captured: it turned out to be larger
+	 * than the policy allows, or its content type could not be parsed so its size could not be safely measured.
 	 */
-	public static final String OVERSIZED_REQUEST_ATTRIBUTE = BodyCaptureStrategy.class.getName() + ".OVERSIZED_REQUEST";
+	public static final String SKIP_BODY_CAPTURE_ATTRIBUTE = BodyCaptureStrategy.class.getName() + ".SKIP_BODY_CAPTURE";
 
 	private final BodyCapturePolicy policy;
 
@@ -28,7 +29,7 @@ public final class BodyCaptureStrategy implements Strategy {
 
 	@Override
 	public HttpRequest process(final HttpRequest request) throws IOException {
-		if (isMarkedOversized(request) || !allowsCapture(request)) {
+		if (isMarkedToSkip(request) || !allowsCapture(request)) {
 			return request.withoutBody();
 		}
 		return request.withBody();
@@ -56,7 +57,7 @@ public final class BodyCaptureStrategy implements Strategy {
 		}
 	}
 
-	private static boolean isMarkedOversized(final HttpRequest request) {
-		return request instanceof final ServletRequest servletRequest && servletRequest.getAttribute(OVERSIZED_REQUEST_ATTRIBUTE) != null;
+	private static boolean isMarkedToSkip(final HttpRequest request) {
+		return request instanceof final ServletRequest servletRequest && servletRequest.getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE) != null;
 	}
 }

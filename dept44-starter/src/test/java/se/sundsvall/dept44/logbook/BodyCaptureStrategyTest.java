@@ -14,7 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
-import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.OVERSIZED_REQUEST_ATTRIBUTE;
+import static se.sundsvall.dept44.logbook.BodyCaptureStrategy.SKIP_BODY_CAPTURE_ATTRIBUTE;
 
 class BodyCaptureStrategyTest {
 
@@ -54,7 +54,7 @@ class BodyCaptureStrategyTest {
 		final var request = mock(HttpRequest.class, withSettings().extraInterfaces(ServletRequest.class));
 		when(request.getHeaders()).thenReturn(HttpHeaders.empty());
 		when(request.getContentType()).thenReturn("application/json");
-		when(((ServletRequest) request).getAttribute(OVERSIZED_REQUEST_ATTRIBUTE)).thenReturn(Boolean.TRUE);
+		when(((ServletRequest) request).getAttribute(SKIP_BODY_CAPTURE_ATTRIBUTE)).thenReturn(Boolean.TRUE);
 		when(request.withoutBody()).thenReturn(request);
 
 		strategy.process(request);

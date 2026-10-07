@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.http.MediaType;
 import org.zalando.logbook.HttpMessage;
 
+import static java.lang.Math.min;
+import static java.lang.Math.toIntExact;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
 
@@ -35,6 +37,7 @@ public final class BodyCapturePolicy {
 
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
+	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
 	private final long maxBodySize;
 
@@ -55,6 +58,14 @@ public final class BodyCapturePolicy {
 
 	public boolean exceedsLimit(final long size) {
 		return isLimited() && size > maxBodySize;
+	}
+
+	/**
+	 * The number of bytes to read from a body of unknown length to find out whether it exceeds the limit: the limit plus
+	 * one, capped at the largest possible array. Only meaningful when {@link #isLimited()}.
+	 */
+	public int readLimit() {
+		return toIntExact(min(maxBodySize + 1, MAX_ARRAY_SIZE));
 	}
 
 	/**

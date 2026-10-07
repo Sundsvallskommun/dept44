@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -47,6 +48,7 @@ import static org.zalando.logbook.json.JsonBodyFilters.replaceJsonStringProperty
 public final class BodyFilterProvider {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BodyFilterProvider.class);
+	private static final String INVALID_JSON_REPLACEMENT = "<body omitted: not valid JSON, so json-path filters could not be applied>";
 
 	private BodyFilterProvider() {}
 
@@ -58,15 +60,26 @@ public final class BodyFilterProvider {
 	 * Replaces a body larger than the policy allows with a short note, so that no later filter or the log formatter has
 	 * to process it. Bodies can only get here oversized when their length was unknown when capturing started, such as a
 	 * JSON response written without a Content-Length.
+	 * <p>
+	 * For a JSON body the note is itself JSON, so that json-path filters can still process it.
 	 */
 	public static BodyFilter oversizedBodyFilter(final BodyCapturePolicy policy) {
-		final var replacement = "<body omitted: larger than " + policy.getMaxBodySize() + " bytes>";
+		final var note = "larger than " + policy.getMaxBodySize() + " bytes";
+		final var jsonReplacement = "{\"bodyOmitted\":\"" + note + "\"}";
+		final var textReplacement = "<body omitted: " + note + ">";
 		return (contentType, body) -> {
-			if (policy.exceedsLimit(body.length())) {
-				return replacement;
+			if (!policy.exceedsLimit(body.length())) {
+				return body;
 			}
-			return body;
+			if (isJson(contentType)) {
+				return jsonReplacement;
+			}
+			return textReplacement;
 		};
+	}
+
+	private static boolean isJson(final String contentType) {
+		return contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json");
 	}
 
 	public static List<BodyFilter> buildJsonPathFilters(final ObjectMapper objectMapper, final Map<String, String> jsonPathFilters) {
@@ -92,13 +105,19 @@ public final class BodyFilterProvider {
 				final var parsedContentType = ContentType.parse(contentType);
 
 				if (parsedContentType != null && parsedContentType.getMimeType().equals(APPLICATION_JSON.getMimeType())) {
-					final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
-					final var value = documentContext.read(filter.getKey());
-					if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
-						documentContext.set(filter.getKey(), filter.getValue());
-					}
+					try {
+						final var documentContext = JsonPath.using(jsonPathConfiguration).parse(body);
+						final var value = documentContext.read(filter.getKey());
+						if (value instanceof final Collection<?> valueAsCollection && !valueAsCollection.isEmpty()) {
+							documentContext.set(filter.getKey(), filter.getValue());
+						}
 
-					return documentContext.jsonString();
+						return documentContext.jsonString();
+					} catch (final RuntimeException e) {
+						// Never fall back to the unfiltered body: it holds exactly the fields these filters exist to mask
+						LOGGER.debug("Could not apply json-path filter to a body that is not valid JSON ({})", e.getMessage());
+						return INVALID_JSON_REPLACEMENT;
+					}
 				}
 
 				return body;

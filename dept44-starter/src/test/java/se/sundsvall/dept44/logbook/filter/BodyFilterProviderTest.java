@@ -1,5 +1,9 @@
 package se.sundsvall.dept44.logbook.filter;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +30,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.zalando.logbook.BodyFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.test.annotation.resource.Load;
@@ -38,6 +43,7 @@ import static org.apache.hc.core5.http.ContentType.APPLICATION_XML;
 import static org.apache.hc.core5.http.ContentType.TEXT_XML;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -123,7 +129,16 @@ class BodyFilterProviderTest {
 
 	@Test
 	void testBuildJsonPathFilters() {
-		assertThat(BodyFilterProvider.buildJsonPathFilters(objectMapperSpy, Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
+		final var filters = BodyFilterProvider.buildJsonPathFilters(new ObjectMapper(), Map.of("$.a", "1", "$.b", "2"));
+
+		assertThat(filters).hasSize(1);
+		assertThat(filters.getFirst().filter(APPLICATION_JSON.toString(), "{\"a\":\"x\",\"b\":\"y\",\"c\":\"z\"}"))
+			.isEqualTo("{\"a\":\"1\",\"b\":\"2\",\"c\":\"z\"}");
+	}
+
+	@Test
+	void testBuildJsonPathFiltersWithoutPaths() {
+		assertThat(BodyFilterProvider.buildJsonPathFilters(objectMapperSpy, Map.of())).isEmpty();
 	}
 
 	@Test
@@ -153,7 +168,8 @@ class BodyFilterProviderTest {
 	@ParameterizedTest
 	@NullSource
 	@ValueSource(strings = {
-		"//[", "count((", "", "count(//secret)", "string(//secret)", "normalize-space(//secret)", "//secret = 'x'", "$undeclared"
+		"//[", "count((", "", "count(//secret)", "string(//secret)", "normalize-space(//secret)", "//secret = 'x'", "$undeclared", "//secret[$v]",
+		"//ns:personnummer", "//ns:*", "//a/@xml:lang"
 	})
 	void testBuildXPathFiltersRejectsInvalidExpression(final String xPath) {
 		final var xPathFilters = new HashMap<String, String>();
@@ -175,12 +191,81 @@ class BodyFilterProviderTest {
 			.isEqualTo("<body omitted: not valid XML, so xpath filters could not be applied>");
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"//ns:personnummer", "//a/@xml:lang"
+	})
+	void testBuildXPathFiltersExplainsNamespacePrefixes(final String xPath) {
+		final var xPathFilters = Map.of(xPath, "***");
+
+		assertThatIllegalArgumentException()
+			.isThrownBy(() -> BodyFilterProvider.buildXPathFilters(xPathFilters))
+			.withMessageContaining("cannot be used, as bodies are parsed without namespaces")
+			.withMessageContaining("//*[local-name()='name']");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"//secret[@kind='$x']", "//secret[@kind=\"c:$d\"]", "child::secret"
+	})
+	void testBuildXPathFiltersAcceptsDollarAndColonInLiteralsAndAxes(final String xPath) {
+		final var xPathFilters = Map.of(xPath, "***");
+
+		assertThatNoException().isThrownBy(() -> BodyFilterProvider.buildXPathFilters(xPathFilters));
+	}
+
 	@Test
-	void testXPathFilterNeverLogsXmlWithUnknownCharsetUnmasked() {
+	void testXPathFilterMasksXmlWithUnknownCharset() {
 		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
 
 		assertThat(xPath.filter("text/xml; charset=unknown-charset", "<a><secret>abc</secret></a>"))
-			.isEqualTo("<body omitted: not valid XML, so xpath filters could not be applied>");
+			.isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><a><secret>***</secret></a>");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"<a><secret>abc</secret><city>Östersund</city></a>",
+		"<?xml version=\"1.0\" encoding=\"UTF-8\"?><a><secret>abc</secret><city>Östersund</city></a>",
+		"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><a><secret>abc</secret><city>Östersund</city></a>"
+	})
+	void testXPathFilterMasksNonAsciiXmlWhateverItsDeclaredEncoding(final String body) {
+		final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+		assertThat(xPath.filter("text/xml; charset=ISO-8859-1", body)).endsWith("<a><secret>***</secret><city>Östersund</city></a>");
+	}
+
+	@Test
+	void testXPathFilterWarnsOnceWhenItCannotWork() throws Exception {
+		final var logger = (Logger) LoggerFactory.getLogger(BodyFilterProvider.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		final var originalLevel = logger.getLevel();
+		logger.setLevel(Level.DEBUG);
+		when(transformerFactorySpy.newTransformer()).thenThrow(new TransformerConfigurationException("test"));
+
+		try (MockedStatic<TransformerFactory> transformerFactoryMock = Mockito.mockStatic(TransformerFactory.class)) {
+			transformerFactoryMock.when(TransformerFactory::newInstance).thenReturn(transformerFactorySpy);
+			final var xPath = BodyFilterProvider.buildXPathFilters(Map.of("//secret/text()", "***")).getFirst();
+
+			assertThat(xPath.filter(TEXT_XML.toString(), "<a><secret>abc</secret></a>")).isEqualTo("<body omitted: xpath filters could not be applied>");
+			assertThat(xPath.filter(TEXT_XML.toString(), "<a><secret>abc</secret></a>")).isEqualTo("<body omitted: xpath filters could not be applied>");
+		} finally {
+			logger.detachAppender(appender);
+			logger.setLevel(originalLevel);
+		}
+
+		assertThat(appender.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.WARN, Level.DEBUG);
+	}
+
+	@Test
+	void testPrefixRecordingNamespaceContext() {
+		final var namespaceContext = new BodyFilterProvider.PrefixRecordingNamespaceContext();
+
+		assertThat(namespaceContext.getNamespaceURI("ns")).isNull();
+		assertThat(namespaceContext.requestedPrefix()).isEqualTo("ns");
+		assertThat(namespaceContext.getPrefix("urn:x")).isNull();
+		assertThat(namespaceContext.getPrefixes("urn:x")).isExhausted();
 	}
 
 	@ParameterizedTest
@@ -230,7 +315,15 @@ class BodyFilterProviderTest {
 
 	@Test
 	void testBuildXPathFilters() {
-		assertThat(BodyFilterProvider.buildXPathFilters(Map.of("key1", "value1", "key2", "value2"))).hasSize(2);
+		final var filters = BodyFilterProvider.buildXPathFilters(Map.of("//a/text()", "1", "//b/text()", "2"));
+
+		assertThat(filters).hasSize(1);
+		assertThat(filters.getFirst().filter(TEXT_XML.toString(), "<r><a>x</a><b>y</b><c>z</c></r>")).endsWith("<r><a>1</a><b>2</b><c>z</c></r>");
+	}
+
+	@Test
+	void testBuildXPathFiltersWithoutExpressions() {
+		assertThat(BodyFilterProvider.buildXPathFilters(Map.of())).isEmpty();
 	}
 
 	@Test
@@ -320,7 +413,7 @@ class BodyFilterProviderTest {
 	@MethodSource("argumentProvider")
 	void testBodyFilter(String contentType, String body, String expectedResult) {
 		final var xPath = "//replace[string-length(text()) > 0]";
-		final BodyFilter filter = BodyFilterProvider.xPath(xPath, "replacement");
+		final BodyFilter filter = BodyFilterProvider.buildXPathFilters(Map.of(xPath, "replacement")).getFirst();
 		assertThat(filter.filter(contentType, body)).isEqualTo(expectedResult);
 	}
 

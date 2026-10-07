@@ -7,6 +7,7 @@ import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
+import org.zalando.logbook.openfeign.FeignLogbookLogger;
 import se.sundsvall.dept44.configuration.feign.logbook.BodyCaptureFeignLogger;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
@@ -27,6 +28,18 @@ class FeignLogbookConfigurationTest {
 			assertThat(context).hasSingleBean(Logger.class);
 			assertThat(context.getBean(Logger.class)).isInstanceOf(BodyCaptureFeignLogger.class);
 		});
+	}
+
+	@Test
+	void leavesLogbookFeignLoggerInPlaceWithoutCapturePolicy() {
+		new ApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, FeignLogbookConfiguration.class, LogbookAutoConfiguration.class))
+			.withBean(Logbook.class, () -> mock(Logbook.class))
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				assertThat(context).hasSingleBean(Logger.class);
+				assertThat(context.getBean(Logger.class)).isInstanceOf(FeignLogbookLogger.class);
+			});
 	}
 
 	@Test

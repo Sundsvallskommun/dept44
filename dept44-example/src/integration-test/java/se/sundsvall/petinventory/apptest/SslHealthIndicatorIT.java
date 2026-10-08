@@ -1,29 +1,27 @@
 package se.sundsvall.petinventory.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-
 import se.sundsvall.petinventory.Application;
-
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
- * Integration test for the SSL health indicator, verifying that it correctly identifies expiring certificates and reports the appropriate health status and details.
- * As there are no integration-tests in the starter module we place this test in the petinventory module, which has the necessary dependencies and setup to run this test.
+ * Integration test for the SSL health indicator, verifying that it correctly identifies expiring certificates and
+ * reports the appropriate health status and details.
+ * As there are no integration-tests in the starter module we place this test in the petinventory module, which has the
+ * necessary dependencies and setup to run this test.
  */
 @ActiveProfiles("it")
 @WireMockAppTestSuite(files = "classpath:/PetInventoryIT/", classes = Application.class)
@@ -33,7 +31,8 @@ class SslHealthIndicatorIT extends AbstractAppTest {
 	private static final String PASSWORD = "changeit";
 	private static final String STORE_TYPE = "PKCS12";
 
-	// Create a self-signed certificate that is expiring in 1 days, which is within the configured warning threshold of 30 days.
+	// Create a self-signed certificate that is expiring in 1 days, which is within the configured warning threshold of 30
+	// days.
 	static {
 		try {
 			Files.createDirectories(KEYSTORE_PATH.getParent());
@@ -54,7 +53,7 @@ class SslHealthIndicatorIT extends AbstractAppTest {
 				.start();
 
 			final var exitCode = process.waitFor();
-			
+
 			if (exitCode != 0) {
 				final var output = new String(process.getInputStream().readAllBytes());
 				throw new RuntimeException("keytool failed with exitCode: " + exitCode + ", output: " + output);
@@ -77,7 +76,7 @@ class SslHealthIndicatorIT extends AbstractAppTest {
 		final var response = restTemplate.getForEntity("/actuator/health", String.class);
 		final var mapper = JsonMapper.builder().build();
 		final var root = mapper.readTree(response.getBody());
-		
+
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(root.path("status").asString()).isEqualTo("RESTRICTED");
 
@@ -92,7 +91,7 @@ class SslHealthIndicatorIT extends AbstractAppTest {
 		// Extract the certificate details and verify that it is valid but expiring soon
 		final var cert = expiringEntry.path("certificates").path(0);
 		assertThat(cert.path("validity").path("status").asString()).isEqualTo("VALID");
-		
+
 		// Validity is set to expire in one day, so it should be before now + 2 days (to allow for some clock skew)
 		assertThat(Instant.parse(cert.path("validityEnds").asString())).isBefore(Instant.now().plus(2, ChronoUnit.DAYS));
 	}

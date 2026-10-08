@@ -1,16 +1,5 @@
 package se.sundsvall.petinventory.apptest;
 
-import static org.springframework.http.HttpHeaders.LOCATION;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpMethod.POST;
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
-import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
-import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
-
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.io.IOException;
@@ -22,6 +11,17 @@ import org.springframework.test.context.jdbc.Sql;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.petinventory.Application;
+
+import static org.springframework.http.HttpHeaders.LOCATION;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
+import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
 
 /**
  * PetInventoryIT tests.

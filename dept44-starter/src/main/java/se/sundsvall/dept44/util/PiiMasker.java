@@ -66,9 +66,9 @@ public final class PiiMasker {
 	 * They are kept apart, rather than joined into one pattern, to keep each of them simple.
 	 */
 	private static final List<Pattern> PHONE_NUMBER_PATTERNS = List.of(
-		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}[ T]\\d{2}:\\d{2}(?::\\d{2})?(?:[.,]\\d+)?(?![-/.]?\\d)"),
-		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[.,]\\d+)?(?![-/.]?\\d)"),
-		Pattern.compile("(?<!\\d)\\d{2}[-/.]\\d{2}[-/.]\\d{4}(?: \\d{2}:\\d{2}(?::\\d{2})?)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d\\d[-/.]\\d\\d[ T]\\d\\d:\\d\\d(?::\\d\\d)?(?:[.,]\\d+)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d\\d[-/.]\\d\\d(?:[.,]\\d+)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d\\d[-/.]\\d\\d[-/.]\\d{4}(?: \\d\\d:\\d\\d(?::\\d\\d)?)?(?![-/.]?\\d)"),
 		phoneNumberPattern("(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}"),
 		phoneNumberPattern("0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2}"));
 

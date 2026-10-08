@@ -66,13 +66,17 @@ public final class PiiMasker {
 	 * They are kept apart, rather than joined into one pattern, to keep each of them simple.
 	 */
 	private static final List<Pattern> PHONE_NUMBER_PATTERNS = List.of(
-		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?(?:[.,]\\d+)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}[ T]\\d{2}:\\d{2}(?::\\d{2})?(?:[.,]\\d+)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[.,]\\d+)?(?![-/.]?\\d)"),
 		Pattern.compile("(?<!\\d)\\d{2}[-/.]\\d{2}[-/.]\\d{4}(?: \\d{2}:\\d{2}(?::\\d{2})?)?(?![-/.]?\\d)"),
 		phoneNumberPattern("(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}"),
 		phoneNumberPattern("0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2}"));
 
-	/** The number of patterns at the start of {@link #PHONE_NUMBER_PATTERNS} that find dates and times. */
-	private static final int DATE_TIME_PATTERNS = 2;
+	/**
+	 * The number of patterns at the start of {@link #PHONE_NUMBER_PATTERNS} that find dates and times. A date with a time
+	 * comes before the same date alone, so that the time is taken with it.
+	 */
+	private static final int DATE_TIME_PATTERNS = 3;
 
 	/** UUID in the canonical {@code 8-4-4-4-12} hexadecimal form, e.g. a {@code partyId}. */
 	private static final Pattern UUID_PATTERN = Pattern.compile("\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b");

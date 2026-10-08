@@ -1,10 +1,5 @@
 package se.sundsvall.petinventory.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -26,6 +21,11 @@ import se.sundsvall.dept44.scheduling.Dept44SchedulerAspect;
 import se.sundsvall.petinventory.service.scheduler.PetScheduler;
 import se.sundsvall.petinventory.service.scheduler.PetSchedulerWorker;
 import tools.jackson.databind.json.JsonMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = {
 	"scheduler.pet-scheduler.cron=* * * * * *", // Setup to execute every second
@@ -69,8 +69,7 @@ class PetSchedulerIT {
 			.extracting(ILoggingEvent::getFormattedMessage)
 			.containsExactly(
 				"Getting and processing pets",
-				"Finished getting and processing pets"
-			);
+				"Finished getting and processing pets");
 
 		// Verify the log messages from the aspect
 		assertThat(aspectAppender.list).hasSize(2)

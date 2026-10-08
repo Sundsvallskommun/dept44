@@ -1,5 +1,11 @@
 package se.sundsvall.petinventory.apptest;
 
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import se.sundsvall.dept44.test.AbstractAppTest;
+import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
+import se.sundsvall.petinventory.Application;
+
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -7,12 +13,6 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static se.sundsvall.dept44.requestid.RequestId.HEADER_NAME;
 import static se.sundsvall.petinventory.apptest.Constants.REG_EXP_VALID_UUID;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import se.sundsvall.dept44.test.AbstractAppTest;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
-import se.sundsvall.petinventory.Application;
 
 /**
  * EndpointsIT tests.

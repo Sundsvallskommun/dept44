@@ -1,7 +1,5 @@
 package se.sundsvall.petinventory.apptest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.io.IOException;
 import java.net.URI;
@@ -11,6 +9,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.context.ApplicationContext;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Assertions shared by the test classes that share their application context.

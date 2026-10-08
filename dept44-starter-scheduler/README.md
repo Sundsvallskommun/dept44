@@ -121,7 +121,8 @@ scheduler.scheduled-task.cron=0 0/5 * * * ?
 # Lock at most for 2 minutes
 schedulers.scheduled-task.shedlock-lock-at-most-for=PT2M
 # Optional: keep the lock for at least 1 minute, so that a pod whose trigger fires a little later cannot run the same
-# schedule again. It must not be longer than lock-at-most-for (two minutes unless set); raise that first if needed.
+# schedule again. It must not be longer than lock-at-most-for (two minutes unless set), or the application fails to
+# start; raise lock-at-most-for first if needed.
 schedulers.scheduled-task.shedlock-lock-at-least-for=PT1M
 # Limit execution time to 2 minutes; a run that takes longer marks the task as unhealthy, also while it is still running
 scheduler.scheduled-task.maximum-execution-time=PT2M

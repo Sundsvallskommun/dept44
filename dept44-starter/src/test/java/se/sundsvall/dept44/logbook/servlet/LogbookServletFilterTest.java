@@ -20,10 +20,14 @@ import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.HttpResponse;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.Logbook.RequestWritingStage;
+import org.zalando.logbook.Logbook.ResponseProcessingStage;
+import org.zalando.logbook.Logbook.ResponseWritingStage;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.RequestFilter;
 import org.zalando.logbook.ResponseFilter;
 import org.zalando.logbook.Sink;
+import org.zalando.logbook.Strategy;
 import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
@@ -300,6 +304,42 @@ class LogbookServletFilterTest {
 		assertThat(sink.responseStatus).isEqualTo(500);
 		assertThat(response.getStatus()).isEqualTo(200);
 		assertThat(response.isCommitted()).isFalse();
+	}
+
+	@Test
+	void failingLoggingDoesNotReplaceTheApplicationsException() {
+		// Logbook itself catches what its own stages throw, so this one fails directly when the response is written
+		final ResponseProcessingStage failingResponse = _ -> () -> {
+			throw new IllegalStateException("logging failed");
+		};
+		final var failingFilter = new LogbookServletFilter(new Logbook() {
+			@Override
+			public RequestWritingStage process(final HttpRequest request) {
+				return new RequestWritingStage() {
+					@Override
+					public ResponseProcessingStage write() {
+						return failingResponse;
+					}
+
+					@Override
+					public ResponseWritingStage process(final HttpResponse response) throws IOException {
+						return failingResponse.process(response);
+					}
+				};
+			}
+
+			@Override
+			public RequestWritingStage process(final HttpRequest request, final Strategy strategy) {
+				return process(request);
+			}
+		}, policy);
+		final var failure = new IllegalStateException("boom");
+
+		assertThatThrownBy(() -> failingFilter.doFilter(new MockHttpServletRequest("GET", "/fail"), new MockHttpServletResponse(), (req, res) -> {
+			throw failure;
+		}))
+			.isSameAs(failure)
+			.satisfies(e -> assertThat(e.getSuppressed()).extracting(Throwable::getMessage).containsExactly("logging failed"));
 	}
 
 	@Test

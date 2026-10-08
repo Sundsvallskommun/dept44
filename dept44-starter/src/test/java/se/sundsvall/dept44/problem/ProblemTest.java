@@ -94,6 +94,13 @@ class ProblemTest {
 			assertThat(Problem.badRequest("Size {0} exceeds {1}", 1234567, 1000).getDetail()).isEqualTo("Size 1234567 exceeds 1000");
 			assertThat(Problem.badGateway("It's {0}", (Object) null).getDetail()).isEqualTo("It's null");
 			assertThat(Problem.internalServerError("No parameters", (Object[]) null).getDetail()).isEqualTo("No parameters");
+			// No MessageFormat quoting and no format types: apostrophes and braces are kept, typed placeholders left as they are
+			assertThat(Problem.badRequest("Can't find '{0}'", "x").getDetail()).isEqualTo("Can't find 'x'");
+			assertThat(Problem.badRequest("Body {\"id\": {0}} rejected", 7).getDetail()).isEqualTo("Body {\"id\": 7} rejected");
+			assertThat(Problem.badRequest("Amount {0,number,#.##} too large", 12.5).getDetail()).isEqualTo("Amount {0,number,#.##} too large");
+			assertThat(Problem.badRequest("{1} without a second parameter", "first").getDetail()).isEqualTo("{1} without a second parameter");
+			assertThat(Problem.badRequest("Literal {", "unused").getDetail()).isEqualTo("Literal {");
+			assertThat(Problem.badRequest("Special $1 and \\ in {0}", "a $2 \\ b").getDetail()).isEqualTo("Special $1 and \\ in a $2 \\ b");
 		} finally {
 			Locale.setDefault(locale);
 		}

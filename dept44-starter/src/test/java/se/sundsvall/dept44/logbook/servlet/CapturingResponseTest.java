@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.logbook.servlet;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -171,6 +173,25 @@ class CapturingResponseTest {
 		rejected.getOutputStream().write("no".getBytes(UTF_8));
 
 		assertThat(rejected.getBody()).isEqualTo("no".getBytes(UTF_8));
+	}
+
+	@Test
+	void writerReportsAnErrorOfTheContainersWriter() throws IOException {
+		final var mock = new MockHttpServletResponse() {
+			@Override
+			public PrintWriter getWriter() {
+				// Such as after the client disconnected: the container's writer keeps the error instead of throwing it
+				return new PrintWriter(Writer.nullWriter()) {
+					@Override
+					public boolean checkError() {
+						return true;
+					}
+				};
+			}
+		};
+
+		assertThat(new CapturingResponse(mock, policy, "HTTP/1.1").getWriter().checkError()).isTrue();
+		assertThat(new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1").getWriter().checkError()).isFalse();
 	}
 
 	@Test

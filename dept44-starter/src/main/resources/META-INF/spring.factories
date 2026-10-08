@@ -1,2 +1,4 @@
 org.springframework.boot.EnvironmentPostProcessor=\
 se.sundsvall.dept44.configuration.Dept44DefaultPropertiesEnvironmentPostProcessor
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+se.sundsvall.dept44.configuration.Dept44AutoConfigurationImportFilter

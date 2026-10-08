@@ -98,7 +98,8 @@ public final class LogbookServletFilter implements Filter {
 		} catch (final IOException | ServletException | RuntimeException e) {
 			try {
 				writeFailed(request, response, writing);
-			} catch (final IOException suppressed) {
+			} catch (final IOException | RuntimeException suppressed) {
+				// A logging failure, such as one in a body filter or the sink, must not replace the application's exception
 				e.addSuppressed(suppressed);
 			}
 			throw e;

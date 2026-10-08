@@ -3,9 +3,6 @@ package se.sundsvall.dept44.problem;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URI;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
@@ -74,14 +71,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badRequest(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_REQUEST, formatDetail(detailPattern, parameters));
+		return valueOf(HttpStatus.BAD_REQUEST, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -105,14 +103,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem notFound(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.NOT_FOUND, formatDetail(detailPattern, parameters));
+		return valueOf(HttpStatus.NOT_FOUND, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -137,14 +136,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and a detail
-	 * message formatted from the given pattern and parameters.
+	 * message formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem internalServerError(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, formatDetail(detailPattern, parameters));
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -169,33 +169,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badGateway(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_GATEWAY, formatDetail(detailPattern, parameters));
-	}
-
-	/**
-	 * Formats a detail message with {@code {0}}, {@code {1}}, ... placeholders. Unlike plain {@link MessageFormat}, an
-	 * apostrophe is kept as it is (so {@code "'{0}'"} gives {@code 'value'}), and parameters are inserted as their
-	 * {@code toString()}, without locale formatting such as digit grouping of numbers.
-	 *
-	 * @param  detailPattern the detail message pattern
-	 * @param  parameters    the detail message parameters
-	 * @return               the formatted detail message
-	 */
-	private static String formatDetail(final String detailPattern, final Object... parameters) {
-		if (detailPattern == null) {
-			return null;
-		}
-		final var asText = Arrays.stream(Objects.requireNonNullElse(parameters, new Object[0]))
-			.map(String::valueOf)
-			.toArray();
-		return MessageFormat.format(detailPattern.replace("'", "''"), asText);
+		return valueOf(HttpStatus.BAD_GATEWAY, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**

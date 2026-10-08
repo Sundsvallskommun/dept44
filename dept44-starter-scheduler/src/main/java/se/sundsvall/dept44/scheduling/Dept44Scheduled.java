@@ -57,8 +57,9 @@ public @interface Dept44Scheduled {
 	 * (clock skew, or a busy scheduler thread) can run the task again for the same schedule. Set it to somewhat less than
 	 * the shortest interval between runs.
 	 * <p>
-	 * It must not be longer than {@link #lockAtMostFor()}, which defaults to two minutes: ShedLock rejects such a pair on
-	 * every run, before the task (and the health tracking around it) starts. Raise {@code lockAtMostFor} first if needed.
+	 * It must not be longer than {@link #lockAtMostFor()}, which defaults to two minutes; raise {@code lockAtMostFor}
+	 * first if needed. ShedLock would reject such a pair on every run, before the task starts, so the application fails
+	 * to start with it instead.
 	 *
 	 * @return the minimum time to hold the lock
 	 */

@@ -96,8 +96,14 @@ final class CapturingResponse extends HttpServletResponseWrapper implements Http
 	public PrintWriter getWriter() throws IOException {
 		if (writer == null) {
 			final var original = super.getWriter();
-			// The container settles the character encoding when its writer is obtained
-			writer = new PrintWriter(new CopyingWriter(original, getCharset()));
+			// The container settles the character encoding when its writer is obtained. The container's writer keeps its
+			// own error state (such as a client that disconnected) instead of throwing, so checkError() asks it as well.
+			writer = new PrintWriter(new CopyingWriter(original, getCharset())) {
+				@Override
+				public boolean checkError() {
+					return super.checkError() || original.checkError();
+				}
+			};
 		}
 		return writer;
 	}

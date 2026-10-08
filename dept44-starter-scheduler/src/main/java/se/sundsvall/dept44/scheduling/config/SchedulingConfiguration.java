@@ -3,7 +3,9 @@ package se.sundsvall.dept44.scheduling.config;
 import javax.sql.DataSource;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
+import net.javacrumbs.shedlock.spring.ExtendedLockConfigurationExtractor;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -36,6 +38,11 @@ class SchedulingConfiguration {
 	 * @param  dataSource the data source
 	 * @return            the lock provider
 	 */
+	@Bean
+	Dept44ScheduledLockValidator dept44ScheduledLockValidator(final ConfigurableListableBeanFactory beanFactory, final ExtendedLockConfigurationExtractor lockConfigurationExtractor) {
+		return new Dept44ScheduledLockValidator(beanFactory, lockConfigurationExtractor);
+	}
+
 	@Bean
 	LockProvider lockProvider(final DataSource dataSource) {
 		return new JdbcTemplateLockProvider(

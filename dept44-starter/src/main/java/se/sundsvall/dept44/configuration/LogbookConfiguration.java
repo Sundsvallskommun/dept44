@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -37,10 +38,10 @@ import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
+import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
 import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
-import se.sundsvall.dept44.logbook.BodylessSecurityStrategy;
 import se.sundsvall.dept44.logbook.servlet.LogbookServletFilter;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -175,16 +176,19 @@ public class LogbookConfiguration {
 		@Bean(FILTER_NAME)
 		@ConditionalOnProperty(name = "logbook.filter.enabled", havingValue = "true", matchIfMissing = true)
 		@ConditionalOnMissingBean(name = FILTER_NAME)
-		FilterRegistrationBean<LogbookServletFilter> logbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
-			return registration(new LogbookServletFilter(logbook, bodyCapturePolicy), FILTER_NAME, Ordered.LOWEST_PRECEDENCE);
+		FilterRegistrationBean<LogbookServletFilter> logbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy,
+			final ObjectProvider<AsyncOnCompleteListenerWrapper> asyncOnCompleteListenerWrapper) {
+			final var logbookFilter = new LogbookServletFilter(logbook, bodyCapturePolicy, asyncOnCompleteListenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
+			return registration(logbookFilter, FILTER_NAME, Ordered.LOWEST_PRECEDENCE);
 		}
 
 		@Bean(SECURE_FILTER_NAME)
 		@ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
 		@ConditionalOnProperty(name = "logbook.secure-filter.enabled", havingValue = "true", matchIfMissing = true)
 		@ConditionalOnMissingBean(name = SECURE_FILTER_NAME)
-		FilterRegistrationBean<LogbookServletFilter> secureLogbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
-			final var secureLogbookFilter = new LogbookServletFilter(logbook, bodyCapturePolicy, new BodylessSecurityStrategy());
+		FilterRegistrationBean<LogbookServletFilter> secureLogbookFilter(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy,
+			final ObjectProvider<AsyncOnCompleteListenerWrapper> asyncOnCompleteListenerWrapper) {
+			final var secureLogbookFilter = LogbookServletFilter.secure(logbook, bodyCapturePolicy, asyncOnCompleteListenerWrapper.getIfAvailable(AsyncOnCompleteListenerWrapper::identity));
 			return registration(secureLogbookFilter, SECURE_FILTER_NAME, Ordered.HIGHEST_PRECEDENCE + 1);
 		}
 

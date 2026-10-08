@@ -105,7 +105,7 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 			.collect(Collectors.joining(", "));
 
 		return Problem.builder()
-			.withStatus(cvpResponse.status() != null ? HttpStatus.valueOf(cvpResponse.status()) : null)
+			.withStatus(cvpResponse.status() != null ? HttpStatus.resolve(cvpResponse.status()) : null)
 			.withTitle(cvpResponse.title() != null ? cvpResponse.title() : "Constraint Violation")
 			.withDetail(violationsString)
 			.build();
@@ -157,7 +157,7 @@ public class ProblemErrorDecoder extends AbstractErrorDecoder {
 
 		@Override
 		public HttpStatus getStatus() {
-			return status != null ? HttpStatus.valueOf(status) : null;
+			return status != null ? HttpStatus.resolve(status) : null;
 		}
 
 		public void setStatus(final Integer status) {

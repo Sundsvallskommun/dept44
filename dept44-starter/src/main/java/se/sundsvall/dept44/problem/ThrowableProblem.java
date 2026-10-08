@@ -8,6 +8,7 @@ import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.ErrorResponseException;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * An exception that represents an RFC 9457 Problem Details object. Extends Spring's ErrorResponseException to integrate
@@ -20,6 +21,7 @@ import org.springframework.web.ErrorResponseException;
 	"typeMessageCode", "cause", "stackTrace", "localizedMessage", "message", "suppressed",
 	"mostSpecificCause", "rootCause", "statusCode"
 })
+@JsonDeserialize // Override the Problem interface's @JsonDeserialize(as = ProblemResponse.class), so the creator below is used
 public class ThrowableProblem extends ErrorResponseException implements Problem {
 
 	// ProblemDetail auto-fills title from status and always returns a non-null status,
@@ -61,7 +63,8 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	 *
 	 * @param type     the problem type URI
 	 * @param title    the problem title
-	 * @param status   the HTTP status code as integer
+	 * @param status   the HTTP status code as integer; a code without an {@link HttpStatus} constant (such as 499) gives
+	 *                 no status
 	 * @param detail   the problem detail
 	 * @param instance the problem instance URI
 	 */
@@ -72,7 +75,7 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 		@JsonProperty("status") final Integer status,
 		@JsonProperty("detail") final String detail,
 		@JsonProperty("instance") final URI instance) {
-		this(type, title, status != null ? HttpStatus.valueOf(status) : null, detail, instance, null);
+		this(type, title, status != null ? HttpStatus.resolve(status) : null, detail, instance, null);
 	}
 
 	private static ProblemDetail createProblemDetail(final URI type, final String title, final HttpStatus status, final String detail, final URI instance) {
@@ -138,6 +141,7 @@ public class ThrowableProblem extends ErrorResponseException implements Problem 
 	 *
 	 * @return the cause as ThrowableProblem, or null
 	 */
+	@JsonIgnore
 	public ThrowableProblem getCauseAsProblem() {
 		final var cause = getCause();
 		return cause instanceof final ThrowableProblem throwableProblem ? throwableProblem : null;

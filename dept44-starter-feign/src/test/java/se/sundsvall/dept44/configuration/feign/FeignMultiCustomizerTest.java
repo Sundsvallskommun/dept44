@@ -14,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.openfeign.FeignBuilderCustomizer;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -32,6 +31,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -98,7 +98,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithCustomizer() {
-		final var feignBuilderCustomizerMock = Mockito.mock(FeignBuilderCustomizer.class);
+		final var feignBuilderCustomizerMock = mock(FeignBuilderCustomizer.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withCustomizer(feignBuilderCustomizerMock)
 			.composeCustomizersToOne();
@@ -110,8 +110,8 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithMultipleCustomizers() {
-		final var feignBuilderCustomizerMock1 = Mockito.mock(FeignBuilderCustomizer.class);
-		final var feignBuilderCustomizerMock2 = Mockito.mock(FeignBuilderCustomizer.class);
+		final var feignBuilderCustomizerMock1 = mock(FeignBuilderCustomizer.class);
+		final var feignBuilderCustomizerMock2 = mock(FeignBuilderCustomizer.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withCustomizer(feignBuilderCustomizerMock1)
 			.withCustomizer(feignBuilderCustomizerMock2)
@@ -214,7 +214,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithDecoder() {
-		final var decoderMock = Mockito.mock(Decoder.class);
+		final var decoderMock = mock(Decoder.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withDecoder(decoderMock)
 			.composeCustomizersToOne();
@@ -226,7 +226,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithEncoder() {
-		final var encoderMock = Mockito.mock(Encoder.class);
+		final var encoderMock = mock(Encoder.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withEncoder(encoderMock)
 			.composeCustomizersToOne();
@@ -238,7 +238,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithErrorDecoder() {
-		final var errorDecoderMock = Mockito.mock(ErrorDecoder.class);
+		final var errorDecoderMock = mock(ErrorDecoder.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withErrorDecoder(errorDecoderMock)
 			.composeCustomizersToOne();
@@ -250,7 +250,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithRequestOptions() {
-		final var requestOptionMock = Mockito.mock(Request.Options.class);
+		final var requestOptionMock = mock(Request.Options.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withRequestOptions(requestOptionMock)
 			.composeCustomizersToOne();
@@ -281,7 +281,7 @@ class FeignMultiCustomizerTest {
 
 	@Test
 	void testWithRequestInterceptor() {
-		final var requestInterceptorMock = Mockito.mock(RequestInterceptor.class);
+		final var requestInterceptorMock = mock(RequestInterceptor.class);
 		final var customizer = FeignMultiCustomizer.create()
 			.withRequestInterceptor(requestInterceptorMock)
 			.composeCustomizersToOne();

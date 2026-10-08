@@ -11,16 +11,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
-import se.sundsvall.dept44.ServiceApplication;
 import se.sundsvall.dept44.authorization.configuration.JwtAuthorizationProperties;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
 import se.sundsvall.dept44.authorization.model.User;
@@ -48,38 +46,18 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	private final JwtAuthorizationProperties properties;
 	private final JwtTokenUtil jwtTokenUtil;
 	private final WebAuthenticationDetailsSource webAuthenticationDetailsSource;
-	private final ApplicationContext applicationContext;
 	private final JsonMapper jsonMapper;
 
 	public JwtAuthorizationExtractionFilter(
 		final JwtAuthorizationProperties properties,
 		final JwtTokenUtil jwtTokenUtil,
 		final WebAuthenticationDetailsSource webAuthenticationDetailsSource,
-		final ApplicationContext applicationContext,
 		final JsonMapper jsonMapper) {
 
 		this.properties = properties;
 		this.jwtTokenUtil = jwtTokenUtil;
 		this.webAuthenticationDetailsSource = webAuthenticationDetailsSource;
-		this.applicationContext = applicationContext;
 		this.jsonMapper = jsonMapper;
-	}
-
-	/**
-	 * Method checks if filter should be applied or not by finding the class annotated with <code>@ServiceApplication</code>
-	 * and verifying if it also has been annotated with <code>@EnableJwtAuthorization</code>. If
-	 * <code>@EnableJwtAuthorization</code> is present on application class this
-	 * filter will be triggered, otherwise not.
-	 */
-	@Override
-	protected boolean shouldNotFilter(final HttpServletRequest request) {
-		final var matches = applicationContext.getBeansWithAnnotation(ServiceApplication.class);
-		return matches.entrySet().stream()
-			.findAny()
-			.map(Entry::getValue)
-			.map(Object::getClass)
-			.map(clazz -> AnnotationUtils.getAnnotation(clazz, EnableJwtAuthorization.class))
-			.isPresent();
 	}
 
 	/**
@@ -88,6 +66,9 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 	 * <code>x-authorization-info</code>. The token is validated and transformed
 	 * into a <code>UsernameAuthenticationToken</code> which is then placed into the SecurityContext to enable Springs
 	 * authorization annotations to access it.
+	 * <p>
+	 * The filter only exists when <code>@EnableJwtAuthorization</code> is used, and runs after Spring Security's filter
+	 * chain, which has by then set an anonymous authentication; that one is replaced.
 	 */
 	@Override
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws ServletException, IOException {
@@ -102,34 +83,44 @@ public class JwtAuthorizationExtractionFilter extends OncePerRequestFilter {
 		}
 	}
 
-	private void extractToken(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain, final String jwtToken) throws IOException {
+	private void extractToken(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain, final String jwtToken) throws IOException, ServletException {
 		try {
 			// Read JWT-token and fetch username and accesses from it
 			final String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
 			final Collection<GenericGrantedAuthority> authorities = jwtTokenUtil.getRolesFromToken(jwtToken);
 
-			// Validate and store the token in SecurityContext if it isn't stored already
-			if (nonNull(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
+			// Validate and store the token in SecurityContext unless the request is already authenticated
+			if (nonNull(username) && isNotAuthenticated(SecurityContextHolder.getContext().getAuthentication())) {
 				final UserDetails userDetails = createUserDetails(username, authorities);
 				final UsernameAuthenticationToken authenticationToken = UsernameAuthenticationToken.authenticated(userDetails, authorities);
 				authenticationToken.setDetails(webAuthenticationDetailsSource.buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+				final var context = SecurityContextHolder.createEmptyContext();
+				context.setAuthentication(authenticationToken);
+				SecurityContextHolder.setContext(context);
 			}
-
-			// Continue with the next filter in a filter chain
-			chain.doFilter(request, response);
-
 		} catch (final IllegalArgumentException | MalformedJwtException | UnsupportedJwtException e) {
 			handleException(response, e, EXCEPTION_UNREADABLE_CREDENTIALS);
+			return;
 		} catch (final SignatureException e) {
 			handleException(response, e, EXCEPTION_INVALID_SIGNATURE);
+			return;
 		} catch (final ExpiredJwtException e) {
 			handleException(response, e, EXCEPTION_CREDENTIALS_EXPIRED);
+			return;
 		} catch (final WeakKeyException e) {
 			handleException(response, e, EXCEPTION_WEAK_KEY);
-		} catch (final Exception e) {
+			return;
+		} catch (final RuntimeException e) {
 			handleException(response, e, EXCEPTION_UNHANDLED);
+			return;
 		}
+
+		// Continue with the next filter in a filter chain; its exceptions are not about the credentials
+		chain.doFilter(request, response);
+	}
+
+	private static boolean isNotAuthenticated(final Authentication authentication) {
+		return isNull(authentication) || authentication instanceof AnonymousAuthenticationToken;
 	}
 
 	private UserDetails createUserDetails(final String username, final Collection<GenericGrantedAuthority> authorities) {

@@ -4,12 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
@@ -99,6 +101,39 @@ class CheckTruststoreValidityMojoTest {
 		mojo.setMonthsUntilExpiration(1);
 
 		assertThatNoException().isThrownBy(mojo::execute);
+	}
+
+	@Test
+	void executeSkipsFilesThatAreNotCertificates() throws Exception {
+		final var truststorePath = "truststore-with-other-files";
+		createSelfSignedCert(LocalDate.now().plusYears(1), truststorePath);
+		Files.writeString(new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/.gitkeep").toPath(), "");
+		Files.writeString(new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/README.md").toPath(), "Certificates for the truststore");
+
+		when(mockMavenProject.getBasedir()).thenReturn(new File(TEST_BASE_DIR));
+
+		mojo.setTruststorePath(truststorePath);
+		mojo.setMonthsUntilExpiration(1);
+
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
+
+	@Test
+	void executeFailsForADamagedCertificate() throws Exception {
+		final var truststorePath = "truststore-with-damaged-certificate";
+		createSelfSignedCert(LocalDate.now().plusYears(1), truststorePath);
+		final var certificate = new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/test.cer").toPath();
+		final var content = Files.readAllBytes(certificate);
+		Files.write(new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/truncated.pem").toPath(), Arrays.copyOf(content, content.length / 2));
+
+		when(mockMavenProject.getBasedir()).thenReturn(new File(TEST_BASE_DIR));
+
+		mojo.setTruststorePath(truststorePath);
+		mojo.setMonthsUntilExpiration(1);
+
+		assertThatExceptionOfType(MojoFailureException.class)
+			.isThrownBy(mojo::execute)
+			.withMessageContaining("Certificate 'truncated.pem' could not be read");
 	}
 
 	/**

@@ -39,6 +39,11 @@ class MaxPagingLimitImplTest {
 	}
 
 	@Test
+	void isValidWithoutLimit() {
+		assertThat(new MaxPagingLimitConstraintValidator().isValid(null, null)).isTrue();
+	}
+
+	@Test
 	void isNotValid() {
 		assertThat(validator.validate(new TestModel().withLimit(1001)))
 			.first()
@@ -57,18 +62,18 @@ class MaxPagingLimitImplTest {
 		private ConstraintValidatorContext.ConstraintViolationBuilder constraintViolationBuilderMock;
 
 		@Autowired
-		private MaxPagingLimitConstraintValidator validator;
+		private MaxPagingLimitConstraintValidator constraintValidator;
 
 		@Test
 		void isValidCustomMaxLimit() {
-			assertThat(validator.isValid(20, contextMock)).isTrue();
+			assertThat(constraintValidator.isValid(20, contextMock)).isTrue();
 		}
 
 		@Test
 		void isNotValidCustomMaxLimit() {
 			when(contextMock.buildConstraintViolationWithTemplate(any())).thenReturn(constraintViolationBuilderMock);
 
-			assertThat(validator.isValid(21, contextMock)).isFalse();
+			assertThat(constraintValidator.isValid(21, contextMock)).isFalse();
 
 			verify(contextMock).buildConstraintViolationWithTemplate("Page limit cannot be greater than 20");
 			verify(constraintViolationBuilderMock).addConstraintViolation();

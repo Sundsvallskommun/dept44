@@ -4,6 +4,12 @@
 		<excludes>
 			<exclude>**/target/**</exclude>
 		</excludes>
+		<!-- Spotless's default covers only the main and test source directories, not the integration tests -->
+		<includes>
+			<include>src/main/java/**/*.java</include>
+			<include>src/test/java/**/*.java</include>
+			<include>src/integration-test/java/**/*.java</include>
+		</includes>
 		<eclipse>
 			<file>src/main/resources/sundsvall_formatting.xml</file>
 		</eclipse>
@@ -44,6 +50,8 @@
 		<toggleOffOn />
 		<excludes>
 			<exclude>**/target/**</exclude>
+			<!-- Claude Code's directory, which can hold nested git worktrees of other branches -->
+			<exclude>**/.claude/**</exclude>
 		</excludes>
 		<includes>
 			<include>**/*.md</include>

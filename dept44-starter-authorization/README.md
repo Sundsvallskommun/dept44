@@ -35,15 +35,20 @@ public class Application {
 }
 ```
 
-Then use Spring Security annotations on your endpoints:
+Then use Spring Security annotations on your endpoints. The roles in the token are used as they are, without a
+`ROLE_` prefix, so check them with `hasAuthority` (`hasRole('ADMIN')` would look for `ROLE_ADMIN`):
 
 ```java
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN')")
 @GetMapping("/admin/resource")
 public ResponseEntity<String> getAdminResource() {
 	// ...
 }
 ```
+
+The token is read by a filter that runs after Spring Security's own filter chain, so the user it describes is seen by
+method security (`@PreAuthorize`, `@PostAuthorize`), not by URL rules in an `HttpSecurity` configuration. The accesses
+a role holds can be checked with json-path through `GenericGrantedAuthority.hasAuthority(role, jsonPath)`.
 
 ## Features
 
@@ -58,6 +63,7 @@ public ResponseEntity<String> getAdminResource() {
 ```yaml
 jwt:
   authorization:
+    secret: <secret>                  # Required: the key the tokens are signed with
     headername: x-authorization-info  # Header containing the JWT (default)
 ```
 

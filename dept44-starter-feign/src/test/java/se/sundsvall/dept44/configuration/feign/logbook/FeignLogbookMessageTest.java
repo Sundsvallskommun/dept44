@@ -41,6 +41,17 @@ class FeignLogbookMessageTest {
 	}
 
 	@Test
+	void urlThatUriRejectsIsLoggedEncodedInsteadOfFailing() {
+		final var request = FeignLogbookRequest.create(Request.create(HttpMethod.GET, "http://host:8080/a b/{id}|x?q={y}", Map.of(), null, null, null));
+
+		assertThat(request.getHost()).isEqualTo("host");
+		assertThat(request.getPort()).contains(8080);
+		assertThat(request.getPath()).isEqualTo("/a b/{id}|x");
+		assertThat(request.getQuery()).isEqualTo("q={y}");
+		assertThat(FeignLogbookRequest.toUri("http://[bad/x y")).hasToString("");
+	}
+
+	@Test
 	void requestWithoutBodyPortOrQuery() throws IOException {
 		final var request = FeignLogbookRequest.create(Request.create(HttpMethod.GET, "/relative", Map.of(), null, null, null));
 

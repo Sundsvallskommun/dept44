@@ -91,14 +91,17 @@ public class Relation {
 	 * Format: {@code {type}|{resourceId};{type};{service};{namespace}|{resourceId};{type};{service};{namespace}}
 	 * <p>
 	 * Example: {@code LINK|src-id;case;myservice;ns|tgt-id;asset;otherservice;ns2}
+	 * <p>
+	 * The format has no escaping, so a value containing {@code |} or {@code ;} cannot be represented.
 	 *
-	 * @return the formatted string representation
+	 * @return                          the formatted string representation
+	 * @throws IllegalArgumentException if a value contains {@code |} or {@code ;}, which would make the string unparseable
 	 */
 	public String toRelationString() {
 		if (source == null && target == null) {
 			return null;
 		}
-		return String.join(SECTION_DELIMITER, nullToEmpty(type), formatIdentifier(source), formatIdentifier(target));
+		return String.join(SECTION_DELIMITER, checked(nullToEmpty(type)), formatIdentifier(source), formatIdentifier(target));
 	}
 
 	/**
@@ -118,7 +121,8 @@ public class Relation {
 		if (sections.length != 3) {
 			throw new IllegalArgumentException(String.format(INVALID_RELATION_FORMAT_MESSAGE, SECTION_DELIMITER, value));
 		}
-		return Relation.create(sections[0], parseIdentifier(sections[1]), parseIdentifier(sections[2]));
+		// A relation without a type is written with an empty type section
+		return Relation.create(sections[0].isEmpty() ? null : sections[0], parseIdentifier(sections[1]), parseIdentifier(sections[2]));
 	}
 
 	private static String formatIdentifier(ResourceIdentifier identifier) {
@@ -126,10 +130,17 @@ public class Relation {
 			return "";
 		}
 		return String.join(FIELD_DELIMITER,
-			nullToEmpty(identifier.getResourceId()),
-			nullToEmpty(identifier.getType()),
-			nullToEmpty(identifier.getService()),
-			nullToEmpty(identifier.getNamespace()));
+			checked(nullToEmpty(identifier.getResourceId())),
+			checked(nullToEmpty(identifier.getType())),
+			checked(nullToEmpty(identifier.getService())),
+			checked(nullToEmpty(identifier.getNamespace())));
+	}
+
+	private static String checked(final String value) {
+		if (value.contains(SECTION_DELIMITER) || value.contains(FIELD_DELIMITER)) {
+			throw new IllegalArgumentException(String.format("Relation value must not contain '%s' or '%s', but got: %s", SECTION_DELIMITER, FIELD_DELIMITER, value));
+		}
+		return value;
 	}
 
 	private static String nullToEmpty(String value) {

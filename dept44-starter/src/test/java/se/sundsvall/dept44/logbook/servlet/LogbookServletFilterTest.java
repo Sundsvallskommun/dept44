@@ -20,16 +20,19 @@ import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.HttpResponse;
 import org.zalando.logbook.Logbook;
+import org.zalando.logbook.Logbook.ResponseProcessingStage;
 import org.zalando.logbook.Precorrelation;
 import org.zalando.logbook.RequestFilter;
 import org.zalando.logbook.ResponseFilter;
 import org.zalando.logbook.Sink;
+import org.zalando.logbook.Strategy;
+import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
-import se.sundsvall.dept44.logbook.BodylessSecurityStrategy;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
@@ -255,17 +258,21 @@ class LogbookServletFilterTest {
 	}
 
 	@Test
-	void securityFilterWritesOnlyRejectedRequestsAndNeverCapturesBodies() throws Exception {
-		final var securityFilter = new LogbookServletFilter(Logbook.builder()
+	void securityFilterWritesAndCapturesOnlyRejectedRequests() throws Exception {
+		final var accepted = new AtomicReference<CapturingResponse>();
+		final var securityFilter = LogbookServletFilter.secure(Logbook.builder()
 			.requestFilter(RequestFilter.none())
 			.responseFilter(ResponseFilter.none())
 			.sink(sink)
-			.build(), policy, new BodylessSecurityStrategy());
-		final var accepted = new MockHttpServletResponse();
+			.build(), policy, AsyncOnCompleteListenerWrapper.identity());
 
-		securityFilter.doFilter(request("application/json", body(10), true), accepted, (req, res) -> write(res, "application/json", body(10), true));
+		securityFilter.doFilter(request("application/json", body(10), true), new MockHttpServletResponse(), (req, res) -> {
+			accepted.set((CapturingResponse) res);
+			write(res, "application/json", body(10), true);
+		});
 
 		assertThat(sink.responseWritten).isFalse();
+		assertThat(accepted.get().getBody()).isEmpty();
 
 		final var rejected = new MockHttpServletResponse();
 		final var received = new AtomicReference<byte[]>();
@@ -277,9 +284,80 @@ class LogbookServletFilterTest {
 
 		assertThat(sink.responseWritten).isTrue();
 		assertThat(sink.requestBody).isEmpty();
-		assertThat(sink.responseBody).isEmpty();
+		assertThat(sink.responseBody).isEqualTo(text(10));
 		assertThat(received.get()).isEqualTo(body(10));
 		assertThat(rejected.getContentAsByteArray()).isEqualTo(body(10));
+	}
+
+	@Test
+	void responseIsLoggedWhenTheChainThrows() {
+		final var response = new MockHttpServletResponse();
+		final var failure = new IllegalStateException("boom");
+
+		assertThatThrownBy(() -> filter.doFilter(new MockHttpServletRequest("GET", "/fail"), response, (req, res) -> {
+			throw failure;
+		})).isSameAs(failure);
+
+		assertThat(sink.responseWritten).isTrue();
+		assertThat(sink.responseStatus).isEqualTo(500);
+		assertThat(response.getStatus()).isEqualTo(200);
+		assertThat(response.isCommitted()).isFalse();
+	}
+
+	@Test
+	void failingLoggingDoesNotReplaceTheApplicationsException() {
+		// Logbook itself catches what its own stages throw, so this one fails directly when the response is written
+		final ResponseProcessingStage failingResponse = _ -> () -> {
+			throw new IllegalStateException("logging failed");
+		};
+		final var failingFilter = new LogbookServletFilter(new Logbook() {
+			@Override
+			public RequestWritingStage process(final HttpRequest request) {
+				return new RequestWritingStage() {
+					@Override
+					public ResponseProcessingStage write() {
+						return failingResponse;
+					}
+
+					@Override
+					public ResponseWritingStage process(final HttpResponse response) throws IOException {
+						return failingResponse.process(response);
+					}
+				};
+			}
+
+			@Override
+			public RequestWritingStage process(final HttpRequest request, final Strategy strategy) {
+				return process(request);
+			}
+		}, policy);
+		final var failure = new IllegalStateException("boom");
+
+		assertThatThrownBy(() -> failingFilter.doFilter(new MockHttpServletRequest("GET", "/fail"), new MockHttpServletResponse(), (req, res) -> {
+			throw failure;
+		}))
+			.isSameAs(failure)
+			.satisfies(e -> assertThat(e.getSuppressed()).extracting(Throwable::getMessage).containsExactly("logging failed"));
+	}
+
+	@Test
+	void asynchronousCompletionGoesThroughTheListenerWrapper() throws Exception {
+		final var wrapped = new AtomicReference<Boolean>(false);
+		final var wrappingFilter = new LogbookServletFilter(Logbook.builder()
+			.strategy(new BodyCaptureStrategy(policy))
+			.sink(sink)
+			.build(), policy, listener -> event -> {
+				wrapped.set(true);
+				listener.onComplete(event);
+			});
+		final var request = new MockHttpServletRequest("GET", "/stream");
+		request.setAsyncSupported(true);
+
+		wrappingFilter.doFilter(request, new MockHttpServletResponse(), (req, res) -> req.startAsync(req, res));
+		((MockAsyncContext) request.getAsyncContext()).complete();
+
+		assertThat(wrapped.get()).isTrue();
+		assertThat(sink.responseWritten).isTrue();
 	}
 
 	@Test
@@ -340,6 +418,7 @@ class LogbookServletFilterTest {
 
 		private String requestBody;
 		private String responseBody;
+		private int responseStatus;
 		private boolean responseWritten;
 
 		@Override
@@ -350,6 +429,7 @@ class LogbookServletFilterTest {
 		@Override
 		public void write(final Correlation correlation, final HttpRequest request, final HttpResponse response) throws IOException {
 			responseBody = response.getBodyAsString();
+			responseStatus = response.getStatus();
 			responseWritten = true;
 		}
 	}

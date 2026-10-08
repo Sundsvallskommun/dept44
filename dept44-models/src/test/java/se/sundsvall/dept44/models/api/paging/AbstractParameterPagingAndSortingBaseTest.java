@@ -32,6 +32,15 @@ class AbstractParameterPagingAndSortingBaseTest {
 	}
 
 	@Test
+	void isUnsortedWithEmptySortBy() {
+		// "?sortBy=" binds to an empty list
+		final var parameter = new TestParameter();
+		parameter.setSortBy(List.of());
+
+		assertThat(parameter.sort()).isEqualTo(Sort.unsorted());
+	}
+
+	@Test
 	void isSortedASC() {
 		var test = new TestParameter();
 		test.setSortBy(List.of("field1", "field2"));

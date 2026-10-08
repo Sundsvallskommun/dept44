@@ -57,11 +57,11 @@ class PetSchedulerIT {
 	@DirtiesContext
 	void testScheduledJobRunsAutomatically() {
 
-		// Wait for the scheduled job to run
+		// Wait for the scheduled job to run, and for its last log lines, which are written after the worker returns
 		await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
-			// Verify that the scheduled job has run
 			verify(petSchedulerWorkerMock).getPets();
-
+			assertThat(petSchedulerAppender.list).hasSize(2);
+			assertThat(aspectAppender.list).hasSize(2);
 		});
 
 		// Verify the log messages inside the scheduled job
@@ -112,11 +112,10 @@ class PetSchedulerIT {
 	void testScheduledJobRunsAutomaticallyThrowException() {
 		when(petSchedulerWorkerMock.getPets()).thenThrow(new RuntimeException("Test exception"));
 
-		// Wait for the scheduled job to run
+		// Wait for the scheduled job to run, and for the aspect's failure log line, which is written after the worker throws
 		await().atMost(1, TimeUnit.MINUTES).untilAsserted(() -> {
-			// Verify that the scheduled job has run
 			verify(petSchedulerWorkerMock).getPets();
-
+			assertThat(aspectAppender.list).hasSize(2);
 		});
 
 		// Verify the log messages inside the scheduled job

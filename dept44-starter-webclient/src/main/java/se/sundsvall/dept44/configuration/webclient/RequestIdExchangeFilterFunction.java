@@ -11,15 +11,24 @@ import se.sundsvall.dept44.support.Identifier;
 
 class RequestIdExchangeFilterFunction implements ExchangeFilterFunction {
 
+	/**
+	 * The request id comes from the Reactor context when the call is made while handling a reactive request, otherwise
+	 * from {@link RequestId}.
+	 */
 	@Override
 	public Mono<ClientResponse> filter(final ClientRequest request, final ExchangeFunction next) {
-		var builder = ClientRequest.from(request)
-			.header(RequestId.HEADER_NAME, RequestId.get());
+		return Mono.deferContextual(context -> {
+			final var builder = ClientRequest.from(request);
 
-		Optional.ofNullable(Identifier.get())
-			.map(Identifier::toHeaderValue)
-			.ifPresent(value -> builder.header(Identifier.HEADER_NAME, value));
+			context.<String>getOrEmpty(RequestId.CONTEXT_KEY)
+				.or(() -> Optional.ofNullable(RequestId.get()))
+				.ifPresent(requestId -> builder.header(RequestId.HEADER_NAME, requestId));
 
-		return next.exchange(builder.build());
+			Optional.ofNullable(Identifier.get())
+				.map(Identifier::toHeaderValue)
+				.ifPresent(value -> builder.header(Identifier.HEADER_NAME, value));
+
+			return next.exchange(builder.build());
+		});
 	}
 }

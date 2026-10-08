@@ -4,20 +4,22 @@ import feign.Logger;
 import feign.Request;
 import feign.Response;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.Logbook.ResponseProcessingStage;
+import se.sundsvall.dept44.configuration.feign.decoder.AbstractErrorDecoder;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static feign.Util.ensureClosed;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static se.sundsvall.dept44.configuration.feign.decoder.AbstractErrorDecoder.MAX_ERROR_BODY_SIZE;
 
 /**
  * Feign logger that hands requests and responses to Logbook, like Logbook's own {@code FeignLogbookLogger}, without
@@ -29,29 +31,20 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
  * for textual bodies within the size that the {@link BodyCapturePolicy} allows. Any other response is logged without
  * its body and handed on with its body untouched.
  * <p>
- * An error body larger than the limit is kept in a temporary file rather than in memory, since error decoders may read
- * it more than once.
+ * Of an error body larger than the limit, only the first {@link AbstractErrorDecoder#MAX_ERROR_BODY_SIZE} bytes are
+ * kept, in memory, since error decoders may read it more than once but never read more than that.
  */
 public class BodyCaptureFeignLogger extends Logger {
 
 	private final Logbook logbook;
 	private final BodyCapturePolicy policy;
-	private final Path temporaryDirectory;
 
 	// Feign is blocking, so a request and its response are handled on the same thread
 	private final ThreadLocal<ResponseProcessingStage> stage = new ThreadLocal<>();
 
 	public BodyCaptureFeignLogger(final Logbook logbook, final BodyCapturePolicy policy) {
-		this(logbook, policy, null);
-	}
-
-	/**
-	 * @param temporaryDirectory where oversized error bodies are kept; {@code null} means the default temporary directory
-	 */
-	BodyCaptureFeignLogger(final Logbook logbook, final BodyCapturePolicy policy, final Path temporaryDirectory) {
 		this.logbook = logbook;
 		this.policy = policy;
-		this.temporaryDirectory = temporaryDirectory;
 	}
 
 	@Override
@@ -134,9 +127,9 @@ public class BodyCaptureFeignLogger extends Logger {
 	}
 
 	/**
-	 * Like {@link #rebufferWithinLimit}, except that a body larger than the limit is kept in a temporary file, so that
-	 * error decoders can still read it more than once. If no temporary file can be created, the body is handed on as a
-	 * stream.
+	 * Like {@link #rebufferWithinLimit}, except that a body larger than the limit is handed on as a byte array holding
+	 * only its first {@link AbstractErrorDecoder#MAX_ERROR_BODY_SIZE} bytes (or the bytes already read, if more), so
+	 * that error decoders can still read it more than once and the rest is never held anywhere.
 	 */
 	private Response rebufferError(final ResponseProcessingStage processingStage, final Response response) throws IOException {
 		if (!policy.isLimited()) {
@@ -150,14 +143,12 @@ public class BodyCaptureFeignLogger extends Logger {
 		}
 
 		write(processingStage, response, null);
-		final Path file;
 		try {
-			file = TempFileBody.createFile(temporaryDirectory);
-		} catch (final IOException _) {
-			return streaming(response, input, head);
-		}
-		try {
-			return response.toBuilder().body(TempFileBody.fill(file, head, input)).build();
+			final var rest = input.readNBytes(Math.max(0, MAX_ERROR_BODY_SIZE - head.length));
+			final var kept = new ByteArrayOutputStream(head.length + rest.length);
+			kept.write(head);
+			kept.write(rest);
+			return response.toBuilder().body(kept.toByteArray()).build();
 		} finally {
 			ensureClosed(input);
 			ensureClosed(response.body());

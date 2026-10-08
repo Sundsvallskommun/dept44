@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,16 +9,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import se.sundsvall.dept44.requestid.RequestId;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -72,49 +72,39 @@ class WebFluxConfigurationTest {
 	@SpringBootTest(classes = WebFluxConfiguration.class, properties = "spring.main.web-application-type=reactive")
 	class RequestIdHandlerFilterFunctionTest {
 
-		@Mock
-		private ServerWebExchange serverWebExchangeMock;
-
-		@Mock
-		private ServerHttpRequest serverHttpRequestMock;
-
-		@Mock
-		private ServerHttpResponse serverHttpResponseMock;
-
-		@Mock
-		private HttpHeaders httpHeadersMock;
-
-		@Mock
-		private WebFilterChain webFilterChainMock;
-
-		@Mock
-		private Mono<Void> monoMock;
-
 		@Autowired
 		private WebFluxConfiguration.RequestIdHandlerFilterFunction requestIdHandlerFilterFunction;
 
 		@Test
 		void requestIdHandlerFilterFunctionFilter() {
-			final var requestId = "requestId";
+			final var exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/").header(RequestId.HEADER_NAME, " requestId "));
+			final var seenInContext = new AtomicReference<String>();
+			final WebFilterChain chain = filteredExchange -> Mono.deferContextual(context -> {
+				seenInContext.set(context.get(RequestId.CONTEXT_KEY));
+				return Mono.empty();
+			});
 
-			when(serverWebExchangeMock.getRequest()).thenReturn(serverHttpRequestMock);
-			when(serverWebExchangeMock.getResponse()).thenReturn(serverHttpResponseMock);
-			when(serverHttpRequestMock.getHeaders()).thenReturn(httpHeadersMock);
-			when(serverHttpResponseMock.getHeaders()).thenReturn(httpHeadersMock);
-			when(httpHeadersMock.getFirst(anyString())).thenReturn(requestId);
-			when(webFilterChainMock.filter(serverWebExchangeMock)).thenReturn(monoMock);
-			when(monoMock.then()).thenReturn(monoMock);
-			when(monoMock.doFinally(any())).thenReturn(monoMock);
+			requestIdHandlerFilterFunction.filter(exchange, chain).block();
 
-			requestIdHandlerFilterFunction.filter(serverWebExchangeMock, webFilterChainMock);
+			assertThat(exchange.getResponse().getHeaders().get(RequestId.HEADER_NAME)).containsExactly("requestId");
+			assertThat(seenInContext.get()).isEqualTo("requestId");
+			assertThat(RequestId.get()).isNull();
+		}
 
-			// Because call to doFinally is mocked RequestId must be resettled for not disturbing other tests
-			RequestId.reset();
+		@Test
+		void requestsHandledOnTheSameThreadGetTheirOwnRequestIds() {
+			final var first = MockServerWebExchange.from(MockServerHttpRequest.get("/"));
+			final var second = MockServerWebExchange.from(MockServerHttpRequest.get("/"));
+			final WebFilterChain neverCompletes = filteredExchange -> Mono.never();
 
-			verify(httpHeadersMock).add(RequestId.HEADER_NAME, requestId);
-			verify(webFilterChainMock).filter(serverWebExchangeMock);
-			verify(monoMock).then();
-			verify(monoMock).doFinally(any());
+			// The first request is still in progress when the second one arrives
+			requestIdHandlerFilterFunction.filter(first, neverCompletes).subscribe();
+			requestIdHandlerFilterFunction.filter(second, neverCompletes).subscribe();
+
+			final var firstId = first.getResponse().getHeaders().getFirst(RequestId.HEADER_NAME);
+			final var secondId = second.getResponse().getHeaders().getFirst(RequestId.HEADER_NAME);
+			assertThat(firstId).isNotBlank();
+			assertThat(secondId).isNotBlank().isNotEqualTo(firstId);
 		}
 	}
 

@@ -19,10 +19,17 @@ public final class MunicipalityUtils {
 	private static final Map<String, Municipality> MUNICIPALITY_BY_ID_MAP = new HashMap<>();
 	private static final Map<String, Municipality> MUNICIPALITY_BY_NAME_MAP = new HashMap<>();
 
+	/**
+	 * A municipality code is four digits: the county (län) code followed by two digits. The definition file also lists the
+	 * counties, with their two-digit codes, which are not municipalities.
+	 */
+	private static final int MUNICIPALITY_ID_LENGTH = 4;
+
 	static {
 		try (final var inputStream = getURL(MUNICIPALITY_DEFINITION_PATH).openStream()) {
 			YAMLMapper.builder().build().readValue(inputStream, new TypeReference<List<Municipality>>() {
 			}).stream()
+				.filter(municipality -> municipality.id().length() == MUNICIPALITY_ID_LENGTH)
 				.forEach(municipality -> {
 					MUNICIPALITY_BY_ID_MAP.put(municipality.id(), municipality);
 					MUNICIPALITY_BY_NAME_MAP.put(upperCase(municipality.name()), municipality);

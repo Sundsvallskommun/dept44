@@ -99,6 +99,19 @@ class CapturingRequestTest {
 	}
 
 	@Test
+	void bodyLargerThanItsContentLengthAllowsIsLoggedAsOmittedWithoutReading() throws IOException {
+		final var mock = new MockHttpServletRequest("POST", "/");
+		mock.setContentType("application/json");
+		mock.setContent("abcdefgh".getBytes(UTF_8));
+		final var request = new CapturingRequest(mock, policy);
+
+		request.withBody();
+
+		assertThat(request.getBody()).isEqualTo("{\"bodyOmitted\":\"larger than 5 bytes\"}".getBytes(UTF_8));
+		assertThat(request.getInputStream().readAllBytes()).isEqualTo("abcdefgh".getBytes(UTF_8));
+	}
+
+	@Test
 	void unlimitedPolicyReadsTheWholeBody() throws IOException {
 		final var mock = new MockHttpServletRequest("POST", "/");
 		mock.setContent(new byte[1000]);

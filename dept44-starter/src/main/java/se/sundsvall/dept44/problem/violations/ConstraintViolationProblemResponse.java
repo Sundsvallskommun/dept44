@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.problem.violations;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
 import java.util.List;
 import se.sundsvall.dept44.problem.ProblemResponse;
@@ -24,6 +26,18 @@ public class ConstraintViolationProblemResponse extends ProblemResponse {
 	public ConstraintViolationProblemResponse(final ConstraintViolationProblem problem) {
 		super(problem);
 		this.violations = ofNullable(problem.getViolations())
+			.map(List::copyOf)
+			.orElseGet(Collections::emptyList);
+	}
+
+	/**
+	 * Create a ConstraintViolationProblemResponse from JSON. The other properties are set through their setters.
+	 *
+	 * @param violations the violations
+	 */
+	@JsonCreator
+	public ConstraintViolationProblemResponse(@JsonProperty("violations") final List<Violation> violations) {
+		this.violations = ofNullable(violations)
 			.map(List::copyOf)
 			.orElseGet(Collections::emptyList);
 	}

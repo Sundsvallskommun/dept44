@@ -1,6 +1,5 @@
 package se.sundsvall.dept44.authorization.configuration;
 
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,10 +19,9 @@ public class PrePostMethodSecurityConfiguration {
 		final JwtAuthorizationProperties properties,
 		final JwtTokenUtil jwtTokenUtil,
 		final WebAuthenticationDetailsSource webAuthenticationDetailsSource,
-		final ApplicationContext applicationContext,
 		final JsonMapper jsonMapper) {
 
-		return new JwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, jsonMapper);
+		return new JwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, jsonMapper);
 	}
 
 	@Bean

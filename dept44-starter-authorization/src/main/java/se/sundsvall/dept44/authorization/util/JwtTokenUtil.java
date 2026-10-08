@@ -8,11 +8,11 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.authorization.model.GenericGrantedAuthority;
+import tools.jackson.databind.json.JsonMapper;
 
 import static java.util.Collections.emptyMap;
 import static org.springframework.util.Assert.hasText;
@@ -21,6 +21,7 @@ import static org.springframework.util.Assert.hasText;
 public class JwtTokenUtil implements Serializable {
 
 	private static final long serialVersionUID = -2550185165626007488L;
+	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
 
 	private final byte[] secret;
 
@@ -49,8 +50,21 @@ public class JwtTokenUtil implements Serializable {
 	public Collection<GenericGrantedAuthority> getRolesFromToken(final String token) {
 		final Map<?, ?> roles = getAllClaimsFromToken(token).get("roles", Map.class);
 		return Optional.ofNullable(roles).orElse(emptyMap()).entrySet().stream()
-			.map(entry -> GenericGrantedAuthority.create(String.valueOf(entry.getKey()), Objects.toString(entry.getValue(), null)))
+			.map(entry -> GenericGrantedAuthority.create(String.valueOf(entry.getKey()), toJson(entry.getValue())))
 			.toList();
+	}
+
+	/**
+	 * The accesses of a role are queried with json-path, so they are handed on as JSON. The claim has already been parsed
+	 * into lists and maps; their {@code toString()} is not JSON (strings lose their quotes and get split on commas). A
+	 * string is handed on as it is, since an issuer may send the accesses as JSON inside a string.
+	 */
+	private static String toJson(final Object accesses) {
+		return switch (accesses) {
+			case null -> null;
+			case final String text -> text;
+			default -> JSON_MAPPER.writeValueAsString(accesses);
+		};
 	}
 
 	/**

@@ -3,9 +3,8 @@ package se.sundsvall.dept44.test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
 import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import java.io.File;
 import java.net.URI;
@@ -34,8 +33,10 @@ import se.sundsvall.dept44.test.supportfiles.AppTestImplementation;
 import se.sundsvall.dept44.test.supportfiles.TestBody;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.time.LocalDate.now;
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,12 +72,6 @@ class AbstractAppTestTest {
 
 	@Mock
 	private WireMockServer wiremockMock;
-
-	@Mock
-	private WireMockConfiguration wireMockConfigMock;
-
-	@Mock
-	private ResponseDefinitionTransformerV2 extensionMock;
 
 	@InjectMocks
 	private AppTestImplementation appTest;
@@ -116,14 +111,17 @@ class AbstractAppTestTest {
 				.withServicePath(uriBuilder -> uriBuilder.path("/a").queryParam("x", "1").build())
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.sendRequestAndVerifyResponse();
+				.sendRequest();
 
 			server.stubFor(get(urlEqualTo("/b")).willReturn(ok()));
 			realAppTest.setupCall()
 				.withServicePath(uriBuilder -> uriBuilder.path("/b").build())
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.sendRequestAndVerifyResponse();
+				.sendRequest();
+
+			assertThat(server.findAll(getRequestedFor(urlEqualTo("/a?x=1")))).hasSize(1);
+			assertThat(server.findAll(getRequestedFor(urlEqualTo("/b")))).hasSize(1);
 		});
 	}
 
@@ -136,7 +134,9 @@ class AbstractAppTestTest {
 				.withServicePath(uriBuilder -> uriBuilder.path("/p/{segment}").queryParam("q", "{q}").build("å ä", "a b&c"))
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.sendRequestAndVerifyResponse();
+				.sendRequest();
+
+			assertThat(server.findAll(getRequestedFor(urlEqualTo("/p/%C3%A5%20%C3%A4?q=a%20b%26c")))).hasSize(1);
 		});
 	}
 
@@ -150,7 +150,9 @@ class AbstractAppTestTest {
 				.withServicePath("/string")
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.sendRequestAndVerifyResponse();
+				.sendRequest();
+
+			assertThat(server.findAll(getRequestedFor(urlEqualTo("/string")))).hasSize(1);
 		});
 	}
 
@@ -202,15 +204,124 @@ class AbstractAppTestTest {
 
 	@Test
 	void testVerifyStubsRetriesWithinASecond() {
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
-		doThrow(new VerificationException("Not called yet")).doNothing().when(wiremockMock).verify(any());
+		final var stub = new StubMapping();
+		final var served = servedBy(stub);
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stub), null));
+		when(wiremockMock.getAllServeEvents()).thenReturn(List.of()).thenReturn(List.of(served));
 
 		final var start = System.nanoTime();
 		appTest.verifyStubs();
 
 		assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(1));
-		verify(wiremockMock, times(2)).verify(any());
+		verify(wiremockMock, times(2)).getAllServeEvents();
 		verify(wiremockMock).resetAll();
+	}
+
+	@Test
+	void testVerifyAllStubsFailsForAStubThatWasNotCalledWhenAnotherStubForTheSameUrlWas() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/items?page=1")).withName("page one").willReturn(ok()));
+			server.stubFor(get(urlEqualTo("/items?page=2")).withName("page two").willReturn(ok()));
+			server.stubFor(post(urlEqualTo("/items?page=1")).willReturn(ok()));
+
+			realAppTest.setupCall()
+				.withServicePath("/items?page=1")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequest();
+
+			assertThatExceptionOfType(VerificationException.class)
+				.isThrownBy(realAppTest::verifyAllStubs)
+				.withMessageContaining("page two")
+				.withMessageContaining("POST /items?page=1")
+				.withMessageNotContaining("page one");
+		});
+	}
+
+	@Test
+	void testVerifyAllStubsTreatsAStubLoadedAgainAsTheSameStub() {
+		runAgainstServer((server, realAppTest) -> {
+			// Loading the same stub file twice (as repeated setupCall() does) gives two stubs with different ids
+			server.stubFor(get(urlEqualTo("/items?page=1")).willReturn(ok()));
+			server.stubFor(get(urlEqualTo("/items?page=1")).willReturn(ok()));
+
+			realAppTest.setupCall()
+				.withServicePath("/items?page=1")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequest();
+
+			assertThat(realAppTest.verifyAllStubs()).isTrue();
+		});
+	}
+
+	@Test
+	void testVerifyAllStubsTreatsABasicAuthStubLoadedAgainAsTheSameStub() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(post(urlEqualTo("/token")).withBasicAuth("client", "secret").willReturn(ok()));
+			realAppTest.restTemplate.withBasicAuth("client", "secret").postForEntity("/token", null, String.class);
+			// Loaded again, as by a later setupCall, and not called again (such as a cached token)
+			server.stubFor(post(urlEqualTo("/token")).withBasicAuth("client", "secret").willReturn(ok()));
+
+			assertThat(realAppTest.verifyAllStubs()).isTrue();
+		});
+	}
+
+	@Test
+	void testVerifyAllStubsPassesWhenEveryStubWasCalled() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/items?page=1")).willReturn(ok()));
+
+			realAppTest.setupCall()
+				.withServicePath("/items?page=1")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.sendRequest();
+
+			assertThat(realAppTest.verifyAllStubs()).isTrue();
+		});
+	}
+
+	@Test
+	void testNonJsonResponsesAreComparedWithoutIgnoringAllWhitespace() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(get(urlEqualTo("/text")).willReturn(ok("Anna  Svensson\n").withHeader(CONTENT_TYPE, "text/plain")));
+			server.stubFor(get(urlEqualTo("/xml")).willReturn(ok("<person><name>Anna Svensson</name></person>").withHeader(CONTENT_TYPE, "application/xml")));
+
+			realAppTest.setupCall()
+				.withServicePath("/text")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("Anna Svensson")
+				.sendRequest();
+			realAppTest.setupCall()
+				.withServicePath("/xml")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("<person>\n\t<name>Anna Svensson</name>\n</person>")
+				.sendRequest();
+			// Element text wrapped over lines, as in a pretty-printed expected file, counts as the same text
+			realAppTest.setupCall()
+				.withServicePath("/xml")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("<person>\n\t<name>\n\t\tAnna\n\t\tSvensson\n\t</name>\n</person>")
+				.sendRequest();
+
+			realAppTest.setupCall()
+				.withServicePath("/text")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("AnnaSvensson");
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
+
+			realAppTest.setupCall()
+				.withServicePath("/xml")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("<person><name>AnnaSvensson</name></person>");
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
+		});
 	}
 
 	@Test
@@ -231,13 +342,11 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq(URI.create("/some/path/123?someParam=someValue")), eq(GET), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath(uriBuilder -> uriBuilder.path("/some/path/{value}")
 				.queryParam("someParam", "someValue")
 				.build(123))
@@ -256,9 +365,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq(URI.create("/some/path/123?someParam=someValue")), eq(GET), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isNull(); // GET requests should not have Content-Type
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testGetCall"));
@@ -283,13 +391,11 @@ class AbstractAppTestTest {
 		final var file = ResourceUtils.getFile("classpath:__files/testBinaryCall/dept44.jpg");
 		final var contentBytes = Files.readAllBytes(file.toPath());
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(GET), any(), eq(byte[].class))).thenReturn(new ResponseEntity<>(contentBytes, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(GET)
 			.withExpectedBinaryResponse("dept44.jpg")
@@ -301,9 +407,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(GET), httpEntityCaptor.capture(), eq(byte[].class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isNull(); // GET requests should not have Content-Type
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testBinaryCall"));
@@ -316,13 +421,11 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(POST)
 			.withHeader("headerKey", "headerValue")
@@ -338,9 +441,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCall"));
@@ -358,13 +460,11 @@ class AbstractAppTestTest {
 				"responseData": "testData"
 			}
 			""".formatted(now().getYear());
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(response, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(POST)
 			.withHeader("headerKey", "headerValue")
@@ -385,9 +485,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testHandleBarReplacement"));
@@ -401,13 +500,11 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHeader("headerKey", "headerValue")
 			.withHttpMethod(POST)
@@ -424,9 +521,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(MULTIPART_FORM_DATA_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCallWithMultiPart"));
@@ -439,13 +535,11 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("http://someurl:111222/aaa"));
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(null, responseHeaders, OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(POST)
 			.withHeader("headerKey", "headerValue")
@@ -461,9 +555,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPostCallMatchesExpectedHeaderValueWithReqexp"));
@@ -476,18 +569,16 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(PUT), any(), eq(String.class))).thenReturn(new ResponseEntity<>("""
 			{
 			"key": "this-is-key",
 			"value": "this-is-value"
 			}
 			""", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var call = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(PUT)
 			.withExpectedResponseStatus(NO_CONTENT)
@@ -508,9 +599,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(PUT), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testPutCall"));
@@ -523,13 +613,11 @@ class AbstractAppTestTest {
 		final var responseHeaders = new HttpHeaders();
 		responseHeaders.put("responseHeader", List.of("responseValue"));
 
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(DELETE), any(), eq(String.class))).thenReturn(new ResponseEntity<>("{}", responseHeaders, NO_CONTENT));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(DELETE)
 			.withMaxVerificationDelayInSeconds(5)
@@ -541,9 +629,8 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(DELETE), httpEntityCaptor.capture(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isNull(); // DELETE without body should not have Content-Type
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testDeleteCall"));
@@ -552,13 +639,11 @@ class AbstractAppTestTest {
 	@Test
 	void testBodyReplacement() {
 		// Setup
-		when(wiremockMock.getOptions()).thenReturn(wireMockConfigMock);
 		when(restTemplateMock.exchange(eq("/some/path"), eq(POST), httpEntityCaptor.capture(), eq(String.class))).thenReturn(new ResponseEntity<>(OK));
-		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(new StubMapping()), null));
+		stubWasCalled();
 
 		// Call
 		final var instance = appTest.setupCall()
-			.withExtensions(extensionMock)
 			.withServicePath("/some/path")
 			.withHttpMethod(POST)
 			.withHeader("headerKey", "headerValue")
@@ -574,13 +659,26 @@ class AbstractAppTestTest {
 		verify(restTemplateMock).exchange(eq("/some/path"), eq(POST), any(), eq(String.class));
 		verify(wiremockMock, times(2)).loadMappingsUsing(any(JsonFileMappingsSource.class));
 		verify(wiremockMock).findAllUnmatchedRequests();
-		verify(wiremockMock).verify(any());
+		verify(wiremockMock).getAllServeEvents();
 		verify(wiremockMock).resetAll();
-		verify(wireMockConfigMock, times(1)).extensions(extensionMock);
 
 		assertThat(httpEntityCaptor.getValue().getHeaders().get(CONTENT_TYPE)).isEqualTo(List.of(APPLICATION_JSON_VALUE));
 		assertThat(httpEntityCaptor.getValue().getHeaders().get("x-test-case")).isEqualTo(List.of("AppTestImplementation.testBodyReplacement"));
 		assertThat(httpEntityCaptor.getValue().getBody()).isEqualTo("{\"someKey\": \"someValue\"}");
+	}
+
+	private void stubWasCalled() {
+		final var stub = new StubMapping();
+		final var served = servedBy(stub);
+		when(wiremockMock.listAllStubMappings()).thenReturn(new ListStubMappingsResult(List.of(stub), null));
+		when(wiremockMock.getAllServeEvents()).thenReturn(List.of(served));
+	}
+
+	private static ServeEvent servedBy(final StubMapping stub) {
+		final var serveEvent = mock(ServeEvent.class);
+		when(serveEvent.getWasMatched()).thenReturn(true);
+		when(serveEvent.getStubMapping()).thenReturn(stub);
+		return serveEvent;
 	}
 
 	private static void runAgainstServer(final BiConsumer<WireMockServer, AppTestImplementation> test) {

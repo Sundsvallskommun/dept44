@@ -46,13 +46,27 @@ final var template = new WebServiceTemplateBuilder()
 	.build();
 ```
 
+The server's certificate must then be trusted by what the rest of the application trusts (the dept44 truststore, or the
+JVM default trust store when there is none) or by a certificate in the keystore, such as the CA that issued the client
+certificate when the keystore holds its chain. It must also be issued for the host called.
+
+To trust other servers, pass a trust manager factory; it replaces that default, with or without a keystore. For
+example, to trust exactly the servers in dept44's truststore:
+
+```java
+final var template = new WebServiceTemplateBuilder()
+	.withBaseUrl("https://soap.example.com/service")
+	.withTrustManagerFactory(truststore.getTrustManagerFactory())
+	.build();
+```
+
 ## Features
 
 - **JAXB marshaling** with automatic package scanning
-- **SSL/TLS** with keystore support (file, classpath, or byte array)
+- **SSL/TLS** with keystore support (file, classpath, or byte array); server certificates and host names are verified
 - **Basic authentication** support
 - **Configurable timeouts**: connect (default 10s), read (default 60s)
-- **Logbook integration** for SOAP message logging
+- **Logbook integration** for SOAP message logging; a logged response body is held in memory up to 1 MB (`withLogbook(logbook, bodyCapturePolicy)` sets another limit) and logged as omitted beyond that
 - **Built-in interceptors**:
   - `DefaultFaultInterceptor` — handles SOAP fault responses
   - `RequestIdInterceptor` — propagates `x-request-id` header

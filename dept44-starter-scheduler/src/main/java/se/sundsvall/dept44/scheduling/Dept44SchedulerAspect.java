@@ -9,6 +9,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import se.sundsvall.dept44.requestid.RequestId;
@@ -65,6 +66,8 @@ public class Dept44SchedulerAspect {
 	private static final String OUTCOME_FAILURE = "FAILURE";
 	private static final String OUTCOME_TIMEOUT = "TIMEOUT";
 
+	private static final Duration DEFAULT_MAXIMUM_EXECUTION_TIME = Duration.ofMinutes(2);
+
 	private final Dept44CompositeHealthContributor dept44Composite;
 	private final Environment environment;
 
@@ -117,28 +120,44 @@ public class Dept44SchedulerAspect {
 	public Object aroundScheduledMethod(final ProceedingJoinPoint pjp, final Dept44Scheduled dept44Scheduled) throws Throwable {
 
 		final var name = environment.resolvePlaceholders(dept44Scheduled.name());
-		final var maxExecutionTime = environment.resolvePlaceholders(dept44Scheduled.maximumExecutionTime());
+		// Parsed before the run, so that an invalid value can neither fail the run nor skip the cleanup below
+		final var maxExecutionTime = maximumExecutionTime(name, environment.resolvePlaceholders(dept44Scheduled.maximumExecutionTime()));
 
 		final var healthIndicator = dept44Composite.getOrCreateIndicator(name);
 		final var startTime = OffsetDateTime.now(ZoneId.systemDefault());
+		Dept44HealthIndicator.Run run = null;
 		try {
 			RequestId.init();
 			MDC.put(MDC_SCHEDULER_NAME, name);
 			MDC.put(MDC_EXECUTION_ID, RequestId.get());
 			LOG.info("Scheduled method {} start. RequestID={}", name, RequestId.get());
 			healthIndicator.resetErrors();
+			run = healthIndicator.runStarted(maxExecutionTime);
 			final var result = pjp.proceed();
 			putCompletion(startTime, OUTCOME_SUCCESS);
 			LOG.info("Scheduled method {} done. RequestID={}", name, RequestId.get());
 			return result;
 		} catch (final Exception e) {
+			if (e instanceof InterruptedException) {
+				// The run is still over, but whoever interrupted the thread must still see that it was
+				Thread.currentThread().interrupt();
+			}
 			healthIndicator.setUnhealthy(e.getMessage());
 			putCompletion(startTime, OUTCOME_FAILURE);
 			LOG.error("Scheduled method {} fail. RequestID={}", name, RequestId.get(), e);
+		} catch (final Error e) {
+			// Such as OutOfMemoryError or StackOverflowError: passed on unchanged, and logged with its stack trace by Spring's
+			// scheduler. The health status names it; the line below marks the failed run while its MDC fields are set.
+			healthIndicator.setUnhealthy(e.toString());
+			putCompletion(startTime, OUTCOME_FAILURE);
+			LOG.error("Scheduled method {} fail with an error. RequestID={}", name, RequestId.get());
+			throw e;
 		} finally {
+			healthIndicator.runFinished(run);
+
 			final var endTime = OffsetDateTime.now(ZoneId.systemDefault());
 			final var duration = Duration.between(startTime, endTime);
-			if (duration.compareTo(Duration.parse(maxExecutionTime)) > 0) {
+			if (duration.compareTo(maxExecutionTime) > 0) {
 				MDC.put(MDC_DURATION_MS, String.valueOf(duration.toMillis()));
 				MDC.put(MDC_OUTCOME, OUTCOME_TIMEOUT);
 				LOG.warn("Scheduled method {} took too long: {} minutes. RequestID={}", name, duration.toMinutes(), RequestId.get());
@@ -156,6 +175,19 @@ public class Dept44SchedulerAspect {
 			RequestId.reset();
 		}
 		return null;
+	}
+
+	/**
+	 * Accepts both an ISO-8601 duration ({@code PT5M}) and the simple form ShedLock accepts for {@code lockAtMostFor} on
+	 * the same annotation ({@code 5m}). An invalid value, such as an unresolved placeholder, falls back to the default.
+	 */
+	static Duration maximumExecutionTime(final String name, final String value) {
+		try {
+			return DurationStyle.detectAndParse(value);
+		} catch (final IllegalArgumentException _) {
+			LOG.warn("Scheduled method {} has an invalid maximumExecutionTime '{}', using {}", name, value, DEFAULT_MAXIMUM_EXECUTION_TIME);
+			return DEFAULT_MAXIMUM_EXECUTION_TIME;
+		}
 	}
 
 	private static void putCompletion(final OffsetDateTime startTime, final String outcome) {

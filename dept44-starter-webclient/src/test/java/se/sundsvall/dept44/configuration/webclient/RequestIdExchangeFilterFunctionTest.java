@@ -12,6 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import reactor.core.publisher.Mono;
+import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
 import se.sundsvall.dept44.support.Identifier.Type;
 
@@ -40,10 +41,41 @@ class RequestIdExchangeFilterFunctionTest {
 	void testFilter() {
 		when(requestMock.headers()).thenReturn(headersMock);
 		when(requestMock.cookies()).thenReturn(new LinkedMultiValueMap<>());
+		when(functionMock.exchange(any(ClientRequest.class))).thenReturn(Mono.empty());
 
-		new RequestIdExchangeFilterFunction().filter(requestMock, functionMock);
+		new RequestIdExchangeFilterFunction().filter(requestMock, functionMock).block();
 
 		verify(functionMock).exchange(any(ClientRequest.class));
+	}
+
+	@Test
+	void testFilterTakesTheRequestIdFromTheReactorContext() {
+		final var request = ClientRequest.create(HttpMethod.GET, URI.create("http://localhost")).build();
+		final var requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+		when(functionMock.exchange(requestCaptor.capture())).thenReturn(Mono.empty());
+
+		new RequestIdExchangeFilterFunction().filter(request, functionMock)
+			.contextWrite(context -> context.put(RequestId.CONTEXT_KEY, "from-context"))
+			.block();
+
+		assertThat(requestCaptor.getValue().headers().getFirst(RequestId.HEADER_NAME)).isEqualTo("from-context");
+	}
+
+	@Test
+	void testFilterTakesTheRequestIdFromRequestIdOutsideAReactiveRequest() {
+		final var request = ClientRequest.create(HttpMethod.GET, URI.create("http://localhost")).build();
+		final var requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+		when(functionMock.exchange(requestCaptor.capture())).thenReturn(Mono.empty());
+
+		try {
+			RequestId.init("from-thread");
+
+			new RequestIdExchangeFilterFunction().filter(request, functionMock).block();
+		} finally {
+			RequestId.reset();
+		}
+
+		assertThat(requestCaptor.getValue().headers().getFirst(RequestId.HEADER_NAME)).isEqualTo("from-thread");
 	}
 
 	@Test

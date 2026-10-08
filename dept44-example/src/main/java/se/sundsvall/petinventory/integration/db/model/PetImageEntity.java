@@ -12,7 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.Objects;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -145,13 +144,12 @@ public class PetImageEntity {
 		return this;
 	}
 
+	// The petName back reference is left out of hashCode, equals and toString, so that neither side of the relation
+	// drives the other's. The content is left out too: comparing or hashing a whole image is expensive, and toString
+	// gives only its size.
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = (prime * result) + Arrays.hashCode(content);
-		result = (prime * result) + Objects.hash(created, fileName, id, mimeType, modified, petName);
-		return result;
+		return Objects.hash(created, fileName, id, mimeType, modified);
 	}
 
 	@Override
@@ -162,13 +160,13 @@ public class PetImageEntity {
 		if (!(obj instanceof final PetImageEntity other)) {
 			return false;
 		}
-		return Arrays.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType) && Objects.equals(modified,
-			other.modified) && Objects.equals(petName, other.petName);
+		return Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType) && Objects.equals(modified,
+			other.modified);
 	}
 
 	@Override
 	public String toString() {
-		return "PetImageEntity [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + ", content=" + Arrays.toString(content) + ", created=" + created + ", modified="
-			+ modified + ", petName=" + petName + "]";
+		return "PetImageEntity [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + ", content=" + (content == null ? null : content.length + " bytes") + ", created=" + created
+			+ ", modified=" + modified + ", petNameId=" + (petName == null ? null : petName.getId()) + "]";
 	}
 }

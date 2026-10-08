@@ -280,4 +280,29 @@ class RelationTest {
 		assertThat(relation.getSource().toString()).contains("ResourceIdentifier", "resourceId=src-id", "type=case", "service=svc", "namespace=ns");
 		assertThat(relation.getTarget().toString()).contains("ResourceIdentifier", "resourceId=tgt-id", "type=asset", "service=svc2");
 	}
+
+	@Test
+	void valuesThatWouldBreakTheFormatAreRejected() {
+		final var withSemicolon = Relation.create("LINK",
+			ResourceIdentifier.create("a;b", "case", "svc", "ns"),
+			ResourceIdentifier.create("tgt-id", "asset", "svc2", null));
+		final var withPipe = Relation.create("LINK",
+			ResourceIdentifier.create("src-id", "case", "svc", "my|ns"),
+			ResourceIdentifier.create("tgt-id", "asset", "svc2", null));
+
+		assertThatThrownBy(withSemicolon::toRelationString).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("a;b");
+		assertThatThrownBy(withPipe::toRelationString).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("my|ns");
+	}
+
+	@Test
+	void relationWithoutTypeRoundTrips() {
+		final var relation = Relation.create(null,
+			ResourceIdentifier.create("src-id", "case", "svc", "ns"),
+			ResourceIdentifier.create("tgt-id", "asset", "svc2", "ns2"));
+
+		final var parsed = Relation.parseRelation(relation.toRelationString());
+
+		assertThat(parsed.getType()).isNull();
+		assertThat(parsed).isEqualTo(relation);
+	}
 }

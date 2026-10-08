@@ -47,17 +47,16 @@ class ValidNamespaceConstraintValidatorTest {
 		assertThat(validator.isValid("underscore_")).isTrue();
 		assertThat(validator.isValid("multiple_underscores_here")).isTrue();
 
-		// With pipes
-		assertThat(validator.isValid("my|namespace")).isTrue();
-		assertThat(validator.isValid("pipe|")).isTrue();
-		assertThat(validator.isValid("|pipe")).isTrue();
-		assertThat(validator.isValid("multiple|pipes|here")).isTrue();
+		// Pipes are not allowed: '|' separates the sections of a Relation
+		assertThat(validator.isValid("my|namespace")).isFalse();
+		assertThat(validator.isValid("pipe|")).isFalse();
+		assertThat(validator.isValid("|pipe")).isFalse();
+		assertThat(validator.isValid("multiple|pipes|here")).isFalse();
 
 		// Mixed combinations
 		assertThat(validator.isValid("my-namespace_123")).isTrue();
-		assertThat(validator.isValid("namespace-with|pipe")).isTrue();
-		assertThat(validator.isValid("complex-name_with|all_chars123")).isTrue();
-		assertThat(validator.isValid("a-b_c|d")).isTrue();
+		assertThat(validator.isValid("complex-name_with_all_chars123")).isTrue();
+		assertThat(validator.isValid("a-b_c")).isTrue();
 
 		// Exactly 32 characters (max length)
 		assertThat(validator.isValid("12345678901234567890123456789012")).isTrue();

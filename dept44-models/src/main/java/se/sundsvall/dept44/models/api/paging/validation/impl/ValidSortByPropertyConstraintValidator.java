@@ -24,7 +24,9 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 
 	@Override
 	public void initialize(ValidSortByProperty constraintAnnotation) {
-		entityProperties.addAll(Stream.of(constraintAnnotation.value().getDeclaredFields())
+		// Includes the columns an entity inherits, such as from a @MappedSuperclass
+		entityProperties.addAll(Stream.<Class<?>>iterate(constraintAnnotation.value(), type -> type != null && type != Object.class, Class::getSuperclass)
+			.flatMap(type -> Stream.of(type.getDeclaredFields()))
 			.filter(field -> field.isAnnotationPresent(Column.class))
 			.map(Field::getName)
 			.filter(name -> Arrays.stream(constraintAnnotation.exclude()).noneMatch(name::equals))
@@ -36,7 +38,8 @@ public class ValidSortByPropertyConstraintValidator implements ConstraintValidat
 
 	@Override
 	public boolean isValid(final AbstractParameterPagingAndSortingBase parameters, final ConstraintValidatorContext context) {
-		final boolean isValid = isEmpty(parameters.getSortBy()) || entityProperties.containsAll(parameters.getSortBy());
+		// As for the built-in constraints, null is valid
+		final boolean isValid = parameters == null || isEmpty(parameters.getSortBy()) || entityProperties.containsAll(parameters.getSortBy());
 
 		if (!isValid) {
 			useCustomMessageForValidation(context, parameters.getSortBy());

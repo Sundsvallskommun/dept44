@@ -1,9 +1,11 @@
 package se.sundsvall.dept44.configuration.webservicetemplate;
 
 import java.io.IOException;
+import java.security.KeyStore;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -216,6 +218,32 @@ class WebServiceTemplateBuilderTest {
 
 		// Do assertions
 		assertThat(template).isNotNull();
+	}
+
+	@Test
+	void testSSLClientWithTrustManagerFactory() throws Exception {
+		final var trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+		trustManagerFactory.init((KeyStore) null);
+
+		final var template = WebServiceTemplateBuilder.create()
+			.withKeyStoreFileLocation("classpath:dummy-keystore.jks")
+			.withKeyStorePassword("password")
+			.withTrustManagerFactory(trustManagerFactory)
+			.build();
+
+		assertThat(template).isNotNull();
+	}
+
+	@Test
+	void testClientInterceptorsKeepTheOrderTheyWereAddedIn() {
+		final var interceptors = new ClientInterceptor[20];
+		final var builder = WebServiceTemplateBuilder.create();
+		for (var i = 0; i < interceptors.length; i++) {
+			interceptors[i] = new DefaultFaultInterceptor();
+			builder.withClientInterceptor(interceptors[i]);
+		}
+
+		assertThat(builder.build().getInterceptors()).containsExactly(interceptors);
 	}
 
 	@Test

@@ -1,6 +1,11 @@
 package se.sundsvall.dept44.scheduling.health;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
@@ -38,15 +43,27 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 public class Dept44HealthIndicator implements HealthIndicator {
 	private final AtomicBoolean healthy = new AtomicBoolean(true);
 	private final AtomicBoolean errors = new AtomicBoolean(false);
-	private String reason;
+	private volatile String reason;
+	private final Set<Run> runs = ConcurrentHashMap.newKeySet();
 
 	/**
-	 * Get the health status.
+	 * Get the health status. A run that is still going on after its maximum execution time makes the status
+	 * {@code "RESTRICTED"} while it runs, so that a hung task is visible before (or without) it ever returning.
 	 *
 	 * @return the health status
 	 */
 	@Override
 	public Health health() {
+		final var now = Instant.now();
+		final var overdueSince = runs.stream()
+			.filter(run -> run.isOverdue(now))
+			.map(Run::since)
+			.min(Comparator.naturalOrder());
+		if (overdueSince.isPresent()) {
+			return Health.status("RESTRICTED")
+				.withDetail("Reason", "Maximum execution time exceeded, still running since " + overdueSince.get())
+				.build();
+		}
 		if (healthy.get()) {
 			return Health.up().build();
 		}
@@ -83,6 +100,30 @@ public class Dept44HealthIndicator implements HealthIndicator {
 	}
 
 	/**
+	 * Record that a run has started. Each run is tracked on its own, so that a run finishing does not hide another one
+	 * of the same task that is still going on.
+	 *
+	 * @param  maximumExecutionTime how long the run may take before the status is {@code "RESTRICTED"}
+	 * @return                      the run, to pass to {@link #runFinished(Run)}
+	 */
+	public Run runStarted(final Duration maximumExecutionTime) {
+		final var run = new Run(Instant.now(), maximumExecutionTime);
+		runs.add(run);
+		return run;
+	}
+
+	/**
+	 * Record that a run has finished.
+	 *
+	 * @param run the run returned by {@link #runStarted(Duration)}; {@code null} is ignored
+	 */
+	public void runFinished(final Run run) {
+		if (run != null) {
+			runs.remove(run);
+		}
+	}
+
+	/**
 	 * Reset the error state.
 	 */
 	public void resetErrors() {
@@ -96,5 +137,27 @@ public class Dept44HealthIndicator implements HealthIndicator {
 	 */
 	public boolean hasErrors() {
 		return errors.get();
+	}
+
+	/**
+	 * A run in progress. Compared by identity, so that two runs started at the same instant are still two runs.
+	 */
+	public static final class Run {
+
+		private final Instant since;
+		private final Duration maximumExecutionTime;
+
+		private Run(final Instant since, final Duration maximumExecutionTime) {
+			this.since = since;
+			this.maximumExecutionTime = maximumExecutionTime;
+		}
+
+		Instant since() {
+			return since;
+		}
+
+		boolean isOverdue(final Instant now) {
+			return Duration.between(since, now).compareTo(maximumExecutionTime) > 0;
+		}
 	}
 }

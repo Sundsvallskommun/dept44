@@ -6,8 +6,6 @@ import java.net.URI;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
-import static java.text.MessageFormat.format;
-
 /**
  * Represents an RFC 9457 Problem Details object.
  *
@@ -73,14 +71,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status BAD_REQUEST, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badRequest(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_REQUEST, format(detailPattern, parameters));
+		return valueOf(HttpStatus.BAD_REQUEST, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -104,14 +103,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status NOT_FOUND, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem notFound(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.NOT_FOUND, format(detailPattern, parameters));
+		return valueOf(HttpStatus.NOT_FOUND, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -136,14 +136,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status INTERNAL_SERVER_ERROR, corresponding title and a detail
-	 * message formatted from the given pattern and parameters.
+	 * message formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem internalServerError(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, format(detailPattern, parameters));
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**
@@ -168,14 +169,15 @@ public interface Problem {
 
 	/**
 	 * Shortcut method to create a ThrowableProblem with status BAD_GATEWAY, corresponding title and a detail message
-	 * formatted from the given pattern and parameters.
+	 * formatted from the given pattern and parameters: each
+	 * {@code {0}}, {@code {1}}, ... is replaced by the parameter at that index, with no quoting and no format types.
 	 *
 	 * @param  detailPattern the detail message pattern
 	 * @param  parameters    the detail message parameters
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badGateway(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_GATEWAY, format(detailPattern, parameters));
+		return valueOf(HttpStatus.BAD_GATEWAY, DetailFormat.format(detailPattern, parameters));
 	}
 
 	/**

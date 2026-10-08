@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -14,14 +16,34 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class ActionRetryerTest {
 
 	private final Action actionMock = Mockito.mock(Action.class);
 
 	private static RetryableException retryableException(final Map<String, Collection<String>> headers) {
-		final var request = Request.create(Request.HttpMethod.GET, "http://localhost", headers, Request.Body.empty(), null);
-		return new RetryableException(200, "message", Request.HttpMethod.GET, (Long) null, request);
+		return retryableException(401, headers);
+	}
+
+	private static RetryableException retryableException(final int status, final Map<String, Collection<String>> headers) {
+		final var request = Request.create(Request.HttpMethod.POST, "http://localhost", headers, Request.Body.empty(), null);
+		return new RetryableException(status, "message", Request.HttpMethod.POST, (Long) null, request);
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = {
+		-1, 503
+	})
+	void failuresOtherThanARejectedTokenAreNotRetried(final int status) {
+		// -1 is how Feign reports an I/O error (e.g. a read timeout); 503 with Retry-After from Feign's default decoder
+		final var actionRetryer = new ActionRetryer(actionMock, 1);
+		final var retryableException = retryableException(status, Map.of("Authorization", List.of("Bearer abc")));
+
+		final var exception = assertThrows(RetryableException.class, () -> actionRetryer.continueOrPropagate(retryableException));
+
+		assertThat(exception).isSameAs(retryableException);
+		verifyNoInteractions(actionMock);
 	}
 
 	@Test

@@ -17,12 +17,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.core.env.Environment;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,8 +89,9 @@ class Dept44SchedulerAspectTest {
 
 		// assert structured MDC fields on the "done" log line
 		final var doneMdc = mdcOf("done");
-		assertThat(doneMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(doneMdc).containsEntry("outcome", "SUCCESS");
+		assertThat(doneMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "SUCCESS");
 		assertThat(doneMdc.get("executionId")).isNotBlank();
 		assertThat(UUID.fromString(doneMdc.get("executionId"))).isNotNull();
 		assertThat(Long.parseLong(doneMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
@@ -125,10 +128,79 @@ class Dept44SchedulerAspectTest {
 
 		// assert structured MDC fields on the "fail" log line
 		final var failMdc = mdcOf("fail");
-		assertThat(failMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(failMdc).containsEntry("outcome", "FAILURE");
+		assertThat(failMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "FAILURE");
 		assertThat(failMdc.get("executionId")).isNotBlank();
 		assertThat(Long.parseLong(failMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
+	}
+
+	@Test
+	void testAroundScheduledMethodError() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT2M")).thenReturn("PT2M");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
+		final var error = new StackOverflowError("too deep");
+		when(pjp.proceed()).thenThrow(error);
+
+		assertThatThrownBy(() -> aspect.aroundScheduledMethod(pjp, dept44Scheduled)).isSameAs(error);
+
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getDetails()).containsEntry("Reason", error.toString());
+		assertThat(mdcOf("fail with an error")).containsEntry("outcome", "FAILURE");
+		assertThat(RequestId.get()).isNull();
+		assertThat(MDC.get("schedulerName")).isNull();
+	}
+
+	@Test
+	void testAroundScheduledMethodWithInvalidMaximumExecutionTime() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("${unresolved}")).thenReturn("${unresolved}");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("${unresolved}");
+		when(pjp.proceed()).thenReturn("Success");
+
+		assertThat(aspect.aroundScheduledMethod(pjp, dept44Scheduled)).isEqualTo("Success");
+
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("UP");
+		// The thread-bound request id is released, so the next run on this thread gets a new one
+		assertThat(RequestId.get()).isNull();
+		assertThat(RequestId.init()).isTrue();
+		RequestId.reset();
+	}
+
+	@Test
+	void testAroundScheduledMethodInterruptedKeepsTheInterrupt() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT2M")).thenReturn("PT2M");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
+		when(pjp.proceed()).thenThrow(new InterruptedException("shutting down"));
+
+		aspect.aroundScheduledMethod(pjp, dept44Scheduled);
+
+		// Thread.interrupted() also clears the flag again, for the tests that follow on this thread
+		assertThat(Thread.interrupted()).isTrue();
+	}
+
+	@Test
+	void testAroundScheduledMethodIsRestrictedWhileStillRunningPastItsMaximum() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT-1S")).thenReturn("PT-1S");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT-1S");
+		final var healthWhileRunning = new AtomicReference<Health>();
+		when(pjp.proceed()).thenAnswer(_ -> {
+			healthWhileRunning.set(healthContributor.getOrCreateIndicator("TestTask").health());
+			return "Success";
+		});
+
+		aspect.aroundScheduledMethod(pjp, dept44Scheduled);
+
+		assertThat(healthWhileRunning.get().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat((String) healthWhileRunning.get().getDetails().get("Reason")).startsWith("Maximum execution time exceeded, still running since");
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getDetails()).containsEntry("Reason", "Maximum execution time exceeded");
 	}
 
 	@Test
@@ -153,8 +225,9 @@ class Dept44SchedulerAspectTest {
 			.findFirst()
 			.orElseThrow()
 			.getMDCPropertyMap();
-		assertThat(warnMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(warnMdc).containsEntry("outcome", "TIMEOUT");
+		assertThat(warnMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "TIMEOUT");
 		assertThat(Long.parseLong(warnMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
 	}
 

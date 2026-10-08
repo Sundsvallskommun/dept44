@@ -28,11 +28,14 @@ public final class DateUtils {
 	 * Time with offset +4h into time with local offset +1h.
 	 * 2021-11-10T12:23:42.500+04:00 -> 2021-11-10T09:23:42.500+01:00
 	 *
-	 * Time with no offset (e.g. LocalDateTime), with DST.
-	 * 2021-06-10T09:23:42 -> 2021-06-10T11:23:42+02:00
+	 * Time with no offset (e.g. LocalDateTime) is taken as local time and keeps its wall-clock time, with DST.
+	 * 2021-06-10T09:23:42 -> 2021-06-10T09:23:42+02:00
 	 *
-	 * Time with no offset (e.g. LocalDateTime).
-	 * 2021-11-10T09:23:42 -> 2021-11-10T11:23:42+01:00
+	 * Time with no offset (e.g. LocalDateTime) is taken as local time and keeps its wall-clock time.
+	 * 2021-11-10T09:23:42 -> 2021-11-10T09:23:42+01:00
+	 *
+	 * Local time that does not exist, in the gap when the clocks are put forward, is moved forward by the length of the gap.
+	 * 2021-03-28T02:30 -> 2021-03-28T03:30+02:00
 	 * </pre>
 	 *
 	 * @param  temporal                 the provided date-time.
@@ -63,14 +66,16 @@ public final class DateUtils {
 	}
 
 	/**
-	 * Method for converting an LocalDateTime to OffsetDateTime with local offset.
+	 * Method for converting an LocalDateTime to OffsetDateTime with local offset. Resolving through the time zone (rather
+	 * than looking up an offset for the local time) gives the offset that is in effect at the resulting instant, also for
+	 * a local time in a daylight saving gap.
 	 *
 	 * @param  localDateTime the date to convert
 	 * @return               offsetDateTime with local offset
 	 */
 	private static OffsetDateTime toOffsetDateTimeWithLocalOffset(final LocalDateTime localDateTime) {
 		return Optional.ofNullable(localDateTime)
-			.map(localDateTime1 -> localDateTime1.atOffset(ZoneId.systemDefault().getRules().getOffset(localDateTime1)))
+			.map(localDateTime1 -> localDateTime1.atZone(ZoneId.systemDefault()).toOffsetDateTime())
 			.orElse(null);
 	}
 }

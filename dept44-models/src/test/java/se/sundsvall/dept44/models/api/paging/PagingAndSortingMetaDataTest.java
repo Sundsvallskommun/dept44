@@ -2,7 +2,6 @@ package se.sundsvall.dept44.models.api.paging;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 
@@ -14,6 +13,7 @@ import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetter
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class PagingAndSortingMetaDataTest {
@@ -60,7 +60,7 @@ class PagingAndSortingMetaDataTest {
 	@Test
 	void testPopulationWithPage() {
 
-		var pageMock = Mockito.mock(Page.class);
+		var pageMock = mock(Page.class);
 
 		when(pageMock.getNumber()).thenReturn(10);
 		when(pageMock.getSize()).thenReturn(20);
@@ -83,7 +83,7 @@ class PagingAndSortingMetaDataTest {
 	@Test
 	void testPopulationWithPageNoSorting() {
 
-		var pageMock = Mockito.mock(Page.class);
+		var pageMock = mock(Page.class);
 
 		when(pageMock.getNumber()).thenReturn(10);
 		when(pageMock.getSize()).thenReturn(20);

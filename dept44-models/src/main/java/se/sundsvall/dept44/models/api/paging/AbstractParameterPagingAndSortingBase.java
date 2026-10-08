@@ -39,7 +39,9 @@ public abstract class AbstractParameterPagingAndSortingBase extends AbstractPara
 
 	@JsonIgnore
 	public Sort sort() {
+		// An empty sortBy (such as from "?sortBy=") means unsorted; Sort.by requires at least one property
 		return Optional.ofNullable(this.sortBy)
+			.filter(sortByList -> !sortByList.isEmpty())
 			.map(sortByList -> Sort.by(Optional.ofNullable(this.sortDirection).orElse(DEFAULT_DIRECTION), sortByList.toArray(new String[0])))
 			.orElseGet(Sort::unsorted);
 	}

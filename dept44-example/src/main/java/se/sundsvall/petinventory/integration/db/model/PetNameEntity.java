@@ -109,9 +109,11 @@ public class PetNameEntity {
 		return this;
 	}
 
+	// The images are left out of hashCode and equals: Hibernate's collection compares by identity, and an image's
+	// content should not drive the pet's equality. toString lists them, each without its content.
 	@Override
 	public int hashCode() {
-		return Objects.hash(created, id, images, modified, name);
+		return Objects.hash(created, id, modified, name);
 	}
 
 	@Override
@@ -122,7 +124,7 @@ public class PetNameEntity {
 		if (!(obj instanceof final PetNameEntity other)) {
 			return false;
 		}
-		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(images, other.images) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
+		return Objects.equals(created, other.created) && Objects.equals(id, other.id) && Objects.equals(modified, other.modified) && Objects.equals(name, other.name);
 	}
 
 	@Override

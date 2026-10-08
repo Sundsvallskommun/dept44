@@ -20,21 +20,27 @@ final class BoundedCapture {
 	}
 
 	void write(final byte[] bytes, final int offset, final int length) {
+		if (accepts(length)) {
+			buffer.write(bytes, offset, length);
+		}
+	}
+
+	void write(final int b) {
+		if (accepts(1)) {
+			buffer.write(b);
+		}
+	}
+
+	private boolean accepts(final int length) {
 		if (overflowed) {
-			return;
+			return false;
 		}
 		if (policy.exceedsLimit((long) buffer.size() + length)) {
 			overflowed = true;
 			buffer = null;
-			return;
+			return false;
 		}
-		buffer.write(bytes, offset, length);
-	}
-
-	void write(final int b) {
-		write(new byte[] {
-			(byte) b
-		}, 0, 1);
+		return true;
 	}
 
 	boolean isOverflowed() {

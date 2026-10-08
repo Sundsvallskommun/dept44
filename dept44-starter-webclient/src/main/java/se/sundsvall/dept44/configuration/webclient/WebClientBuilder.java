@@ -13,7 +13,10 @@ import java.util.function.Predicate;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.ClientCredentialsReactiveOAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.RemoveAuthorizedClientReactiveOAuth2AuthorizationFailureHandler;
+import org.springframework.security.oauth2.client.endpoint.WebClientReactiveClientCredentialsTokenResponseClient;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
@@ -27,8 +30,10 @@ import org.zalando.logbook.netty.LogbookClientHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import se.sundsvall.dept44.configuration.Constants;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static java.util.Optional.ofNullable;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
@@ -40,6 +45,7 @@ public class WebClientBuilder {
 	private Duration readTimeout = Duration.ofSeconds(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS);
 	private Duration writeTimeout = Duration.ofSeconds(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS);
 	private Logbook logbook;
+	private BodyCapturePolicy bodyCapturePolicy = BodyCapturePolicy.withDefaultLimit();
 
 	public WebClientBuilder() {
 		customizers = new ArrayList<>();
@@ -164,13 +170,27 @@ public class WebClientBuilder {
 	}
 
 	/**
-	 * Sets the Logbook instance to use for payload logging.
+	 * Sets the Logbook instance to use for payload logging. At most {@link BodyCapturePolicy#DEFAULT_MAX_BODY_SIZE} of a
+	 * response body is held in memory for it; use {@link #withLogbook(Logbook, BodyCapturePolicy)} to apply the service's
+	 * own {@code logbook.logs.maxBodySizeToCapture}.
 	 *
 	 * @param  logbook the Logbook instance
 	 * @return         this builder
 	 */
 	public WebClientBuilder withLogbook(final Logbook logbook) {
+		return withLogbook(logbook, BodyCapturePolicy.withDefaultLimit());
+	}
+
+	/**
+	 * Sets the Logbook instance to use for payload logging, and how much of a response body may be held in memory for it.
+	 *
+	 * @param  logbook           the Logbook instance
+	 * @param  bodyCapturePolicy the {@link BodyCapturePolicy} bean
+	 * @return                   this builder
+	 */
+	public WebClientBuilder withLogbook(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
 		this.logbook = logbook;
+		this.bodyCapturePolicy = requireNonNull(bodyCapturePolicy, "bodyCapturePolicy may not be null.");
 		return this;
 	}
 
@@ -230,26 +250,54 @@ public class WebClientBuilder {
 		return builder;
 	}
 
+	/**
+	 * Like the Feign OAuth2 interceptor: a token the server rejects (401 or 403 with an OAuth2 error) is evicted, so the
+	 * next call fetches a new one instead of reusing the rejected token until it expires, and the calls to the token
+	 * endpoint use this client's timeouts instead of none. Token requests are not payload logged: their body holds the
+	 * client secret.
+	 */
 	private ServerOAuth2AuthorizedClientExchangeFilterFunction createOAuth2Filter(final ClientRegistration clientRegistration) {
 		final var clientRegistrations = new InMemoryReactiveClientRegistrationRepository(clientRegistration);
 		final var clientService = new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrations);
-		final var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(
-			new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService));
+
+		final var tokenResponseClient = new WebClientReactiveClientCredentialsTokenResponseClient();
+		tokenResponseClient.setWebClient(WebClient.builder().clientConnector(createClientConnector(false)).build());
+		final var authorizedClientProvider = new ClientCredentialsReactiveOAuth2AuthorizedClientProvider();
+		authorizedClientProvider.setAccessTokenResponseClient(tokenResponseClient);
+
+		final var authorizedClientManager = new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(clientRegistrations, clientService);
+		authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider);
+
+		final var oAuth2Filter = new ServerOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
 		oAuth2Filter.setDefaultClientRegistrationId(clientRegistration.getRegistrationId());
+		oAuth2Filter.setAuthorizationFailureHandler(new RemoveAuthorizedClientReactiveOAuth2AuthorizationFailureHandler(
+			(clientRegistrationId, principal, attributes) -> clientService.removeAuthorizedClient(clientRegistrationId, principal.getName())));
 
 		return oAuth2Filter;
 	}
 
 	private ReactorClientHttpConnector createClientConnector() {
+		return createClientConnector(true);
+	}
+
+	/**
+	 * Netty's timeout handlers take whole units; they are given milliseconds, since whole seconds would turn a timeout
+	 * below one second into 0, which disables it.
+	 */
+	private ReactorClientHttpConnector createClientConnector(final boolean payloadLogging) {
 		return new ReactorClientHttpConnector(HttpClient.create()
 			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(connectTimeout.toMillis()))
 			.doOnConnected(connection -> {
 				connection
-					.addHandlerLast(new ReadTimeoutHandler(Math.toIntExact(readTimeout.toSeconds())))
-					.addHandlerLast(new WriteTimeoutHandler(Math.toIntExact(writeTimeout.toSeconds())));
+					.addHandlerLast(new ReadTimeoutHandler(readTimeout.toMillis(), MILLISECONDS))
+					.addHandlerLast(new WriteTimeoutHandler(writeTimeout.toMillis(), MILLISECONDS));
 
-				if (logbook != null) {
-					connection.addHandlerLast(new LogbookClientHandler(logbook));
+				if (payloadLogging && logbook != null) {
+					// Logbook's handler between the two that keep it from holding more of a body than the policy allows
+					connection
+						.addHandlerLast(new LogbookCaptureLimit.Limiter(bodyCapturePolicy))
+						.addHandlerLast(new LogbookClientHandler(logbook))
+						.addHandlerLast(new LogbookCaptureLimit.Restorer());
 				}
 			}));
 	}

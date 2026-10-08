@@ -12,6 +12,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
@@ -159,7 +160,8 @@ public class CheckOpenApiPropertiesMojo extends AbstractDept44CheckMojo {
 			}
 
 			return properties;
-		} catch (final IOException e) {
+		} catch (final IOException | JacksonException e) {
+			// Jackson 3 reports invalid YAML with an unchecked JacksonException
 			throw new MojoFailureException(String.format(
 				"Unable to load properties/YAML file %s: %s", propertyFile.getName(), e.getMessage()), e);
 		}

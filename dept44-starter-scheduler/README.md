@@ -5,9 +5,9 @@ checks, and schedlock integration.
 
 ## Prerequisites
 
-- Java 21
+- Java 25
 - Maven 3.9.9+
-- Spring Boot 3.x
+- Spring Boot 4.x
 
 ## Installation
 
@@ -18,7 +18,6 @@ Include the dependency in your `pom.xml`:
 <dependency>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-starter-scheduler</artifactId>
-	<version>6.0.6-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -29,8 +28,8 @@ Include the dependency in your `pom.xml`:
    via the `/actuator/health` endpoint.
 
 2. **Centralized Exception Handling**  
-   Exceptions thrown during task execution are automatically logged and can restrict the system's health status to "
-   RESTRICTED."
+   Exceptions thrown during task execution are logged and set the task's health status to "RESTRICTED". So does an
+   `Error` (such as `OutOfMemoryError`), which is logged and then passed on.
 
 3. **ShedLock Integration**  
    Ensures that only one instance of a task runs at a time across distributed systems.
@@ -41,7 +40,12 @@ Include the dependency in your `pom.xml`:
 5. **Customizable Configurations**  
    Scheduling, locking, and execution time limits are all configurable via properties or YAML files.
 
-6. **Manual Health Management**  
+6. **Execution Time Limit**  
+   A run that takes longer than `maximumExecutionTime` sets the health status to "RESTRICTED", already while it is still
+   running. The limit is an ISO-8601 duration (`PT2M`) or the simple form also used for the lock (`2m`); an invalid value
+   falls back to two minutes and is logged as a warning on every run.
+
+7. **Manual Health Management**  
    Allows for custom handling of exceptions within tasks while still enabling health status updates programmatically.
 
 ## Usage
@@ -56,6 +60,7 @@ Include the dependency in your `pom.xml`:
            cron = "${scheduler.scheduled-task.cron}",
            name = "${scheduler.scheduled-task.name}",
            lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
+           lockAtLeastFor = "${schedulers.scheduled-task.shedlock-lock-at-least-for}",
            maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
        )
        public void scheduledTask() {
@@ -115,7 +120,11 @@ scheduler.scheduled-task.name=ScheduledTask
 scheduler.scheduled-task.cron=0 0/5 * * * ?
 # Lock at most for 2 minutes
 schedulers.scheduled-task.shedlock-lock-at-most-for=PT2M
-# Limit execution time to 2 minutes, if exceeded, the task will be marked as unhealthy
+# Optional: keep the lock for at least 1 minute, so that a pod whose trigger fires a little later cannot run the same
+# schedule again. It must not be longer than lock-at-most-for (two minutes unless set), or the application fails to
+# start; raise lock-at-most-for first if needed.
+schedulers.scheduled-task.shedlock-lock-at-least-for=PT1M
+# Limit execution time to 2 minutes; a run that takes longer marks the task as unhealthy, also while it is still running
 scheduler.scheduled-task.maximum-execution-time=PT2M
 ```
 
@@ -127,6 +136,7 @@ scheduler:
     name: "ScheduledTask"
     cron: "0 0/5 * * * ?"
     shedlock-lock-at-most-for: "PT2M"
+    shedlock-lock-at-least-for: "PT1M"
     maximum-execution-time: "PT2M"
 ```
 

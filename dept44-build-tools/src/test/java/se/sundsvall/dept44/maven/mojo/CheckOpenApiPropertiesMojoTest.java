@@ -72,4 +72,14 @@ class CheckOpenApiPropertiesMojoTest {
 				"Property \"openapi.title\" is missing or empty in application*.properties/YAML",
 				"Property \"openapi.version\" is missing or empty in application*.properties/YAML");
 	}
+
+	@Test
+	void executeWithInvalidYaml() {
+		when(mockMavenProject.getBasedir())
+			.thenReturn(new File("src/test/resources/openapi-properties/invalid-yaml"));
+
+		assertThatExceptionOfType(MojoFailureException.class)
+			.isThrownBy(mojo::execute)
+			.withMessageStartingWith("Unable to load properties/YAML file application.yml");
+	}
 }

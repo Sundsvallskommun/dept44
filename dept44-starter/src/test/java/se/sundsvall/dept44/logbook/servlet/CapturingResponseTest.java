@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.logbook.servlet;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -69,19 +71,46 @@ class CapturingResponseTest {
 	}
 
 	@Test
-	void writerAndSingleBytesAreCaptured() throws IOException {
+	void singleBytesAreCaptured() throws IOException {
+		final var response = new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1");
+		response.withBody();
+
+		response.getOutputStream().write('a');
+		response.getOutputStream().write('b');
+
+		assertThat(response.getBody()).isEqualTo("ab".getBytes(UTF_8));
+	}
+
+	@Test
+	void writerIsTheContainersAndIsCaptured() throws IOException {
 		final var mock = new MockHttpServletResponse();
 		mock.setCharacterEncoding("UTF-8");
 		final var response = new CapturingResponse(mock, policy, "HTTP/1.1");
 		response.withBody();
 
-		response.getOutputStream().write('a');
-		response.getWriter().write("bc");
-		response.flushBuffer();
+		response.getWriter().write("åb");
+		response.getWriter().write('c');
+		response.getWriter().write("xdx".toCharArray(), 1, 1);
+		response.getWriter().flush();
 
-		assertThat(response.getBody()).isEqualTo("abc".getBytes(UTF_8));
-		assertThat(mock.getContentAsString()).isEqualTo("abc");
+		assertThat(response.getBody()).isEqualTo("åbcd".getBytes(UTF_8));
+		assertThat(mock.getContentAsString()).isEqualTo("åbcd");
 		assertThat(response.getWriter()).isSameAs(response.getWriter());
+
+		response.getWriter().close();
+
+		assertThat(mock.isCommitted()).isTrue();
+	}
+
+	@Test
+	void writerBuffersNothingOfItsOwn() throws IOException {
+		final var mock = new MockHttpServletResponse();
+		final var response = new CapturingResponse(mock, policy, "HTTP/1.1");
+
+		response.getWriter().write("abc");
+
+		// Everything written has reached the container, so a reset of the response discards it
+		assertThat(mock.getContentAsString()).isEqualTo("abc");
 	}
 
 	@Test
@@ -102,14 +131,83 @@ class CapturingResponseTest {
 	}
 
 	@Test
+	void resetDecidesAgainWhetherToCapture() throws IOException {
+		final var response = new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1");
+		response.withBody();
+		response.setContentType("application/pdf");
+		response.getOutputStream().write("%PDF".getBytes(UTF_8));
+
+		assertThat(response.getBody()).isEmpty();
+
+		response.reset();
+		response.setContentType("application/problem+json");
+		response.getOutputStream().write("{}".getBytes(UTF_8));
+
+		assertThat(response.getBody()).isEqualTo("{}".getBytes(UTF_8));
+	}
+
+	@Test
 	void withoutBodyStopsCapturing() throws IOException {
 		final var response = new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1");
 		response.withBody();
 		response.getOutputStream().write("abc".getBytes(UTF_8));
 
 		response.withoutBody();
+		response.withBody();
+		response.getOutputStream().write("d".getBytes(UTF_8));
 
 		assertThat(response.getBody()).isEmpty();
+	}
+
+	@Test
+	void bodyIsCapturedOnlyForAcceptedStatuses() throws IOException {
+		final var rejectedOnly = new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1", status -> status == 401);
+		rejectedOnly.withBody();
+		rejectedOnly.getOutputStream().write("ok".getBytes(UTF_8));
+
+		assertThat(rejectedOnly.getBody()).isEmpty();
+
+		final var rejected = new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1", status -> status == 401);
+		rejected.withBody();
+		rejected.setStatus(401);
+		rejected.getOutputStream().write("no".getBytes(UTF_8));
+
+		assertThat(rejected.getBody()).isEqualTo("no".getBytes(UTF_8));
+	}
+
+	@Test
+	void writerReportsAnErrorOfTheContainersWriter() throws IOException {
+		final var mock = new MockHttpServletResponse() {
+			@Override
+			public PrintWriter getWriter() {
+				// Such as after the client disconnected: the container's writer keeps the error instead of throwing it
+				return new PrintWriter(Writer.nullWriter()) {
+					@Override
+					public boolean checkError() {
+						return true;
+					}
+				};
+			}
+		};
+
+		assertThat(new CapturingResponse(mock, policy, "HTTP/1.1").getWriter().checkError()).isTrue();
+		assertThat(new CapturingResponse(new MockHttpServletResponse(), policy, "HTTP/1.1").getWriter().checkError()).isFalse();
+	}
+
+	@Test
+	void failedRequestIsReportedAsServerErrorUntilCommitted() {
+		final var mock = new MockHttpServletResponse();
+		final var response = new CapturingResponse(mock, policy, "HTTP/1.1");
+
+		response.failed();
+
+		assertThat(response.getStatus()).isEqualTo(500);
+		assertThat(mock.getStatus()).isEqualTo(200);
+
+		mock.setStatus(404);
+		mock.flushBuffer();
+
+		assertThat(response.getStatus()).isEqualTo(404);
 	}
 
 	@Test

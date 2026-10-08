@@ -1,10 +1,14 @@
 package se.sundsvall.dept44.authorization.util;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import io.jsonwebtoken.security.WeakKeyException;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -94,6 +98,40 @@ class JwtTokenUtilTest {
 			.containsExactlyInAnyOrder(
 				"GenericGrantedAuthority [role=READ, accesses=[\"CATEGORY_1\"]]",
 				"GenericGrantedAuthority [role=WRITE, accesses=[\"CATEGORY_1\",\"CATEGORY_2\"]]");
+	}
+
+	@Test
+	void getRolesKeepsAccessValuesIntact() {
+		final var jwt = Jwts.builder()
+			.subject("userName")
+			.claim("roles", Map.of(
+				"READ", List.of("A, B", "007", "x]y"),
+				"ADMIN", Map.of("municipalityId", "2281")))
+			.signWith(Keys.hmacShaKeyFor(secret.getBytes()))
+			.compact();
+
+		final var roles = new JwtTokenUtil(secret).getRolesFromToken(jwt);
+
+		final var read = roles.stream().filter(role -> role.hasAuthority("READ")).findFirst().orElseThrow();
+		assertThat(read.hasAuthority("READ", "$[?(@ == 'A, B')]")).isTrue();
+		assertThat(read.hasAuthority("READ", "$[?(@ == 'B')]")).isFalse();
+		assertThat(read.hasAuthority("READ", "$[?(@ == '007')]")).isTrue();
+		assertThat(read.hasAuthority("READ", "$[?(@ == 'x]y')]")).isTrue();
+		final var admin = roles.stream().filter(role -> role.hasAuthority("ADMIN")).findFirst().orElseThrow();
+		assertThat(admin.getAccesses().read("$.municipalityId", String.class)).isEqualTo("2281");
+	}
+
+	@Test
+	void getRolesReadsAccessesSentAsJsonInAString() {
+		final var jwt = Jwts.builder()
+			.subject("userName")
+			.claim("roles", Map.of("READ", "[\"CATEGORY_1\"]"))
+			.signWith(Keys.hmacShaKeyFor(secret.getBytes()))
+			.compact();
+
+		final var read = new JwtTokenUtil(secret).getRolesFromToken(jwt).iterator().next();
+
+		assertThat(read.hasAuthority("READ", "$[?(@ == 'CATEGORY_1')]")).isTrue();
 	}
 
 	@Test

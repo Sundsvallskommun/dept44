@@ -6,6 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Optional;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,10 +24,12 @@ import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
 import se.sundsvall.petinventory.api.model.PetInventoryItem;
 import se.sundsvall.petinventory.service.PetInventoryService;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static org.springframework.http.ResponseEntity.created;
@@ -36,8 +41,6 @@ import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 @RequestMapping("/pet-inventory-items")
 @Tag(name = "Pet inventory", description = "Pet inventory operations")
 class PetInventoryResource {
-
-	private static final String CONTENT_DISPOSITION_HEADER_VALUE = "attachment; filename=\"%s\"";
 
 	private final PetInventoryService petInventoryService;
 
@@ -98,10 +101,23 @@ class PetInventoryResource {
 	})
 	ResponseEntity<byte[]> getPetImage(@PathVariable final long id, @PathVariable final long imageId) {
 		final var petImage = petInventoryService.getPetImage(id, imageId);
+		// ContentDisposition quotes and encodes the file name, which comes from the uploading client
+		final var contentDisposition = ContentDisposition.attachment().filename(petImage.getFileName(), UTF_8).build();
 		return ok()
-			.header(CONTENT_DISPOSITION, CONTENT_DISPOSITION_HEADER_VALUE.formatted(petImage.getFileName()))
+			.header(CONTENT_DISPOSITION, contentDisposition.toString())
 			.contentLength(petImage.getContent().length)
-			.contentType(MediaType.parseMediaType(petImage.getMimeType()))
+			.contentType(mediaType(petImage.getMimeType()))
 			.body(petImage.getContent());
+	}
+
+	/**
+	 * The MIME type was sent by the uploading client, so it may be missing or invalid.
+	 */
+	private static MediaType mediaType(final String mimeType) {
+		try {
+			return Optional.ofNullable(mimeType).map(MediaType::parseMediaType).orElse(APPLICATION_OCTET_STREAM);
+		} catch (final InvalidMediaTypeException _) {
+			return APPLICATION_OCTET_STREAM;
+		}
 	}
 }

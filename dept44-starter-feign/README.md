@@ -29,7 +29,7 @@ Include the dependency in your `pom.xml`:
   propagation
 - **Binary-aware decoder**: Handles non-JSON responses (images, files, streams)
 - **Pageable support**: Encodes Spring Data `Pageable` parameters as query strings
-- **Retry with backoff**: `ActionRetryer` for transient failure handling
+- **Token retry**: `ActionRetryer` retries a call once, after evicting the cached OAuth2 token, when a `RetryResponseVerifier` reports the token as rejected (such as a 401 with `invalid_token`). Other failures, including I/O errors and timeouts, are not retried
 - **Circuit breaker**: Integration with Resilience4j
 
 ## Usage

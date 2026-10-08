@@ -233,29 +233,9 @@ components:
           type: string
         detail:
           type: string
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
         instance:
           type: string
           format: uri
-    ThrowableProblem:
-      type: object
-      properties:
-        type:
-          type: string
-          format: uri
-        title:
-          type: string
-        status:
-          type: integer
-          format: int32
-        detail:
-          type: string
-        instance:
-          type: string
-          format: uri
-        causeAsProblem:
-          $ref: "#/components/schemas/ThrowableProblem"
     Violation:
       type: object
       properties:

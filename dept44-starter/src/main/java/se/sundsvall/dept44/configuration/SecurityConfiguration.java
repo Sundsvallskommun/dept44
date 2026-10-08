@@ -18,6 +18,9 @@ public class SecurityConfiguration {
 	@Order(0)
 	SecurityFilterChain filterChain(final HttpSecurity http) {
 		return http
+			// CSRF protection guards credentials a browser sends by itself, such as cookies. Nothing here authenticates by
+			// cookie or session: every request is permitted, and dept44-starter-authorization reads its JWT from a request
+			// header, which a browser never adds on its own.
 			.csrf(CsrfConfigurer::disable) // Disable CSRF
 			.securityMatcher("/**")
 			.authorizeHttpRequests(authorizeHttpRequestsCustomizer -> authorizeHttpRequestsCustomizer.anyRequest().permitAll())

@@ -11,6 +11,11 @@ public final class RequestId {
 
 	public static final String MDC_REQUEST_ID_KEY = "x-request-id";
 	public static final String HEADER_NAME = "x-request-id";
+	/**
+	 * Key of the request id in the Reactor context of a reactive request, where thread-bound state does not follow the
+	 * request.
+	 */
+	public static final String CONTEXT_KEY = RequestId.class.getName();
 	private static final ThreadLocal<Integer> THREAD_LOCAL_COUNTER = new ThreadLocal<>();
 
 	private RequestId() {}

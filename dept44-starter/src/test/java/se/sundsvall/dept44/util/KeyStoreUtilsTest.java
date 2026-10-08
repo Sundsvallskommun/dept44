@@ -4,7 +4,6 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -15,7 +14,7 @@ class KeyStoreUtilsTest {
 
 	@Test
 	void loadKeyStoreFromByteArray() throws IOException {
-		try (var in = getClass().getResourceAsStream(format("/%s", KEY_STORE_FILENAME))) {
+		try (var in = getClass().getResourceAsStream("/" + KEY_STORE_FILENAME)) {
 			assert in != null;
 
 			var keyStoreData = in.readAllBytes();
@@ -53,9 +52,16 @@ class KeyStoreUtilsTest {
 
 	@Test
 	void loadKeyStoreFromLocation() {
-		var keyStore = KeyStoreUtils.loadKeyStore(format("classpath:%s", KEY_STORE_FILENAME), KEY_STORE_PASSWORD);
+		var keyStore = KeyStoreUtils.loadKeyStore("classpath:" + KEY_STORE_FILENAME, KEY_STORE_PASSWORD);
 
 		assertThat(keyStore).isNotNull();
+	}
+
+	@Test
+	void loadKeyStoreWithoutLocation() {
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> KeyStoreUtils.loadKeyStore((String) null, "dummyPassword"))
+			.withMessage("Unable to load key store");
 	}
 
 	@Test

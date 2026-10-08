@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -48,7 +47,6 @@ class PrePostMethodSecurityConfigurationTest {
 		@Mock JwtAuthorizationProperties properties,
 		@Mock JwtTokenUtil jwtTokenUtil,
 		@Mock WebAuthenticationDetailsSource webAuthenticationDetailsSource,
-		@Mock ApplicationContext applicationContext,
 		@Mock JsonMapper jsonMapper) {
 
 		final var secret = "secret";
@@ -57,7 +55,7 @@ class PrePostMethodSecurityConfigurationTest {
 
 		final PrePostMethodSecurityConfiguration configuration = new PrePostMethodSecurityConfiguration();
 
-		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, applicationContext, jsonMapper))
+		assertThat(configuration.jwtAuthorizationExtractionFilter(properties, jwtTokenUtil, webAuthenticationDetailsSource, jsonMapper))
 			.isNotNull().isInstanceOf(JwtAuthorizationExtractionFilter.class);
 		assertThat(configuration.webAuthenticationDetailsSource()).isNotNull().isInstanceOf(WebAuthenticationDetailsSource.class);
 		assertThat(configuration.jwtTokenUtil(jwtAuthorizationProperties)).isNotNull().hasFieldOrPropertyWithValue("secret", secret.getBytes());

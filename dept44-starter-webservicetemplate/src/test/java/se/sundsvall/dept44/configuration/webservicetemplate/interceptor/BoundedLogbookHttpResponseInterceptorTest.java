@@ -77,7 +77,7 @@ class BoundedLogbookHttpResponseInterceptorTest {
 		final var stage = attributes.getDeclaredField("STAGE");
 		stage.setAccessible(true);
 
-		assertThat(BoundedLogbookHttpResponseInterceptor.STAGE).isEqualTo(stage.get(null));
+		assertThat(stage.get(null)).isEqualTo(BoundedLogbookHttpResponseInterceptor.STAGE);
 	}
 
 	@Test

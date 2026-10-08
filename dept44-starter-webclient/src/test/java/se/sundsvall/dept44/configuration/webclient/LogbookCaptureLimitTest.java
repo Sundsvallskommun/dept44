@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.configuration.webclient;
 
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.DefaultHttpContent;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.mockwebserver.MockResponse;
@@ -89,6 +91,23 @@ class LogbookCaptureLimitTest {
 
 		assertThat(second).isEqualTo(text(LIMIT / 2));
 		await().untilAsserted(() -> assertThat(loggedBody.get()).isEqualTo(text(LIMIT / 2)));
+	}
+
+	@Test
+	void hiddenChunksAreEqualWhenTheyHideEqualChunks() {
+		final var original = new DefaultHttpContent(Unpooled.copiedBuffer("a", UTF_8));
+		final var other = new DefaultHttpContent(Unpooled.copiedBuffer("b", UTF_8));
+
+		assertThat(new LogbookCaptureLimit.HiddenContent(original))
+			.isEqualTo(new LogbookCaptureLimit.HiddenContent(original))
+			.hasSameHashCodeAs(new LogbookCaptureLimit.HiddenContent(original))
+			.isNotEqualTo(new LogbookCaptureLimit.HiddenContent(other))
+			.isNotEqualTo(original);
+		assertThat(new LogbookCaptureLimit.HiddenLastContent(original, Unpooled.copiedBuffer("shown", UTF_8)))
+			.isEqualTo(new LogbookCaptureLimit.HiddenLastContent(original, Unpooled.copiedBuffer("shown", UTF_8)))
+			.hasSameHashCodeAs(new LogbookCaptureLimit.HiddenLastContent(original, Unpooled.copiedBuffer("shown", UTF_8)))
+			.isNotEqualTo(new LogbookCaptureLimit.HiddenLastContent(other, Unpooled.copiedBuffer("shown", UTF_8)))
+			.isNotEqualTo(original);
 	}
 
 	private org.springframework.web.reactive.function.client.WebClient webClient() {

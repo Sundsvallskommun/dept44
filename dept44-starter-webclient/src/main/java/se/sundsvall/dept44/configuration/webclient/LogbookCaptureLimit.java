@@ -124,9 +124,20 @@ final class LogbookCaptureLimit {
 
 		private final HttpContent original;
 
-		private HiddenContent(final HttpContent original) {
+		HiddenContent(final HttpContent original) {
 			super(Unpooled.EMPTY_BUFFER);
 			this.original = original;
+		}
+
+		// Netty compares chunks by their decoder result only, so the chunk hidden is compared by identity
+		@Override
+		public boolean equals(final Object other) {
+			return other instanceof final HiddenContent hidden && super.equals(hidden) && original == hidden.original;
+		}
+
+		@Override
+		public int hashCode() {
+			return 31 * super.hashCode() + System.identityHashCode(original);
 		}
 	}
 
@@ -137,9 +148,20 @@ final class LogbookCaptureLimit {
 
 		private final HttpContent original;
 
-		private HiddenLastContent(final HttpContent original, final ByteBuf shown) {
+		HiddenLastContent(final HttpContent original, final ByteBuf shown) {
 			super(shown);
 			this.original = original;
+		}
+
+		// Netty compares chunks by their decoder result only, so the chunk hidden is compared by identity
+		@Override
+		public boolean equals(final Object other) {
+			return other instanceof final HiddenLastContent hidden && super.equals(hidden) && original == hidden.original;
+		}
+
+		@Override
+		public int hashCode() {
+			return 31 * super.hashCode() + System.identityHashCode(original);
 		}
 	}
 }

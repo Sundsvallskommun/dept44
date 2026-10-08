@@ -174,7 +174,7 @@ class CapturingResponseTest {
 	}
 
 	@Test
-	void failedRequestIsReportedAsServerErrorUntilCommitted() throws IOException {
+	void failedRequestIsReportedAsServerErrorUntilCommitted() {
 		final var mock = new MockHttpServletResponse();
 		final var response = new CapturingResponse(mock, policy, "HTTP/1.1");
 

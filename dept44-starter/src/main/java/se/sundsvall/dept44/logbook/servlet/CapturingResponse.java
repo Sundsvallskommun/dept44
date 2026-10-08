@@ -16,7 +16,6 @@ import org.zalando.logbook.HttpResponse;
 import org.zalando.logbook.Origin;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
-import static jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;

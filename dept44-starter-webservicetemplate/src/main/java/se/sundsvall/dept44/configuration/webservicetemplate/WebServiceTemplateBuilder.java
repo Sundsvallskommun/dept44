@@ -358,7 +358,8 @@ public class WebServiceTemplateBuilder {
 
 	private KeyManager[] keyManagers(final KeyStore keyStore) throws GeneralSecurityException {
 		if (keyStore == null) {
-			return null;
+			// No client certificate to present
+			return new KeyManager[0];
 		}
 		final var keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
 		keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());

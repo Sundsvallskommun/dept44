@@ -3,7 +3,6 @@ package se.sundsvall.dept44.test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
-import com.github.tomakehurst.wiremock.extension.Extension;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
@@ -191,20 +190,6 @@ public abstract class AbstractAppTest {
 		}
 
 		return this;
-	}
-
-	/**
-	 * Not supported: WireMock loads its extensions when the server is created, so an extension added to a running server
-	 * would silently never be applied. Register extensions where the WireMock server is configured instead.
-	 *
-	 * @param      extensions                    ignored
-	 * @return                                   never returns
-	 * @throws     UnsupportedOperationException always
-	 * @deprecated                               extensions can only be registered when the WireMock server is created
-	 */
-	@Deprecated(since = "8.0", forRemoval = true)
-	public AbstractAppTest withExtensions(final Extension... extensions) {
-		throw new UnsupportedOperationException("WireMock extensions must be registered when the WireMock server is created; added to a running server they are never applied");
 	}
 
 	public AbstractAppTest withHttpMethod(final HttpMethod method) {
@@ -718,7 +703,7 @@ public abstract class AbstractAppTest {
 			.findFirst()
 			.orElse("any URL");
 		return Optional.ofNullable(stub.getName())
-			.map(name -> format("%s (%s %s)", name, request.getMethod(), url))
-			.orElseGet(() -> format("%s %s", request.getMethod(), url));
+			.map(name -> name + " (" + request.getMethod() + " " + url + ")")
+			.orElseGet(() -> request.getMethod() + " " + url);
 	}
 }

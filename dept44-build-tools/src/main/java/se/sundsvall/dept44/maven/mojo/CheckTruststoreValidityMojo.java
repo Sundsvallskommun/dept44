@@ -53,20 +53,24 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 			var certificateFiles = truststoreDir.listFiles(File::isFile);
 			if (certificateFiles != null) {
 				for (var certificateFile : certificateFiles) {
-					try (var certificateInputStream = new FileInputStream(certificateFile)) {
-						var certificate = (X509Certificate) certificateFactory.generateCertificate(certificateInputStream);
-						var notAfter = certificate.getNotAfter().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-						if (notAfter.isBefore(expiry)) {
-							addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE), monthsUntilExpiration, today.format(ISO_DATE)));
-						}
-					} catch (final CertificateException e) {
-						// Like the runtime truststore, which skips such files: e.g. .gitkeep, .DS_Store or a README
-						getLog().warn("Skipping '%s', which is not an X.509 certificate: %s".formatted(certificateFile.getName(), e.getMessage()));
-					}
+					checkCertificate(certificateFile, today, expiry);
 				}
 			}
 		} catch (IOException e) {
 			throw new MojoFailureException("Unable to check certificates " + e.getLocalizedMessage(), e);
+		}
+	}
+
+	private void checkCertificate(final File certificateFile, final LocalDate today, final LocalDate expiry) throws IOException {
+		try (var certificateInputStream = new FileInputStream(certificateFile)) {
+			var certificate = (X509Certificate) certificateFactory.generateCertificate(certificateInputStream);
+			var notAfter = certificate.getNotAfter().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			if (notAfter.isBefore(expiry)) {
+				addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE), monthsUntilExpiration, today.format(ISO_DATE)));
+			}
+		} catch (final CertificateException e) {
+			// Like the runtime truststore, which skips such files: e.g. .gitkeep, .DS_Store or a README
+			getLog().warn("Skipping '%s', which is not an X.509 certificate: %s".formatted(certificateFile.getName(), e.getMessage()));
 		}
 	}
 

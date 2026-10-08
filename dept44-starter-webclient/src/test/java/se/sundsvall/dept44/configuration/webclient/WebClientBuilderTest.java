@@ -150,8 +150,9 @@ class WebClientBuilderTest {
 				.build();
 
 			final var call = webClient.get().retrieve().toBodilessEntity();
+			final var timeout = Duration.ofSeconds(5);
 
-			assertThatThrownBy(() -> call.block(Duration.ofSeconds(5)))
+			assertThatThrownBy(() -> call.block(timeout))
 				.isInstanceOf(WebClientRequestException.class)
 				.hasRootCauseInstanceOf(ReadTimeoutException.class);
 		}

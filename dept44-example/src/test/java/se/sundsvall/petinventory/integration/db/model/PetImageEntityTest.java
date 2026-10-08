@@ -76,9 +76,11 @@ class PetImageEntityTest {
 		final var image = PetImageEntity.create().withId(2L).withFileName("cat.jpg").withContent(new byte[1000]).withPetName(pet);
 		pet.setImages(List.of(image));
 
+		final var samePet = PetNameEntity.create().withId(1L).withName("Garfield");
+		samePet.setImages(List.of(PetImageEntity.create().withId(2L).withFileName("cat.jpg").withContent(new byte[1000]).withPetName(samePet)));
+
 		assertThat(pet.toString()).contains("petNameId=1", "content=1000 bytes");
-		assertThat(pet.hashCode()).isEqualTo(pet.hashCode());
-		assertThat(pet).isEqualTo(pet);
+		assertThat(pet).isEqualTo(samePet).hasSameHashCodeAs(samePet);
 		assertThat(image).isEqualTo(PetImageEntity.create().withId(2L).withFileName("cat.jpg").withContent(new byte[1000]).withPetName(pet));
 	}
 }

@@ -55,6 +55,9 @@ import static se.sundsvall.dept44.configuration.Constants.APPLICATION_YML;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class WebConfiguration implements WebMvcConfigurer {
 
+	/** The name of the municipality id path variable, also used as its MDC key. */
+	private static final String MUNICIPALITY_ID = "municipalityId";
+
 	private final int municipalityIdUriIndex;
 	private final List<String> allowedIds;
 
@@ -138,8 +141,6 @@ public class WebConfiguration implements WebMvcConfigurer {
 	 */
 	static class MunicipalityIdInterceptor implements HandlerInterceptor {
 
-		private static final String MUNICIPALITY_ID_VARIABLE = "municipalityId";
-
 		private final List<String> allowedIds;
 
 		MunicipalityIdInterceptor(final List<String> allowedIds) {
@@ -161,7 +162,7 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 		private static String municipalityId(final HttpServletRequest request) {
 			if (request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE) instanceof final Map<?, ?> variables) {
-				return variables.get(MUNICIPALITY_ID_VARIABLE) instanceof final String value ? value : null;
+				return variables.get(MUNICIPALITY_ID) instanceof final String value ? value : null;
 			}
 			return null;
 		}
@@ -261,13 +262,13 @@ public class WebConfiguration implements WebMvcConfigurer {
 			final FilterChain chain) throws ServletException, IOException {
 			final var pathParams = request.getRequestURI().split("/");
 			if (pathParams.length > municipalityIdUriIndex) {
-				MDC.put("municipalityId", pathParams[municipalityIdUriIndex]);
+				MDC.put(MUNICIPALITY_ID, pathParams[municipalityIdUriIndex]);
 			}
 
 			try {
 				chain.doFilter(request, response);
 			} finally {
-				MDC.remove("municipalityId");
+				MDC.remove(MUNICIPALITY_ID);
 			}
 		}
 	}

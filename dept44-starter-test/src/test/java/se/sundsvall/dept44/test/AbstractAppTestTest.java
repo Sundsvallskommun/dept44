@@ -3,7 +3,6 @@ package se.sundsvall.dept44.test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.admin.model.ListStubMappingsResult;
 import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
@@ -73,9 +72,6 @@ class AbstractAppTestTest {
 
 	@Mock
 	private WireMockServer wiremockMock;
-
-	@Mock
-	private ResponseDefinitionTransformerV2 extensionMock;
 
 	@InjectMocks
 	private AppTestImplementation appTest;
@@ -222,13 +218,6 @@ class AbstractAppTestTest {
 	}
 
 	@Test
-	void testWithExtensionsIsNotSupported() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> appTest.withExtensions(extensionMock))
-			.withMessageContaining("when the WireMock server is created");
-	}
-
-	@Test
 	void testVerifyAllStubsFailsForAStubThatWasNotCalledWhenAnotherStubForTheSameUrlWas() {
 		runAgainstServer((server, realAppTest) -> {
 			server.stubFor(get(urlEqualTo("/items?page=1")).withName("page one").willReturn(ok()));
@@ -300,18 +289,19 @@ class AbstractAppTestTest {
 				.withExpectedResponse("<person>\n\t<name>Anna Svensson</name>\n</person>")
 				.sendRequest();
 
-			assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> realAppTest.setupCall()
+			realAppTest.setupCall()
 				.withServicePath("/text")
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.withExpectedResponse("AnnaSvensson")
-				.sendRequest());
-			assertThatExceptionOfType(AssertionError.class).isThrownBy(() -> realAppTest.setupCall()
+				.withExpectedResponse("AnnaSvensson");
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
+
+			realAppTest.setupCall()
 				.withServicePath("/xml")
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
-				.withExpectedResponse("<person><name>AnnaSvensson</name></person>")
-				.sendRequest());
+				.withExpectedResponse("<person><name>AnnaSvensson</name></person>");
+			assertThatExceptionOfType(AssertionError.class).isThrownBy(realAppTest::sendRequest);
 		});
 	}
 

@@ -47,8 +47,12 @@ final class CapturingRequest extends HttpServletRequestWrapper implements HttpRe
 	@Override
 	public HttpRequest withBody() throws IOException {
 		withBody = true;
-		if (replay == null && isReadable()) {
-			read();
+		if (replay == null && !oversized && !BodyCapturePolicy.isParsedByContainer(getContentType())) {
+			if (policy.exceedsLimit(getContentLengthLong())) {
+				oversized = true;
+			} else {
+				read();
+			}
 		}
 		return this;
 	}
@@ -68,10 +72,6 @@ final class CapturingRequest extends HttpServletRequestWrapper implements HttpRe
 			return policy.omittedNote(getContentType()).getBytes(getCharset());
 		}
 		return Optional.ofNullable(captured).orElse(EMPTY);
-	}
-
-	private boolean isReadable() {
-		return !BodyCapturePolicy.isParsedByContainer(getContentType()) && !policy.exceedsLimit(getContentLengthLong());
 	}
 
 	private void read() throws IOException {

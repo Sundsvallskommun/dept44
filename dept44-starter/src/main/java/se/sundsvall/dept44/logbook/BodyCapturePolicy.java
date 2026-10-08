@@ -18,8 +18,9 @@ import static org.springframework.http.HttpHeaders.CONTENT_LENGTH;
  * <p>
  * A body is only captured when it is textual, is not a file attachment and does not exceed the configured maximum
  * size. Everything else is logged without its body. For bodies of unknown length the size is enforced while they are
- * read by dept44's servlet filters and Feign logger; Logbook's own WebClient and HttpClient integrations capture such a
- * body in full before it is checked.
+ * read: by dept44's servlet filters and Feign logger, and by the response logging that {@code WebClientBuilder} and
+ * {@code WebServiceTemplateBuilder} set up. Logbook integrations set up any other way, such as Logbook's own RestClient
+ * and RestTemplate interceptors, capture such a body in full before it is checked.
  *
  * @param maxBodySize the largest body, in bytes, that may be captured. A negative value disables the size limit.
  */
@@ -42,10 +43,22 @@ public record BodyCapturePolicy(long maxBodySize) {
 		MediaType.valueOf("application/*+json"),
 		MediaType.valueOf("application/*+xml"));
 
+	/**
+	 * The default limit, the same as the default of {@code logbook.logs.maxBodySizeToCapture}: 1 MB.
+	 */
+	public static final long DEFAULT_MAX_BODY_SIZE = 1024L * 1024L;
+
 	private static final MediaType MULTIPART = MediaType.valueOf("multipart/*");
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+	/**
+	 * @return a policy with the {@link #DEFAULT_MAX_BODY_SIZE default limit}
+	 */
+	public static BodyCapturePolicy withDefaultLimit() {
+		return new BodyCapturePolicy(DEFAULT_MAX_BODY_SIZE);
+	}
 
 	public boolean isLimited() {
 		return maxBodySize >= 0;

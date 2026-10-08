@@ -47,7 +47,7 @@ final var myService = new WebClientBuilder()
 - **OAuth2 client credentials** flow with scope support
 - **Basic authentication** support
 - **Configurable timeouts**: connect (default 10s), read (default 60s), write (default 60s)
-- **Logbook integration** for structured request/response logging
+- **Logbook integration** for structured request/response logging; a logged response body is held in memory up to 1 MB (`withLogbook(logbook, bodyCapturePolicy)` sets another limit) and logged as omitted beyond that
 - **Request ID propagation** via `RequestIdExchangeFilterFunction`
 - **Custom filters and status handlers** via builder methods
 - **Declarative HTTP client** proxy generation

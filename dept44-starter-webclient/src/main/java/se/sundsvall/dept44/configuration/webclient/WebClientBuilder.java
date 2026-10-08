@@ -30,6 +30,7 @@ import org.zalando.logbook.netty.LogbookClientHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import se.sundsvall.dept44.configuration.Constants;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -44,6 +45,7 @@ public class WebClientBuilder {
 	private Duration readTimeout = Duration.ofSeconds(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS);
 	private Duration writeTimeout = Duration.ofSeconds(Constants.DEFAULT_WRITE_TIMEOUT_IN_SECONDS);
 	private Logbook logbook;
+	private BodyCapturePolicy bodyCapturePolicy = BodyCapturePolicy.withDefaultLimit();
 
 	public WebClientBuilder() {
 		customizers = new ArrayList<>();
@@ -168,13 +170,27 @@ public class WebClientBuilder {
 	}
 
 	/**
-	 * Sets the Logbook instance to use for payload logging.
+	 * Sets the Logbook instance to use for payload logging. At most {@link BodyCapturePolicy#DEFAULT_MAX_BODY_SIZE} of a
+	 * response body is held in memory for it; use {@link #withLogbook(Logbook, BodyCapturePolicy)} to apply the service's
+	 * own {@code logbook.logs.maxBodySizeToCapture}.
 	 *
 	 * @param  logbook the Logbook instance
 	 * @return         this builder
 	 */
 	public WebClientBuilder withLogbook(final Logbook logbook) {
+		return withLogbook(logbook, BodyCapturePolicy.withDefaultLimit());
+	}
+
+	/**
+	 * Sets the Logbook instance to use for payload logging, and how much of a response body may be held in memory for it.
+	 *
+	 * @param  logbook           the Logbook instance
+	 * @param  bodyCapturePolicy the {@link BodyCapturePolicy} bean
+	 * @return                   this builder
+	 */
+	public WebClientBuilder withLogbook(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
 		this.logbook = logbook;
+		this.bodyCapturePolicy = requireNonNull(bodyCapturePolicy, "bodyCapturePolicy may not be null.");
 		return this;
 	}
 
@@ -277,7 +293,11 @@ public class WebClientBuilder {
 					.addHandlerLast(new WriteTimeoutHandler(writeTimeout.toMillis(), MILLISECONDS));
 
 				if (payloadLogging && logbook != null) {
-					connection.addHandlerLast(new LogbookClientHandler(logbook));
+					// Logbook's handler between the two that keep it from holding more of a body than the policy allows
+					connection
+						.addHandlerLast(new LogbookCaptureLimit.Limiter(bodyCapturePolicy))
+						.addHandlerLast(new LogbookClientHandler(logbook))
+						.addHandlerLast(new LogbookCaptureLimit.Restorer());
 				}
 			}));
 	}

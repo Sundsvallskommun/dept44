@@ -8,13 +8,11 @@ import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.HttpResponse;
@@ -31,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static se.sundsvall.dept44.configuration.feign.decoder.AbstractErrorDecoder.MAX_ERROR_BODY_SIZE;
 
 class BodyCaptureFeignLoggerTest {
 
@@ -134,36 +133,31 @@ class BodyCaptureFeignLoggerTest {
 	}
 
 	@Test
-	void largeErrorResponseIsKeptInTemporaryFileUntilClosed(@TempDir final Path directory) throws IOException {
-		final var fileLogger = logger(new BodyCapturePolicy(LIMIT), directory);
+	void largeErrorResponseKeepsAsMuchAsErrorDecodersRead() throws IOException {
 		final var body = new TrackingInputStream(bytes(LIMIT * 3));
 		final var response = response(500, "application/problem+json", body, null);
-		fileLogger.logRequest(CONFIG_KEY, Level.FULL, request(null));
 
-		final var result = fileLogger.logAndRebufferResponse(CONFIG_KEY, Level.FULL, response, 1);
+		final var result = logResponse(response);
 
 		assertThat(body.closed).isTrue();
 		assertThat(sink.responseBody).isEmpty();
 		assertThat(result.body().isRepeatable()).isTrue();
-		assertThat(result.body().length()).isEqualTo(LIMIT * 3);
 		assertThat(result.body().asInputStream().readAllBytes()).isEqualTo(bytes(LIMIT * 3));
 		assertThat(result.body().asInputStream().readAllBytes()).isEqualTo(bytes(LIMIT * 3));
-		assertThat(directory).isNotEmptyDirectory();
-
-		result.close();
-
-		assertThat(directory).isEmptyDirectory();
 	}
 
 	@Test
-	void largeErrorResponseIsStreamedWhenNoTemporaryFileCanBeCreated(@TempDir final Path directory) throws IOException {
-		final var fileLogger = logger(new BodyCapturePolicy(LIMIT), directory.resolve("missing"));
-		final var response = response(500, "application/problem+json", new TrackingInputStream(bytes(LIMIT * 3)), null);
-		fileLogger.logRequest(CONFIG_KEY, Level.FULL, request(null));
+	void hugeErrorResponseIsCutAtWhatErrorDecodersRead() throws IOException {
+		final var size = MAX_ERROR_BODY_SIZE * 3;
+		final var body = new TrackingInputStream(bytes(size));
+		final var response = response(500, "application/problem+json", body, size);
 
-		final var result = fileLogger.logAndRebufferResponse(CONFIG_KEY, Level.FULL, response, 1);
+		final var result = logResponse(response);
 
-		assertThat(result.body().asInputStream().readAllBytes()).isEqualTo(bytes(LIMIT * 3));
+		assertThat(body.closed).isTrue();
+		assertThat(body.bytesRead).isEqualTo(MAX_ERROR_BODY_SIZE);
+		assertThat(result.body().length()).isEqualTo(MAX_ERROR_BODY_SIZE);
+		assertThat(result.body().asInputStream().readAllBytes()).isEqualTo(bytes(MAX_ERROR_BODY_SIZE));
 	}
 
 	@Test
@@ -271,16 +265,12 @@ class BodyCaptureFeignLoggerTest {
 	}
 
 	private BodyCaptureFeignLogger logger(final BodyCapturePolicy policy) {
-		return logger(policy, null);
-	}
-
-	private BodyCaptureFeignLogger logger(final BodyCapturePolicy policy, final Path temporaryDirectory) {
 		return new BodyCaptureFeignLogger(Logbook.builder()
 			.strategy(new BodyCaptureStrategy(policy))
 			.requestFilter(RequestFilter.none())
 			.responseFilter(ResponseFilter.none())
 			.sink(sink)
-			.build(), policy, temporaryDirectory);
+			.build(), policy);
 	}
 
 	private static Request request(final byte[] body) {

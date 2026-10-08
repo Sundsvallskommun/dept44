@@ -25,6 +25,7 @@ import org.springframework.web.service.invoker.HttpExchangeAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.zalando.logbook.Logbook;
 import reactor.core.publisher.Mono;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.problem.Problem;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +58,8 @@ class WebClientBuilderTest {
 	@Test
 	void testNullFields() {
 		assertThat(createBuilder(false))
-			.hasAllNullFieldsOrPropertiesExcept("connectTimeout", "readTimeout", "writeTimeout", "customizers")
+			.hasAllNullFieldsOrPropertiesExcept("connectTimeout", "readTimeout", "writeTimeout", "customizers", "bodyCapturePolicy")
+			.hasFieldOrPropertyWithValue("bodyCapturePolicy", BodyCapturePolicy.withDefaultLimit())
 			.hasFieldOrPropertyWithValue("connectTimeout", Duration.ofSeconds(10))
 			.hasFieldOrPropertyWithValue("readTimeout", Duration.ofSeconds(30))
 			.hasFieldOrPropertyWithValue("writeTimeout", Duration.ofSeconds(30))

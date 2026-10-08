@@ -35,9 +35,10 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractErrorDecoder.class);
 
 	/**
-	 * The most of an error body that is read to find the error message.
+	 * The most of an error body that is read to find the error message. Payload logging keeps no more than this of an
+	 * error body that is larger than it may capture.
 	 */
-	protected static final int MAX_ERROR_BODY_SIZE = 1024 * 1024;
+	public static final int MAX_ERROR_BODY_SIZE = 1024 * 1024;
 
 	protected final String integrationName;
 	protected final RetryResponseVerifier retryResponseVerifier;
@@ -104,10 +105,11 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 			.findAny()
 			.orElse(BAD_GATEWAY);
 
-		return switch (Series.valueOf(response.status())) {
+		// A status outside 100-599 (some proxies and firewalls answer 999) has no series
+		return switch (Series.resolve(response.status())) {
 			case CLIENT_ERROR -> new ClientProblem(status, extractMessage(response));
 			case SERVER_ERROR -> new ServerProblem(status, extractMessage(response));
-			default -> Problem.valueOf(status, extractMessage(response));
+			case null, default -> Problem.valueOf(status, extractMessage(response));
 		};
 	}
 

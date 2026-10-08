@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zalando.logbook.HttpHeaders;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Origin;
@@ -52,8 +53,29 @@ final class FeignLogbookRequest implements HttpRequest {
 		if (body != null && !headers.containsKey(CONTENT_LENGTH)) {
 			headers = headers.update(CONTENT_LENGTH, String.valueOf(body.length));
 		}
-		return new FeignLogbookRequest(URI.create(request.url()), request.httpMethod().name(), headers, body, request.charset(),
+		return new FeignLogbookRequest(toUri(request.url()), request.httpMethod().name(), headers, body, request.charset(),
 			toProtocolVersion(request.protocolVersion()));
+	}
+
+	/**
+	 * {@link URI} rejects some characters that HTTP clients send as they are, such as a space or an unresolved template
+	 * variable. Logging must never fail the request, so such a URL is logged with those characters encoded, and a URL
+	 * that cannot be parsed at all is logged without it.
+	 */
+	static URI toUri(final String url) {
+		try {
+			return URI.create(url);
+		} catch (final IllegalArgumentException _) {
+			return toEncodedUri(url);
+		}
+	}
+
+	private static URI toEncodedUri(final String url) {
+		try {
+			return UriComponentsBuilder.fromUriString(url).build().encode().toUri();
+		} catch (final RuntimeException _) {
+			return URI.create("");
+		}
 	}
 
 	/**

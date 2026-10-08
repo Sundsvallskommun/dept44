@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.configuration;
 
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,19 +32,24 @@ public class WebFluxConfiguration {
 		}
 	}
 
+	/**
+	 * Gives each request its request id: the one in the {@code x-request-id} header, or a new one. The id is put in the
+	 * Reactor context under {@link RequestId#CONTEXT_KEY} rather than in {@link RequestId}'s thread-bound state, since
+	 * reactive requests share threads and move between them.
+	 */
 	static class RequestIdHandlerFilterFunction implements WebFilter {
 
 		@Override
 		public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
-			var requestId = exchange.getRequest().getHeaders().getFirst(RequestId.HEADER_NAME);
+			final var requestId = Optional.ofNullable(exchange.getRequest().getHeaders().getFirst(RequestId.HEADER_NAME))
+				.map(String::trim)
+				.filter(id -> !id.isEmpty())
+				.orElseGet(() -> UUID.randomUUID().toString());
 
-			RequestId.init(requestId);
-
-			exchange.getResponse().getHeaders().add(RequestId.HEADER_NAME, RequestId.get());
+			exchange.getResponse().getHeaders().add(RequestId.HEADER_NAME, requestId);
 
 			return chain.filter(exchange)
-				.then()
-				.doFinally(ignoredSignalType -> RequestId.reset());
+				.contextWrite(context -> context.put(RequestId.CONTEXT_KEY, requestId));
 		}
 	}
 

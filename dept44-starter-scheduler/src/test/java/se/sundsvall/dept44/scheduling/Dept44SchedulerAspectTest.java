@@ -23,6 +23,7 @@ import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.scheduling.health.Dept44HealthIndicator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,8 +88,9 @@ class Dept44SchedulerAspectTest {
 
 		// assert structured MDC fields on the "done" log line
 		final var doneMdc = mdcOf("done");
-		assertThat(doneMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(doneMdc).containsEntry("outcome", "SUCCESS");
+		assertThat(doneMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "SUCCESS");
 		assertThat(doneMdc.get("executionId")).isNotBlank();
 		assertThat(UUID.fromString(doneMdc.get("executionId"))).isNotNull();
 		assertThat(Long.parseLong(doneMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
@@ -125,10 +127,45 @@ class Dept44SchedulerAspectTest {
 
 		// assert structured MDC fields on the "fail" log line
 		final var failMdc = mdcOf("fail");
-		assertThat(failMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(failMdc).containsEntry("outcome", "FAILURE");
+		assertThat(failMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "FAILURE");
 		assertThat(failMdc.get("executionId")).isNotBlank();
 		assertThat(Long.parseLong(failMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
+	}
+
+	@Test
+	void testAroundScheduledMethodError() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT2M")).thenReturn("PT2M");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
+		final var error = new StackOverflowError("too deep");
+		when(pjp.proceed()).thenThrow(error);
+
+		assertThatThrownBy(() -> aspect.aroundScheduledMethod(pjp, dept44Scheduled)).isSameAs(error);
+
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(mdcOf("fail with an error")).containsEntry("outcome", "FAILURE");
+		assertThat(RequestId.get()).isNull();
+		assertThat(MDC.get("schedulerName")).isNull();
+	}
+
+	@Test
+	void testAroundScheduledMethodWithInvalidMaximumExecutionTime() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("${unresolved}")).thenReturn("${unresolved}");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("${unresolved}");
+		when(pjp.proceed()).thenReturn("Success");
+
+		assertThat(aspect.aroundScheduledMethod(pjp, dept44Scheduled)).isEqualTo("Success");
+
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("UP");
+		// The thread-bound request id is released, so the next run on this thread gets a new one
+		assertThat(RequestId.get()).isNull();
+		assertThat(RequestId.init()).isTrue();
+		RequestId.reset();
 	}
 
 	@Test
@@ -153,8 +190,9 @@ class Dept44SchedulerAspectTest {
 			.findFirst()
 			.orElseThrow()
 			.getMDCPropertyMap();
-		assertThat(warnMdc).containsEntry("schedulerName", "TestTask");
-		assertThat(warnMdc).containsEntry("outcome", "TIMEOUT");
+		assertThat(warnMdc)
+			.containsEntry("schedulerName", "TestTask")
+			.containsEntry("outcome", "TIMEOUT");
 		assertThat(Long.parseLong(warnMdc.get("durationMs"))).isGreaterThanOrEqualTo(0L);
 	}
 

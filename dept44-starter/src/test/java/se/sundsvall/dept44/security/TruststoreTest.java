@@ -29,6 +29,7 @@ class TruststoreTest {
 		// If something goes wrong SSLContext is set to defaultSSLContext
 		assertThat(truststore.getSSLContext()).isNotEqualTo(defaultSSLContext);
 		assertThat(truststore.getSSLContext()).isNotNull();
+		assertThat(truststore.getSSLContext().getDefaultSSLParameters().getProtocols()).contains("TLSv1.3", "TLSv1.2");
 		assertThat(truststore.getTrustManagerFactory()).isNotNull();
 	}
 

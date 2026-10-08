@@ -40,6 +40,9 @@ class ValidUuidConstraintValidatorTest {
 
 		assertThat(validator.isValid("not-valid")).isFalse();
 		assertThat(validator.isValid("not-valid", null)).isFalse();
+		assertThat(validator.isValid("1-1-1-1-1")).isFalse();
+		assertThat(validator.isValid("abc-def-0-0-0")).isFalse();
+		assertThat(validator.isValid("+1-2-3-4-5")).isFalse();
 
 		verify(annotationMock).nullable();
 	}

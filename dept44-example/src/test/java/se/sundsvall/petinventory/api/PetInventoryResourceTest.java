@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -145,5 +147,27 @@ class PetInventoryResourceTest {
 		// Assert
 		assertThat(response).isEqualTo(classPathResource.getContentAsByteArray());
 		verify(petInventoryServiceMock).getPetImage(id, petImageId);
+	}
+
+	@Test
+	void getPetImageWithClientSuppliedFileNameAndNoMimeType() {
+		final var petImageEntity = PetImageEntity.create()
+			.withContent(new byte[] {
+				1, 2, 3
+			})
+			.withFileName("bild \"åäö\".jpg");
+
+		when(petInventoryServiceMock.getPetImage(anyLong(), anyLong())).thenReturn(petImageEntity);
+
+		final var result = webTestClient.get().uri("/pet-inventory-items/{id}/images/{petImageId}", 1L, 10L)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(MediaType.APPLICATION_OCTET_STREAM)
+			.expectBody()
+			.returnResult();
+
+		final var contentDisposition = ContentDisposition.parse(result.getResponseHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+		assertThat(contentDisposition.isAttachment()).isTrue();
+		assertThat(contentDisposition.getFilename()).isEqualTo("bild \"åäö\".jpg");
 	}
 }

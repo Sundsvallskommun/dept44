@@ -4,19 +4,26 @@ import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.core5.ssl.SSLContexts;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.ws.WebServiceMessageFactory;
@@ -33,6 +40,7 @@ import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebService
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
+import se.sundsvall.dept44.configuration.webservicetemplate.ssl.AnyOfTrustManager;
 import se.sundsvall.dept44.support.BasicAuthentication;
 
 import static java.util.HashSet.newHashSet;
@@ -44,6 +52,8 @@ import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
 
 public class WebServiceTemplateBuilder {
 
+	private static final String TLS = "TLS";
+
 	private String baseUrl;
 	private String keyStoreFileLocation;
 	private byte[] keyStoreData;
@@ -53,6 +63,7 @@ public class WebServiceTemplateBuilder {
 	private Duration readTimeout = Duration.ofSeconds(Constants.DEFAULT_READ_TIMEOUT_IN_SECONDS);
 
 	private BasicAuthentication basicAuthentication;
+	private TrustManagerFactory trustManagerFactory;
 	private Set<ClientInterceptor> clientInterceptors;
 	private Logbook logbook;
 	private Set<String> packagesToScan;
@@ -193,14 +204,27 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * Adds an interceptor.
+	 * Which servers to trust when a keystore is set. A server is trusted when its certificate chain is trusted by this
+	 * factory or by the certificates in the keystore. When not set, the JVM default trust store is used; pass
+	 * {@code truststore.getTrustManagerFactory()} to trust dept44's truststore instead.
+	 *
+	 * @param  trustManagerFactory an initialized trust manager factory
+	 * @return                     this builder {@link WebServiceTemplateBuilder}
+	 */
+	public WebServiceTemplateBuilder withTrustManagerFactory(final TrustManagerFactory trustManagerFactory) {
+		this.trustManagerFactory = trustManagerFactory;
+		return this;
+	}
+
+	/**
+	 * Adds an interceptor. Interceptors run in the order they are added.
 	 *
 	 * @param  clientInterceptor interceptor to add
 	 * @return                   this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withClientInterceptor(final ClientInterceptor clientInterceptor) {
 		if (this.clientInterceptors == null) {
-			this.clientInterceptors = new HashSet<>();
+			this.clientInterceptors = new LinkedHashSet<>();
 		}
 		this.clientInterceptors.add(clientInterceptor);
 		return this;
@@ -296,16 +320,42 @@ public class WebServiceTemplateBuilder {
 
 		if (shouldUseSSL()) {
 			try {
-				final var sslContext = SSLContexts.custom()
-					.loadTrustMaterial(getKeyStore(), (_, _) -> true)
-					.loadKeyMaterial(getKeyStore(), keyStorePassword.toCharArray())
-					.build();
+				final var keyStore = getKeyStore();
+				final var keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+				keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
 
-				cmBuilder.setTlsSocketStrategy(new DefaultClientTlsStrategy(sslContext, NoopHostnameVerifier.INSTANCE));
+				final var sslContext = SSLContext.getInstance(TLS);
+				sslContext.init(keyManagerFactory.getKeyManagers(), new TrustManager[] {
+					serverTrustManager(keyStore)
+				}, null);
+
+				// The default host name verifier checks that the server certificate is issued for the host
+				cmBuilder.setTlsSocketStrategy(new DefaultClientTlsStrategy(sslContext));
 			} catch (final Exception e) {
 				throw new WebServiceTemplateException("Couldn't load keystore", e);
 			}
 		}
+	}
+
+	/**
+	 * The server is trusted when its certificate chain is trusted by the trust manager factory given to this builder
+	 * (the JVM default trust store when none is given), or by the certificates in the client keystore.
+	 */
+	private X509TrustManager serverTrustManager(final KeyStore keyStore) throws GeneralSecurityException {
+		final var serverTrust = trustManagerFactory != null ? trustManagerFactory : trustManagerFactory(null);
+
+		return new AnyOfTrustManager(Stream.of(serverTrust, trustManagerFactory(keyStore))
+			.map(TrustManagerFactory::getTrustManagers)
+			.flatMap(Arrays::stream)
+			.filter(X509TrustManager.class::isInstance)
+			.map(X509TrustManager.class::cast)
+			.toList());
+	}
+
+	private static TrustManagerFactory trustManagerFactory(final KeyStore trustStore) throws GeneralSecurityException {
+		final var factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+		factory.init(trustStore);
+		return factory;
 	}
 
 	private KeyStore getKeyStore() {

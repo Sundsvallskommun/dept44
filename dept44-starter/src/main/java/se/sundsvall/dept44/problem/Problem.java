@@ -3,10 +3,11 @@ package se.sundsvall.dept44.problem;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URI;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Objects;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.annotation.JsonDeserialize;
-
-import static java.text.MessageFormat.format;
 
 /**
  * Represents an RFC 9457 Problem Details object.
@@ -80,7 +81,7 @@ public interface Problem {
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badRequest(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_REQUEST, format(detailPattern, parameters));
+		return valueOf(HttpStatus.BAD_REQUEST, formatDetail(detailPattern, parameters));
 	}
 
 	/**
@@ -111,7 +112,7 @@ public interface Problem {
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem notFound(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.NOT_FOUND, format(detailPattern, parameters));
+		return valueOf(HttpStatus.NOT_FOUND, formatDetail(detailPattern, parameters));
 	}
 
 	/**
@@ -143,7 +144,7 @@ public interface Problem {
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem internalServerError(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, format(detailPattern, parameters));
+		return valueOf(HttpStatus.INTERNAL_SERVER_ERROR, formatDetail(detailPattern, parameters));
 	}
 
 	/**
@@ -175,7 +176,26 @@ public interface Problem {
 	 * @return               a new ThrowableProblem
 	 */
 	static ThrowableProblem badGateway(final String detailPattern, final Object... parameters) {
-		return valueOf(HttpStatus.BAD_GATEWAY, format(detailPattern, parameters));
+		return valueOf(HttpStatus.BAD_GATEWAY, formatDetail(detailPattern, parameters));
+	}
+
+	/**
+	 * Formats a detail message with {@code {0}}, {@code {1}}, ... placeholders. Unlike plain {@link MessageFormat}, an
+	 * apostrophe is kept as it is (so {@code "'{0}'"} gives {@code 'value'}), and parameters are inserted as their
+	 * {@code toString()}, without locale formatting such as digit grouping of numbers.
+	 *
+	 * @param  detailPattern the detail message pattern
+	 * @param  parameters    the detail message parameters
+	 * @return               the formatted detail message
+	 */
+	private static String formatDetail(final String detailPattern, final Object... parameters) {
+		if (detailPattern == null) {
+			return null;
+		}
+		final var asText = Arrays.stream(Objects.requireNonNullElse(parameters, new Object[0]))
+			.map(String::valueOf)
+			.toArray();
+		return MessageFormat.format(detailPattern.replace("'", "''"), asText);
 	}
 
 	/**

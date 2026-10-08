@@ -11,7 +11,7 @@ import se.sundsvall.dept44.common.validators.annotation.impl.ValidOrganizationNu
 
 /**
  * The annotated element must be a valid organization number according to the regular expression
- * ^([1235789][\d][2-9]\d{7})$. Accepts CharSequence.
+ * ^([1235-9][\d][2-9]\d{7})$. Accepts CharSequence.
  *
  * @see <a href="https://sundsvall.atlassian.net/wiki/spaces/SK/pages/22675457/OpenAPI+namns+ttning">Open API
  *      namnsättning</a>
@@ -29,7 +29,7 @@ public @interface ValidOrganizationNumber {
 	 *
 	 * @return the message.
 	 */
-	String message() default "must match the regular expression ^([1235789][\\d][2-9]\\d{7})$";
+	String message() default "must match the regular expression ^([1235-9][\\d][2-9]\\d{7})$";
 
 	/**
 	 * Controls whether the value can be null or not.

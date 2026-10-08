@@ -7,6 +7,7 @@ import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -80,7 +81,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 	}
 
 	@Override
-	public Exception decode(final String methodKey, final Response response) {
+	public Exception decode(final String methodKey, final Response originalResponse) {
+		final var response = withRepeatableBody(originalResponse);
 		if ((retryResponseVerifier != null) && retryResponseVerifier.shouldReturnRetryableException(response)) {
 			return new RetryableException(
 				response.status(),
@@ -97,7 +99,8 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		// Use the bypass status code if it matches the response code, otherwise BAD_GATEWAY.
 		final var status = Optional.ofNullable(bypassResponseCodes).orElse(emptyList()).stream()
 			.filter(bypassCode -> bypassCode.equals(response.status()))
-			.map(HttpStatus::valueOf)
+			.map(HttpStatus::resolve)
+			.filter(Objects::nonNull)
 			.findAny()
 			.orElse(BAD_GATEWAY);
 
@@ -106,6 +109,23 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 			case SERVER_ERROR -> new ServerProblem(status, extractMessage(response));
 			default -> Problem.valueOf(status, extractMessage(response));
 		};
+	}
+
+	/**
+	 * The message is extracted by reading the body more than once (to check whether it is blank, then by the subclass).
+	 * A body that can only be read once, such as a streamed body when Feign's logger level is NONE, is read into memory
+	 * first, at most {@value #MAX_ERROR_BODY_SIZE} bytes of it.
+	 */
+	private static Response withRepeatableBody(final Response response) {
+		if (isNull(response.body()) || response.body().isRepeatable()) {
+			return response;
+		}
+		try (final var input = response.body().asInputStream()) {
+			return response.toBuilder().body(input.readNBytes(MAX_ERROR_BODY_SIZE)).build();
+		} catch (final IOException e) {
+			LOGGER.warn("Could not read the error response body", e);
+			return response;
+		}
 	}
 
 	/**
@@ -169,7 +189,7 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 		}
 
 		static ErrorMessage create(final String integrationName, final int httpStatus) {
-			return create(integrationName, httpStatus, Map.of(KEY_TITLE, HttpStatus.valueOf(httpStatus).getReasonPhrase()));
+			return create(integrationName, httpStatus, Map.of(KEY_TITLE, reasonPhrase(httpStatus)));
 		}
 
 		static ErrorMessage create(final String integrationName, final int httpStatus, final String title, final String detail) {
@@ -181,12 +201,20 @@ public abstract class AbstractErrorDecoder implements ErrorDecoder {
 
 		private static ErrorMessage create(final String integrationName, final int httpStatus, final Map<String, Object> errorInfo) {
 			final SortedMap<String, Object> map = new TreeMap<>();
-			final var status = HttpStatus.valueOf(httpStatus);
-			map.put(KEY_STATUS, status.value() + " " + status.getReasonPhrase());
+			map.put(KEY_STATUS, httpStatus + " " + reasonPhrase(httpStatus));
 
 			ofNullable(errorInfo).ifPresent(map::putAll);
 
 			return new ErrorMessage(integrationName, map);
+		}
+
+		/**
+		 * Status codes such as 499 or 520 are used by proxies and CDNs but have no {@link HttpStatus} constant.
+		 */
+		private static String reasonPhrase(final int httpStatus) {
+			return Optional.ofNullable(HttpStatus.resolve(httpStatus))
+				.map(HttpStatus::getReasonPhrase)
+				.orElse("Unknown Status");
 		}
 
 		/**

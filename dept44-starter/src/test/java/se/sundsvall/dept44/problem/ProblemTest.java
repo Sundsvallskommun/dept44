@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.problem;
 
 import java.net.URI;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,6 +82,21 @@ class ProblemTest {
 		assertThat(problem.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(problem.getTitle()).isEqualTo("Bad Request");
 		assertThat(problem.getDetail()).isEqualTo("Something cannot be more than 12 characters long");
+	}
+
+	@Test
+	void detailParametersKeepApostrophesAndAreNotLocaleFormatted() {
+		final var locale = Locale.getDefault();
+		try {
+			Locale.setDefault(Locale.forLanguageTag("sv-SE"));
+
+			assertThat(Problem.notFound("Errand with id '{0}' not found", "abc").getDetail()).isEqualTo("Errand with id 'abc' not found");
+			assertThat(Problem.badRequest("Size {0} exceeds {1}", 1234567, 1000).getDetail()).isEqualTo("Size 1234567 exceeds 1000");
+			assertThat(Problem.badGateway("It's {0}", (Object) null).getDetail()).isEqualTo("It's null");
+			assertThat(Problem.internalServerError("No parameters", (Object[]) null).getDetail()).isEqualTo("No parameters");
+		} finally {
+			Locale.setDefault(locale);
+		}
 	}
 
 	@Test

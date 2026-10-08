@@ -43,20 +43,23 @@ public final class PiiMasker {
 
 	/**
 	 * Swedish personal identity number on the ten-digit {@code NNNNNN[-+]?NNNN} or twelve-digit
-	 * {@code NNNNNNNN[-+]?NNNN} form (the optional {@code \d{2}} is the two-digit century prefix). The {@code \b} word
-	 * boundaries keep a run that is part of a longer number (or token) from matching.
+	 * {@code NNNNNNNN[-+]?NNNN} form (the optional {@code \d{2}} is the two-digit century prefix). The number must not
+	 * be preceded or followed by a letter or digit, which keeps a run that is part of a longer number (or a token such as
+	 * a hash) from matching, while still matching next to {@code _} as in {@code beslut_199001011234.pdf}.
 	 */
-	private static final Pattern PERSONAL_NUMBER_PATTERN = Pattern.compile("\\b\\d{6}(?:\\d{2})?[-+]?\\d{4}\\b");
+	private static final Pattern PERSONAL_NUMBER_PATTERN = Pattern.compile("(?<![A-Za-z0-9])\\d{6}(?:\\d{2})?[-+]?\\d{4}(?![A-Za-z0-9])");
 
 	private static final String PERSONAL_NUMBER_MASK = "******-****";
 
 	/**
 	 * Structured Swedish phone number: either a {@code +46}/{@code 0046} country-code prefix, or a national number with a
 	 * leading {@code 0} and at least one space/hyphen separator. Requiring that structure keeps a bare run of digits from
-	 * matching (such a run is handled by {@link #maskPersonalNumber(String)} instead).
+	 * matching (such a run is handled by {@link #maskPersonalNumber(String)} instead). A number that starts right after a
+	 * digit and a date separator ({@code -}, {@code /}, {@code .}), or ends before a time or decimal separator and a digit,
+	 * is part of a date or time such as {@code 2024-03-08 09:15:22}, not a phone number.
 	 */
 	private static final Pattern PHONE_NUMBER_PATTERN = Pattern.compile(
-		"(?<!\\w)(?:(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}|0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2})(?!\\d)");
+		"(?<!\\w)(?<!\\d[-/.])(?:(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}|0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2})(?![:.]?\\d)");
 
 	/** UUID in the canonical {@code 8-4-4-4-12} hexadecimal form, e.g. a {@code partyId}. */
 	private static final Pattern UUID_PATTERN = Pattern.compile("\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b");

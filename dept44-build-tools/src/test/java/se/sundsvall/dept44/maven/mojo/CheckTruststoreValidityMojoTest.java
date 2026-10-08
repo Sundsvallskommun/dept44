@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
@@ -92,6 +93,21 @@ class CheckTruststoreValidityMojoTest {
 	void executeWithValidCert() throws Exception {
 		final var truststorePath = "truststore";
 		createSelfSignedCert(LocalDate.now().plusYears(1), truststorePath);
+
+		when(mockMavenProject.getBasedir()).thenReturn(new File(TEST_BASE_DIR));
+
+		mojo.setTruststorePath(truststorePath);
+		mojo.setMonthsUntilExpiration(1);
+
+		assertThatNoException().isThrownBy(mojo::execute);
+	}
+
+	@Test
+	void executeSkipsFilesThatAreNotCertificates() throws Exception {
+		final var truststorePath = "truststore-with-other-files";
+		createSelfSignedCert(LocalDate.now().plusYears(1), truststorePath);
+		Files.writeString(new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/.gitkeep").toPath(), "");
+		Files.writeString(new File(TEST_BASE_DIR, "/src/main/resources/" + truststorePath + "/README.md").toPath(), "Certificates for the truststore");
 
 		when(mockMavenProject.getBasedir()).thenReturn(new File(TEST_BASE_DIR));
 

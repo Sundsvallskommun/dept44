@@ -1,18 +1,24 @@
 package se.sundsvall.dept44.configuration.webclient;
 
 import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutException;
+import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.invoker.HttpExchangeAdapter;
@@ -22,7 +28,9 @@ import reactor.core.publisher.Mono;
 import se.sundsvall.dept44.problem.Problem;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.assertj.core.util.introspection.PropertyOrFieldSupport.EXTRACTION;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -40,8 +48,11 @@ class WebClientBuilderTest {
 	private static final Duration READ_TIMEOUT = Duration.ofSeconds(55);
 	private static final Duration WRITE_TIMEOUT = Duration.ofSeconds(56);
 
-	private static final Logbook LOGBOOK_MOCK = mock(Logbook.class);
-	private static final ClientRegistration CLIENT_REGISTRATION_MOCK = mock(ClientRegistration.class);
+	@Mock
+	private Logbook logbookMock;
+
+	@Mock
+	private ClientRegistration clientRegistrationMock;
 
 	@Test
 	void testNullFields() {
@@ -62,7 +73,7 @@ class WebClientBuilderTest {
 			.hasFieldOrPropertyWithValue("connectTimeout", CONNECT_TIMEOUT)
 			.hasFieldOrPropertyWithValue("readTimeout", READ_TIMEOUT)
 			.hasFieldOrPropertyWithValue("writeTimeout", WRITE_TIMEOUT)
-			.hasFieldOrPropertyWithValue("logbook", LOGBOOK_MOCK)
+			.hasFieldOrPropertyWithValue("logbook", logbookMock)
 			.extracting("customizers").asInstanceOf(LIST).isNotNull().hasSize(3);
 	}
 
@@ -104,7 +115,7 @@ class WebClientBuilderTest {
 
 	@Test
 	void testBuildFromCustomValuesWithOAuth2() {
-		when(CLIENT_REGISTRATION_MOCK.getRegistrationId()).thenReturn("registrationId");
+		when(clientRegistrationMock.getRegistrationId()).thenReturn("registrationId");
 
 		final var webClient = createBuilder(true, false, true).build();
 
@@ -115,6 +126,35 @@ class WebClientBuilderTest {
 			.hasSize(2)
 			.hasAtLeastOneElementOfType(RequestIdExchangeFilterFunction.class)
 			.hasAtLeastOneElementOfType(ServerOAuth2AuthorizedClientExchangeFilterFunction.class);
+
+		// A token the server rejects is evicted (Spring's default for this filter leaves it cached until it expires)
+		final var oAuth2Filter = ((List<?>) EXTRACTION.getValueOf("builder.filters", webClient)).stream()
+			.filter(ServerOAuth2AuthorizedClientExchangeFilterFunction.class::isInstance)
+			.findFirst().orElseThrow();
+		assertThat(EXTRACTION.getValueOf("clientResponseHandler", oAuth2Filter).getClass().getSimpleName()).isEqualTo("AuthorizationFailureForwarder");
+	}
+
+	@Test
+	void testSubSecondReadTimeoutIsApplied() throws Exception {
+		// A server that accepts the connection but never answers
+		try (final var server = new ServerSocket(0); final var executor = Executors.newSingleThreadExecutor()) {
+			executor.submit(() -> {
+				try (final var socket = server.accept()) {
+					socket.getInputStream().readAllBytes();
+				}
+				return null;
+			});
+			final var webClient = new WebClientBuilder()
+				.withBaseUrl("http://localhost:" + server.getLocalPort())
+				.withReadTimeout(Duration.ofMillis(300))
+				.build();
+
+			final var call = webClient.get().retrieve().toBodilessEntity();
+
+			assertThatThrownBy(() -> call.block(Duration.ofSeconds(5)))
+				.isInstanceOf(WebClientRequestException.class)
+				.hasRootCauseInstanceOf(ReadTimeoutException.class);
+		}
 	}
 
 	@Test
@@ -180,7 +220,7 @@ class WebClientBuilderTest {
 		final var builder = new WebClientBuilder()
 			.withBaseUrl(BASE_URL)
 			.withConnectTimeout(CONNECT_TIMEOUT)
-			.withLogbook(LOGBOOK_MOCK)
+			.withLogbook(logbookMock)
 			.withReadTimeout(READ_TIMEOUT)
 			.withWriteTimeout(WRITE_TIMEOUT);
 
@@ -195,9 +235,9 @@ class WebClientBuilderTest {
 					.thenReturn(mockBuilder);
 
 				when(mockBuilder.scope(ArgumentMatchers.<Set<String>>any())).thenReturn(mockBuilder);
-				when(mockBuilder.build()).thenReturn(CLIENT_REGISTRATION_MOCK);
+				when(mockBuilder.build()).thenReturn(clientRegistrationMock);
 
-				builder.withOAuth2ClientRegistration(CLIENT_REGISTRATION_MOCK);
+				builder.withOAuth2ClientRegistration(clientRegistrationMock);
 			}
 		}
 

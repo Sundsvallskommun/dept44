@@ -25,7 +25,7 @@ class ValidOrganizationNumberConstraintValidatorTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"1026112233", "2120122334", "3154812233", "5566112233", "7021112233", "8921112233", "9351112233"
+		"1026112233", "2120122334", "3154812233", "5566112233", "6021112233", "7021112233", "8921112233", "9351112233"
 	})
 	void validOrganizationNumber(String orgNbr) {
 
@@ -40,7 +40,7 @@ class ValidOrganizationNumberConstraintValidatorTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"1006112233", "2110122334", "0921112233", "4566112233", "6021112233", "not-valid"
+		"1006112233", "2110122334", "0921112233", "4566112233", "6011112233", "not-valid"
 	})
 	void invalidOrganizationNumber(String orgNbr) {
 
@@ -81,7 +81,7 @@ class ValidOrganizationNumberConstraintValidatorTest {
 
 	@Test
 	void testMessage() {
-		assertThat(validator.getMessage()).isEqualTo("must match the regular expression ^([1235789][\\d][2-9]\\d{7})$");
+		assertThat(validator.getMessage()).isEqualTo("must match the regular expression ^([1235-9][\\d][2-9]\\d{7})$");
 
 		verifyNoInteractions(annotationMock);
 	}

@@ -1,14 +1,15 @@
 package se.sundsvall.petinventory.integration.db.model;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanConstructor;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEquals;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCode;
-import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToString;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanEqualsExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanHashCodeExcluding;
+import static com.google.code.beanmatchers.BeanMatchers.hasValidBeanToStringExcluding;
 import static com.google.code.beanmatchers.BeanMatchers.hasValidGettersAndSetters;
 import static com.google.code.beanmatchers.BeanMatchers.registerValueGenerator;
 import static java.time.OffsetDateTime.now;
@@ -28,9 +29,9 @@ class PetImageEntityTest {
 		assertThat(PetImageEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCode(),
-			hasValidBeanEquals(),
-			hasValidBeanToString()));
+			hasValidBeanHashCodeExcluding("petName"),
+			hasValidBeanEqualsExcluding("petName"),
+			hasValidBeanToStringExcluding("petName", "content")));
 	}
 
 	@Test
@@ -67,5 +68,17 @@ class PetImageEntityTest {
 	void testNoDirtOnCreatedBean() {
 		assertThat(new PetImageEntity()).hasAllNullFieldsOrProperties();
 		assertThat(PetImageEntity.create()).hasAllNullFieldsOrProperties();
+	}
+
+	@Test
+	void petWithImagesCanBeComparedAndPrinted() {
+		final var pet = PetNameEntity.create().withId(1L).withName("Garfield");
+		final var image = PetImageEntity.create().withId(2L).withFileName("cat.jpg").withContent(new byte[1000]).withPetName(pet);
+		pet.setImages(List.of(image));
+
+		assertThat(pet.toString()).contains("petNameId=1", "content=1000 bytes");
+		assertThat(pet.hashCode()).isEqualTo(pet.hashCode());
+		assertThat(pet).isEqualTo(pet);
+		assertThat(image).isEqualTo(PetImageEntity.create().withId(2L).withFileName("cat.jpg").withContent(new byte[1000]).withPetName(pet));
 	}
 }

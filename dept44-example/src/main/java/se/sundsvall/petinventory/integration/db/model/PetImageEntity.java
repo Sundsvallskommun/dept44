@@ -145,12 +145,14 @@ public class PetImageEntity {
 		return this;
 	}
 
+	// The petName back reference is left out of hashCode, equals and toString: PetNameEntity includes its images in
+	// its own, so including the pet here would recurse until the stack overflows.
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = (prime * result) + Arrays.hashCode(content);
-		result = (prime * result) + Objects.hash(created, fileName, id, mimeType, modified, petName);
+		result = (prime * result) + Objects.hash(created, fileName, id, mimeType, modified);
 		return result;
 	}
 
@@ -163,12 +165,12 @@ public class PetImageEntity {
 			return false;
 		}
 		return Arrays.equals(content, other.content) && Objects.equals(created, other.created) && Objects.equals(fileName, other.fileName) && Objects.equals(id, other.id) && Objects.equals(mimeType, other.mimeType) && Objects.equals(modified,
-			other.modified) && Objects.equals(petName, other.petName);
+			other.modified);
 	}
 
 	@Override
 	public String toString() {
-		return "PetImageEntity [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + ", content=" + Arrays.toString(content) + ", created=" + created + ", modified="
-			+ modified + ", petName=" + petName + "]";
+		return "PetImageEntity [id=" + id + ", fileName=" + fileName + ", mimeType=" + mimeType + ", content=" + (content == null ? null : content.length + " bytes") + ", created=" + created
+			+ ", modified=" + modified + ", petNameId=" + (petName == null ? null : petName.getId()) + "]";
 	}
 }

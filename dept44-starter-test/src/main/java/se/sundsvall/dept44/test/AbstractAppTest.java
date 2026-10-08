@@ -3,10 +3,11 @@ package se.sundsvall.dept44.test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.Extension;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,9 +19,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import net.javacrumbs.jsonunit.JsonAssert;
 import net.javacrumbs.jsonunit.core.Option;
 import org.slf4j.Logger;
@@ -42,19 +46,20 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 import org.wiremock.spring.ConfigureWireMock;
 import org.wiremock.spring.InjectWireMock;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.builder.Input;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 import wiremock.com.github.jknack.handlebars.Handlebars;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
-import static com.github.tomakehurst.wiremock.matching.UrlPattern.fromOneOf;
 import static java.lang.String.format;
 import static java.nio.file.Files.readString;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toSet;
 import static net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals;
 import static net.javacrumbs.jsonunit.JsonAssert.setOptions;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,7 +85,6 @@ public abstract class AbstractAppTest {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass().getName());
 
-	@Autowired
 	protected TestRestTemplate restTemplate;
 
 	@InjectWireMock
@@ -106,6 +110,14 @@ public abstract class AbstractAppTest {
 	private Map<String, String> headerValues;
 	private String testDirectoryPath;
 	private String testCaseName;
+
+	/**
+	 * Injected through a setter, not a constructor, so that subclasses need no constructor of their own.
+	 */
+	@Autowired
+	void setRestTemplate(final TestRestTemplate restTemplate) {
+		this.restTemplate = restTemplate;
+	}
 
 	private static String normalizePath(final String input) {
 		var path = input.replace('\\', '/');
@@ -181,9 +193,18 @@ public abstract class AbstractAppTest {
 		return this;
 	}
 
+	/**
+	 * Not supported: WireMock loads its extensions when the server is created, so an extension added to a running server
+	 * would silently never be applied. Register extensions where the WireMock server is configured instead.
+	 *
+	 * @param      extensions                    ignored
+	 * @return                                   never returns
+	 * @throws     UnsupportedOperationException always
+	 * @deprecated                               extensions can only be registered when the WireMock server is created
+	 */
+	@Deprecated(since = "8.0", forRemoval = true)
 	public AbstractAppTest withExtensions(final Extension... extensions) {
-		((WireMockConfiguration) wiremock.getOptions()).extensions(extensions);
-		return this;
+		throw new UnsupportedOperationException("WireMock extensions must be registered when the WireMock server is created; added to a running server they are never applied");
 	}
 
 	public AbstractAppTest withHttpMethod(final HttpMethod method) {
@@ -426,9 +447,12 @@ public abstract class AbstractAppTest {
 			if (nonNull(responseContentType) && responseContentType.isPresentIn(List.of(APPLICATION_JSON, APPLICATION_PROBLEM_JSON))) {
 				// Compare as JSON
 				assertJsonEquals(renderedExpectedBody, responseBody);
+			} else if (isXml(responseContentType)) {
+				// Compare as XML, ignoring the whitespace that only formats the document
+				assertXmlSimilar(renderedExpectedBody, responseBody);
 			} else {
-				// Compare as text
-				assertThat(renderedExpectedBody).isEqualToIgnoringWhitespace(responseBody);
+				// Compare as text: runs of whitespace count as one space, but whitespace is not ignored altogether
+				assertThat(responseBody).isEqualToNormalizingWhitespace(renderedExpectedBody);
 			}
 		}
 		if (nonNull(expectedResponseBinary)) {
@@ -633,19 +657,43 @@ public abstract class AbstractAppTest {
 		JsonAssert.setOptions(Option.IGNORING_ARRAY_ORDER);
 	}
 
+	private static boolean isXml(final MediaType contentType) {
+		return nonNull(contentType) && (contentType.isCompatibleWith(MediaType.APPLICATION_XML) || contentType.isCompatibleWith(MediaType.TEXT_XML)
+			|| "xml".equals(contentType.getSubtypeSuffix()));
+	}
+
+	private static void assertXmlSimilar(final String expected, final String actual) {
+		final var diff = DiffBuilder.compare(Input.fromString(expected))
+			.withTest(Input.fromString(String.valueOf(actual)))
+			.ignoreWhitespace()
+			.ignoreComments()
+			.checkForSimilar()
+			.build();
+		assertThat(diff.hasDifferences()).as("XML response differs from the expected: %s", diff).isFalse();
+	}
+
 	/**
-	 * Verifies that all setup stubs setup has been called.
+	 * Verifies that every stub that was set up has been called, and that no request went unmatched. A stub counts as
+	 * called only when a request matched it, including its method, query parameters, headers and body; another stub for
+	 * the same URL being called is not enough. Stubs are told apart by what they match (and their scenario state), so
+	 * a stub file loaded again by a later {@link #setupCall()} counts as the same stub.
 	 *
 	 * @return                       true if verification succeeds.
 	 * @throws VerificationException if verification fails
 	 */
 	public boolean verifyAllStubs() {
-		// Verify all stubs by URL.
-		wiremock.listAllStubMappings().getMappings().forEach(stub -> {
-			final var requestPattern = stub.getRequest();
-			wiremock.verify(
-				anyRequestedFor(fromOneOf(requestPattern.getUrl(), requestPattern.getUrlPattern(), requestPattern.getUrlPath(), requestPattern.getUrlPathPattern(), requestPattern.getUrlPathTemplate())));
-		});
+		final var calledStubs = wiremock.getAllServeEvents().stream()
+			.filter(ServeEvent::getWasMatched)
+			.map(serveEvent -> matchKey(serveEvent.getStubMapping()))
+			.collect(toSet());
+		final var uncalledStubs = wiremock.listAllStubMappings().getMappings().stream()
+			.filter(stub -> !calledStubs.contains(matchKey(stub)))
+			.map(AbstractAppTest::describe)
+			.distinct()
+			.toList();
+		if (!uncalledStubs.isEmpty()) {
+			throw new VerificationException(format("The following stubs were not called: %s", uncalledStubs));
+		}
 
 		final var unmatchedRequests = wiremock.findAllUnmatchedRequests();
 		if (!isEmpty(unmatchedRequests)) {
@@ -657,5 +705,20 @@ public abstract class AbstractAppTest {
 		}
 
 		return true;
+	}
+
+	private static List<Object> matchKey(final StubMapping stub) {
+		return Arrays.asList(stub.getRequest(), stub.getScenarioName(), stub.getRequiredScenarioState());
+	}
+
+	private static String describe(final StubMapping stub) {
+		final var request = stub.getRequest();
+		final var url = Stream.of(request.getUrl(), request.getUrlPattern(), request.getUrlPath(), request.getUrlPathPattern(), request.getUrlPathTemplate())
+			.filter(Objects::nonNull)
+			.findFirst()
+			.orElse("any URL");
+		return Optional.ofNullable(stub.getName())
+			.map(name -> format("%s (%s %s)", name, request.getMethod(), url))
+			.orElseGet(() -> format("%s %s", request.getMethod(), url));
 	}
 }

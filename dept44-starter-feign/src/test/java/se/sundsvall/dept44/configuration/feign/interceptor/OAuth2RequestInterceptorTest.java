@@ -385,15 +385,19 @@ class OAuth2RequestInterceptorTest {
 
 	@Test
 	void testConstructorWithNullConnectTimeout() {
+		final var timeout = Duration.ofSeconds(1);
+
 		assertThatExceptionOfType(IllegalArgumentException.class)
-			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, null, Duration.ofSeconds(1)))
+			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, null, timeout))
 			.withMessage("connectTimeout cannot be null");
 	}
 
 	@Test
 	void testConstructorWithNullReadTimeout() {
+		final var timeout = Duration.ofSeconds(1);
+
 		assertThatExceptionOfType(IllegalArgumentException.class)
-			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, Duration.ofSeconds(1), null))
+			.isThrownBy(() -> new OAuth2RequestInterceptor(clientRegistrationMock, DEFAULT_SCOPESET, timeout, null))
 			.withMessage("readTimeout cannot be null");
 	}
 

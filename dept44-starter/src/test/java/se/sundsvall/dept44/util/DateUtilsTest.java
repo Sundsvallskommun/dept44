@@ -50,6 +50,12 @@ class DateUtilsTest {
 
 		// Null input renders null output.
 		assertThat(DateUtils.toOffsetDateTimeWithLocalOffset(null)).isNull();
+
+		// LocalDateTime in the daylight saving gap: the offset is the one in effect at the resulting instant.
+		assertThat(DateUtils.toOffsetDateTimeWithLocalOffset(LocalDateTime.parse("2021-03-28T02:30:00"))).hasToString("2021-03-28T03:30+02:00");
+
+		// LocalDateTime in the daylight saving overlap: the earlier (summer time) offset.
+		assertThat(DateUtils.toOffsetDateTimeWithLocalOffset(LocalDateTime.parse("2021-10-31T02:30:00"))).hasToString("2021-10-31T02:30+02:00");
 	}
 
 	@ParameterizedTest

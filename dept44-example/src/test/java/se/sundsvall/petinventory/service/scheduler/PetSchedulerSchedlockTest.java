@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -21,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -80,7 +80,7 @@ class PetSchedulerSchedlockTest {
 		@Primary
 		PetSchedulerWorker createMock() {
 
-			final var mockBean = Mockito.mock(PetSchedulerWorker.class);
+			final var mockBean = mock(PetSchedulerWorker.class);
 
 			// Let mock hang
 			doAnswer(invocation -> {

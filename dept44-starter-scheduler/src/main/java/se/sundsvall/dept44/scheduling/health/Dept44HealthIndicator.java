@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.scheduling.health;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.boot.health.contributor.Health;
@@ -38,15 +40,25 @@ import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 public class Dept44HealthIndicator implements HealthIndicator {
 	private final AtomicBoolean healthy = new AtomicBoolean(true);
 	private final AtomicBoolean errors = new AtomicBoolean(false);
-	private String reason;
+	private volatile String reason;
+	private volatile Instant runningSince;
+	private volatile Duration maximumExecutionTime;
 
 	/**
-	 * Get the health status.
+	 * Get the health status. A run that is still going on after its maximum execution time makes the status
+	 * {@code "RESTRICTED"} while it runs, so that a hung task is visible before (or without) it ever returning.
 	 *
 	 * @return the health status
 	 */
 	@Override
 	public Health health() {
+		final var since = runningSince;
+		final var maximum = maximumExecutionTime;
+		if (since != null && maximum != null && Duration.between(since, Instant.now()).compareTo(maximum) > 0) {
+			return Health.status("RESTRICTED")
+				.withDetail("Reason", "Maximum execution time exceeded, still running since " + since)
+				.build();
+		}
 		if (healthy.get()) {
 			return Health.up().build();
 		}
@@ -80,6 +92,23 @@ public class Dept44HealthIndicator implements HealthIndicator {
 		healthy.set(true);
 		errors.set(false);
 		this.reason = null;
+	}
+
+	/**
+	 * Record that a run has started.
+	 *
+	 * @param maximumExecutionTime how long the run may take before the status is {@code "RESTRICTED"}
+	 */
+	public void runStarted(final Duration maximumExecutionTime) {
+		this.maximumExecutionTime = maximumExecutionTime;
+		this.runningSince = Instant.now();
+	}
+
+	/**
+	 * Record that the run has finished.
+	 */
+	public void runFinished() {
+		this.runningSince = null;
 	}
 
 	/**

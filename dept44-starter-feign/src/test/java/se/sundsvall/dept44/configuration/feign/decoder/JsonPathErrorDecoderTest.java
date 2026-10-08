@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 import se.sundsvall.dept44.configuration.feign.decoder.JsonPathErrorDecoder.JsonPathSetup;
 import se.sundsvall.dept44.exception.ClientProblem;
 import se.sundsvall.dept44.exception.ServerProblem;
@@ -31,6 +30,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.dept44.configuration.feign.decoder.WSO2RetryResponseVerifierTest.WSO2_TOKEN_EXPIRE_HEADER_ERROR;
@@ -221,7 +221,7 @@ class JsonPathErrorDecoderTest {
 
 	@Test
 	void errorDecoderReturnsRetryableException() {
-		final var retryResponseVerifierMock = Mockito.mock(RetryResponseVerifier.class);
+		final var retryResponseVerifierMock = mock(RetryResponseVerifier.class);
 		final var errorDecoder = new JsonPathErrorDecoder("XXX", emptyList(), new JsonPathSetup("$['title']", "$['detail']"), retryResponseVerifierMock);
 		final var errorResponse = buildErrorResponse("Error", 500, null);
 

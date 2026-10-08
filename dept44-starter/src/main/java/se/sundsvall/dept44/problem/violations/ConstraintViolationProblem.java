@@ -40,7 +40,7 @@ public class ConstraintViolationProblem extends ThrowableProblem {
 		@JsonProperty("type") final URI type,
 		@JsonProperty("status") final Integer status,
 		@JsonProperty("violations") final List<Violation> violations) {
-		this(type, status != null ? HttpStatus.valueOf(status) : null, violations, null);
+		this(type, status != null ? HttpStatus.resolve(status) : null, violations, null);
 	}
 
 	/**

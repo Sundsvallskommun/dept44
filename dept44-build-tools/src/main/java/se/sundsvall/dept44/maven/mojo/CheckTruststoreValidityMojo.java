@@ -59,10 +59,13 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 						if (notAfter.isBefore(expiry)) {
 							addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE), monthsUntilExpiration, today.format(ISO_DATE)));
 						}
+					} catch (final CertificateException e) {
+						// Like the runtime truststore, which skips such files: e.g. .gitkeep, .DS_Store or a README
+						getLog().warn("Skipping '%s', which is not an X.509 certificate: %s".formatted(certificateFile.getName(), e.getMessage()));
 					}
 				}
 			}
-		} catch (IOException | CertificateException e) {
+		} catch (IOException e) {
 			throw new MojoFailureException("Unable to check certificates " + e.getLocalizedMessage(), e);
 		}
 	}

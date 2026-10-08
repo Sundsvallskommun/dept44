@@ -84,7 +84,7 @@ public class Truststore {
 		+ "These are now the ONLY trusted CAs for this process - the JDK 'cacerts' store is NOT in use. "
 		+ "To trust an additional CA (for example an external party's server certificate), add its X.509 (PEM) certificate to '{}'.";
 
-	private static final String SSL_PROTOCOL = "TLSv1.2";
+	private static final String SSL_PROTOCOL = "TLS"; // TLS 1.3 and 1.2, as the JDK enables them; "TLSv1.2" would rule out TLS 1.3
 	private static final String CERTIFICATE_TYPE = "X.509";
 	private static final String INTERNAL_TRUSTSTORE_PATH = "internal-truststore/*"; // Points to src/main/resources/internal-truststore/* in this project.
 

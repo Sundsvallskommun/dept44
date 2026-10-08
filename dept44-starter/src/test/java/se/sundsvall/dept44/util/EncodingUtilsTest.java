@@ -28,7 +28,12 @@ class EncodingUtilsTest {
 			Arguments.of("Löpande underhåll", false),
 			Arguments.of("Uppdatering/förändring", false),
 			Arguments.of("Växelförändring", false),
-			Arguments.of("ÅÄÖåäö", false));
+			Arguments.of("ÅÄÖåäö", false),
+			Arguments.of("«яблоку»", false),
+			Arguments.of("Сказку\u00a0читай", false),
+			Arguments.of("Ålder: 3 år; \u00c3\u0085sa \u00c3\u0096berg", true),
+			Arguments.of("plain ascii", false),
+			Arguments.of(null, false));
 	}
 
 	private static Stream<Arguments> fixDoubleEncodedUTF8ContentArguments() {
@@ -40,6 +45,11 @@ class EncodingUtilsTest {
 			Arguments.of("LÃ¶pande underhÃ¥ll", "Löpande underhåll"),
 			Arguments.of("Uppdatering/fÃ¶rÃ¤ndring", "Uppdatering/förändring"),
 			Arguments.of("VÃ¤xelfÃ¶rÃ¤ndring", "Växelförändring"),
+			Arguments.of("«яблоку»", "«яблоку»"),
+			Arguments.of("Ålder: 3 år; Ã\u0085sa Ã\u0096berg", "Ålder: 3 år; Åsa Öberg"),
+			Arguments.of("€: â\u0082¬, emoji: ð\u009f\u0098\u0080", "€: €, emoji: 😀"),
+			Arguments.of("Сказку читай", "Сказку читай"),
+			Arguments.of(null, null),
 			// spotless:off
 			Arguments.of("ÃÃÃÃ¥Ã¤Ã¶", "ÅÄÖåäö"));
 	}//spotless:on

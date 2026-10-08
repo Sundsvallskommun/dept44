@@ -104,11 +104,11 @@ public class ProblemResponse implements Problem {
 	/**
 	 * Set the status from an integer status code (for JSON deserialization).
 	 *
-	 * @param statusCode the HTTP status code
+	 * @param statusCode the HTTP status code; a code without an {@link HttpStatus} constant (such as 499) gives no status
 	 */
 	@JsonSetter("status")
 	public void setStatus(final Integer statusCode) {
-		this.status = statusCode != null ? HttpStatus.valueOf(statusCode) : null;
+		this.status = statusCode != null ? HttpStatus.resolve(statusCode) : null;
 	}
 
 	/**

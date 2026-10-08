@@ -7,7 +7,17 @@ import java.util.Collection;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+/**
+ * Retries a request whose token was rejected (HTTP 401, as a {@code RetryableException} from an error decoder's
+ * {@code RetryResponseVerifier}), after running the action, such as evicting the rejected token.
+ * <p>
+ * Feign also reports I/O errors (connect and read timeouts) as a {@code RetryableException}, and its default error
+ * decoder reports a response with a {@code Retry-After} header as one. Those are not retried: the request may already
+ * have been processed (a timed-out POST would be sent twice), and a new token would not help.
+ */
 public class ActionRetryer implements Retryer {
+
+	private static final int UNAUTHORIZED = 401;
 
 	private final int maxAttempts;
 	private int attempt;
@@ -21,7 +31,7 @@ public class ActionRetryer implements Retryer {
 
 	@Override
 	public void continueOrPropagate(RetryableException e) {
-		if (attempt > maxAttempts) {
+		if (attempt > maxAttempts || e.status() != UNAUTHORIZED) {
 			throw e;
 		}
 		// Pass the Authorization header of the failed request so the action only acts on the exact token that failed.

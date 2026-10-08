@@ -241,6 +241,17 @@ class ProblemExceptionHandlerTest {
 	}
 
 	@Test
+	void handlingAProblemLeavesItsOwnHeadersUntouched() {
+		// Spring passes the exception's own headers; a problem may be a shared constant thrown by many requests
+		final var problem = Problem.valueOf(NOT_FOUND, "Resource not found");
+
+		final var response = handler.handleExceptionInternal(problem, null, problem.getHeaders(), HttpStatusCode.valueOf(404), webRequest);
+
+		assertThat(response.getHeaders().getContentType()).isEqualTo(APPLICATION_PROBLEM_JSON);
+		assertThat(problem.getHeaders().getContentType()).isNull();
+	}
+
+	@Test
 	void handleThrowableProblem() {
 		final var problem = Problem.valueOf(NOT_FOUND, "Resource not found");
 

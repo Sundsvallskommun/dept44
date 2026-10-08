@@ -12,7 +12,7 @@ import static org.springframework.util.ReflectionUtils.findMethod;
 
 public class ValidNamespaceConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidNamespace, String> {
 
-	private static final String NAMESPACE_REGEXP = "[\\w|\\-]{2,32}";
+	private static final String NAMESPACE_REGEXP = "[\\w\\-]{2,32}"; // \w is A-Z, a-z, 0-9 and _
 	private boolean nullable;
 
 	@Override

@@ -15,7 +15,7 @@ import static org.springframework.util.ReflectionUtils.findMethod;
  */
 public class ValidOrganizationNumberConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidOrganizationNumber, String> {
 
-	private static final String REGEX_PATTERN = "^([1235789][\\d][2-9]\\d{7})$";
+	private static final String REGEX_PATTERN = "^([1235-9][\\d][2-9]\\d{7})$"; // Group 6 is enkla bolag; 4 is not used
 	private boolean nullable;
 
 	@Override

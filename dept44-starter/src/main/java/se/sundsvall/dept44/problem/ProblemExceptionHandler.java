@@ -5,6 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.SocketTimeoutException;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -13,6 +15,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -23,11 +26,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import se.sundsvall.dept44.problem.violations.ConstraintViolationProblem;
@@ -48,7 +54,7 @@ import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 @ControllerAdvice
 public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProblemExceptionHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ProblemExceptionHandler.class);
 
 	private static final String CONSTRAINT_VIOLATION_TITLE = "Constraint Violation";
 
@@ -80,7 +86,8 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 		}
 		var resolvedHeaders = headers;
 		if (resolvedHeaders.getContentType() == null) {
-			resolvedHeaders = new HttpHeaders(headers);
+			// A copy: new HttpHeaders(headers) shares the exception's own headers, which may belong to a shared problem
+			resolvedHeaders = HttpHeaders.copyOf(headers);
 			resolvedHeaders.setContentType(APPLICATION_PROBLEM_JSON);
 		}
 		return super.handleExceptionInternal(ex, convertedBody, resolvedHeaders, resolvedStatus, request);
@@ -94,6 +101,29 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 		final @NonNull MethodArgumentNotValidException ex, final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
 
 		final var problem = toConstraintViolationProblem(ex);
+		return handleExceptionInternal(ex, ProblemResponse.from(problem), headers, status, request);
+	}
+
+	/**
+	 * Override to produce ConstraintViolationProblem with violations from Spring's built-in method validation, which
+	 * applies to controllers without class-level {@code @Validated}. Violations of a method parameter are named like those
+	 * of a {@link ConstraintViolationException} ({@code method.parameter}), violations inside a {@code @Valid} object by
+	 * their field.
+	 */
+	@Override
+	protected @Nullable ResponseEntity<@NonNull Object> handleHandlerMethodValidationException(
+		final @NonNull HandlerMethodValidationException ex, final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
+
+		final var violations = Stream.concat(
+			ex.getParameterValidationResults().stream().flatMap(this::toViolations),
+			ex.getCrossParameterValidationResults().stream().map(error -> new Violation(ex.getMethod().getName(), error.getDefaultMessage())))
+			.toList();
+
+		final var problem = ConstraintViolationProblem.builder()
+			.withStatus(BAD_REQUEST)
+			.withTitle(CONSTRAINT_VIOLATION_TITLE)
+			.withViolations(violations)
+			.build();
 		return handleExceptionInternal(ex, ProblemResponse.from(problem), headers, status, request);
 	}
 
@@ -164,7 +194,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleCallNotPermittedException(final CallNotPermittedException exception, final HttpServletRequest request) {
 		logWithContext(request, SERVICE_UNAVAILABLE.getReasonPhrase(), exception.getCausingCircuitBreakerName(),
-			() -> LOGGER.warn("Circuit breaker '{}' is open, responding with {}", exception.getCausingCircuitBreakerName(), SERVICE_UNAVAILABLE.value()));
+			() -> LOG.warn("Circuit breaker '{}' is open, responding with {}", exception.getCausingCircuitBreakerName(), SERVICE_UNAVAILABLE.value()));
 
 		final var problem = Problem.valueOf(SERVICE_UNAVAILABLE, exception.getMessage());
 
@@ -181,7 +211,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleAccessDeniedException(final AccessDeniedException exception, final HttpServletRequest request) {
 		logWithContext(request, FORBIDDEN.getReasonPhrase(), null,
-			() -> LOGGER.warn("Access denied ({}), responding with {}", exception.getClass().getSimpleName(), FORBIDDEN.value()));
+			() -> LOG.warn("Access denied ({}), responding with {}", exception.getClass().getSimpleName(), FORBIDDEN.value()));
 
 		return createProblem(FORBIDDEN, exception.getMessage());
 	}
@@ -193,7 +223,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleAuthenticationException(final AuthenticationException exception, final HttpServletRequest request) {
 		logWithContext(request, UNAUTHORIZED.getReasonPhrase(), null,
-			() -> LOGGER.warn("Authentication failed ({}), responding with {}", exception.getClass().getSimpleName(), UNAUTHORIZED.value()));
+			() -> LOG.warn("Authentication failed ({}), responding with {}", exception.getClass().getSimpleName(), UNAUTHORIZED.value()));
 
 		return createProblem(UNAUTHORIZED, exception.getMessage());
 	}
@@ -223,7 +253,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	@ResponseBody
 	public ResponseEntity<Problem> handleSocketTimeoutException(final SocketTimeoutException exception, final HttpServletRequest request) {
 		logWithContext(request, GATEWAY_TIMEOUT.getReasonPhrase(), null,
-			() -> LOGGER.error("Downstream call timed out, responding with {}: {}", GATEWAY_TIMEOUT.value(), exception.getMessage()));
+			() -> LOG.error("Downstream call timed out, responding with {}: {}", GATEWAY_TIMEOUT.value(), exception.getMessage()));
 
 		return createProblem(GATEWAY_TIMEOUT, exception.getMessage());
 	}
@@ -231,14 +261,66 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	/**
 	 * Catch-all handler for any unhandled exception. Ensures all errors produce a Problem JSON response instead of falling
 	 * through to the Servlet container's default error handling.
+	 * <p>
+	 * Spring only looks for a handler for an exception's cause when nothing handles the exception itself, which this
+	 * handler always does. So a problem, a timeout or an open circuit breaker wrapped in another exception (by Feign,
+	 * RestClient, WebClient or a {@code CompletableFuture}) is looked for here, and answered as if thrown directly.
 	 */
 	@ExceptionHandler(Exception.class)
 	@ResponseBody
 	public ResponseEntity<Problem> handleException(final Exception exception, final HttpServletRequest request) {
+		final var handled = handleCause(exception, request);
+		if (handled != null) {
+			return handled;
+		}
+
 		logWithContext(request, INTERNAL_SERVER_ERROR.getReasonPhrase(), null,
-			() -> LOGGER.error("Unhandled exception caught by global handler, responding with {}", INTERNAL_SERVER_ERROR.value(), exception));
+			() -> LOG.error("Unhandled exception caught by global handler, responding with {}", INTERNAL_SERVER_ERROR.value(), exception));
 
 		return createProblem(INTERNAL_SERVER_ERROR, exception.getMessage());
+	}
+
+	private ResponseEntity<Problem> handleCause(final Exception exception, final HttpServletRequest request) {
+		final var seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+		for (var cause = exception.getCause(); cause != null && seen.add(cause); cause = cause.getCause()) {
+			switch (cause) {
+				case final ThrowableProblem problem -> {
+					final var problemStatus = Optional.ofNullable(problem.getStatus()).orElse(INTERNAL_SERVER_ERROR);
+					return ResponseEntity
+						.status(problemStatus)
+						.headers(HttpHeaders.copyOf(problem.getHeaders()))
+						.contentType(APPLICATION_PROBLEM_JSON)
+						.body(ProblemResponse.from(problem));
+				}
+				case final SocketTimeoutException timeout -> {
+					return handleSocketTimeoutException(timeout, request);
+				}
+				case final CallNotPermittedException notPermitted -> {
+					return handleCallNotPermittedException(notPermitted, request);
+				}
+				default -> {
+					// Look further down the cause chain
+				}
+			}
+		}
+		return null;
+	}
+
+	private Stream<Violation> toViolations(final ParameterValidationResult result) {
+		if (result instanceof final ParameterErrors errors) {
+			return Stream.concat(
+				errors.getFieldErrors().stream().map(this::toViolation),
+				errors.getGlobalErrors().stream().map(this::toViolation));
+		}
+		return result.getResolvableErrors().stream().map(error -> toViolation(result, error));
+	}
+
+	private Violation toViolation(final ParameterValidationResult result, final MessageSourceResolvable error) {
+		try {
+			return toViolation(result.unwrap(error, ConstraintViolation.class));
+		} catch (final IllegalArgumentException _) {
+			return new Violation(result.getMethodParameter().getParameterName(), error.getDefaultMessage());
+		}
 	}
 
 	private ProblemResponse toProblemResponse(final ProblemDetail pd) {
@@ -248,7 +330,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			response.setType(type);
 		}
 		response.setTitle(pd.getTitle());
-		response.setStatus(HttpStatus.valueOf(pd.getStatus()));
+		response.setStatus(HttpStatus.resolve(pd.getStatus()));
 		response.setDetail(pd.getDetail());
 		response.setInstance(pd.getInstance());
 		return response;

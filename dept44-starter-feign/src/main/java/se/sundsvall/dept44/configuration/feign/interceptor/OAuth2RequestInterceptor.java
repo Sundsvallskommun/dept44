@@ -139,7 +139,7 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 		}
 		var accessToken = requireNonNull(authorizedClient, "authorizedClient cannot be null").getAccessToken();
 		requestTemplate.removeHeader(AUTHORIZATION);
-		requestTemplate.header(AUTHORIZATION, String.format("Bearer %s", accessToken.getTokenValue()));
+		requestTemplate.header(AUTHORIZATION, "Bearer " + accessToken.getTokenValue());
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class OAuth2RequestInterceptor implements RequestInterceptor {
 				return;
 			}
 
-			final var currentAuthorizationHeader = String.format("Bearer %s", currentClient.getAccessToken().getTokenValue());
+			final var currentAuthorizationHeader = "Bearer " + currentClient.getAccessToken().getTokenValue();
 			if (currentAuthorizationHeader.equals(failedAuthorizationHeader)) {
 				oAuth2AuthorizedClientService.removeAuthorizedClient(registrationId, ANONYMOUS_AUTHENTICATION.getName());
 			}

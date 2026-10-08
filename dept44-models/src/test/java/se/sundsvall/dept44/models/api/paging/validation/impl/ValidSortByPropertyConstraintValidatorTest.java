@@ -51,13 +51,27 @@ class ValidSortByPropertyConstraintValidatorTest {
 	}
 
 	@Test
+	void isValidWithInheritedField() {
+		final var parameters = new TestParameters();
+		parameters.setSortBy(List.of("created"));
+		assertThat(validator.validate(parameters)).isEmpty();
+	}
+
+	@Test
+	void isValidWithoutParameters() {
+		assertThat(new ValidSortByPropertyConstraintValidator().isValid(null, null)).isTrue();
+	}
+
+	@Test
 	void isNotValid() {
 		final var parameters = new TestParameters();
 		parameters.setSortBy(List.of("notASortableField"));
 		assertThat(validator.validate(parameters))
 			.first()
 			.extracting(ConstraintViolation::getMessage)
-			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [myField, id, mySecondField].");
+			.asString()
+			.startsWith("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [")
+			.contains("myField", "id", "mySecondField", "created");
 	}
 
 	@Test
@@ -70,7 +84,13 @@ class ValidSortByPropertyConstraintValidatorTest {
 			.isEqualTo("One or more of the sortBy properties [notASortableField] are not valid. Valid properties to sort by are [includeField].");
 	}
 
-	private static class TestEntity {
+	private static class BaseEntity {
+
+		@Column(name = "created")
+		private String created;
+	}
+
+	private static class TestEntity extends BaseEntity {
 
 		@Column(name = " id")
 		private Integer id;

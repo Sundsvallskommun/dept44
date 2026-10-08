@@ -20,12 +20,13 @@ import static se.sundsvall.dept44.test.annotation.resource.Load.ResourceType.STR
 class MunicipalityUtilsTest {
 
 	private static final String TEST_JSON_FILE = "data/municipality.yml";
-	private static final Integer EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS = 311;
+	private static final Integer EXPECTED_NUMBER_OF_RECORDS_IN_FILE = 311;
+	private static final Integer EXPECTED_NUMBER_OF_MUNICIPALITIES = 290;
 
 	@Test
 	void validFileContent(@Load(value = TEST_JSON_FILE, as = STRING) final String json) throws Exception {
 		assertThat(new YAMLMapper().readValue(json, new TypeReference<List<Municipality>>() {}))
-			.hasSize(EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS)
+			.hasSize(EXPECTED_NUMBER_OF_RECORDS_IN_FILE)
 			.allMatch(municipality -> isNotBlank(municipality.id()))
 			.allMatch(municipality -> isNotBlank(municipality.name()))
 			.allMatch(municipality -> isDigits(municipality.id()))
@@ -115,7 +116,16 @@ class MunicipalityUtilsTest {
 
 	@Test
 	void findAll() {
-		assertThat(MunicipalityUtils.findAll()).hasSize(EXPECTED_NUMBER_OF_MUNICIPALITY_RECORDS);
+		assertThat(MunicipalityUtils.findAll()).hasSize(EXPECTED_NUMBER_OF_MUNICIPALITIES)
+			.allMatch(municipality -> length(municipality.id()) == 4);
+	}
+
+	@Test
+	void countiesAreNotMunicipalities() {
+		assertThat(MunicipalityUtils.existsById("22")).isFalse();
+		assertThat(MunicipalityUtils.findById("01")).isNull();
+		assertThat(MunicipalityUtils.existsByName("Västernorrlands län")).isFalse();
+		assertThat(MunicipalityUtils.existsById("2281")).isTrue();
 	}
 
 	private boolean hasNoSurroundingWhitespace(final String string) {

@@ -52,9 +52,22 @@ public @interface Dept44Scheduled {
 	String lockAtMostFor() default "";
 
 	/**
-	 * * The maximum time for executing the task before the health status is set to restricted.
+	 * Alias for {@link SchedulerLock#lockAtLeastFor()}: the minimum time to hold the lock, even when the task finishes
+	 * sooner. Without it the lock is released as soon as the task finishes, and a pod whose trigger fires a little later
+	 * (clock skew, or a busy scheduler thread) can run the task again for the same schedule. Set it to somewhat less than
+	 * the shortest interval between runs.
+	 *
+	 * @return the minimum time to hold the lock
+	 */
+	@AliasFor(annotation = SchedulerLock.class, attribute = "lockAtLeastFor")
+	String lockAtLeastFor() default "";
+
+	/**
+	 * The maximum time for executing the task before the health status is set to restricted, also while the task is still
+	 * running.
 	 * <p>
-	 * Should be ISO8601 duration as described in {@link java.time.Duration#parse(CharSequence)}, for example PT30S.
+	 * An ISO-8601 duration as described in {@link java.time.Duration#parse(CharSequence)}, for example PT30S, or the
+	 * simple form also accepted by {@link #lockAtMostFor()}, for example 30s.
 	 * <p>
 	 * Default is 2 minutes.
 	 *

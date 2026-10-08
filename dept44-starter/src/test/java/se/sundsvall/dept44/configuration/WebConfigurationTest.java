@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Nested;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -29,6 +31,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -39,7 +42,6 @@ import se.sundsvall.dept44.support.Identifier.Type;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -440,52 +442,53 @@ class WebConfigurationTest {
 
 		private WebConfiguration.MunicipalityIdInterceptor municipalityIdInterceptor;
 
-		static Stream<Arguments> argumentsProvider() {
-			return Stream.of(
-				Arguments.of("/%s/any/service", "2281", 1),
-				Arguments.of("/any/%s/service", "2281", 2),
-				Arguments.of("/any/service/%s", "2281", 3),
-				Arguments.of("/%s/any/service", "2260", 1),
-				Arguments.of("/any/%s/service", "2260", 2),
-				Arguments.of("/any/service/%s", "2260", 3));
+		@ParameterizedTest
+		@ValueSource(strings = {
+			"2281", "2260"
+		})
+		void preHandleWithAllowedIds(final String municipalityId) {
+			final var object = new Object();
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId));
+
+			when(httpServletRequestMock.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).thenReturn(Map.of("municipalityId", municipalityId));
+
+			assertThat(municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object)).isTrue();
 		}
 
 		@ParameterizedTest
-		@MethodSource("argumentsProvider")
-		void preHandleWithAllowedIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
+		@ValueSource(strings = {
+			"2281", "2260"
+		})
+		void preHandleWithNotAllowedIds(final String municipalityId) {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(municipalityId), municipalityIdUriIndex);
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234", "3214"));
 
-			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
-
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
-
-			assertThat(result).isTrue();
-			assertThatNoException().isThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object));
-		}
-
-		@ParameterizedTest
-		@MethodSource("argumentsProvider")
-		void preHandleWithNotAllowedIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
-			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("1234, 3214"), municipalityIdUriIndex);
-
-			when(httpServletRequestMock.getRequestURI()).thenReturn(path.formatted(municipalityId));
+			when(httpServletRequestMock.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).thenReturn(Map.of("municipalityId", municipalityId));
 
 			assertThatThrownBy(() -> municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object))
 				.isInstanceOf(ThrowableProblem.class)
 				.hasMessage("Not implemented for municipalityId: " + municipalityId);
 		}
 
-		@ParameterizedTest
-		@MethodSource("argumentsProvider")
-		void preHandleWithNoConfiguredMunicipalityIds(final String path, final String municipalityId, final int municipalityIdUriIndex) {
+		@Test
+		void preHandleLetsThroughRequestsWithoutAMunicipalityVariable() {
 			final var object = new Object();
-			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of(), municipalityIdUriIndex);
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of("2281"));
 
-			final var result = municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object);
+			// E.g. /api-docs: no path variables at all
+			assertThat(municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object)).isTrue();
 
-			assertThat(result).isTrue();
+			// E.g. /status/{id}: other path variables only
+			when(httpServletRequestMock.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).thenReturn(Map.of("id", "1"));
+			assertThat(municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object)).isTrue();
+		}
+
+		@Test
+		void preHandleWithNoConfiguredMunicipalityIds() {
+			final var object = new Object();
+			municipalityIdInterceptor = new WebConfiguration.MunicipalityIdInterceptor(List.of());
+
+			assertThat(municipalityIdInterceptor.preHandle(httpServletRequestMock, httpServletResponseMock, object)).isTrue();
 		}
 	}
 }

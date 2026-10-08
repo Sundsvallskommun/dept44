@@ -14,7 +14,8 @@ public class MaxPagingLimitConstraintValidator implements ConstraintValidator<Ma
 
 	@Override
 	public boolean isValid(Integer value, ConstraintValidatorContext context) {
-		var isValid = value <= maxLimit;
+		// As for the built-in constraints, null is valid; @NotNull is for requiring a value
+		final var isValid = value == null || value <= maxLimit;
 
 		if (!isValid) {
 			useCustomMessageForValidation(context, String.format(MSG, maxLimit));

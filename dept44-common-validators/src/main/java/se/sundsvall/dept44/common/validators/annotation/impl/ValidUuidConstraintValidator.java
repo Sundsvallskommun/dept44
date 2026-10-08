@@ -3,10 +3,11 @@ package se.sundsvall.dept44.common.validators.annotation.impl;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.lang.reflect.Method;
-import java.util.UUID;
+import java.util.regex.Pattern;
 import se.sundsvall.dept44.common.validators.annotation.ValidUuid;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.ReflectionUtils.findMethod;
 
@@ -14,6 +15,8 @@ import static org.springframework.util.ReflectionUtils.findMethod;
  * Defines the logic to validate that a string is a valid UUID.
  */
 public class ValidUuidConstraintValidator extends AbstractValidator implements ConstraintValidator<ValidUuid, String> {
+
+	private static final Pattern CANONICAL_UUID = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
 
 	private boolean nullable;
 
@@ -43,13 +46,11 @@ public class ValidUuidConstraintValidator extends AbstractValidator implements C
 			.orElseThrow(createException(ValidUuid.class.getName()));
 	}
 
+	/**
+	 * The canonical 8-4-4-4-12 hexadecimal form only. {@link java.util.UUID#fromString(String)} alone also accepts
+	 * shorter groups, such as "1-1-1-1-1".
+	 */
 	private boolean isValidUUID(final String value) {
-		try {
-			UUID.fromString(String.valueOf(value));
-		} catch (final Exception _) {
-			return false;
-		}
-
-		return true;
+		return nonNull(value) && CANONICAL_UUID.matcher(value).matches();
 	}
 }

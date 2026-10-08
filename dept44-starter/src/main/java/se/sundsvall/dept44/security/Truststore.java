@@ -11,6 +11,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -88,6 +90,8 @@ public class Truststore {
 	private static final String CERTIFICATE_TYPE = "X.509";
 	private static final String INTERNAL_TRUSTSTORE_PATH = "internal-truststore/*"; // Points to src/main/resources/internal-truststore/* in this project.
 
+	private static final AtomicReference<TrustManagerFactory> INSTALLED_TRUST_MANAGER_FACTORY = new AtomicReference<>();
+
 	private final String trustStorePath;
 	private final String internalTrustStorePath;
 	private final SSLContext sslContext;
@@ -126,6 +130,17 @@ public class Truststore {
 		return this.trustManagerFactory;
 	}
 
+	/**
+	 * The trust manager factory of the truststore installed as the JVM default {@link SSLContext}. A client that builds
+	 * an {@link SSLContext} of its own, such as one with a client certificate, uses it to trust the same servers as the
+	 * rest of the application.
+	 *
+	 * @return the factory, or empty when no truststore with certificates has been installed
+	 */
+	public static Optional<TrustManagerFactory> installedTrustManagerFactory() {
+		return Optional.ofNullable(INSTALLED_TRUST_MANAGER_FACTORY.get());
+	}
+
 	public SSLContext getSSLContext() {
 		return this.sslContext;
 	}
@@ -136,6 +151,9 @@ public class Truststore {
 		try {
 			LOG.info(MESSAGE_USAGE_INFO, trustStorePath);
 			initializedSSLContext = initializeTruststore();
+			if (initializedSSLContext != null) {
+				INSTALLED_TRUST_MANAGER_FACTORY.set(trustManagerFactory);
+			}
 
 		} catch (final Exception e) {
 			LOG.error(MESSAGE_SSL_CONTEXT_INITIALIZATION_ERROR, e);

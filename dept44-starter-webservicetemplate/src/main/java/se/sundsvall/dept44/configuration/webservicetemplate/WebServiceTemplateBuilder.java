@@ -11,7 +11,6 @@ import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -46,12 +45,14 @@ import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultF
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.ssl.AnyOfTrustManager;
+import se.sundsvall.dept44.configuration.webservicetemplate.ssl.DefaultTrustManager;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.support.BasicAuthentication;
 
 import static java.util.HashSet.newHashSet;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static se.sundsvall.dept44.configuration.webservicetemplate.ssl.DefaultTrustManager.x509TrustManager;
 import static se.sundsvall.dept44.util.KeyStoreUtils.loadKeyStore;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNonNull;
 import static se.sundsvall.dept44.util.ResourceUtils.requireNotBlank;
@@ -226,8 +227,9 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * Which servers to trust. A server is trusted when its certificate chain is trusted by this factory, or by the
-	 * certificates in the keystore when one is set. When not set, the JVM default trust store is used instead of this
-	 * factory; pass {@code truststore.getTrustManagerFactory()} to trust dept44's truststore.
+	 * certificates in the keystore when one is set. With a keystore and without this factory, the servers the rest of the
+	 * application trusts are trusted instead: those of the dept44 truststore, or, without one, those of the JVM default
+	 * trust store.
 	 *
 	 * @param  trustManagerFactory an initialized trust manager factory
 	 * @return                     this builder {@link WebServiceTemplateBuilder}
@@ -368,20 +370,16 @@ public class WebServiceTemplateBuilder {
 
 	/**
 	 * The server is trusted when its certificate chain is trusted by the trust manager factory given to this builder
-	 * (the JVM default trust store when none is given), or by any certificate in the client keystore: its trusted
+	 * (what the rest of the application trusts when none is given), or by any certificate in the client keystore: its
+	 * trusted
 	 * certificates, and every certificate in the chain of its keys, so also the CA that issued the client certificate.
 	 */
 	private X509TrustManager serverTrustManager(final KeyStore keyStore) throws GeneralSecurityException {
-		final var trustManagerFactories = new ArrayList<TrustManagerFactory>();
-		trustManagerFactories.add(trustManagerFactory != null ? trustManagerFactory : trustManagerFactory(null));
-		keyStoreCertificates(keyStore).ifPresent(trustManagerFactories::add);
+		final var trustManagers = new ArrayList<X509TrustManager>();
+		trustManagers.add(trustManagerFactory != null ? x509TrustManager(trustManagerFactory) : new DefaultTrustManager());
+		keyStoreCertificates(keyStore).map(DefaultTrustManager::x509TrustManager).ifPresent(trustManagers::add);
 
-		return new AnyOfTrustManager(trustManagerFactories.stream()
-			.map(TrustManagerFactory::getTrustManagers)
-			.flatMap(Arrays::stream)
-			.filter(X509TrustManager.class::isInstance)
-			.map(X509TrustManager.class::cast)
-			.toList());
+		return new AnyOfTrustManager(trustManagers);
 	}
 
 	/**

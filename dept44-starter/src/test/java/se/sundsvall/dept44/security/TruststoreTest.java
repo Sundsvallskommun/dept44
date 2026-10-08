@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +31,7 @@ class TruststoreTest {
 		assertThat(truststore.getSSLContext()).isNotNull();
 		assertThat(truststore.getSSLContext().getDefaultSSLParameters().getProtocols()).contains("TLSv1.3", "TLSv1.2");
 		assertThat(truststore.getTrustManagerFactory()).isNotNull();
+		assertThat(Truststore.installedTrustManagerFactory()).containsSame(truststore.getTrustManagerFactory());
 	}
 
 	@Test

@@ -1,11 +1,16 @@
 package se.sundsvall.dept44.util;
 
+import java.time.Duration;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class PiiMaskerTest {
 
@@ -72,7 +77,23 @@ class PiiMaskerTest {
 			Arguments.of("08-123 45 67/+46 70 123 45 67", "**-*** ** **/+** ** *** ** **"),
 			Arguments.of("070-1234567/070-7654321", "***-*******/***-*******"),
 			Arguments.of("GET /2281/070-1234567", "GET /2281/***-*******"),
-			Arguments.of("070-123 45 67.5", "***-*** ** **.5"));
+			Arguments.of("070-123 45 67.5", "***-*** ** **.5"),
+			// A phone number that starts like a date is not taken for one
+			Arguments.of("0701-23-45-67", "****-**-**-**"),
+			Arguments.of("0046-70-1234567", "****-**-*******"),
+			Arguments.of("0046-70-123 45 67", "****-**-*** ** **"));
+	}
+
+	@Test
+	void maskPhoneNumberScansALongValueInOnePass() {
+		// About 500 KB with 10 000 timestamps, as in a large payload log line: scanned again for every match, this took minutes
+		final var value = IntStream.range(0, 10_000)
+			.mapToObj(index -> "{\"created\":\"2024-03-08T09:15:22.123\",\"id\":" + index + "}")
+			.collect(joining(",", "[", "]"));
+
+		final var masked = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> PiiMasker.maskPhoneNumber(value));
+
+		assertThat(masked).isEqualTo(value);
 	}
 
 	@ParameterizedTest

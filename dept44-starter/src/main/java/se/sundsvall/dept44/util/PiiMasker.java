@@ -2,12 +2,9 @@ package se.sundsvall.dept44.util;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static java.util.Comparator.comparingInt;
 
 /**
  * Masks personally identifiable information (PII) in strings so it can be logged without exposing personal data.
@@ -63,12 +60,14 @@ public final class PiiMasker {
 	 * matching (such a run is handled by {@link #maskPersonalNumber(String)} instead).
 	 * <p>
 	 * Dates and times, such as {@code 2024-03-08 09:15:22} or {@code 08.05.2024 07:30}, are found as well and left as
-	 * they are, so that no part of them is taken for a phone number. All patterns are tried as the alternatives of a
+	 * they are, so that no part of them is taken for a phone number. A date must not be next to more digits, so that a
+	 * phone number such as {@code 0701-23-45-67} is not taken for one. All patterns are tried as the alternatives of a
 	 * single pattern would be: what starts first is taken, and when two match at the same place the earlier pattern wins.
+	 * They are kept apart, rather than joined into one pattern, to keep each of them simple.
 	 */
 	private static final List<Pattern> PHONE_NUMBER_PATTERNS = List.of(
-		Pattern.compile("\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?(?:[.,]\\d+)?"),
-		Pattern.compile("\\d{2}[-/.]\\d{2}[-/.]\\d{4}(?: \\d{2}:\\d{2}(?::\\d{2})?)?"),
+		Pattern.compile("(?<!\\d)\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?(?:[.,]\\d+)?(?![-/.]?\\d)"),
+		Pattern.compile("(?<!\\d)\\d{2}[-/.]\\d{2}[-/.]\\d{4}(?: \\d{2}:\\d{2}(?::\\d{2})?)?(?![-/.]?\\d)"),
 		phoneNumberPattern("(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}"),
 		phoneNumberPattern("0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2}"));
 
@@ -145,33 +144,61 @@ public final class PiiMasker {
 
 	private static String maskPhoneNumberDigits(final String value) {
 		final var masked = new StringBuilder(value);
-		var found = nextPhoneNumberOrDateTime(value, 0);
-		while (found.isPresent()) {
-			final var match = found.get();
-			if (match.isPhoneNumber()) {
-				maskDigits(masked, match.start(), match.end());
+		final var scanner = new PhoneNumberScanner(value);
+		for (var index = scanner.nextAt(0); index >= 0; index = scanner.nextAt(scanner.end(index))) {
+			if (index >= DATE_TIME_PATTERNS) {
+				maskDigits(masked, scanner.start(index), scanner.end(index));
 			}
-			found = nextPhoneNumberOrDateTime(value, match.end());
 		}
 		return masked.toString();
 	}
 
 	/**
-	 * The phone number, date or time that starts first at or after the given index. Of two that start at the same index,
-	 * the one matched by the earlier pattern is returned, since {@link Stream#min} keeps the first of equal elements.
+	 * Finds the phone numbers, dates and times in a value in one pass. Each pattern keeps its next match, and is only
+	 * searched again once a match has been taken from where that one starts, so that a long value with many matches is
+	 * not scanned again for every match.
 	 */
-	private static Optional<Found> nextPhoneNumberOrDateTime(final String value, final int from) {
-		return IntStream.range(0, PHONE_NUMBER_PATTERNS.size())
-			.mapToObj(index -> found(PHONE_NUMBER_PATTERNS.get(index).matcher(value), from, index >= DATE_TIME_PATTERNS))
-			.flatMap(Optional::stream)
-			.min(comparingInt(Found::start));
-	}
+	private static final class PhoneNumberScanner {
 
-	private static Optional<Found> found(final Matcher matcher, final int from, final boolean isPhoneNumber) {
-		return matcher.find(from) ? Optional.of(new Found(matcher.start(), matcher.end(), isPhoneNumber)) : Optional.empty();
-	}
+		private final List<Matcher> matchers;
+		private final MatchResult[] nextMatches;
 
-	private record Found(int start, int end, boolean isPhoneNumber) {
+		private PhoneNumberScanner(final String value) {
+			this.matchers = PHONE_NUMBER_PATTERNS.stream().map(pattern -> pattern.matcher(value)).toList();
+			this.nextMatches = new MatchResult[matchers.size()];
+			for (var index = 0; index < matchers.size(); index++) {
+				nextMatches[index] = find(matchers.get(index), 0);
+			}
+		}
+
+		/**
+		 * The index of the pattern whose match starts first at or after the given position, or -1 when there is none. Of
+		 * two that start at the same position, the earlier pattern wins.
+		 */
+		private int nextAt(final int from) {
+			var first = -1;
+			for (var index = 0; index < nextMatches.length; index++) {
+				if (nextMatches[index] != null && nextMatches[index].start() < from) {
+					nextMatches[index] = find(matchers.get(index), from);
+				}
+				if (nextMatches[index] != null && (first < 0 || nextMatches[index].start() < nextMatches[first].start())) {
+					first = index;
+				}
+			}
+			return first;
+		}
+
+		private int start(final int index) {
+			return nextMatches[index].start();
+		}
+
+		private int end(final int index) {
+			return nextMatches[index].end();
+		}
+
+		private static MatchResult find(final Matcher matcher, final int from) {
+			return matcher.find(from) ? matcher.toMatchResult() : null;
+		}
 	}
 
 	private static void maskDigits(final StringBuilder text, final int start, final int end) {

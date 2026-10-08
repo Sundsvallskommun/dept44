@@ -146,11 +146,11 @@ public class Dept44SchedulerAspect {
 			putCompletion(startTime, OUTCOME_FAILURE);
 			LOG.error("Scheduled method {} fail. RequestID={}", name, RequestId.get(), e);
 		} catch (final Error e) {
-			// Such as OutOfMemoryError or StackOverflowError: named here, while the run's MDC fields are still set, and
-			// passed on unchanged. Spring's scheduler logs it with its stack trace.
+			// Such as OutOfMemoryError or StackOverflowError: passed on unchanged, and logged with its stack trace by Spring's
+			// scheduler. The health status names it; the line below marks the failed run while its MDC fields are set.
 			healthIndicator.setUnhealthy(e.toString());
 			putCompletion(startTime, OUTCOME_FAILURE);
-			LOG.error("Scheduled method {} fail with an error: {}. RequestID={}", name, e.toString(), RequestId.get());
+			LOG.error("Scheduled method {} fail with an error. RequestID={}", name, RequestId.get());
 			throw e;
 		} finally {
 			healthIndicator.runFinished(run);

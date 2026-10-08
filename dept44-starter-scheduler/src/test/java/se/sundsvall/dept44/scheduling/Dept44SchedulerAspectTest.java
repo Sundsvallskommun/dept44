@@ -149,9 +149,6 @@ class Dept44SchedulerAspectTest {
 		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("RESTRICTED");
 		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getDetails()).containsEntry("Reason", error.toString());
 		assertThat(mdcOf("fail with an error")).containsEntry("outcome", "FAILURE");
-		// Named on the log line written while the run's MDC fields are set
-		assertThat(appender.list.stream().filter(event -> event.getFormattedMessage().contains("fail with an error")).findFirst().orElseThrow().getFormattedMessage())
-			.contains(error.toString());
 		assertThat(RequestId.get()).isNull();
 		assertThat(MDC.get("schedulerName")).isNull();
 	}

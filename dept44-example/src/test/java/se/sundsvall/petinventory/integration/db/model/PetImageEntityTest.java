@@ -29,8 +29,8 @@ class PetImageEntityTest {
 		assertThat(PetImageEntity.class, allOf(
 			hasValidBeanConstructor(),
 			hasValidGettersAndSetters(),
-			hasValidBeanHashCodeExcluding("petName"),
-			hasValidBeanEqualsExcluding("petName"),
+			hasValidBeanHashCodeExcluding("petName", "content"),
+			hasValidBeanEqualsExcluding("petName", "content"),
 			hasValidBeanToStringExcluding("petName", "content")));
 	}
 

@@ -114,6 +114,11 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 	protected @Nullable ResponseEntity<@NonNull Object> handleHandlerMethodValidationException(
 		final @NonNull HandlerMethodValidationException ex, final @NonNull HttpHeaders headers, final @NonNull HttpStatusCode status, final @NonNull WebRequest request) {
 
+		if (ex.isForReturnValue()) {
+			// The response failed its own constraints: a server error, which Spring answers with 500
+			return super.handleHandlerMethodValidationException(ex, headers, status, request);
+		}
+
 		final var violations = Stream.concat(
 			ex.getParameterValidationResults().stream().flatMap(this::toViolations),
 			ex.getCrossParameterValidationResults().stream().map(error -> new Violation(ex.getMethod().getName(), error.getDefaultMessage())))
@@ -286,6 +291,7 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			switch (cause) {
 				case final ThrowableProblem problem -> {
 					final var problemStatus = Optional.ofNullable(problem.getStatus()).orElse(INTERNAL_SERVER_ERROR);
+					logWrappedProblem(exception, problemStatus, request);
 					return ResponseEntity
 						.status(problemStatus)
 						.headers(HttpHeaders.copyOf(problem.getHeaders()))
@@ -293,7 +299,10 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 						.body(ProblemResponse.from(problem));
 				}
 				case final SocketTimeoutException timeout -> {
-					return handleSocketTimeoutException(timeout, request);
+					// The wrapper's message names the call that timed out, and its stack trace where it was made
+					logWithContext(request, GATEWAY_TIMEOUT.getReasonPhrase(), null,
+						() -> LOG.error("Downstream call timed out, responding with {}: {}", GATEWAY_TIMEOUT.value(), exception.getMessage(), exception));
+					return createProblem(GATEWAY_TIMEOUT, timeout.getMessage());
 				}
 				case final CallNotPermittedException notPermitted -> {
 					return handleCallNotPermittedException(notPermitted, request);
@@ -304,6 +313,16 @@ public class ProblemExceptionHandler extends ResponseEntityExceptionHandler {
 			}
 		}
 		return null;
+	}
+
+	private static void logWrappedProblem(final Exception exception, final HttpStatus status, final HttpServletRequest request) {
+		if (status.is5xxServerError()) {
+			logWithContext(request, status.getReasonPhrase(), null,
+				() -> LOG.error("Problem wrapped in {} caught by global handler, responding with {}", exception.getClass().getSimpleName(), status.value(), exception));
+		} else {
+			logWithContext(request, status.getReasonPhrase(), null,
+				() -> LOG.warn("Problem wrapped in {} caught by global handler, responding with {}: {}", exception.getClass().getSimpleName(), status.value(), exception.getMessage()));
+		}
 	}
 
 	private Stream<Violation> toViolations(final ParameterValidationResult result) {

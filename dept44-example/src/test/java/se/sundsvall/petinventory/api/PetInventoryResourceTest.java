@@ -170,4 +170,21 @@ class PetInventoryResourceTest {
 		assertThat(contentDisposition.isAttachment()).isTrue();
 		assertThat(contentDisposition.getFilename()).isEqualTo("bild \"åäö\".jpg");
 	}
+
+	@Test
+	void getPetImageWithInvalidMimeType() {
+		final var petImageEntity = PetImageEntity.create()
+			.withContent(new byte[] {
+				1, 2, 3
+			})
+			.withFileName("cat.jpg")
+			.withMimeType("image");
+
+		when(petInventoryServiceMock.getPetImage(anyLong(), anyLong())).thenReturn(petImageEntity);
+
+		webTestClient.get().uri("/pet-inventory-items/{id}/images/{petImageId}", 1L, 10L)
+			.exchange()
+			.expectStatus().isOk()
+			.expectHeader().contentType(MediaType.APPLICATION_OCTET_STREAM);
+	}
 }

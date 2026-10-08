@@ -58,6 +58,29 @@ class AnyOfTrustManagerTest {
 	}
 
 	@Test
+	void runtimeFailureOfOneTrustManagerDoesNotKeepTheOthersFromBeingAsked() throws CertificateException {
+		doThrow(new IllegalStateException("the trustAnchors parameter must be non-empty")).when(first).checkServerTrusted(CHAIN, "RSA");
+
+		new AnyOfTrustManager(List.of(first, second)).checkServerTrusted(CHAIN, "RSA");
+
+		verify(second).checkServerTrusted(CHAIN, "RSA");
+	}
+
+	@Test
+	void runtimeFailureIsReportedWithTheOtherFailures() throws CertificateException {
+		doThrow(new CertificateException("first")).when(first).checkServerTrusted(CHAIN, "RSA");
+		doThrow(new IllegalStateException("second")).when(second).checkServerTrusted(CHAIN, "RSA");
+		final var trustManager = new AnyOfTrustManager(List.of(first, second));
+
+		assertThatExceptionOfType(CertificateException.class)
+			.isThrownBy(() -> trustManager.checkServerTrusted(CHAIN, "RSA"))
+			.withMessage("first")
+			.satisfies(e -> assertThat(e.getSuppressed())
+				.singleElement()
+				.satisfies(suppressed -> assertThat(suppressed).isInstanceOf(CertificateException.class).hasCauseInstanceOf(IllegalStateException.class)));
+	}
+
+	@Test
 	void clientChainsAreCheckedTheSameWay() throws CertificateException {
 		doThrow(new CertificateException("first")).when(first).checkClientTrusted(CHAIN, "RSA");
 

@@ -46,14 +46,22 @@ public final class AnyOfTrustManager implements X509TrustManager {
 				check.against(trustManager);
 				return;
 			} catch (final CertificateException e) {
-				if (failure == null) {
-					failure = e;
-				} else {
-					failure.addSuppressed(e);
-				}
+				failure = addFailure(failure, e);
+			} catch (final RuntimeException e) {
+				// A trust manager without any trusted certificate, for one, fails with a RuntimeException. That must not
+				// keep the others from being asked.
+				failure = addFailure(failure, new CertificateException(e.getMessage(), e));
 			}
 		}
 		throw failure;
+	}
+
+	private static CertificateException addFailure(final CertificateException failure, final CertificateException e) {
+		if (failure == null) {
+			return e;
+		}
+		failure.addSuppressed(e);
+		return failure;
 	}
 
 	@FunctionalInterface

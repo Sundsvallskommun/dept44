@@ -46,6 +46,19 @@ class ErrorDecoderEdgeCasesTest {
 		assertThat(((ThrowableProblem) withBody).getStatus()).isEqualTo(BAD_GATEWAY);
 	}
 
+	@ParameterizedTest
+	@ValueSource(ints = {
+		99, 999
+	})
+	void statusOutsideEveryHttpSeriesGivesAProblem(final int status) {
+		final var decoder = new ProblemErrorDecoder(INTEGRATION_NAME);
+
+		final var decoded = decoder.decode("method", response(status, null, Map.of()));
+
+		assertThat(decoded).isInstanceOf(ThrowableProblem.class).isNotInstanceOfAny(ClientProblem.class, ServerProblem.class);
+		assertThat(((ThrowableProblem) decoded).getStatus()).isEqualTo(BAD_GATEWAY);
+	}
+
 	@Test
 	void bodyThatCanOnlyBeReadOnceIsStillUsedForTheMessage() {
 		final var decoder = new ProblemErrorDecoder(INTEGRATION_NAME);

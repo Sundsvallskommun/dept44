@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.configuration;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -54,17 +57,28 @@ class Dept44DefaultPropertiesEnvironmentPostProcessorTest {
 		assertThat(postProcessor.getOrder()).isEqualTo(Ordered.LOWEST_PRECEDENCE);
 	}
 
+	/**
+	 * A service's root application configuration next to dept44's {@code config/application.properties}, the location
+	 * Spring Boot ranks above it. Defaults kept in that file would win over the service's own value.
+	 */
 	@Test
 	void applicationConfigurationOverridesTheDefaultsInARunningApplication() {
 		final var application = new SpringApplication(EmptyConfiguration.class);
 		application.setWebApplicationType(WebApplicationType.NONE);
 
-		try (final var context = application.run("--spring.config.name=dept44-default-precedence")) {
+		try (final var context = application.run("--spring.config.location=optional:classpath:/precedence/,optional:classpath:/config/")) {
 			final var environment = context.getEnvironment();
 
 			assertThat(environment.getProperty("spring.datasource.hikari.maximum-pool-size")).isEqualTo("50");
 			assertThat(environment.getProperty("server.shutdown")).isEqualTo("graceful");
 		}
+	}
+
+	@Test
+	void dept44ConfigDataFileHoldsOnlyTheEnvImport() throws IOException {
+		final var properties = PropertiesLoaderUtils.loadProperties(new ClassPathResource("config/application.properties"));
+
+		assertThat(properties).containsOnlyKeys("spring.config.import");
 	}
 
 	@Configuration(proxyBeanMethods = false)

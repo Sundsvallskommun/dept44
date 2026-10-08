@@ -27,6 +27,10 @@ Built-in types include `ThrowableProblem`, `ConstraintViolationProblem`, and a g
 Automatic `x-request-id` propagation via `RequestId` utility and MDC integration. Each incoming request gets a unique
 identifier for tracing across service calls.
 
+In a reactive (WebFlux) application the request id is kept in the Reactor context instead, under
+`RequestId.CONTEXT_KEY`, since a request does not stay on one thread. It reaches outgoing `WebClient` calls made while
+the request is handled, but not the MDC, so it is not in the log lines and `RequestId.get()` does not return it there.
+
 ### Security
 
 Default `SecurityConfiguration` that disables CSRF and permits all requests. Services requiring authentication should

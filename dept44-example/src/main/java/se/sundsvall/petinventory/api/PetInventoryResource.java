@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.http.ContentDisposition;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -105,7 +106,18 @@ class PetInventoryResource {
 		return ok()
 			.header(CONTENT_DISPOSITION, contentDisposition.toString())
 			.contentLength(petImage.getContent().length)
-			.contentType(Optional.ofNullable(petImage.getMimeType()).map(MediaType::parseMediaType).orElse(APPLICATION_OCTET_STREAM))
+			.contentType(mediaType(petImage.getMimeType()))
 			.body(petImage.getContent());
+	}
+
+	/**
+	 * The MIME type was sent by the uploading client, so it may be missing or invalid.
+	 */
+	private static MediaType mediaType(final String mimeType) {
+		try {
+			return Optional.ofNullable(mimeType).map(MediaType::parseMediaType).orElse(APPLICATION_OCTET_STREAM);
+		} catch (final InvalidMediaTypeException _) {
+			return APPLICATION_OCTET_STREAM;
+		}
 	}
 }

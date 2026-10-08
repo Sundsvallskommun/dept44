@@ -122,6 +122,19 @@ class JwtTokenUtilTest {
 	}
 
 	@Test
+	void getRolesReadsAccessesSentAsJsonInAString() {
+		final var jwt = Jwts.builder()
+			.subject("userName")
+			.claim("roles", Map.of("READ", "[\"CATEGORY_1\"]"))
+			.signWith(Keys.hmacShaKeyFor(secret.getBytes()))
+			.compact();
+
+		final var read = new JwtTokenUtil(secret).getRolesFromToken(jwt).iterator().next();
+
+		assertThat(read.hasAuthority("READ", "$[?(@ == 'CATEGORY_1')]")).isTrue();
+	}
+
+	@Test
 	void processExpiredJwt(@Load("expired_jwt.txt") String jwt) {
 		final JwtTokenUtil util = new JwtTokenUtil(secret);
 		final ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> util.getUsernameFromToken(jwt));

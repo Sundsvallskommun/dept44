@@ -65,7 +65,14 @@ class PiiMaskerTest {
 			Arguments.of("Job scheduled at 2024-03-08 09:15:22", "Job scheduled at 2024-03-08 09:15:22"),
 			Arguments.of("2025-01-15 12:30:00.0", "2025-01-15 12:30:00.0"),
 			Arguments.of("Period 2024-05-01 2024-06-01", "Period 2024-05-01 2024-06-01"),
-			Arguments.of("08.05.2024 07:30", "08.05.2024 07:30"));
+			Arguments.of("08.05.2024 07:30", "08.05.2024 07:30"),
+			Arguments.of("2024-03-08T09:15:22.123 done", "2024-03-08T09:15:22.123 done"),
+			// A phone number right after a digit and a slash or hyphen, or before a decimal point, is still masked whole
+			Arguments.of("Tel 060-123 45/070-123 45 67", "Tel ***-*** **/***-*** ** **"),
+			Arguments.of("08-123 45 67/+46 70 123 45 67", "**-*** ** **/+** ** *** ** **"),
+			Arguments.of("070-1234567/070-7654321", "***-*******/***-*******"),
+			Arguments.of("GET /2281/070-1234567", "GET /2281/***-*******"),
+			Arguments.of("070-123 45 67.5", "***-*** ** **.5"));
 	}
 
 	@ParameterizedTest

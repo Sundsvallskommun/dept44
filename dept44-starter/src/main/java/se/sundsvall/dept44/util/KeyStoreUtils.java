@@ -56,6 +56,12 @@ public final class KeyStoreUtils {
 	 * @return                  a {@link KeyStore}
 	 */
 	public static KeyStore loadKeyStore(final String keyStoreLocation, final String keyStorePassword) {
-		return loadKeyStore(RESOURCE_LOADER.getResource(keyStoreLocation), keyStorePassword);
+		final Resource resource;
+		try {
+			resource = RESOURCE_LOADER.getResource(keyStoreLocation);
+		} catch (final RuntimeException e) {
+			throw new IllegalStateException(ERROR_MESSAGE, e);
+		}
+		return loadKeyStore(resource, keyStorePassword);
 	}
 }

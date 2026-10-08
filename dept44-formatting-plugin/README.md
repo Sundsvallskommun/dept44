@@ -59,7 +59,8 @@ configurations include:
 
 #### File Inclusions and Exclusions
 
-It is possible to include or exclude specific files or directories from the formatting process. This can be done by
+It is possible to include or exclude specific files or directories from the formatting process. Includes are added to
+the plugin's own, and excludes are applied on top of them, so use excludes to leave files out. This can be done by
 adding the following configuration to the plugin in the `pom.xml` file:
 
 ```xml
@@ -67,7 +68,6 @@ adding the following configuration to the plugin in the `pom.xml` file:
 <plugin>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-formatting-plugin</artifactId>
-	<version>6.0.3-SNAPSHOT</version>
 	<configuration>
 		<javaIncludes>
 			<include>**/api/**</include>
@@ -101,6 +101,17 @@ adding the following configuration to the plugin in the `pom.xml` file:
 		</pomExcludes>
 	</configuration>
 </plugin>
+```
+
+Integration tests (`src/integration-test/java`) are formatted and checked like the main and test sources. A project
+whose integration tests are not formatted yet can run `mvn dept44-formatting:apply` once, or leave them out for now:
+
+```xml
+<configuration>
+	<javaExcludes>
+		<exclude>src/integration-test/**</exclude>
+	</javaExcludes>
+</configuration>
 ```
 
 > Note: The spotless configuration in pom.xml is exclusively for the plugin’s internal use and not applied to projects

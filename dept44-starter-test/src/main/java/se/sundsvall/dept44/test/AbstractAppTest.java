@@ -3,6 +3,7 @@ package se.sundsvall.dept44.test;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.VerificationException;
 import com.github.tomakehurst.wiremock.common.ClasspathFileSource;
+import com.github.tomakehurst.wiremock.common.Json;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.helpers.WireMockHelpers;
 import com.github.tomakehurst.wiremock.standalone.JsonFileMappingsSource;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
@@ -650,7 +651,7 @@ public abstract class AbstractAppTest {
 	private static void assertXmlSimilar(final String expected, final String actual) {
 		final var diff = DiffBuilder.compare(Input.fromString(expected))
 			.withTest(Input.fromString(String.valueOf(actual)))
-			.ignoreWhitespace()
+			.normalizeWhitespace()
 			.ignoreComments()
 			.checkForSimilar()
 			.build();
@@ -692,8 +693,13 @@ public abstract class AbstractAppTest {
 		return true;
 	}
 
+	/**
+	 * What a stub matches, so that a stub file loaded again by a later {@link #setupCall()} counts as the same stub. The
+	 * request is compared in its JSON form: some of its parts, such as basic-auth credentials and custom matchers, are not
+	 * equal to an identical copy of themselves.
+	 */
 	private static List<Object> matchKey(final StubMapping stub) {
-		return Arrays.asList(stub.getRequest(), stub.getScenarioName(), stub.getRequiredScenarioState());
+		return Arrays.asList(Json.write(stub.getRequest()), stub.getScenarioName(), stub.getRequiredScenarioState());
 	}
 
 	private static String describe(final StubMapping stub) {

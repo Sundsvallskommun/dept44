@@ -120,13 +120,30 @@ class Dept44HealthIndicatorTest {
 
 	@Test
 	void testRunStillGoingOnAfterItsMaximumExecutionTimeIsRestricted() {
-		healthIndicator.runStarted(Duration.ofMillis(-1));
+		final var run = healthIndicator.runStarted(Duration.ofMillis(-1));
 
 		final var health = healthIndicator.health();
 		assertThat(health.getStatus().getCode()).isEqualTo("RESTRICTED");
 		assertThat((String) health.getDetails().get("Reason")).startsWith("Maximum execution time exceeded, still running since");
 
-		healthIndicator.runFinished();
+		healthIndicator.runFinished(run);
+
+		assertThat(healthIndicator.health().getStatus().getCode()).isEqualTo("UP");
+	}
+
+	@Test
+	void testRunFinishingDoesNotHideAnotherRunThatIsStillGoingOn() {
+		healthIndicator.runStarted(Duration.ofMillis(-1));
+		final var laterRun = healthIndicator.runStarted(Duration.ofMinutes(2));
+
+		healthIndicator.runFinished(laterRun);
+
+		assertThat(healthIndicator.health().getStatus().getCode()).isEqualTo("RESTRICTED");
+	}
+
+	@Test
+	void testFinishingWithoutARunIsIgnored() {
+		healthIndicator.runFinished(null);
 
 		assertThat(healthIndicator.health().getStatus().getCode()).isEqualTo("UP");
 	}

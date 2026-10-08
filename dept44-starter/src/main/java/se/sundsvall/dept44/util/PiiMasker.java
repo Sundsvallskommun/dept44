@@ -2,9 +2,9 @@ package se.sundsvall.dept44.util;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparingInt;
@@ -60,16 +60,20 @@ public final class PiiMasker {
 	/**
 	 * Structured Swedish phone number: either a {@code +46}/{@code 0046} country-code prefix, or a national number with a
 	 * leading {@code 0} and at least one space/hyphen separator. Requiring that structure keeps a bare run of digits from
-	 * matching (such a run is handled by {@link #maskPersonalNumber(String)} instead). A number that starts right after a
-	 * digit and a date separator ({@code -}, {@code /}, {@code .}), or ends before a time or decimal separator and a digit,
-	 * is part of a date or time such as {@code 2024-03-08 09:15:22}, not a phone number.
+	 * matching (such a run is handled by {@link #maskPersonalNumber(String)} instead).
 	 * <p>
-	 * The two forms are separate patterns, tried as the alternatives of a single pattern would be: the number that starts
-	 * first is masked, and when both forms match at the same place the first one wins.
+	 * Dates and times, such as {@code 2024-03-08 09:15:22} or {@code 08.05.2024 07:30}, are found as well and left as
+	 * they are, so that no part of them is taken for a phone number. All patterns are tried as the alternatives of a
+	 * single pattern would be: what starts first is taken, and when two match at the same place the earlier pattern wins.
 	 */
 	private static final List<Pattern> PHONE_NUMBER_PATTERNS = List.of(
+		Pattern.compile("\\d{4}[-/.]\\d{2}[-/.]\\d{2}(?:[ T]\\d{2}:\\d{2}(?::\\d{2})?)?(?:[.,]\\d+)?"),
+		Pattern.compile("\\d{2}[-/.]\\d{2}[-/.]\\d{4}(?: \\d{2}:\\d{2}(?::\\d{2})?)?"),
 		phoneNumberPattern("(?:\\+46|0046)[\\s-]?\\d(?:[\\s-]?\\d){6,10}"),
 		phoneNumberPattern("0\\d{1,3}[\\s-]\\d{2,4}(?:[\\s-]?\\d{2,3}){1,2}"));
+
+	/** The number of patterns at the start of {@link #PHONE_NUMBER_PATTERNS} that find dates and times. */
+	private static final int DATE_TIME_PATTERNS = 2;
 
 	/** UUID in the canonical {@code 8-4-4-4-12} hexadecimal form, e.g. a {@code partyId}. */
 	private static final Pattern UUID_PATTERN = Pattern.compile("\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b");
@@ -141,25 +145,33 @@ public final class PiiMasker {
 
 	private static String maskPhoneNumberDigits(final String value) {
 		final var masked = new StringBuilder(value);
-		var phoneNumber = nextPhoneNumber(value, 0);
-		while (phoneNumber.isPresent()) {
-			final var match = phoneNumber.get();
-			maskDigits(masked, match.start(), match.end());
-			phoneNumber = nextPhoneNumber(value, match.end());
+		var found = nextPhoneNumberOrDateTime(value, 0);
+		while (found.isPresent()) {
+			final var match = found.get();
+			if (match.isPhoneNumber()) {
+				maskDigits(masked, match.start(), match.end());
+			}
+			found = nextPhoneNumberOrDateTime(value, match.end());
 		}
 		return masked.toString();
 	}
 
 	/**
-	 * The phone number that starts first at or after the given index. Of two that start at the same index, the one
-	 * matched by the earlier pattern is returned, since {@link Stream#min} keeps the first of equal elements.
+	 * The phone number, date or time that starts first at or after the given index. Of two that start at the same index,
+	 * the one matched by the earlier pattern is returned, since {@link Stream#min} keeps the first of equal elements.
 	 */
-	private static Optional<MatchResult> nextPhoneNumber(final String value, final int from) {
-		return PHONE_NUMBER_PATTERNS.stream()
-			.map(pattern -> pattern.matcher(value))
-			.filter(matcher -> matcher.find(from))
-			.map(Matcher::toMatchResult)
-			.min(comparingInt(MatchResult::start));
+	private static Optional<Found> nextPhoneNumberOrDateTime(final String value, final int from) {
+		return IntStream.range(0, PHONE_NUMBER_PATTERNS.size())
+			.mapToObj(index -> found(PHONE_NUMBER_PATTERNS.get(index).matcher(value), from, index >= DATE_TIME_PATTERNS))
+			.flatMap(Optional::stream)
+			.min(comparingInt(Found::start));
+	}
+
+	private static Optional<Found> found(final Matcher matcher, final int from, final boolean isPhoneNumber) {
+		return matcher.find(from) ? Optional.of(new Found(matcher.start(), matcher.end(), isPhoneNumber)) : Optional.empty();
+	}
+
+	private record Found(int start, int end, boolean isPhoneNumber) {
 	}
 
 	private static void maskDigits(final StringBuilder text, final int start, final int end) {
@@ -175,11 +187,10 @@ public final class PiiMasker {
 	}
 
 	/**
-	 * A phone number in the given form that does not start right after a word character or a date separator following a
-	 * digit, and does not end before a digit or a time or decimal separator and a digit.
+	 * A phone number in the given form that does not start right after a word character and does not end before a digit.
 	 */
 	private static Pattern phoneNumberPattern(final String number) {
-		return Pattern.compile("(?<!\\w)(?<!\\d[-/.])" + number + "(?![:.]?\\d)");
+		return Pattern.compile("(?<!\\w)" + number + "(?!\\d)");
 	}
 
 	/**

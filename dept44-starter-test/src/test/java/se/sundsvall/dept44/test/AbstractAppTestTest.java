@@ -256,6 +256,18 @@ class AbstractAppTestTest {
 	}
 
 	@Test
+	void testVerifyAllStubsTreatsABasicAuthStubLoadedAgainAsTheSameStub() {
+		runAgainstServer((server, realAppTest) -> {
+			server.stubFor(post(urlEqualTo("/token")).withBasicAuth("client", "secret").willReturn(ok()));
+			realAppTest.restTemplate.withBasicAuth("client", "secret").postForEntity("/token", null, String.class);
+			// Loaded again, as by a later setupCall, and not called again (such as a cached token)
+			server.stubFor(post(urlEqualTo("/token")).withBasicAuth("client", "secret").willReturn(ok()));
+
+			assertThat(realAppTest.verifyAllStubs()).isTrue();
+		});
+	}
+
+	@Test
 	void testVerifyAllStubsPassesWhenEveryStubWasCalled() {
 		runAgainstServer((server, realAppTest) -> {
 			server.stubFor(get(urlEqualTo("/items?page=1")).willReturn(ok()));
@@ -287,6 +299,13 @@ class AbstractAppTestTest {
 				.withHttpMethod(GET)
 				.withExpectedResponseStatus(OK)
 				.withExpectedResponse("<person>\n\t<name>Anna Svensson</name>\n</person>")
+				.sendRequest();
+			// Element text wrapped over lines, as in a pretty-printed expected file, counts as the same text
+			realAppTest.setupCall()
+				.withServicePath("/xml")
+				.withHttpMethod(GET)
+				.withExpectedResponseStatus(OK)
+				.withExpectedResponse("<person>\n\t<name>\n\t\tAnna\n\t\tSvensson\n\t</name>\n</person>")
 				.sendRequest();
 
 			realAppTest.setupCall()

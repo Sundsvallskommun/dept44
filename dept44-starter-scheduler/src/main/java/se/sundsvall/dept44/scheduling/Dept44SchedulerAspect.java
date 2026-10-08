@@ -125,33 +125,35 @@ public class Dept44SchedulerAspect {
 
 		final var healthIndicator = dept44Composite.getOrCreateIndicator(name);
 		final var startTime = OffsetDateTime.now(ZoneId.systemDefault());
-		var outcomeRecorded = false;
+		Dept44HealthIndicator.Run run = null;
 		try {
 			RequestId.init();
 			MDC.put(MDC_SCHEDULER_NAME, name);
 			MDC.put(MDC_EXECUTION_ID, RequestId.get());
 			LOG.info("Scheduled method {} start. RequestID={}", name, RequestId.get());
 			healthIndicator.resetErrors();
-			healthIndicator.runStarted(maxExecutionTime);
+			run = healthIndicator.runStarted(maxExecutionTime);
 			final var result = pjp.proceed();
 			putCompletion(startTime, OUTCOME_SUCCESS);
-			outcomeRecorded = true;
 			LOG.info("Scheduled method {} done. RequestID={}", name, RequestId.get());
 			return result;
 		} catch (final Exception e) {
+			if (e instanceof InterruptedException) {
+				// The run is still over, but whoever interrupted the thread must still see that it was
+				Thread.currentThread().interrupt();
+			}
 			healthIndicator.setUnhealthy(e.getMessage());
 			putCompletion(startTime, OUTCOME_FAILURE);
-			outcomeRecorded = true;
 			LOG.error("Scheduled method {} fail. RequestID={}", name, RequestId.get(), e);
+		} catch (final Error e) {
+			// Such as OutOfMemoryError or StackOverflowError: logged here, while the run's MDC fields are still set, and
+			// passed on unchanged
+			healthIndicator.setUnhealthy(e.toString());
+			putCompletion(startTime, OUTCOME_FAILURE);
+			LOG.error("Scheduled method {} fail with an error. RequestID={}", name, RequestId.get(), e);
+			throw e;
 		} finally {
-			healthIndicator.runFinished();
-			if (!outcomeRecorded) {
-				// The method threw an Error (such as OutOfMemoryError or StackOverflowError). It is not swallowed, Spring's
-				// scheduler logs it, but the run must not be reported as healthy.
-				healthIndicator.setUnhealthy("Scheduled method ended with an error");
-				putCompletion(startTime, OUTCOME_FAILURE);
-				LOG.error("Scheduled method {} fail with an error. RequestID={}", name, RequestId.get());
-			}
+			healthIndicator.runFinished(run);
 
 			final var endTime = OffsetDateTime.now(ZoneId.systemDefault());
 			final var duration = Duration.between(startTime, endTime);

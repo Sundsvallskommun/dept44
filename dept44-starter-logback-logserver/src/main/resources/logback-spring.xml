@@ -16,6 +16,9 @@
 
     <springProperty scope="context" name="applicationName" source="spring.application.name" defaultValue="name-not-set"/>
     <springProperty scope="context" name="maxChunkSize" source="dept44.logback.logserver.maxchunksize" defaultValue="508"/>
+    <!-- Bridged under its own name, which is what propertyContains(...) in the conditions below looks up. These defaults
+         are the only ones: a properties file in this jar would override a service's own application.yml. -->
+    <springProperty scope="context" name="dept44.logback.logserver.disabled" source="dept44.logback.logserver.disabled" defaultValue="false"/>
 
     <!-- PII masking. Bridge the Spring property into the logback context so PiiMaskingConverter can read it in start(),
          and register the %maskPii conversion word used in the console and GELF patterns below. Masking is opt-in and

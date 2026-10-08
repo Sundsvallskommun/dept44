@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.core.env.Environment;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
@@ -146,7 +147,11 @@ class Dept44SchedulerAspectTest {
 		assertThatThrownBy(() -> aspect.aroundScheduledMethod(pjp, dept44Scheduled)).isSameAs(error);
 
 		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getDetails()).containsEntry("Reason", error.toString());
 		assertThat(mdcOf("fail with an error")).containsEntry("outcome", "FAILURE");
+		// Logged with the error itself, while the run's MDC fields are set, so the two can be found together
+		assertThat(appender.list.stream().filter(event -> event.getFormattedMessage().contains("fail with an error")).findFirst().orElseThrow().getThrowableProxy().getClassName())
+			.isEqualTo(StackOverflowError.class.getName());
 		assertThat(RequestId.get()).isNull();
 		assertThat(MDC.get("schedulerName")).isNull();
 	}
@@ -166,6 +171,39 @@ class Dept44SchedulerAspectTest {
 		assertThat(RequestId.get()).isNull();
 		assertThat(RequestId.init()).isTrue();
 		RequestId.reset();
+	}
+
+	@Test
+	void testAroundScheduledMethodInterruptedKeepsTheInterrupt() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT2M")).thenReturn("PT2M");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT2M");
+		when(pjp.proceed()).thenThrow(new InterruptedException("shutting down"));
+
+		aspect.aroundScheduledMethod(pjp, dept44Scheduled);
+
+		// Thread.interrupted() also clears the flag again, for the tests that follow on this thread
+		assertThat(Thread.interrupted()).isTrue();
+	}
+
+	@Test
+	void testAroundScheduledMethodIsRestrictedWhileStillRunningPastItsMaximum() throws Throwable {
+		when(environment.resolvePlaceholders("TestTask")).thenReturn("TestTask");
+		when(environment.resolvePlaceholders("PT-1S")).thenReturn("PT-1S");
+		when(dept44Scheduled.name()).thenReturn("TestTask");
+		when(dept44Scheduled.maximumExecutionTime()).thenReturn("PT-1S");
+		final var healthWhileRunning = new AtomicReference<Health>();
+		when(pjp.proceed()).thenAnswer(_ -> {
+			healthWhileRunning.set(healthContributor.getOrCreateIndicator("TestTask").health());
+			return "Success";
+		});
+
+		aspect.aroundScheduledMethod(pjp, dept44Scheduled);
+
+		assertThat(healthWhileRunning.get().getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat((String) healthWhileRunning.get().getDetails().get("Reason")).startsWith("Maximum execution time exceeded, still running since");
+		assertThat(healthContributor.getOrCreateIndicator("TestTask").health().getDetails()).containsEntry("Reason", "Maximum execution time exceeded");
 	}
 
 	@Test

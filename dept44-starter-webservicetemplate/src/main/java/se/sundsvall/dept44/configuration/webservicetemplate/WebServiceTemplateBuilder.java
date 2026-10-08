@@ -4,16 +4,21 @@ import jakarta.xml.soap.MessageFactory;
 import jakarta.xml.soap.SOAPConstants;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -34,13 +39,14 @@ import org.springframework.ws.transport.http.HttpComponents5ClientFactory;
 import org.springframework.ws.transport.http.SimpleHttpComponents5MessageSender;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.httpclient5.LogbookHttpRequestInterceptor;
-import org.zalando.logbook.httpclient5.LogbookHttpResponseInterceptor;
 import se.sundsvall.dept44.configuration.Constants;
 import se.sundsvall.dept44.configuration.webservicetemplate.exception.WebServiceTemplateException;
+import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.BoundedLogbookHttpResponseInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.DefaultFaultInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RemoveContentLengthHeaderInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.interceptor.RequestIdInterceptor;
 import se.sundsvall.dept44.configuration.webservicetemplate.ssl.AnyOfTrustManager;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.support.BasicAuthentication;
 
 import static java.util.HashSet.newHashSet;
@@ -66,6 +72,7 @@ public class WebServiceTemplateBuilder {
 	private TrustManagerFactory trustManagerFactory;
 	private Set<ClientInterceptor> clientInterceptors;
 	private Logbook logbook;
+	private BodyCapturePolicy bodyCapturePolicy = BodyCapturePolicy.withDefaultLimit();
 	private Set<String> packagesToScan;
 	private WebServiceMessageFactory webServiceMessageFactory;
 
@@ -159,13 +166,27 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * For payload logging.
+	 * For payload logging. At most {@link BodyCapturePolicy#DEFAULT_MAX_BODY_SIZE} of a response body is held in memory
+	 * for it; use {@link #withLogbook(Logbook, BodyCapturePolicy)} to apply the service's own
+	 * {@code logbook.logs.maxBodySizeToCapture}.
 	 *
 	 * @param  logbook {@link org.zalando.logbook.Logbook} to override default config with
 	 * @return         this builder {@link WebServiceTemplateBuilder}
 	 */
 	public WebServiceTemplateBuilder withLogbook(final Logbook logbook) {
+		return withLogbook(logbook, BodyCapturePolicy.withDefaultLimit());
+	}
+
+	/**
+	 * For payload logging, holding at most what the given policy allows of a response body in memory.
+	 *
+	 * @param  logbook           {@link org.zalando.logbook.Logbook} to override default config with
+	 * @param  bodyCapturePolicy the {@link BodyCapturePolicy} bean
+	 * @return                   this builder {@link WebServiceTemplateBuilder}
+	 */
+	public WebServiceTemplateBuilder withLogbook(final Logbook logbook, final BodyCapturePolicy bodyCapturePolicy) {
 		this.logbook = logbook;
+		this.bodyCapturePolicy = requireNonNull(bodyCapturePolicy, "bodyCapturePolicy may not be null");
 		return this;
 	}
 
@@ -204,9 +225,9 @@ public class WebServiceTemplateBuilder {
 	}
 
 	/**
-	 * Which servers to trust when a keystore is set. A server is trusted when its certificate chain is trusted by this
-	 * factory or by the certificates in the keystore. When not set, the JVM default trust store is used; pass
-	 * {@code truststore.getTrustManagerFactory()} to trust dept44's truststore instead.
+	 * Which servers to trust. A server is trusted when its certificate chain is trusted by this factory, or by the
+	 * certificates in the keystore when one is set. When not set, the JVM default trust store is used instead of this
+	 * factory; pass {@code truststore.getTrustManagerFactory()} to trust dept44's truststore.
 	 *
 	 * @param  trustManagerFactory an initialized trust manager factory
 	 * @return                     this builder {@link WebServiceTemplateBuilder}
@@ -308,7 +329,7 @@ public class WebServiceTemplateBuilder {
 		if (logbook != null) {
 			httpClientBuilder
 				.addRequestInterceptorFirst(new LogbookHttpRequestInterceptor(logbook))
-				.addResponseInterceptorFirst(new LogbookHttpResponseInterceptor());
+				.addResponseInterceptorFirst(new BoundedLogbookHttpResponseInterceptor(bodyCapturePolicy));
 		}
 	}
 
@@ -318,33 +339,43 @@ public class WebServiceTemplateBuilder {
 			.setConnectTimeout(Timeout.ofMilliseconds(Math.toIntExact(connectTimeout.toMillis())))
 			.build());
 
-		if (shouldUseSSL()) {
+		if (shouldUseSSL() || trustManagerFactory != null) {
 			try {
-				final var keyStore = getKeyStore();
-				final var keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-				keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
-
+				final var keyStore = shouldUseSSL() ? getKeyStore() : null;
 				final var sslContext = SSLContext.getInstance(TLS);
-				sslContext.init(keyManagerFactory.getKeyManagers(), new TrustManager[] {
+				sslContext.init(keyManagers(keyStore), new TrustManager[] {
 					serverTrustManager(keyStore)
 				}, null);
 
-				// The default host name verifier checks that the server certificate is issued for the host
+				// With neither a host name verifier nor a policy given, the TLS layer itself checks that the server
+				// certificate is issued for the host (HTTPS endpoint identification), as for any JSSE connection.
 				cmBuilder.setTlsSocketStrategy(new DefaultClientTlsStrategy(sslContext));
 			} catch (final Exception e) {
-				throw new WebServiceTemplateException("Couldn't load keystore", e);
+				throw new WebServiceTemplateException("Couldn't set up TLS", e);
 			}
 		}
 	}
 
+	private KeyManager[] keyManagers(final KeyStore keyStore) throws GeneralSecurityException {
+		if (keyStore == null) {
+			return null;
+		}
+		final var keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+		keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
+		return keyManagerFactory.getKeyManagers();
+	}
+
 	/**
 	 * The server is trusted when its certificate chain is trusted by the trust manager factory given to this builder
-	 * (the JVM default trust store when none is given), or by the certificates in the client keystore.
+	 * (the JVM default trust store when none is given), or by any certificate in the client keystore: its trusted
+	 * certificates, and every certificate in the chain of its keys, so also the CA that issued the client certificate.
 	 */
 	private X509TrustManager serverTrustManager(final KeyStore keyStore) throws GeneralSecurityException {
-		final var serverTrust = trustManagerFactory != null ? trustManagerFactory : trustManagerFactory(null);
+		final var trustManagerFactories = new ArrayList<TrustManagerFactory>();
+		trustManagerFactories.add(trustManagerFactory != null ? trustManagerFactory : trustManagerFactory(null));
+		keyStoreCertificates(keyStore).ifPresent(trustManagerFactories::add);
 
-		return new AnyOfTrustManager(Stream.of(serverTrust, trustManagerFactory(keyStore))
+		return new AnyOfTrustManager(trustManagerFactories.stream()
 			.map(TrustManagerFactory::getTrustManagers)
 			.flatMap(Arrays::stream)
 			.filter(X509TrustManager.class::isInstance)
@@ -352,10 +383,45 @@ public class WebServiceTemplateBuilder {
 			.toList());
 	}
 
+	/**
+	 * A trust manager factory for every certificate in the keystore. Initialized with the keystore itself, it would only
+	 * trust the client's own certificate of each key entry, not the certificates that issued it.
+	 */
+	private static Optional<TrustManagerFactory> keyStoreCertificates(final KeyStore keyStore) throws GeneralSecurityException {
+		if (keyStore == null) {
+			return Optional.empty();
+		}
+		final var certificates = KeyStore.getInstance(KeyStore.getDefaultType());
+		try {
+			certificates.load(null, null);
+		} catch (final IOException e) {
+			throw new GeneralSecurityException("Couldn't create an empty keystore", e);
+		}
+		for (final var alias : Collections.list(keyStore.aliases())) {
+			final var chain = certificates(keyStore, alias);
+			for (var index = 0; index < chain.size(); index++) {
+				certificates.setCertificateEntry(alias + "-" + index, chain.get(index));
+			}
+		}
+		// A trust manager without any certificate fails every check with an unrelated error, so leave it out
+		return certificates.size() == 0 ? Optional.empty() : Optional.of(trustManagerFactory(certificates));
+	}
+
 	private static TrustManagerFactory trustManagerFactory(final KeyStore trustStore) throws GeneralSecurityException {
 		final var factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 		factory.init(trustStore);
 		return factory;
+	}
+
+	/**
+	 * The certificate chain of a key entry, or the certificate of a trusted certificate entry.
+	 */
+	private static List<Certificate> certificates(final KeyStore keyStore, final String alias) throws KeyStoreException {
+		final var chain = keyStore.getCertificateChain(alias);
+		if (chain != null) {
+			return List.of(chain);
+		}
+		return Optional.ofNullable(keyStore.getCertificate(alias)).map(List::of).orElseGet(List::of);
 	}
 
 	private KeyStore getKeyStore() {

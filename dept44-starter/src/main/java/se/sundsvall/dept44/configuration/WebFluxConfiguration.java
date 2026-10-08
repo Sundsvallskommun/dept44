@@ -5,7 +5,6 @@ import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -18,7 +17,6 @@ import se.sundsvall.dept44.requestid.RequestId;
 public class WebFluxConfiguration {
 
 	@Configuration
-	@EnableWebFlux
 	static class WebFluxConfig implements WebFluxConfigurer {
 
 		@Bean

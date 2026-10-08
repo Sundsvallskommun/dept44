@@ -1,11 +1,16 @@
 package se.sundsvall.dept44.problem;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -15,7 +20,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,6 +69,53 @@ class ProblemExceptionHandlerMvcTest {
 	}
 
 	@Test
+	void responseFailingItsOwnConstraintsIsAServerError() throws Exception {
+		mockMvc.perform(get("/invalid-response"))
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.title").value("Internal Server Error"))
+			.andExpect(jsonPath("$.violations").doesNotExist());
+	}
+
+	@Test
+	void wrappedTimeoutIsLoggedWithTheWrapper() throws Exception {
+		final var appender = new ListAppender<ILoggingEvent>();
+		final var logger = (Logger) LoggerFactory.getLogger(ProblemExceptionHandler.class);
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			mockMvc.perform(get("/wrapped-timeout"));
+		} finally {
+			logger.detachAppender(appender);
+		}
+
+		assertThat(appender.list).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+			assertThat(event.getFormattedMessage()).contains("Request failed");
+			assertThat(event.getThrowableProxy().getMessage()).isEqualTo("Request failed");
+		});
+	}
+
+	@Test
+	void wrappedServerProblemIsLoggedWithTheWrapper() throws Exception {
+		final var appender = new ListAppender<ILoggingEvent>();
+		final var logger = (Logger) LoggerFactory.getLogger(ProblemExceptionHandler.class);
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			mockMvc.perform(get("/wrapped-server-problem"))
+				.andExpect(status().isBadGateway());
+		} finally {
+			logger.detachAppender(appender);
+		}
+
+		assertThat(appender.list).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.ERROR);
+			assertThat(event.getFormattedMessage()).contains("CompletionException", "502");
+			assertThat(event.getThrowableProxy().getClassName()).isEqualTo(CompletionException.class.getName());
+		});
+	}
+
+	@Test
 	void otherExceptionsGiveInternalServerError() throws Exception {
 		mockMvc.perform(get("/failure"))
 			.andExpect(status().isInternalServerError())
@@ -78,6 +132,9 @@ class ProblemExceptionHandlerMvcTest {
 	}
 
 	public record SearchParameters(@NotBlank String name, String id) {
+	}
+
+	public record Item(@NotBlank String name) {
 	}
 
 	@RestController
@@ -101,6 +158,17 @@ class ProblemExceptionHandlerMvcTest {
 		@GetMapping("/wrapped-problem")
 		String wrappedProblem() {
 			throw new CompletionException(Problem.valueOf(NOT_FOUND, "missing"));
+		}
+
+		@GetMapping("/wrapped-server-problem")
+		String wrappedServerProblem() {
+			throw new CompletionException(Problem.valueOf(BAD_GATEWAY, "downstream failed"));
+		}
+
+		@GetMapping("/invalid-response")
+		@Valid
+		Item invalidResponse() {
+			return new Item("");
 		}
 
 		@GetMapping("/failure")

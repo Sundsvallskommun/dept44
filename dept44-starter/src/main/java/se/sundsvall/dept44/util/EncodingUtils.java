@@ -26,16 +26,17 @@ public final class EncodingUtils {
 	 *
 	 * If a String contains characters like: "Ã
 	 * ÃÃÃ¥Ã¤Ã¶", it might be double encoded.
-	 * By running it through this method, it will become correctly UTF-8 encoded again. Each double encoded character is
-	 * repaired on its own, so correctly encoded characters in the same string (such as Cyrillic, or a correct "å") are
-	 * kept as they are.
+	 * By running it through this method, it will become correctly UTF-8 encoded again. A string is only changed when it
+	 * shows clear signs of double encoding (see {@link #isDoubleEncodedUTF8Content(String)}). Each double encoded
+	 * character is then repaired on its own, so correctly encoded characters in the same string (such as Cyrillic, or a
+	 * correct "å") are kept as they are.
 	 *
 	 * @param  string String to fix
 	 * @return        the corrected string
 	 */
 	public static String fixDoubleEncodedUTF8Content(final String string) {
-		if (string == null) {
-			return null;
+		if (!isDoubleEncodedUTF8Content(string)) {
+			return string;
 		}
 		return DOUBLE_ENCODED_CHARACTER.matcher(string)
 			.replaceAll(match -> Matcher.quoteReplacement(decode(match.group()).orElse(match.group())));
@@ -47,6 +48,11 @@ public final class EncodingUtils {
 	 * If a String contains characters like: "Ã
 	 * ÃÃÃ¥Ã¤Ã¶", it might be double encoded.
 	 * This method will detect that.
+	 * <p>
+	 * Many correctly encoded strings also hold characters that happen to form a valid UTF-8 byte sequence, such as "Å"
+	 * followed by a non-breaking space. So only a sequence that ordinary text does not contain counts: one that starts
+	 * with "Â" or "Ã" (a double encoded Latin-1 character, such as "å" or "»"), or one with a C1 control character
+	 * (U+0080-U+009F) in it (most other double encoded characters, such as "€" or Cyrillic letters).
 	 *
 	 * @param  string content to check
 	 * @return        true if the string content is double encoded, false otherwise.
@@ -57,11 +63,16 @@ public final class EncodingUtils {
 		}
 		final var matcher = DOUBLE_ENCODED_CHARACTER.matcher(string);
 		while (matcher.find()) {
-			if (decode(matcher.group()).isPresent()) {
+			if (isClearlyDoubleEncoded(matcher.group()) && decode(matcher.group()).isPresent()) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	private static boolean isClearlyDoubleEncoded(final String sequence) {
+		final var lead = sequence.charAt(0);
+		return lead == '\u00C2' || lead == '\u00C3' || sequence.chars().skip(1).anyMatch(character -> character <= '\u009F');
 	}
 
 	/**

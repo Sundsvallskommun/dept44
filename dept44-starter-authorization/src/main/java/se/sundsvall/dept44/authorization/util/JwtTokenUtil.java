@@ -56,10 +56,15 @@ public class JwtTokenUtil implements Serializable {
 
 	/**
 	 * The accesses of a role are queried with json-path, so they are handed on as JSON. The claim has already been parsed
-	 * into lists and maps; their {@code toString()} is not JSON (strings lose their quotes and get split on commas).
+	 * into lists and maps; their {@code toString()} is not JSON (strings lose their quotes and get split on commas). A
+	 * string is handed on as it is, since an issuer may send the accesses as JSON inside a string.
 	 */
 	private static String toJson(final Object accesses) {
-		return accesses == null ? null : JSON_MAPPER.writeValueAsString(accesses);
+		return switch (accesses) {
+			case null -> null;
+			case final String text -> text;
+			default -> JSON_MAPPER.writeValueAsString(accesses);
+		};
 	}
 
 	/**

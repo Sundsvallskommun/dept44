@@ -8,6 +8,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Locale;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -19,6 +21,7 @@ import static java.time.format.DateTimeFormatter.ISO_DATE;
 public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 
 	private static final String FAILURE_MESSAGE = "Certificate '%s' expiration date (%s) is before or less than %d months from now (%s) and needs to be updated";
+	private static final List<String> CERTIFICATE_EXTENSIONS = List.of(".pem", ".crt", ".cer", ".der");
 
 	private final CertificateFactory certificateFactory;
 
@@ -69,9 +72,19 @@ public class CheckTruststoreValidityMojo extends AbstractDept44CheckMojo {
 				addError(FAILURE_MESSAGE.formatted(certificateFile.getName(), notAfter.format(ISO_DATE), monthsUntilExpiration, today.format(ISO_DATE)));
 			}
 		} catch (final CertificateException e) {
-			// Like the runtime truststore, which skips such files: e.g. .gitkeep, .DS_Store or a README
-			getLog().warn("Skipping '%s', which is not an X.509 certificate: %s".formatted(certificateFile.getName(), e.getMessage()));
+			if (hasCertificateExtension(certificateFile)) {
+				// Meant to be a certificate, so a damaged one: the runtime truststore would silently leave it out
+				addError("Certificate '%s' could not be read: %s".formatted(certificateFile.getName(), e.getMessage()));
+			} else {
+				// Not meant to be one, such as .gitkeep, .DS_Store or a README; the runtime truststore skips it too
+				getLog().warn("Skipping '%s', which is not an X.509 certificate: %s".formatted(certificateFile.getName(), e.getMessage()));
+			}
 		}
+	}
+
+	private static boolean hasCertificateExtension(final File file) {
+		final var name = file.getName().toLowerCase(Locale.ROOT);
+		return CERTIFICATE_EXTENSIONS.stream().anyMatch(name::endsWith);
 	}
 
 	@Parameter(property = "dept44.check.truststore.skip", defaultValue = "false")

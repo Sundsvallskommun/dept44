@@ -58,6 +58,13 @@ class KeyStoreUtilsTest {
 	}
 
 	@Test
+	void loadKeyStoreWithoutLocation() {
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> KeyStoreUtils.loadKeyStore((String) null, "dummyPassword"))
+			.withMessage("Unable to load key store");
+	}
+
+	@Test
 	void loadKeyStoreFromLocationFailure() {
 		assertThatExceptionOfType(IllegalStateException.class)
 			.isThrownBy(() -> KeyStoreUtils.loadKeyStore("non-existent.jks", "dummyPassword"))

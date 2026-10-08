@@ -33,6 +33,10 @@ class EncodingUtilsTest {
 			Arguments.of("Сказку\u00a0читай", false),
 			Arguments.of("Ålder: 3 år; \u00c3\u0085sa \u00c3\u0096berg", true),
 			Arguments.of("plain ascii", false),
+			// Correctly encoded text whose characters happen to form valid UTF-8 byte sequences
+			Arguments.of("TVÅ\u00a0BARN", false),
+			Arguments.of("Ö»", false),
+			Arguments.of("på\u00a0\u00a0och", false),
 			Arguments.of(null, false));
 	}
 
@@ -49,6 +53,9 @@ class EncodingUtilsTest {
 			Arguments.of("Ålder: 3 år; Ã\u0085sa Ã\u0096berg", "Ålder: 3 år; Åsa Öberg"),
 			Arguments.of("€: â\u0082¬, emoji: ð\u009f\u0098\u0080", "€: €, emoji: 😀"),
 			Arguments.of("Сказку читай", "Сказку читай"),
+			Arguments.of("TVÅ\u00a0BARN", "TVÅ\u00a0BARN"),
+			Arguments.of("Ö»", "Ö»"),
+			Arguments.of("på\u00a0\u00a0och", "på\u00a0\u00a0och"),
 			Arguments.of(null, null),
 			// spotless:off
 			Arguments.of("ÃÃÃÃ¥Ã¤Ã¶", "ÅÄÖåäö"));

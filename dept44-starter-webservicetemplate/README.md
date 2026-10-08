@@ -46,10 +46,14 @@ final var template = new WebServiceTemplateBuilder()
 	.build();
 ```
 
+The server's certificate must then be trusted by the JVM default trust store or by the certificates in the keystore, and
+must be issued for the host called. To trust the servers in dept44's truststore instead of the JVM default, add
+`.withTrustManagerFactory(truststore.getTrustManagerFactory())`.
+
 ## Features
 
 - **JAXB marshaling** with automatic package scanning
-- **SSL/TLS** with keystore support (file, classpath, or byte array)
+- **SSL/TLS** with keystore support (file, classpath, or byte array); server certificates and host names are verified
 - **Basic authentication** support
 - **Configurable timeouts**: connect (default 10s), read (default 60s)
 - **Logbook integration** for SOAP message logging

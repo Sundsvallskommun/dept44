@@ -51,9 +51,10 @@ Add this plugin to your project's `pom.xml` in the `<plugins>` section:
 The plugin uses [Spotless](https://github.com/diffplug/spotless) under the hood to handle file formatting. Key
 configurations include:
 
-- **Java Formatting**: Applies Eclipse formatting based on `src/main/resources/sundsvall_formatting.xml`
+- **Java Formatting**: Applies Eclipse formatting based on `src/main/resources/sundsvall_formatting.xml` to
+  `src/main/java`, `src/test/java` and `src/integration-test/java`
 - **Indentation**: Tabs with 4 spaces per tab
-- **File Exclusions**: Excludes files in `target` and other specified directories
+- **File Exclusions**: Excludes files in `target`, `.claude` and other specified directories
 - **File Type Handling**: Configures formatting for `.java`, `.json`, `.sql`, `.md`, and `pom.xml` files
 
 #### File Inclusions and Exclusions

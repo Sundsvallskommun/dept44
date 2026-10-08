@@ -56,6 +56,7 @@ Include the dependency in your `pom.xml`:
            cron = "${scheduler.scheduled-task.cron}",
            name = "${scheduler.scheduled-task.name}",
            lockAtMostFor = "${schedulers.scheduled-task.shedlock-lock-at-most-for}",
+           lockAtLeastFor = "${schedulers.scheduled-task.shedlock-lock-at-least-for}",
            maximumExecutionTime = "${scheduler.scheduled-task.maximum-execution-time}"
        )
        public void scheduledTask() {
@@ -115,7 +116,10 @@ scheduler.scheduled-task.name=ScheduledTask
 scheduler.scheduled-task.cron=0 0/5 * * * ?
 # Lock at most for 2 minutes
 schedulers.scheduled-task.shedlock-lock-at-most-for=PT2M
-# Limit execution time to 2 minutes, if exceeded, the task will be marked as unhealthy
+# Optional: keep the lock for at least 4 minutes, so that a pod whose trigger fires a little later cannot run the same
+# schedule again. Set it to somewhat less than the shortest interval between runs.
+schedulers.scheduled-task.shedlock-lock-at-least-for=PT4M
+# Limit execution time to 2 minutes; a run that takes longer marks the task as unhealthy, also while it is still running
 scheduler.scheduled-task.maximum-execution-time=PT2M
 ```
 
@@ -127,6 +131,7 @@ scheduler:
     name: "ScheduledTask"
     cron: "0 0/5 * * * ?"
     shedlock-lock-at-most-for: "PT2M"
+    shedlock-lock-at-least-for: "PT4M"
     maximum-execution-time: "PT2M"
 ```
 

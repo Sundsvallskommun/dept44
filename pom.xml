@@ -63,6 +63,8 @@
 		<logbook.version>4.2.0</logbook.version>
 		<springdoc.version>3.1.1</springdoc.version>
 		<spring-cloud.version>2025.1.3</spring-cloud.version>
+		<!-- Ahead of Spring Boot 4.1.1 (7.4.5) for HHH-20882: 7.4.9+ stops logging the MariaDB password in HHH10001005. Remove when spring-boot.version reaches 4.1.2 -->
+		<hibernate.version>7.4.12.Final</hibernate.version>
 		<!-- Must track the WireMock version that wiremock-spring-boot pulls in, since both end up on the test classpath -->
 		<wiremock.version>3.13.2</wiremock.version>
 		<resilience4j.version>2.4.0</resilience4j.version>
@@ -136,6 +138,17 @@
 				<version>${logbook.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<!-- Hibernate (explicit entries win over the Spring Boot BOM, see hibernate.version) -->
+			<dependency>
+				<groupId>org.hibernate.orm</groupId>
+				<artifactId>hibernate-core</artifactId>
+				<version>${hibernate.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.hibernate.orm</groupId>
+				<artifactId>hibernate-processor</artifactId>
+				<version>${hibernate.version}</version>
 			</dependency>
 			<!-- Framework -->
 			<dependency>

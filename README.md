@@ -43,6 +43,8 @@ across projects. Here’s an overview:
   for testing database-backed services.
 - **`dept44-starter-scheduler`**: Streamlines scheduled task management with robust exception handling, automated health
   checks, and ShedLock integration.
+- **`dept44-starter-rabbitmq`**: Publishing and consuming over RabbitMQ, with safe defaults and publishing the broker has
+  confirmed.
 
 For more details, see each module’s README or documentation in the repository.
 

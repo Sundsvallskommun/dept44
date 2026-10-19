@@ -40,6 +40,7 @@
 		<module>dept44-starter-jpa</module>
 		<module>dept44-starter-jpa-test</module>
 		<module>dept44-benchmarks</module>
+		<module>dept44-starter-rabbitmq</module>
 	</modules>
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -213,6 +214,11 @@
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-jpa-test</artifactId>
 				<version>8.1.1-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>se.sundsvall.dept44</groupId>
+				<artifactId>dept44-starter-rabbitmq</artifactId>
+				<version>8.0.13-SNAPSHOT</version>
 			</dependency>
 			<!-- Resilience4j -->
 			<dependency>

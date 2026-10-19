@@ -1,0 +1,227 @@
+package se.sundsvall.dept44.rabbitmq;
+
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.core.Address;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.ReturnedMessage;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRUPTED;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT;
+
+@ExtendWith(MockitoExtension.class)
+class Dept44RabbitPublisherTest {
+
+	private static final String EXCHANGE = "exchange";
+	private static final String ROUTING_KEY = "routing-key";
+	private static final String PAYLOAD = "payload";
+
+	@Mock
+	private RabbitTemplate rabbitTemplate;
+
+	@Mock
+	private ConnectionFactory connectionFactory;
+
+	private Dept44RabbitPublisher publisher;
+
+	@BeforeEach
+	void setUp() {
+		when(rabbitTemplate.getConnectionFactory()).thenReturn(connectionFactory);
+		when(connectionFactory.isPublisherConfirms()).thenReturn(true);
+		when(connectionFactory.isPublisherReturns()).thenReturn(true);
+		when(rabbitTemplate.isMandatoryFor(any())).thenReturn(true);
+		publisher = new Dept44RabbitPublisher(rabbitTemplate, Duration.ofMillis(200));
+	}
+
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"PT0S", "PT-1S"
+	})
+	void confirmTimeoutMustBePositive(final Duration confirmTimeout) {
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, confirmTimeout))
+			.withMessage("The confirm timeout must be positive, was " + confirmTimeout);
+	}
+
+	@Test
+	void publishSetsThePropertiesAndReturnsOnAck() {
+		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		publisher.publish(message()
+			.withMessageId("message-id")
+			.withCorrelationId("correlation-id")
+			.withReplyTo("reply-exchange", "reply-key")
+			.withHeader("x-custom", "value"));
+
+		final var properties = sent.get().getMessageProperties();
+		assertThat(properties.getMessageId()).isEqualTo("message-id");
+		assertThat(properties.getCorrelationId()).isEqualTo("correlation-id");
+		assertThat(properties.getReplyToAddress()).isEqualTo(new Address("reply-exchange", "reply-key"));
+		assertThat(properties.<String>getHeader("x-custom")).isEqualTo("value");
+	}
+
+	@Test
+	void publishGeneratesAMessageIdWhenAbsent() {
+		final var correlation = new AtomicReference<CorrelationData>();
+		final var sent = brokerAnswers(correlationData -> {
+			correlation.set(correlationData);
+			correlationData.getFuture().complete(new CorrelationData.Confirm(true, null));
+		});
+
+		publisher.publish(message());
+
+		final var properties = sent.get().getMessageProperties();
+		assertThat(properties.getMessageId()).isNotBlank().isNotEqualTo(correlation.get().getId());
+		assertThat(properties.getCorrelationId()).isNull();
+		assertThat(properties.getReplyTo()).isNull();
+	}
+
+	@Test
+	void nackedMessage() {
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(false, "Channel closed by application")));
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was nacked by the broker: Channel closed by application")
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED));
+	}
+
+	@Test
+	void returnedMessage() {
+		brokerAnswers(correlationData -> {
+			correlationData.setReturned(new ReturnedMessage(new Message(new byte[0]), 312, "NO_ROUTE", EXCHANGE, ROUTING_KEY));
+			correlationData.getFuture().complete(new CorrelationData.Confirm(true, null));
+		});
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was returned by the broker: 312 NO_ROUTE")
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(RETURNED));
+	}
+
+	@Test
+	void noConfirmInTime() {
+		brokerAnswers(_ -> {});
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was not confirmed within PT0.2S")
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(TIMEOUT));
+	}
+
+	@Test
+	void interruptedWhileWaiting() {
+		brokerAnswers(_ -> Thread.currentThread().interrupt());
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Interrupted while waiting for the confirm of Message message-id to exchange 'exchange' with routing key 'routing-key'")
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(INTERRUPTED))
+			.withCauseInstanceOf(InterruptedException.class);
+		// Thread.interrupted() also clears the flag, so that it does not leak into the next test
+		assertThat(Thread.interrupted()).isTrue();
+	}
+
+	@Test
+	void confirmCompletedExceptionally() {
+		final var cause = new IllegalStateException("broken");
+		brokerAnswers(correlationData -> correlationData.getFuture().completeExceptionally(cause));
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was not confirmed")
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED))
+			.withCause(cause);
+	}
+
+	@Test
+	void publishRequiresAPayload() {
+		final var message = OutgoingMessage.to(EXCHANGE, ROUTING_KEY);
+
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> publisher.publish(message))
+			.withMessage("A message to exchange 'exchange' has no payload");
+		verifyNothingSent();
+	}
+
+	@Test
+	void requestIsPublishedWithItsProperties() {
+		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		publisher.request(message()
+			.withMessageId("message-id")
+			.withCorrelationId("correlation-id")
+			.withReplyTo("reply-exchange", "reply-key"));
+
+		final var properties = sent.get().getMessageProperties();
+		assertThat(properties.getMessageId()).isEqualTo("message-id");
+		assertThat(properties.getCorrelationId()).isEqualTo("correlation-id");
+		assertThat(properties.getReplyTo()).isEqualTo("reply-exchange/reply-key");
+	}
+
+	@Test
+	void requestRequiresMessageIdCorrelationIdAndReplyTo() {
+		final var message = message();
+
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> publisher.request(message))
+			.withMessage("A request to exchange 'exchange' lacks message id, correlation id, reply-to");
+		verifyNothingSent();
+	}
+
+	@Test
+	void requestNamesOnlyWhatIsMissing() {
+		final var message = message().withMessageId("message-id").withCorrelationId("correlation-id");
+
+		assertThatExceptionOfType(IllegalArgumentException.class)
+			.isThrownBy(() -> publisher.request(message))
+			.withMessage("A request to exchange 'exchange' lacks reply-to");
+	}
+
+	private void verifyNothingSent() {
+		verify(rabbitTemplate, never()).convertAndSend(anyString(), anyString(), any(), any(MessagePostProcessor.class), any(CorrelationData.class));
+	}
+
+	private static OutgoingMessage message() {
+		return OutgoingMessage.to(EXCHANGE, ROUTING_KEY).withPayload(PAYLOAD);
+	}
+
+	/**
+	 * Runs the publisher's post-processor on a message, as the template does, and lets the broker act on the confirm.
+	 */
+	private AtomicReference<Message> brokerAnswers(final Consumer<CorrelationData> broker) {
+		final var sent = new AtomicReference<Message>();
+		doAnswer(invocation -> {
+			final MessagePostProcessor postProcessor = invocation.getArgument(3);
+			sent.set(postProcessor.postProcessMessage(new Message(new byte[0])));
+			broker.accept(invocation.getArgument(4));
+			return null;
+		}).when(rabbitTemplate).convertAndSend(eq(EXCHANGE), anyString(), eq(PAYLOAD), any(MessagePostProcessor.class), any(CorrelationData.class));
+		return sent;
+	}
+}

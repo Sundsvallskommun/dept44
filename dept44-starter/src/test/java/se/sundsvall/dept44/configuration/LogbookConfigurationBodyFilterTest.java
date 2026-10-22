@@ -35,6 +35,7 @@ class LogbookConfigurationBodyFilterTest {
 		.withPropertyValues(
 			"logbook.default.excluded.paths=/actuator/**",
 			"logbook.logger.name=" + LOGGER_NAME,
+			"logbook.body-filters.allowlist.enabled=false",
 			"logbook.logs.maxBodySizeToLog=100",
 			"logbook.body-filters.json-path[0].key=$..secret",
 			"logbook.body-filters.json-path[0].value=***",
@@ -81,7 +82,7 @@ class LogbookConfigurationBodyFilterTest {
 	void logbookDefaultMaskingAppliesWithoutConfiguredFilters() {
 		new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, ObjectMapperConfiguration.class, LogbookConfiguration.class))
-			.withPropertyValues("logbook.default.excluded.paths=/actuator/**", "logbook.logger.name=" + LOGGER_NAME)
+			.withPropertyValues("logbook.default.excluded.paths=/actuator/**", "logbook.logger.name=" + LOGGER_NAME, "logbook.body-filters.allowlist.enabled=false")
 			.run(context -> {
 				assertThat(context).hasNotFailed();
 
@@ -103,14 +104,15 @@ class LogbookConfigurationBodyFilterTest {
 	 * <p>
 	 * Without any {@code logbook.body-filters} configured, which is where a service that masks its payload with a
 	 * {@link org.zalando.logbook.BodyFilter} bean of its own ends up: nothing replaces an unparseable body on the way
-	 * to the formatter, so whatever the mask wrote is what the formatter has to judge.
+	 * to the formatter, so whatever the mask wrote is what the formatter has to judge. The allowlist is disabled, since
+	 * it replaces such a body with a note of its own.
 	 */
 	@ParameterizedTest
 	@MethodSource("bodiesThatAreNotJsonDocuments")
 	void aJsonBodyThatIsNoDocumentIsWrittenAsAStringSoTheEntryStaysParseable(final String body) {
 		new ApplicationContextRunner()
 			.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, ObjectMapperConfiguration.class, LogbookConfiguration.class))
-			.withPropertyValues("logbook.default.excluded.paths=/actuator/**", "logbook.logger.name=" + LOGGER_NAME)
+			.withPropertyValues("logbook.default.excluded.paths=/actuator/**", "logbook.logger.name=" + LOGGER_NAME, "logbook.body-filters.allowlist.enabled=false")
 			.run(context -> {
 				assertThat(context).hasNotFailed();
 

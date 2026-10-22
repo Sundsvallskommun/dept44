@@ -306,7 +306,7 @@ public final class BodyFilterProvider {
 		}
 	}
 
-	private static boolean isJson(final String contentType) {
+	static boolean isJson(final String contentType) {
 		final var mimeType = mimeType(contentType);
 		return mimeType.equals(APPLICATION_JSON.getMimeType()) || mimeType.endsWith("+json");
 	}

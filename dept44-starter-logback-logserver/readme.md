@@ -51,11 +51,15 @@ If needed, provide your own `logback-spring.xml` in your service to override thi
 
 ### Properties
 
-|                Property                 | Default |                       Description                       |
-|-----------------------------------------|---------|---------------------------------------------------------|
-| `dept44.logback.logserver.disabled`     | `false` | Set to `true` to disable GELF logging                   |
-| `dept44.logback.logserver.maxchunksize` | `508`   | Max GELF chunk size in bytes                            |
-| `dept44.logback.pii-masking.enabled`    | `false` | Set to `true` to mask PII in all log output (see below) |
+|                   Property                   | Default |                       Description                       |
+|----------------------------------------------|---------|---------------------------------------------------------|
+| `dept44.logback.logserver.disabled`          | `false` | Set to `true` to disable GELF logging                   |
+| `dept44.logback.logserver.maxchunksize`      | `508`   | Max GELF chunk size in bytes                            |
+| `dept44.logback.pii-masking.enabled`         | `false` | Set to `true` to mask PII in all log output (see below) |
+| `dept44.logback.pii-masking.uuid`            | `true`  | Set to `false` to leave UUIDs whole when masking is on  |
+| `dept44.logback.pii-masking.personal-number` | `true`  | Set to `false` to leave personal identity numbers whole |
+| `dept44.logback.pii-masking.phone-number`    | `true`  | Set to `false` to leave phone numbers whole             |
+| `dept44.logback.pii-masking.email`           | `true`  | Set to `false` to leave e-mail addresses whole          |
 
 ### PII masking
 
@@ -73,6 +77,31 @@ masked:
 The masking is performed by the `%maskPii` pattern conversion word (class
 `se.sundsvall.dept44.util.PiiMasker` / `se.sundsvall.dept44.logback.PiiMaskingConverter`). When disabled it renders
 identically to `%m`, so there is no behavioural change in the default configuration.
+
+#### Turning a single category off
+
+Each category is masked unless its own property says `false`, so enabling masking masks everything, as before.
+
+The category worth a decision is **`uuid`**. A UUID is masked to its first four characters, and four hexadecimal
+characters are not enough to tie a log line to an errand, an attachment or a message. A service that traces an incident
+by `errandId` or `attachmentId` - or that masks its HTTP payloads field by field and deliberately keeps the identifiers
+- loses that ability when every UUID in every log line is truncated. Such a service can keep its identifiers and still
+have the other categories masked:
+
+```yaml
+dept44:
+  logback:
+    pii-masking:
+      enabled: true
+      uuid: false
+```
+
+Mask `partyId` at the source in that case (`PiiMasker.maskUuid`, or a payload mask that does not keep it) - a `partyId`
+is a direct identifier against the Party service, which is why UUID masking exists at all.
+
+A UUID that is **not** masked is stepped over rather than scanned, because the personal-identity-number shape matches
+the digits of one: the first two groups of `12345678-1234-1234-1234-123456789012` are a ten-digit number as far as that
+pattern is concerned. Leaving UUIDs readable therefore costs nothing in correctness.
 
 > **Note:** this is distinct from `LogUtils.sanitizeForLogging`, which guards against *log injection*, not PII.
 

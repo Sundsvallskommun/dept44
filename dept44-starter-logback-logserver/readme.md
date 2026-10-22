@@ -67,6 +67,12 @@ Set `dept44.logback.pii-masking.enabled=true` to mask personally identifiable in
 console and GELF - regardless of whether the producing code remembered to mask the value itself. The following are
 masked:
 
+> **Before 8.1.0, GELF was not masked.** The GELF layouts were configured as `shortPatternLayout` and
+> `fullPatternLayout`, names that logback-gelf 6 does not know. Logback ignores such elements, so the encoder used its
+> own `%m` layouts, and only the console was masked. A service with its own `logback-spring.xml` that copied the GELF
+> encoder must rename them to `shortMessageLayout` and `fullMessageLayout`. A warning such as
+> `Ignoring unknown property [shortPatternLayout]` at startup shows the problem.
+
 |           Category            |             Example input              |   Masked output    |
 |-------------------------------|----------------------------------------|--------------------|
 | Swedish personal identity no. | `900101-1234` / `199001011234`         | `******-****`      |

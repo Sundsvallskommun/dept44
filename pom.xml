@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sundsvall.dept44</groupId>
 	<artifactId>dept44-parent</artifactId>
-	<version>8.0.13-SNAPSHOT</version>
+	<version>8.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>dept44-parent</name>
 	<description>Sundsvalls kommun spring boot library</description>
@@ -39,6 +39,7 @@
 		<module>dept44-starter-scheduler</module>
 		<module>dept44-starter-jpa</module>
 		<module>dept44-starter-jpa-test</module>
+		<module>dept44-benchmarks</module>
 	</modules>
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -73,6 +74,7 @@
 		<json-unit.version>6.3.0</json-unit.version>
 		<logback-gelf.version>6.1.2</logback-gelf.version>
 		<janino.version>3.1.12</janino.version>
+		<jmh.version>1.37</jmh.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
 		<spring-boot-admin.version>4.1.4</spring-boot-admin.version>
@@ -95,6 +97,7 @@
 		<spotless-maven-plugin-version>3.10.4</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.16.0</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.16.0</maven-plugin-plugin.version>
+		<exec-maven-plugin.version>3.6.4</exec-maven-plugin.version>
 		<lombok.version>1.18.48</lombok.version>
 		<spotbugs-annotations.version>4.10.5</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.12.0</central-publishing-maven-plugin.version>
@@ -154,62 +157,62 @@
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-authorization</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-common-validators</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-models</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-feign</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-logback-logserver</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-test</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webclient</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-webservicetemplate</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-scheduler</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-jpa</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>se.sundsvall.dept44</groupId>
 				<artifactId>dept44-starter-jpa-test</artifactId>
-				<version>8.0.13-SNAPSHOT</version>
+				<version>8.1.0-SNAPSHOT</version>
 			</dependency>
 			<!-- Resilience4j -->
 			<dependency>
@@ -275,6 +278,17 @@
 				<artifactId>maven-plugin-annotations</artifactId>
 				<version>${maven-plugin-annotations.version}</version>
 			</dependency>
+			<!-- Benchmarks -->
+			<dependency>
+				<groupId>org.openjdk.jmh</groupId>
+				<artifactId>jmh-core</artifactId>
+				<version>${jmh.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjdk.jmh</groupId>
+				<artifactId>jmh-generator-annprocess</artifactId>
+				<version>${jmh.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<build>
@@ -288,7 +302,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-build-tools</artifactId>
-					<version>8.0.13-SNAPSHOT</version>
+					<version>8.1.0-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>
@@ -302,7 +316,7 @@
 				<plugin>
 					<groupId>se.sundsvall.dept44</groupId>
 					<artifactId>dept44-formatting-plugin</artifactId>
-					<version>8.0.13-SNAPSHOT</version>
+					<version>8.1.0-SNAPSHOT</version>
 					<executions>
 						<execution>
 							<goals>

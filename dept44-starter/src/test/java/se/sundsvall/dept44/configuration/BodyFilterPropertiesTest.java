@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.util.unit.DataSize;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,5 +34,12 @@ class BodyFilterPropertiesTest {
 		assertThat(properties.getxPath().getFirst().entrySet()).containsExactly(
 			Map.entry("key", "some_yml_xpath_key_1"),
 			Map.entry("value", "some_yml_xpath_value_1"));
+	}
+
+	@Test
+	void testAllowlistDefaults() {
+		assertThat(properties.getAllowlist().isEnabled()).isTrue();
+		assertThat(properties.getAllowlist().getMaxSize()).isEqualTo(DataSize.ofKilobytes(256));
+		assertThat(properties.getAllowlist().getPaths()).isEmpty();
 	}
 }

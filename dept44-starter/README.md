@@ -49,6 +49,45 @@ Pre-configured Jackson with ISO-8601 date formatting, timezone preservation, and
 
 Structured HTTP request/response logging with sensitive data filtering for passwords and tokens.
 
+Bodies may hold personal data, so they are masked by an allowlist by default. Only the values of the fields the
+allowlist names are logged. Every other value of a JSON body, whatever its type, is replaced by `[masked]`, and a body
+that is not JSON is logged without its body. The names of the fields are kept, so a log entry still shows the shape of
+what was sent. The allowlist is empty by default, so no values are logged until a service names them:
+
+```yaml
+logbook:
+  body-filters:
+    allowlist:
+      paths:
+        - '$..id'
+        - '$.content[*].title'
+```
+
+A path names a field the way JSONPath does, and nothing more: `$` is the root, `.field` a child, `..field` a field at
+any depth, `*` any one field and `[*]` the elements of an array. Every path starts with `$`. Array nesting is
+transparent, so `$.content.title` is the same path as `$.content[*].title`. A path that uses a predicate, an index, a
+slice or a function stops the application from starting, also when the allowlist is disabled.
+
+A path names a field that holds a single value. A path to an object or an array keeps nothing below it, so that a
+field added to it later is not logged without anyone asking for it. `$.address..*` keeps every value below `address`.
+
+A body longer than `logbook.body-filters.allowlist.max-size` (default `256KB`, counted in characters, `-1` for no
+limit) is not parsed, and is logged as a note instead. A service whose payloads hold no personal data can log bodies in
+full:
+
+```yaml
+logbook:
+  body-filters:
+    allowlist:
+      enabled: false
+```
+
+The allowlist runs after the other body filters, such as `logbook.body-filters.json-path`, so a value they mask stays
+masked even when the allowlist keeps its field. `logbook.body-filters.x-path` only applies when the allowlist is
+disabled, since an XML body is otherwise logged without its body. The allowlist applies to everything logged through
+the `Logbook` bean that dept44 sets up: incoming requests, Feign clients, and WebClient and WebServiceTemplate clients
+given that bean through `withLogbook(...)`.
+
 ### Circuit Breaker
 
 Default Resilience4j circuit breaker configuration for fault tolerance.

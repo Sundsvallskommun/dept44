@@ -46,6 +46,17 @@ The results are printed at the end of the run and written to `dept44-benchmarks/
 Numbers are only comparable between runs on the same machine. Run on a machine that does nothing else, and keep a
 laptop plugged in.
 
+### The report
+
+Open `dept44-benchmarks/report.html` in a browser and load a `jmh-result.json`, or drop one onto the page. It draws a
+chart for each question the benchmarks answer, switches between time and allocation, and has the values as tables.
+Load an earlier run under "Compare with" to see what changed, the largest changes first. The file is read in the
+browser and sent nowhere.
+
+Each run overwrites `jmh-result.json`, so copy it somewhere before the next run to keep it for a comparison. To share
+a run as a single file, paste its `jmh-result.json` into the `embedded-results` block at the end of `report.html`,
+and an earlier run into `embedded-baseline` to compare with it.
+
 ## The benchmarks
 
 |            Benchmark            |                                      Measures                                       |               Parameters               |

@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmark report</title>
+<!--
+	Charts for the jmh-result.json that dept44-benchmarks writes. Open this file in a browser and load a result file,
+	or drop one onto the page. Nothing is sent anywhere: the file is read in the browser.
+
+	To share a run as a single file, paste the contents of its jmh-result.json into the embedded-results block at the
+	end of this file, and those of an earlier run into embedded-baseline to compare with it.
+-->
+<style>
+	:root {
+		color-scheme: light;
+		--page: #f9f9f7;
+		--surface: #fcfcfb;
+		--ink: #0b0b0b;
+		--ink-2: #52514e;
+		--muted: #898781;
+		--grid: #e1e0d9;
+		--axis: #c3c2b7;
+		--border: rgba(11, 11, 11, 0.10);
+		--wash: rgba(11, 11, 11, 0.04);
+		/* Categorical slots 1-5, in their validated order */
+		--s1: #2a78d6;
+		--s2: #eb6834;
+		--s3: #1baf7a;
+		--s4: #eda100;
+		--s5: #e87ba4;
+		/* Ordinal blue ramp, smallest to largest */
+		--o1: #86b6ef;
+		--o2: #5598e7;
+		--o3: #2a78d6;
+		--o4: #1c5cab;
+		--o5: #104281;
+		/* Status, always with an icon and a label */
+		--good: #0ca30c;
+		--warning: #fab219;
+		--critical: #d03b3b;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-theme="light"]) {
+			color-scheme: dark;
+			--page: #0d0d0d;
+			--surface: #1a1a19;
+			--ink: #f0efec;
+			--ink-2: #c3c2b7;
+			--muted: #898781;
+			--grid: #2c2c2a;
+			--axis: #383835;
+			--border: rgba(255, 255, 255, 0.10);
+			--wash: rgba(255, 255, 255, 0.05);
+			--s1: #3987e5;
+			--s2: #d95926;
+			--s3: #199e70;
+			--s4: #c98500;
+			--s5: #d55181;
+			--o1: #184f95;
+			--o2: #256abf;
+			--o3: #3987e5;
+			--o4: #6da7ec;
+			--o5: #b7d3f6;
+		}
+	}
+
+	:root[data-theme="dark"] {
+		color-scheme: dark;
+		--page: #0d0d0d;
+		--surface: #1a1a19;
+		--ink: #f0efec;
+		--ink-2: #c3c2b7;
+		--muted: #898781;
+		--grid: #2c2c2a;
+		--axis: #383835;
+		--border: rgba(255, 255, 255, 0.10);
+		--wash: rgba(255, 255, 255, 0.05);
+		--s1: #3987e5;
+		--s2: #d95926;
+		--s3: #199e70;
+		--s4: #c98500;
+		--s5: #d55181;
+		--o1: #184f95;
+		--o2: #256abf;
+		--o3: #3987e5;
+		--o4: #6da7ec;
+		--o5: #b7d3f6;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	body {
+		margin: 0;
+		background: var(--page);
+		color: var(--ink);
+		font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+	}
+
+	.page {
+		max-width: 1120px;
+		margin: 0 auto;
+		padding: 32px 16px 64px;
+	}
+
+	h1 {
+		margin: 0 0 4px;
+		font-size: 24px;
+		font-weight: 600;
+	}
+
+	h2 {
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+	}
+
+	h3 {
+		margin: 0 0 4px;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--ink-2);
+	}
+
+	p {
+		margin: 0;
+	}
+
+	.lede {
+		color: var(--ink-2);
+		max-width: 72ch;
+	}
+
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+		align-items: center;
+		margin: 20px 0 8px;
+	}
+
+	.file {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 12px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+		cursor: pointer;
+	}
+
+	.file input {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.file:focus-within {
+		outline: 2px solid var(--s1);
+		outline-offset: 2px;
+	}
+
+	.file .name {
+		color: var(--muted);
+	}
+
+	.segmented {
+		display: inline-flex;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--surface);
+	}
+
+	.segmented button,
+	.link {
+		font: inherit;
+		color: var(--ink-2);
+		background: none;
+		border: 0;
+		cursor: pointer;
+	}
+
+	.segmented button {
+		padding: 6px 12px;
+	}
+
+	.segmented button[aria-pressed="true"] {
+		background: var(--wash);
+		color: var(--ink);
+		font-weight: 600;
+	}
+
+	.link {
+		padding: 0;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.hint {
+		color: var(--muted);
+	}
+
+	.message {
+		margin: 8px 0;
+		color: var(--ink-2);
+	}
+
+	.callout {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+		margin: 16px 0 0;
+		padding: 10px 12px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+	}
+
+	.tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 12px;
+		margin-top: 16px;
+	}
+
+	.tile {
+		padding: 12px 14px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+	}
+
+	.tile .label {
+		color: var(--ink-2);
+		font-size: 12px;
+	}
+
+	.tile .value {
+		font-size: 18px;
+		font-weight: 600;
+	}
+
+	.card {
+		position: relative;
+		margin: 24px 0 0;
+		padding: 20px;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		background: var(--surface);
+	}
+
+	.card .caption {
+		margin: 4px 0 12px;
+		color: var(--ink-2);
+		max-width: 80ch;
+	}
+
+	.legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 16px;
+		margin: 0 0 8px;
+		color: var(--ink-2);
+		font-size: 13px;
+	}
+
+	.legend span {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.facets {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+		gap: 16px;
+	}
+
+	.plot {
+		position: relative;
+	}
+
+	svg {
+		display: block;
+		overflow: visible;
+	}
+
+	svg text {
+		fill: var(--muted);
+		font-size: 12px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	svg .axis-title {
+		fill: var(--ink-2);
+	}
+
+	svg:focus {
+		outline: none;
+	}
+
+	svg:focus-visible {
+		outline: 2px solid var(--s1);
+		outline-offset: 4px;
+		border-radius: 4px;
+	}
+
+	.tooltip {
+		position: absolute;
+		z-index: 10;
+		pointer-events: none;
+		min-width: 160px;
+		padding: 8px 10px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+		font-size: 12px;
+	}
+
+	.tooltip .heading {
+		margin-bottom: 4px;
+		color: var(--ink-2);
+	}
+
+	.tooltip .row {
+		display: grid;
+		grid-template-columns: 14px auto 1fr;
+		gap: 6px;
+		align-items: center;
+		white-space: nowrap;
+	}
+
+	.tooltip .value {
+		color: var(--ink);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tooltip .series {
+		color: var(--ink-2);
+	}
+
+	.empty {
+		padding: 24px 0;
+		color: var(--muted);
+	}
+
+	.table-toggle {
+		margin-top: 8px;
+	}
+
+	table {
+		width: 100%;
+		margin-top: 12px;
+		border-collapse: collapse;
+		font-size: 13px;
+	}
+
+	caption {
+		text-align: left;
+		color: var(--ink-2);
+		padding-bottom: 4px;
+	}
+
+	th,
+	td {
+		padding: 6px 8px;
+		border-bottom: 1px solid var(--grid);
+		text-align: left;
+	}
+
+	td.number,
+	th.number {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	th {
+		color: var(--ink-2);
+		font-weight: 500;
+	}
+
+	.verdict {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		white-space: nowrap;
+	}
+
+	.drop-active .page {
+		outline: 2px dashed var(--s1);
+		outline-offset: 8px;
+		border-radius: 12px;
+	}
+</style>
+</head>
+<body>
+<div class="page">
+	<header>
+		<h1>Payload logging benchmarks</h1>
+		<p class="lede">Charts for a <code>jmh-result.json</code> from dept44-benchmarks. Times are the average per call, and
+			lower is better. Axes marked as logarithmic are, so that 1 KiB and 1 MiB fit on the same chart.</p>
+		<div class="controls">
+			<label class="file">Load results <span class="name" id="current-name">none</span>
+				<input type="file" id="current-file" accept=".json,application/json">
+			</label>
+			<label class="file">Compare with <span class="name" id="baseline-name">none</span>
+				<input type="file" id="baseline-file" accept=".json,application/json">
+			</label>
+			<div class="segmented" role="group" aria-label="Metric">
+				<button type="button" data-metric="time" aria-pressed="true">Time per call</button>
+				<button type="button" data-metric="alloc" aria-pressed="false">Allocated per call</button>
+			</div>
+			<span class="hint">or drop a result file onto the page</span>
+		</div>
+		<p class="message" id="message" role="alert"></p>
+		<div id="run-info"></div>
+	</header>
+	<main id="charts"></main>
+</div>
+<script>
+	"use strict";
+
+	const SVG_NS = "http://www.w3.org/2000/svg";
+	const METRICS = {
+		time: { label: "Time per call", format: formatTime },
+		alloc: { label: "Allocated per call", format: formatBytes }
+	};
+
+	const OUTPUTS = ["DISCARD", "CONSOLE", "CONSOLE_MASKED", "CONSOLE_GELF", "CONSOLE_GELF_MASKED"];
+	const OUTPUT_LABELS = {
+		DISCARD: "Discarded at the logger",
+		CONSOLE: "Console",
+		CONSOLE_MASKED: "Console, masked",
+		CONSOLE_GELF: "Console and GELF",
+		CONSOLE_GELF_MASKED: "Console and GELF, masked"
+	};
+
+	/**
+	 * Each chart answers one question. points() picks the results it shows and says where each goes: its facet, its
+	 * series and its x.
+	 */
+	const CHARTS = [
+		{
+			id: "log-output",
+			type: "line",
+			title: "What writing the payload log adds",
+			caption: "One call with a JSON response, written where a service writes it: to the console, and over GELF to a log server on localhost, with and without PII masking. Each masked line is masked three times, once in the console pattern and once in each GELF layout.",
+			x: { label: "Body size (logarithmic)", scale: "log", format: formatKiB },
+			series: { order: OUTPUTS, labels: OUTPUT_LABELS, palette: "categorical" },
+			facets: {
+				order: ["DISABLED", "EMPTY"],
+				labels: { DISABLED: "Allowlist disabled: bodies logged in full", EMPTY: "Allowlist enabled, no paths: every value masked" }
+			},
+			points: rows => rows.filter(r => r.benchmark === "LogOutputBenchmark")
+				.map(r => ({ facet: r.params.allowlist, series: r.params.output, x: Number(r.params.bodyKiB), row: r }))
+		},
+		{
+			id: "chain",
+			type: "line",
+			title: "The whole chain, by allowlist setting",
+			caption: "Everything Logbook does for one call up to the logger, which discards the line. Above the allowlist's maximum size of 256 KiB, a body is replaced by a note rather than parsed.",
+			x: { label: "Body size (logarithmic)", scale: "log", format: formatKiB },
+			series: {
+				order: ["DISABLED", "EMPTY", "PATHS_50", "PATHS_200"],
+				labels: { DISABLED: "Allowlist disabled", EMPTY: "No paths", PATHS_50: "50 paths", PATHS_200: "200 paths" },
+				palette: "categorical"
+			},
+			points: rows => rows.filter(r => r.benchmark === "LogbookChainBenchmark")
+				.map(r => ({ series: r.params.allowlist, x: Number(r.params.bodyKiB), row: r }))
+		},
+		{
+			id: "support-management",
+			type: "line",
+			title: "A realistic service",
+			caption: "Pages of errands shaped like those of api-service-support-management, with its 183 allowlist paths, discarded at the logger or written as the service writes them.",
+			x: { label: "Errands on the page (logarithmic)", scale: "log", format: x => String(x) },
+			series: {
+				order: ["DISABLED|DISCARD", "DISABLED|CONSOLE_GELF_MASKED", "SUPPORT_MANAGEMENT|DISCARD", "SUPPORT_MANAGEMENT|CONSOLE_GELF_MASKED"],
+				labels: {
+					"DISABLED|DISCARD": "Bodies in full, discarded",
+					"DISABLED|CONSOLE_GELF_MASKED": "Bodies in full, console and GELF masked",
+					"SUPPORT_MANAGEMENT|DISCARD": "Allowlist, discarded",
+					"SUPPORT_MANAGEMENT|CONSOLE_GELF_MASKED": "Allowlist, console and GELF masked"
+				},
+				palette: "categorical"
+			},
+			points: rows => rows.filter(r => r.benchmark === "SupportManagementChainBenchmark")
+				.map(r => ({ series: r.params.allowlist + "|" + (r.params.output || "DISCARD"), x: Number(r.params.errands), row: r }))
+		},
+		{
+			id: "paths",
+			type: "line",
+			title: "The allowlist against the number of paths",
+			caption: "The allowlist filter alone. Paths that each end in a field name of their own cost next to nothing, however many there are: a flat line is what to look for.",
+			x: { label: "Paths", scale: "point", order: ["0", "10", "50", "200", "500"], format: x => String(x) },
+			series: {
+				order: ["1", "10", "100", "250", "1000"],
+				labels: { 1: "1 KiB", 10: "10 KiB", 100: "100 KiB", 250: "250 KiB", 1000: "1000 KiB" },
+				palette: "ordinal"
+			},
+			points: rows => rows.filter(r => r.benchmark === "AllowlistBodyFilterBenchmark")
+				.map(r => ({ series: r.params.bodyKiB, x: r.params.paths, row: r }))
+		},
+		{
+			id: "rules",
+			type: "bar",
+			title: "The kind of path against the shape of the body",
+			caption: "200 paths and a 100 KiB body. Rules that end in the same field name, or in *, are matched against every value they could name.",
+			groups: {
+				order: ["DESCENDANT", "ANCHORED", "SHARED_LEAF", "WILDCARD"],
+				labels: {
+					DESCENDANT: ["Descendant", "$..fieldN"],
+					ANCHORED: ["Anchored", "$.content[*].fieldN"],
+					SHARED_LEAF: ["Shared leaf", "$..groupN.field0"],
+					WILDCARD: ["Wildcard", "$..groupN.*"]
+				}
+			},
+			series: {
+				order: ["FLAT", "NESTED", "PAGE"],
+				labels: { FLAT: "Flat object", NESTED: "Nested 10 deep", PAGE: "Page of rows" },
+				palette: "categorical"
+			},
+			points: rows => rows.filter(r => r.benchmark === "AllowlistRuleBenchmark")
+				.map(r => ({ group: r.params.ruleKind, series: r.params.shape, row: r }))
+		},
+		{
+			id: "floor",
+			type: "line",
+			title: "The allowlist against json-path and the Jackson floor",
+			caption: "The floor is parsing a body and writing it back, the least the allowlist can cost. The json-path filters mask the fields they name, with the same paths and bodies.",
+			x: { label: "Body size (logarithmic)", scale: "log", format: formatKiB },
+			series: {
+				order: ["floor", "allowlist", "jsonpath-10", "jsonpath-50", "jsonpath-200"],
+				labels: {
+					floor: "Jackson floor",
+					allowlist: "Allowlist, 200 paths",
+					"jsonpath-10": "json-path, 10 paths",
+					"jsonpath-50": "json-path, 50 paths",
+					"jsonpath-200": "json-path, 200 paths"
+				},
+				palette: "categorical"
+			},
+			points: rows => rows.flatMap(r => {
+				if (r.benchmark === "JsonBaselineBenchmark") {
+					return [{ series: "floor", x: Number(r.params.bodyKiB), row: r }];
+				}
+				if (r.benchmark === "AllowlistBodyFilterBenchmark" && r.params.paths === "200") {
+					return [{ series: "allowlist", x: Number(r.params.bodyKiB), row: r }];
+				}
+				if (r.benchmark === "JsonPathFilterBenchmark") {
+					return [{ series: "jsonpath-" + r.params.paths, x: Number(r.params.bodyKiB), row: r }];
+				}
+				return [];
+			})
+		}
+	];
+
+	const state = { current: null, baseline: null, metric: "time" };
+
+	// ---- Loading ------------------------------------------------------------------------------------------------
+
+	function parseResults(text) {
+		const data = JSON.parse(text);
+		if (!Array.isArray(data) || data.some(r => typeof r.benchmark !== "string" || !r.primaryMetric)) {
+			throw new Error("This is not a JMH result file in JSON.");
+		}
+		return data.map(r => {
+			const name = r.benchmark.split(".");
+			return {
+				benchmark: name[name.length - 2],
+				method: name[name.length - 1],
+				params: r.params || {},
+				time: metricOf(r.primaryMetric),
+				alloc: metricOf(r.secondaryMetrics && r.secondaryMetrics["gc.alloc.rate.norm"]),
+				forks: r.forks,
+				warmupIterations: r.warmupIterations,
+				measurementIterations: r.measurementIterations,
+				measurementTime: r.measurementTime,
+				jdkVersion: r.jdkVersion,
+				jmhVersion: r.jmhVersion
+			};
+		});
+	}
+
+	/** JMH writes the error as "NaN" when a run has too few iterations to estimate it. */
+	function metricOf(metric) {
+		if (!metric) {
+			return null;
+		}
+		const error = Number(metric.scoreError);
+		return { score: Number(metric.score), error: Number.isFinite(error) ? error : null };
+	}
+
+	function load(file, target) {
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				state[target] = parseResults(reader.result);
+				document.getElementById(target + "-name").textContent = file.name;
+				setMessage("");
+				render();
+			} catch (e) {
+				setMessage("Could not read " + file.name + ": " + e.message);
+			}
+		};
+		reader.readAsText(file);
+	}
+
+	function loadEmbedded(id, target, name) {
+		const text = document.getElementById(id).textContent.trim();
+		if (text) {
+			state[target] = parseResults(text);
+			document.getElementById(target + "-name").textContent = name;
+		}
+	}
+
+	function setMessage(text) {
+		document.getElementById("message").textContent = text;
+	}
+
+	// ---- Formatting ---------------------------------------------------------------------------------------------
+
+	function significant(value) {
+		return Number(value.toPrecision(3)).toLocaleString("en-US");
+	}
+
+	/** JMH reports time in microseconds. */
+	function formatTime(us) {
+		if (us < 1) {
+			return significant(us * 1000) + " ns";
+		}
+		if (us < 1000) {
+			return significant(us) + " µs";
+		}
+		if (us < 1e6) {
+			return significant(us / 1000) + " ms";
+		}
+		return significant(us / 1e6) + " s";
+	}
+
+	/** Decimal units, so that the ticks of a logarithmic axis, which fall on powers of ten, read as round numbers. */
+	function formatBytes(bytes) {
+		if (bytes < 1000) {
+			return significant(bytes) + " B";
+		}
+		if (bytes < 1e6) {
+			return significant(bytes / 1000) + " kB";
+		}
+		if (bytes < 1e9) {
+			return significant(bytes / 1e6) + " MB";
+		}
+		return significant(bytes / 1e9) + " GB";
+	}
+
+	function formatKiB(kib) {
+		return kib + " KiB";
+	}
+
+	function formatValue(metric, value) {
+		const text = metric.format(value.score);
+		return value.error === null ? text : text + " ± " + metric.format(value.error);
+	}
+
+	// ---- Elements -----------------------------------------------------------------------------------------------
+
+	function svg(name, attributes = {}, style = {}) {
+		const element = document.createElementNS(SVG_NS, name);
+		Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+		Object.assign(element.style, style);
+		return element;
+	}
+
+	function html(name, className, text) {
+		const element = document.createElement(name);
+		if (className) {
+			element.className = className;
+		}
+		if (text !== undefined) {
+			element.textContent = text;
+		}
+		return element;
+	}
+
+	function seriesColor(palette, index) {
+		return palette === "ordinal" ? "var(--o" + (index + 1) + ")" : "var(--s" + (index + 1) + ")";
+	}
+
+	function lineKey(color) {
+		const key = svg("svg", { width: 14, height: 10, "aria-hidden": "true" });
+		key.appendChild(svg("line", { x1: 0, y1: 5, x2: 14, y2: 5 }, { stroke: color, strokeWidth: "2px", strokeLinecap: "round" }));
+		return key;
+	}
+
+	function swatch(color) {
+		const key = svg("svg", { width: 12, height: 12, "aria-hidden": "true" });
+		key.appendChild(svg("rect", { x: 0, y: 0, width: 12, height: 12, rx: 3 }, { fill: color }));
+		return key;
+	}
+
+	function legend(series, bars) {
+		const element = html("div", "legend");
+		series.forEach(s => {
+			const item = html("span");
+			item.appendChild(bars ? swatch(s.color) : lineKey(s.color));
+			item.appendChild(document.createTextNode(s.label));
+			element.appendChild(item);
+		});
+		return element;
+	}
+
+	function tooltipRow(color, value, label) {
+		const row = html("div", "row");
+		row.appendChild(lineKey(color));
+		row.appendChild(html("span", "value", value));
+		row.appendChild(html("span", "series", label));
+		return row;
+	}
+
+	/**
+	 * @param x the position in the chart, which may sit below a heading in the plot
+	 * @param y the position in the chart
+	 */
+	function placeTooltip(tooltip, plot, chart, x, y) {
+		const offset = chart.getBoundingClientRect().top - plot.getBoundingClientRect().top;
+		const width = tooltip.offsetWidth;
+		const left = x + 16 + width > plot.clientWidth ? x - 16 - width : x + 16;
+		tooltip.style.left = Math.max(0, left) + "px";
+		tooltip.style.top = Math.max(0, offset + y - 12) + "px";
+	}
+
+	// ---- Scales -------------------------------------------------------------------------------------------------
+
+	function logTicks(min, max) {
+		const ticks = [];
+		for (let exponent = Math.floor(Math.log10(min)); exponent <= Math.ceil(Math.log10(max)); exponent++) {
+			[1, 2, 5].forEach(m => {
+				const tick = m * Math.pow(10, exponent);
+				if (tick >= min && tick <= max) {
+					ticks.push(tick);
+				}
+			});
+		}
+		return ticks.length > 7 ? ticks.filter(t => Math.abs(Math.log10(t) % 1) < 1e-9) : ticks;
+	}
+
+	/** Ticks from 0 up to the first one at or above max, so that the tallest bar stays inside the axis. */
+	function linearTicks(max) {
+		const rough = max / 5;
+		const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+		const step = [1, 2, 5, 10].map(m => m * magnitude).find(s => s >= rough);
+		const ticks = [0];
+		while (ticks[ticks.length - 1] < max) {
+			ticks.push(ticks.length * step);
+		}
+		return ticks;
+	}
+
+	/** The domain of a logarithmic axis, widened to the nearest 1, 2 or 5 times a power of ten on each side. */
+	function logDomain(min, max) {
+		const steps = exponent => [1, 2, 5].map(m => m * Math.pow(10, exponent));
+		const lower = steps(Math.floor(Math.log10(min))).filter(t => t <= min / 1.1).pop()
+			|| steps(Math.floor(Math.log10(min)) - 1).pop();
+		const upper = steps(Math.floor(Math.log10(max))).concat(steps(Math.floor(Math.log10(max)) + 1)).find(t => t >= max * 1.1);
+		return [lower, upper];
+	}
+
+	// ---- Line chart ---------------------------------------------------------------------------------------------
+
+	function renderLine(body, spec, points) {
+		const metric = METRICS[state.metric];
+		const valued = points.map(p => ({ ...p, value: p.row[state.metric] })).filter(p => p.value && p.value.score > 0);
+		const series = spec.series.order.filter(key => valued.some(p => p.series === key))
+			.map(key => ({ key, label: spec.series.labels[key], color: seriesColor(spec.series.palette, spec.series.order.indexOf(key)) }));
+		const facets = spec.facets
+			? spec.facets.order.filter(key => valued.some(p => p.facet === key)).map(key => ({ key, label: spec.facets.labels[key] }))
+			: [{ key: undefined, label: null }];
+
+		const scores = valued.map(p => p.value.score);
+		const [yMin, yMax] = logDomain(Math.min(...scores), Math.max(...scores));
+
+		body.appendChild(legend(series, false));
+		const grid = html("div", facets.length > 1 ? "facets" : "");
+		body.appendChild(grid);
+
+		// Every panel is in the grid before any is measured, so that each is drawn at the width of its own column
+		const tables = facets.map(facet => {
+			const facetPoints = valued.filter(p => p.facet === facet.key);
+			const xs = spec.x.scale === "point"
+				? spec.x.order.filter(x => facetPoints.some(p => p.x === x))
+				: [...new Set(facetPoints.map(p => p.x))].sort((a, b) => a - b);
+			const panel = html("div", "plot");
+			if (facet.label) {
+				panel.appendChild(html("h3", null, facet.label));
+			}
+			grid.appendChild(panel);
+			return { facet, xs, facetPoints, panel };
+		});
+		tables.forEach(({ xs, facetPoints, panel }) => drawLinePanel(panel, spec, series, xs, facetPoints, yMin, yMax, metric));
+
+		body.appendChild(tableToggle(() => tables.map(({ facet, xs, facetPoints }) => {
+			const table = html("table");
+			table.appendChild(html("caption", null, (facet.label ? facet.label + ". " : "") + metric.label));
+			const head = html("tr");
+			head.appendChild(html("th", null, spec.x.label.replace(" (logarithmic)", "")));
+			series.forEach(s => head.appendChild(html("th", "number", s.label)));
+			table.appendChild(head);
+			xs.forEach(x => {
+				const row = html("tr");
+				row.appendChild(html("td", null, spec.x.format(x)));
+				series.forEach(s => {
+					const point = facetPoints.find(p => p.series === s.key && p.x === x);
+					row.appendChild(html("td", "number", point ? formatValue(metric, point.value) : "–"));
+				});
+				table.appendChild(row);
+			});
+			return table;
+		})));
+	}
+
+	function drawLinePanel(panel, spec, series, xs, points, yMin, yMax, metric) {
+		const width = Math.max(panel.clientWidth, 280);
+		const margin = { top: 28, right: 20, bottom: 48, left: 68 };
+		const plotHeight = 280;
+		const height = margin.top + plotHeight + margin.bottom;
+		const plotWidth = width - margin.left - margin.right;
+		const inset = 14;
+
+		const xPosition = spec.x.scale === "point"
+			? x => margin.left + inset + (xs.length === 1 ? 0 : xs.indexOf(x) * (plotWidth - 2 * inset) / (xs.length - 1))
+			: x => {
+				const lo = Math.log10(xs[0]);
+				const hi = Math.log10(xs[xs.length - 1]);
+				return margin.left + inset + (hi === lo ? 0 : (Math.log10(x) - lo) / (hi - lo) * (plotWidth - 2 * inset));
+			};
+		const yPosition = y => margin.top + plotHeight - (Math.log10(y) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin)) * plotHeight;
+
+		const chart = svg("svg", { width, height, tabindex: 0, role: "img", "aria-label": spec.title + ". " + metric.label + ", logarithmic. The table below has the values." });
+		panel.appendChild(chart);
+
+		logTicks(yMin, yMax).forEach(tick => {
+			const y = yPosition(tick);
+			chart.appendChild(svg("line", { x1: margin.left, x2: width - margin.right, y1: y, y2: y }, { stroke: "var(--grid)", strokeWidth: "1px" }));
+			const label = svg("text", { x: margin.left - 8, y: y + 4, "text-anchor": "end" });
+			label.textContent = metric.format(tick);
+			chart.appendChild(label);
+		});
+		chart.appendChild(svg("line", { x1: margin.left, x2: width - margin.right, y1: margin.top + plotHeight, y2: margin.top + plotHeight }, { stroke: "var(--axis)", strokeWidth: "1px" }));
+
+		// Labels that would collide are left out, keeping those to the right: on a logarithmic axis, values such as
+		// 250 and 300 sit close together. The tooltip and the table still have every value.
+		let leftmost = Infinity;
+		[...xs].reverse().forEach(x => {
+			const label = svg("text", { x: xPosition(x), y: margin.top + plotHeight + 18, "text-anchor": "middle" });
+			label.textContent = spec.x.format(x);
+			chart.appendChild(label);
+			const half = label.getComputedTextLength() / 2;
+			if (xPosition(x) + half > leftmost - 6) {
+				label.remove();
+			} else {
+				leftmost = xPosition(x) - half;
+			}
+		});
+		const xTitle = svg("text", { x: margin.left + plotWidth / 2, y: height - 6, "text-anchor": "middle", class: "axis-title" });
+		xTitle.textContent = spec.x.label;
+		chart.appendChild(xTitle);
+		const yTitle = svg("text", { x: margin.left, y: 12, class: "axis-title" });
+		yTitle.textContent = metric.label + " (logarithmic)";
+		chart.appendChild(yTitle);
+
+		const crosshair = svg("line", { y1: margin.top, y2: margin.top + plotHeight, visibility: "hidden" }, { stroke: "var(--axis)", strokeWidth: "1px" });
+		chart.appendChild(crosshair);
+
+		const markers = [];
+		series.forEach(s => {
+			const seriesPoints = xs.map(x => points.find(p => p.series === s.key && p.x === x)).filter(Boolean);
+			const path = seriesPoints.map((p, i) => (i === 0 ? "M" : "L") + xPosition(p.x) + "," + yPosition(p.value.score)).join(" ");
+			chart.appendChild(svg("path", { d: path }, { fill: "none", stroke: s.color, strokeWidth: "2px", strokeLinejoin: "round", strokeLinecap: "round" }));
+			seriesPoints.forEach(p => {
+				const marker = svg("circle", { cx: xPosition(p.x), cy: yPosition(p.value.score), r: 4 }, { fill: s.color, stroke: "var(--surface)", strokeWidth: "2px" });
+				marker.dataset.x = String(p.x);
+				chart.appendChild(marker);
+				markers.push(marker);
+			});
+		});
+
+		const tooltip = html("div", "tooltip");
+		tooltip.hidden = true;
+		panel.appendChild(tooltip);
+
+		const show = (index, pointerY) => {
+			const x = xs[index];
+			const position = xPosition(x);
+			crosshair.setAttribute("x1", position);
+			crosshair.setAttribute("x2", position);
+			crosshair.setAttribute("visibility", "visible");
+			markers.forEach(m => m.setAttribute("r", m.dataset.x === String(x) ? 5 : 4));
+			tooltip.replaceChildren(html("div", "heading", spec.x.format(x)));
+			series.forEach(s => {
+				const point = points.find(p => p.series === s.key && p.x === x);
+				if (point) {
+					tooltip.appendChild(tooltipRow(s.color, formatValue(metric, point.value), s.label));
+				}
+			});
+			tooltip.hidden = false;
+			placeTooltip(tooltip, panel, chart, position, pointerY);
+			chart.dataset.index = String(index);
+		};
+		const hide = () => {
+			crosshair.setAttribute("visibility", "hidden");
+			markers.forEach(m => m.setAttribute("r", 4));
+			tooltip.hidden = true;
+		};
+		const nearest = clientX => {
+			const left = chart.getBoundingClientRect().left;
+			let best = 0;
+			xs.forEach((x, i) => {
+				if (Math.abs(xPosition(x) - (clientX - left)) < Math.abs(xPosition(xs[best]) - (clientX - left))) {
+					best = i;
+				}
+			});
+			return best;
+		};
+
+		chart.addEventListener("pointermove", event => show(nearest(event.clientX), event.clientY - chart.getBoundingClientRect().top));
+		chart.addEventListener("pointerleave", hide);
+		chart.addEventListener("blur", hide);
+		chart.addEventListener("focus", () => show(Number(chart.dataset.index || 0), margin.top + 20));
+		chart.addEventListener("keydown", event => {
+			const index = Number(chart.dataset.index || 0);
+			if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+				event.preventDefault();
+				show(Math.min(xs.length - 1, Math.max(0, index + (event.key === "ArrowRight" ? 1 : -1))), margin.top + 20);
+			} else if (event.key === "Escape") {
+				hide();
+			}
+		});
+	}
+
+	// ---- Bar chart ----------------------------------------------------------------------------------------------
+
+	function renderBars(body, spec, points) {
+		const metric = METRICS[state.metric];
+		const valued = points.map(p => ({ ...p, value: p.row[state.metric] })).filter(p => p.value);
+		const series = spec.series.order.filter(key => valued.some(p => p.series === key))
+			.map(key => ({ key, label: spec.series.labels[key], color: seriesColor(spec.series.palette, spec.series.order.indexOf(key)) }));
+		const groups = spec.groups.order.filter(key => valued.some(p => p.group === key));
+
+		body.appendChild(legend(series, true));
+		const panel = html("div", "plot");
+		body.appendChild(panel);
+
+		const width = Math.max(panel.clientWidth, 280);
+		const margin = { top: 28, right: 12, bottom: 52, left: 68 };
+		const plotHeight = 260;
+		const height = margin.top + plotHeight + margin.bottom;
+		const plotWidth = width - margin.left - margin.right;
+		const ticks = linearTicks(Math.max(...valued.map(p => p.value.score)));
+		const yMax = ticks[ticks.length - 1];
+		const yPosition = y => margin.top + plotHeight - y / yMax * plotHeight;
+		const band = plotWidth / groups.length;
+		const barWidth = Math.min(24, (band * 0.6 - 2 * (series.length - 1)) / series.length);
+
+		const chart = svg("svg", { width, height, role: "img", "aria-label": spec.title + ". " + metric.label + ". The table below has the values." });
+		panel.appendChild(chart);
+
+		ticks.forEach(tick => {
+			const y = yPosition(tick);
+			chart.appendChild(svg("line", { x1: margin.left, x2: width - margin.right, y1: y, y2: y }, { stroke: tick === 0 ? "var(--axis)" : "var(--grid)", strokeWidth: "1px" }));
+			const label = svg("text", { x: margin.left - 8, y: y + 4, "text-anchor": "end" });
+			label.textContent = tick === 0 ? "0" : metric.format(tick);
+			chart.appendChild(label);
+		});
+		const yTitle = svg("text", { x: margin.left, y: 12, class: "axis-title" });
+		yTitle.textContent = metric.label;
+		chart.appendChild(yTitle);
+
+		const tooltip = html("div", "tooltip");
+		tooltip.hidden = true;
+		panel.appendChild(tooltip);
+		const bars = [];
+
+		groups.forEach((group, g) => {
+			const center = margin.left + band * g + band / 2;
+			const [name, example] = spec.groups.labels[group];
+			const label = svg("text", { x: center, y: margin.top + plotHeight + 18, "text-anchor": "middle", class: "axis-title" });
+			label.textContent = name;
+			chart.appendChild(label);
+			const sub = svg("text", { x: center, y: margin.top + plotHeight + 34, "text-anchor": "middle" });
+			sub.textContent = example;
+			chart.appendChild(sub);
+
+			const start = center - (series.length * barWidth + 2 * (series.length - 1)) / 2;
+			series.forEach((s, i) => {
+				const point = valued.find(p => p.group === group && p.series === s.key);
+				if (!point) {
+					return;
+				}
+				const x = start + i * (barWidth + 2);
+				const top = yPosition(point.value.score);
+				const bottom = yPosition(0);
+				const radius = Math.min(4, barWidth / 2, bottom - top);
+				const bar = svg("path", {
+					d: "M" + x + "," + bottom + " V" + (top + radius) + " Q" + x + "," + top + " " + (x + radius) + "," + top
+						+ " H" + (x + barWidth - radius) + " Q" + (x + barWidth) + "," + top + " " + (x + barWidth) + "," + (top + radius)
+						+ " V" + bottom + " Z",
+					tabindex: 0
+				}, { fill: s.color });
+				chart.appendChild(bar);
+				bars.push(bar);
+				const hit = svg("rect", { x: x - 1, y: margin.top, width: barWidth + 2, height: plotHeight }, { fill: "transparent" });
+				chart.appendChild(hit);
+
+				const show = () => {
+					bars.forEach(b => b.style.opacity = b === bar ? "1" : "0.45");
+					tooltip.replaceChildren(html("div", "heading", name + " · " + example));
+					tooltip.appendChild(tooltipRow(s.color, formatValue(metric, point.value), s.label));
+					tooltip.hidden = false;
+					placeTooltip(tooltip, panel, chart, x + barWidth / 2, top);
+				};
+				const hide = () => {
+					bars.forEach(b => b.style.opacity = "1");
+					tooltip.hidden = true;
+				};
+				[hit, bar].forEach(target => {
+					target.addEventListener("pointerenter", show);
+					target.addEventListener("pointerleave", hide);
+				});
+				bar.addEventListener("focus", show);
+				bar.addEventListener("blur", hide);
+			});
+		});
+
+		body.appendChild(tableToggle(() => {
+			const table = html("table");
+			table.appendChild(html("caption", null, metric.label));
+			const head = html("tr");
+			head.appendChild(html("th", null, "Kind of path"));
+			series.forEach(s => head.appendChild(html("th", "number", s.label)));
+			table.appendChild(head);
+			groups.forEach(group => {
+				const row = html("tr");
+				row.appendChild(html("td", null, spec.groups.labels[group].join(" ")));
+				series.forEach(s => {
+					const point = valued.find(p => p.group === group && p.series === s.key);
+					row.appendChild(html("td", "number", point ? formatValue(metric, point.value) : "–"));
+				});
+				table.appendChild(row);
+			});
+			return [table];
+		}));
+	}
+
+	function tableToggle(buildTables) {
+		const wrapper = html("div", "table-toggle");
+		const button = html("button", "link", "Show the table");
+		button.type = "button";
+		button.setAttribute("aria-expanded", "false");
+		const holder = html("div");
+		holder.hidden = true;
+		button.addEventListener("click", () => {
+			const open = holder.hidden;
+			holder.hidden = !open;
+			button.textContent = open ? "Hide the table" : "Show the table";
+			button.setAttribute("aria-expanded", String(open));
+			if (open && !holder.hasChildNodes()) {
+				buildTables().forEach(table => holder.appendChild(table));
+			}
+		});
+		wrapper.append(button, holder);
+		return wrapper;
+	}
+
+	// ---- Run information and comparison ----------------------------------------------------------------------
+
+	function renderRunInfo() {
+		const container = document.getElementById("run-info");
+		container.replaceChildren();
+		if (!state.current) {
+			return;
+		}
+		const first = state.current[0];
+		const tiles = html("div", "tiles");
+		[
+			["Results", String(state.current.length)],
+			["Benchmarks", String(new Set(state.current.map(r => r.benchmark)).size)],
+			["Forks × iterations", first.forks + " × " + first.measurementIterations + " of " + first.measurementTime],
+			["JDK and JMH", first.jdkVersion + " · " + first.jmhVersion]
+		].forEach(([label, value]) => {
+			const tile = html("div", "tile");
+			tile.append(html("div", "label", label), html("div", "value", value));
+			tiles.appendChild(tile);
+		});
+		container.appendChild(tiles);
+
+		if (first.forks < 2 || first.measurementIterations < 5) {
+			const callout = html("div", "callout");
+			callout.appendChild(statusIcon("warning"));
+			callout.appendChild(html("p", null, "Quick run: with " + first.forks + " fork and " + first.measurementIterations + " iterations, the numbers are only a rough guide, and most have no error estimate."));
+			container.appendChild(callout);
+		}
+	}
+
+	function statusIcon(status) {
+		const icon = svg("svg", { width: 16, height: 16, viewBox: "0 0 16 16", "aria-hidden": "true" });
+		if (status === "warning") {
+			icon.appendChild(svg("path", { d: "M8 1.5 15 14.5H1Z" }, { fill: "var(--warning)" }));
+			icon.appendChild(svg("rect", { x: 7.25, y: 6, width: 1.5, height: 4.5, rx: 0.75 }, { fill: "#0b0b0b" }));
+			icon.appendChild(svg("circle", { cx: 8, cy: 12.25, r: 0.9 }, { fill: "#0b0b0b" }));
+		} else if (status === "good") {
+			icon.appendChild(svg("circle", { cx: 8, cy: 8, r: 7 }, { fill: "var(--good)" }));
+			icon.appendChild(svg("path", { d: "M4.5 8.2 7 10.6 11.5 5.6" }, { fill: "none", stroke: "#fff", strokeWidth: "1.8px", strokeLinecap: "round", strokeLinejoin: "round" }));
+		} else if (status === "critical") {
+			icon.appendChild(svg("circle", { cx: 8, cy: 8, r: 7 }, { fill: "var(--critical)" }));
+			icon.appendChild(svg("path", { d: "M8 4.5V8.8M8 11.3V11.4" }, { fill: "none", stroke: "#fff", strokeWidth: "1.8px", strokeLinecap: "round" }));
+		} else {
+			icon.appendChild(svg("circle", { cx: 8, cy: 8, r: 6 }, { fill: "none", stroke: "var(--muted)", strokeWidth: "1.5px" }));
+		}
+		return icon;
+	}
+
+	function keyOf(row) {
+		return row.benchmark + "." + row.method + "|" + Object.keys(row.params).sort().map(k => k + "=" + row.params[k]).join(",");
+	}
+
+	function renderComparison(main) {
+		if (!state.current || !state.baseline) {
+			return;
+		}
+		const metric = METRICS[state.metric];
+		const baseline = new Map(state.baseline.map(r => [keyOf(r), r]));
+		const rows = state.current
+			.map(current => ({ current, before: baseline.get(keyOf(current)) }))
+			.filter(r => r.before && r.current[state.metric] && r.before[state.metric])
+			.map(r => {
+				const now = r.current[state.metric];
+				const then = r.before[state.metric];
+				const change = (now.score - then.score) / then.score;
+				let verdict = "unknown";
+				if (now.error !== null && then.error !== null) {
+					verdict = Math.abs(now.score - then.score) > now.error + then.error ? (change < 0 ? "good" : "critical") : "neutral";
+				}
+				return { ...r, now, then, change, verdict };
+			})
+			.sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+
+		const card = html("section", "card");
+		card.appendChild(html("h2", null, "Compared with the earlier run"));
+		card.appendChild(html("p", "caption", "Every result both runs have, the largest changes first. A change counts when the two confidence intervals do not overlap."));
+		if (rows.length === 0) {
+			card.appendChild(html("p", "empty", "The two runs have no results in common."));
+			main.appendChild(card);
+			return;
+		}
+		const table = html("table");
+		const head = html("tr");
+		["Benchmark", "Parameters"].forEach(t => head.appendChild(html("th", null, t)));
+		["Earlier", "Now", "Change"].forEach(t => head.appendChild(html("th", "number", t)));
+		head.appendChild(html("th", null, "Verdict"));
+		table.appendChild(head);
+		const labels = { good: "Faster", critical: "Slower", neutral: "No clear difference", unknown: "No error estimate" };
+		rows.forEach(r => {
+			const row = html("tr");
+			row.appendChild(html("td", null, r.current.benchmark.replace("Benchmark", "")));
+			row.appendChild(html("td", null, Object.entries(r.current.params).map(([k, v]) => k + "=" + v).join(", ")));
+			row.appendChild(html("td", "number", formatValue(metric, r.then)));
+			row.appendChild(html("td", "number", formatValue(metric, r.now)));
+			row.appendChild(html("td", "number", (r.change > 0 ? "+" : "") + significant(r.change * 100) + " %"));
+			const verdict = html("td");
+			const label = html("span", "verdict");
+			label.append(statusIcon(r.verdict), document.createTextNode(state.metric === "alloc" && r.verdict !== "neutral" && r.verdict !== "unknown" ? (r.verdict === "good" ? "Less" : "More") : labels[r.verdict]));
+			verdict.appendChild(label);
+			row.appendChild(verdict);
+			table.appendChild(row);
+		});
+		card.appendChild(table);
+		main.appendChild(card);
+	}
+
+	// ---- Rendering ----------------------------------------------------------------------------------------------
+
+	function render() {
+		renderRunInfo();
+		const main = document.getElementById("charts");
+		main.replaceChildren();
+		if (!state.current) {
+			main.appendChild(html("p", "empty", "Load a jmh-result.json to see the charts."));
+			return;
+		}
+		CHARTS.forEach(spec => {
+			const card = html("section", "card");
+			card.id = spec.id;
+			card.appendChild(html("h2", null, spec.title));
+			card.appendChild(html("p", "caption", spec.caption));
+			main.appendChild(card);
+			const points = spec.points(state.current);
+			if (!points.some(p => p.row[state.metric])) {
+				card.appendChild(html("p", "empty", "Not in this run."));
+				return;
+			}
+			(spec.type === "bar" ? renderBars : renderLine)(card, spec, points);
+		});
+		renderComparison(main);
+	}
+
+	document.getElementById("current-file").addEventListener("change", event => event.target.files[0] && load(event.target.files[0], "current"));
+	document.getElementById("baseline-file").addEventListener("change", event => event.target.files[0] && load(event.target.files[0], "baseline"));
+	document.querySelectorAll("[data-metric]").forEach(button => button.addEventListener("click", () => {
+		state.metric = button.dataset.metric;
+		document.querySelectorAll("[data-metric]").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
+		render();
+	}));
+	document.addEventListener("dragover", event => {
+		event.preventDefault();
+		document.body.classList.add("drop-active");
+	});
+	document.addEventListener("dragleave", event => {
+		if (event.relatedTarget === null) {
+			document.body.classList.remove("drop-active");
+		}
+	});
+	document.addEventListener("drop", event => {
+		event.preventDefault();
+		document.body.classList.remove("drop-active");
+		const file = event.dataTransfer.files[0];
+		if (file) {
+			load(file, "current");
+		}
+	});
+	let resizeTimer;
+	window.addEventListener("resize", () => {
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(render, 150);
+	});
+
+	// The embedded results come after this script, so they are read once the whole page is
+	document.addEventListener("DOMContentLoaded", () => {
+		try {
+			loadEmbedded("embedded-results", "current", "embedded");
+			loadEmbedded("embedded-baseline", "baseline", "embedded");
+		} catch (e) {
+			setMessage("Could not read the embedded results: " + e.message);
+		}
+		render();
+	});
+</script>
+<!-- Paste a jmh-result.json between these tags to embed a run in this file -->
+<script type="application/json" id="embedded-results"></script>
+<script type="application/json" id="embedded-baseline"></script>
+</body>
+</html>

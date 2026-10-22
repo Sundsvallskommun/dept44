@@ -20,11 +20,19 @@
          are the only ones: a properties file in this jar would override a service's own application.yml. -->
     <springProperty scope="context" name="dept44.logback.logserver.disabled" source="dept44.logback.logserver.disabled" defaultValue="false"/>
 
-    <!-- PII masking. Bridge the Spring property into the logback context so PiiMaskingConverter can read it in start(),
-         and register the %maskPii conversion word used in the console and GELF patterns below. Masking is opt-in and
-         defaults to off; when off, %maskPii renders identically to %m. Note: %maskPii only masks the rendered message -
-         MDC values, caller data and stack traces emitted as separate GELF fields are not masked. -->
+    <!-- PII masking. Bridge the Spring properties into the logback context so PiiMaskingConverter can read them in
+         start(), and register the %maskPii conversion word used in the console and GELF patterns below. Masking is
+         opt-in and defaults to off; when off, %maskPii renders identically to %m. Note: %maskPii only masks the
+         rendered message - MDC values, caller data and stack traces emitted as separate GELF fields are not masked.
+
+         Each category is masked unless its property says false, so enabling masking masks everything as before. Turn
+         uuid off to keep the identifiers an incident is traced by: an errandId or an attachmentId is a UUID too, and
+         masking leaves four characters of it. -->
     <springProperty scope="context" name="DEPT44_PII_MASKING_ENABLED" source="dept44.logback.pii-masking.enabled" defaultValue="false"/>
+    <springProperty scope="context" name="DEPT44_PII_MASKING_UUID" source="dept44.logback.pii-masking.uuid" defaultValue="true"/>
+    <springProperty scope="context" name="DEPT44_PII_MASKING_PERSONAL_NUMBER" source="dept44.logback.pii-masking.personal-number" defaultValue="true"/>
+    <springProperty scope="context" name="DEPT44_PII_MASKING_PHONE_NUMBER" source="dept44.logback.pii-masking.phone-number" defaultValue="true"/>
+    <springProperty scope="context" name="DEPT44_PII_MASKING_EMAIL" source="dept44.logback.pii-masking.email" defaultValue="true"/>
     <conversionRule conversionWord="maskPii" class="se.sundsvall.dept44.logback.PiiMaskingConverter"/>
 
     <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">

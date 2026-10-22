@@ -41,13 +41,14 @@ LOG.info("Inga kontaktinställningar hittades för {} med filter {}",
 
 För ett värde vars typ är känd kan du använda en riktad metod – tydligare och billigare:
 
-|               Metod               |                            Använd för                            |
-|-----------------------------------|------------------------------------------------------------------|
-| `PiiMasker.maskPii(s)`            | Generellt – godtycklig sträng som kan innehålla flera kategorier |
-| `PiiMasker.maskUuid(s)`           | Ett `partyId`/UUID                                               |
-| `PiiMasker.maskPersonalNumber(s)` | Ett personnummer / `legalId`                                     |
-| `PiiMasker.maskEmail(s)`          | En e-postadress                                                  |
-| `PiiMasker.maskPhoneNumber(s)`    | Ett telefonnummer                                                |
+|               Metod                |                            Använd för                            |
+|------------------------------------|------------------------------------------------------------------|
+| `PiiMasker.maskPii(s)`             | Generellt – godtycklig sträng som kan innehålla flera kategorier |
+| `PiiMasker.maskPii(s, kategorier)` | Som ovan, men bara de kategorier som anges (8.0.13+)             |
+| `PiiMasker.maskUuid(s)`            | Ett `partyId`/UUID                                               |
+| `PiiMasker.maskPersonalNumber(s)`  | Ett personnummer / `legalId`                                     |
+| `PiiMasker.maskEmail(s)`           | En e-postadress                                                  |
+| `PiiMasker.maskPhoneNumber(s)`     | Ett telefonnummer                                                |
 
 Alla metoder är null-säkra (`null` in → `null` ut).
 
@@ -89,6 +90,34 @@ Detta är ett skyddsnät (defense-in-depth), **inte** en ersättning för att ma
 - Fri text (namn, adress) fångas inte av regex.
 - En tjänst med egen `logback-spring.xml` måste själv replikera `<conversionRule>` och
   `%maskPii`-mönstret.
+
+### Varje kategori kan stängas av för sig
+
+Varje kategori maskas om inte dess egen property säger `false`, så att slå på maskningen maskar allt
+som tidigare:
+
+```properties
+dept44.logback.pii-masking.uuid=false
+dept44.logback.pii-masking.personal-number=false
+dept44.logback.pii-masking.phone-number=false
+dept44.logback.pii-masking.email=false
+```
+
+Den kategori som kräver ett beslut är **`uuid`**. Ett UUID maskas till sina fyra första tecken, och
+fyra tecken räcker inte för att knyta en loggrad till ett ärende, en bilaga eller ett meddelande. En
+tjänst som spårar en incident via `errandId`/`attachmentId` – eller som maskar sina HTTP-payloads
+fält för fält och medvetet behåller identifierarna – förlorar det om varje UUID i varje loggrad
+kortas av. Den tjänsten kan stänga av `uuid` och ändå få övriga kategorier maskade.
+
+Med `uuid=false` loggas varje `partyId` i klartext, om inte koden har maskat det själv.
+UUID-regeln kan inte skilja ett `partyId` från ett `errandId`, så skyddsnätet täcker det inte
+längre i någon loggrad, payload-loggen inräknad. `partyId` är en direkt identifierare mot
+Party-tjänsten och kan slås upp till personnummer, vilket är hela skälet till att UUID-maskning
+finns. Att stänga av `uuid` är ett avsteg från kärnregeln överst i den här policyn och kräver ett
+beslut, inte bara en ändring i konfigurationen. Maska `partyId` vid källan (`PiiMasker.maskUuid`,
+eller en payload-maskning som inte behåller det) innan `uuid` stängs av.
+
+Kräver dept44 **8.0.13+**; tidigare versioner har bara `enabled` och maskar alla kategorier.
 
 Se `dept44-starter-logback-logserver/readme.md` för detaljer och begränsningar.
 

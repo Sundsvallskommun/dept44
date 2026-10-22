@@ -1,7 +1,9 @@
 package se.sundsvall.dept44.util;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,10 +83,29 @@ public final class PiiMasker {
 	/** UUID in the canonical {@code 8-4-4-4-12} hexadecimal form, e.g. a {@code partyId}. */
 	private static final Pattern UUID_PATTERN = Pattern.compile("\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b");
 
+	/** The number of leading characters a masked UUID keeps, and what is written in place of the rest. */
+	private static final int UUID_KEPT_CHARACTERS = 4;
+
+	private static final String UUID_MASK_SUFFIX = "...";
+
 	/** E-mail address. Group 1 captures the local part, group 2 captures the domain. */
 	private static final Pattern EMAIL_PATTERN = Pattern.compile("([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})");
 
 	private PiiMasker() {}
+
+	/**
+	 * The kinds of personal data {@link #maskPii(String, Set)} can be asked for, so that a caller who needs one of them
+	 * left alone can say so. The names are the ones the framework's
+	 * {@code dept44.logback.pii-masking.<category>} properties are spelled with.
+	 */
+	public enum Category {
+		UUID,
+		PERSONAL_NUMBER,
+		PHONE_NUMBER,
+		EMAIL
+	}
+
+	private static final Set<Category> ALL_CATEGORIES = EnumSet.allOf(Category.class);
 
 	/**
 	 * Masks every supported PII category in the given string in one pass.
@@ -104,12 +125,73 @@ public final class PiiMasker {
 	 * @see          LogUtils#sanitizeForLogging(String)
 	 */
 	public static String maskPii(final String input) {
-		return Optional.ofNullable(input)
-			.map(PiiMasker::maskUuid)
-			.map(PiiMasker::maskPhoneNumber)
-			.map(PiiMasker::maskPersonalNumber)
-			.map(PiiMasker::maskEmail)
-			.orElse(null);
+		return maskPii(input, ALL_CATEGORIES);
+	}
+
+	/**
+	 * Masks the given kinds of personal data in the given string, leaving the kinds that are not named as they are.
+	 *
+	 * <p>
+	 * Use this where one category has to stay readable. The framework's opt-in masker uses it so that a service which
+	 * traces an incident by {@code errandId} or {@code attachmentId} can keep its UUIDs whole and still have personal
+	 * identity numbers, phone numbers and e-mail addresses masked.
+	 *
+	 * <p>
+	 * The categories are applied in the order described on {@link #maskPii(String)}. A UUID that is <em>not</em> masked
+	 * is stepped over by the phone-number and personal-number matchers, because the personal-number shape matches the
+	 * digits of one: the first two groups of {@code 12345678-1234-1234-1234-123456789012} are a ten-digit number as far
+	 * as that pattern is concerned. E-mail addresses are still read from the whole value, so that an address carrying a
+	 * UUID, such as {@code john.doe+f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com}, is masked as one address.
+	 *
+	 * @param  input      the string to mask
+	 * @param  categories the kinds of personal data to mask; nothing is masked when this is empty or {@code null}
+	 * @return            a copy with the named kinds of PII masked, or {@code null} if the input was {@code null}
+	 */
+	public static String maskPii(final String input, final Set<Category> categories) {
+		if (input == null || categories == null || categories.isEmpty()) {
+			return input;
+		}
+		// A masked UUID cannot be mistaken for anything else, so the numbers read the whole value as they always have
+		final var masked = categories.contains(Category.UUID)
+			? maskNumbers(maskUuid(input), categories)
+			: maskNumbersAroundUuids(input, categories);
+		// Read from the whole value even when the UUIDs are kept: stepping over a UUID in the local part of an e-mail
+		// address would cut the address in two, and neither half would be masked
+		return categories.contains(Category.EMAIL) ? maskEmail(masked) : masked;
+	}
+
+	/**
+	 * Masks the phone numbers and personal identity numbers named, in the parts of the value that are not a UUID. A UUID
+	 * that stays readable has to be stepped over: its digits are a personal identity number as far as that pattern is
+	 * concerned.
+	 */
+	private static String maskNumbersAroundUuids(final String input, final Set<Category> categories) {
+		final var uuids = UUID_PATTERN.matcher(input);
+		if (!uuids.find()) {
+			return maskNumbers(input, categories);
+		}
+
+		final var masked = new StringBuilder(input.length());
+		var from = 0;
+		do {
+			masked.append(maskNumbers(input.substring(from, uuids.start()), categories))
+				.append(uuids.group());
+			from = uuids.end();
+		} while (uuids.find());
+
+		return masked.append(maskNumbers(input.substring(from), categories)).toString();
+	}
+
+	/** Masks the phone numbers and then the personal identity numbers, each only if its category is named. */
+	private static String maskNumbers(final String input, final Set<Category> categories) {
+		var masked = input;
+		if (categories.contains(Category.PHONE_NUMBER)) {
+			masked = maskPhoneNumber(masked);
+		}
+		if (categories.contains(Category.PERSONAL_NUMBER)) {
+			masked = maskPersonalNumber(masked);
+		}
+		return masked;
 	}
 
 	/**
@@ -233,7 +315,8 @@ public final class PiiMasker {
 	 */
 	public static String maskUuid(final String input) {
 		return Optional.ofNullable(input)
-			.map(value -> UUID_PATTERN.matcher(value).replaceAll(match -> match.group().substring(0, 4) + "..."))
+			.map(value -> UUID_PATTERN.matcher(value)
+				.replaceAll(match -> match.group().substring(0, UUID_KEPT_CHARACTERS) + UUID_MASK_SUFFIX))
 			.orElse(null);
 	}
 

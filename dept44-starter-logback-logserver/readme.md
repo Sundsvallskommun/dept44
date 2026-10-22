@@ -51,11 +51,15 @@ If needed, provide your own `logback-spring.xml` in your service to override thi
 
 ### Properties
 
-|                Property                 | Default |                       Description                       |
-|-----------------------------------------|---------|---------------------------------------------------------|
-| `dept44.logback.logserver.disabled`     | `false` | Set to `true` to disable GELF logging                   |
-| `dept44.logback.logserver.maxchunksize` | `508`   | Max GELF chunk size in bytes                            |
-| `dept44.logback.pii-masking.enabled`    | `false` | Set to `true` to mask PII in all log output (see below) |
+|                   Property                   | Default |                       Description                       |
+|----------------------------------------------|---------|---------------------------------------------------------|
+| `dept44.logback.logserver.disabled`          | `false` | Set to `true` to disable GELF logging                   |
+| `dept44.logback.logserver.maxchunksize`      | `508`   | Max GELF chunk size in bytes                            |
+| `dept44.logback.pii-masking.enabled`         | `false` | Set to `true` to mask PII in all log output (see below) |
+| `dept44.logback.pii-masking.uuid`            | `true`  | Set to `false` to leave UUIDs whole when masking is on  |
+| `dept44.logback.pii-masking.personal-number` | `true`  | Set to `false` to leave personal identity numbers whole |
+| `dept44.logback.pii-masking.phone-number`    | `true`  | Set to `false` to leave phone numbers whole             |
+| `dept44.logback.pii-masking.email`           | `true`  | Set to `false` to leave e-mail addresses whole          |
 
 ### PII masking
 
@@ -73,6 +77,36 @@ masked:
 The masking is performed by the `%maskPii` pattern conversion word (class
 `se.sundsvall.dept44.util.PiiMasker` / `se.sundsvall.dept44.logback.PiiMaskingConverter`). When disabled it renders
 identically to `%m`, so there is no behavioural change in the default configuration.
+
+#### Turning a single category off
+
+Each category is masked unless its own property says `false`, so enabling masking masks everything, as before.
+
+The category worth a decision is **`uuid`**. A UUID is masked to its first four characters, and four hexadecimal
+characters are not enough to tie a log line to an errand, an attachment or a message. A service that traces an incident
+by `errandId` or `attachmentId` - or that masks its HTTP payloads field by field and deliberately keeps the identifiers
+- loses that ability when every UUID in every log line is truncated. Such a service can keep its identifiers and still
+have the other categories masked:
+
+```yaml
+dept44:
+  logback:
+    pii-masking:
+      enabled: true
+      uuid: false
+```
+
+With `uuid: false`, every `partyId` is logged in clear text unless the code masked it itself. The UUID rule cannot tell
+a `partyId` from an `errandId`, so the safety net no longer covers it in any log line, the payload log included. A
+`partyId` is a direct identifier against the Party service and can be looked up to a personal identity number, which is
+why UUID masking exists at all. Turning `uuid` off is an exception to the core rule of the
+[PII logging policy](../docs/pii-logging-policy.md) and needs a decision, not just a configuration change. Mask `partyId`
+at the source (`PiiMasker.maskUuid`, or a payload mask that does not keep it) before turning it off.
+
+A UUID that is **not** masked is stepped over by the phone-number and personal-identity-number rules, because the
+personal-identity-number shape matches the digits of one: the first two groups of `12345678-1234-1234-1234-123456789012`
+are a ten-digit number as far as that pattern is concerned. E-mail addresses are still read from the whole line, so an
+address carrying a UUID, such as `john.doe+f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com`, is masked as one address.
 
 > **Note:** this is distinct from `LogUtils.sanitizeForLogging`, which guards against *log injection*, not PII.
 

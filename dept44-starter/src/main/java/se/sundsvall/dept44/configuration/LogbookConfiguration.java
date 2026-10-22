@@ -112,7 +112,12 @@ public class LogbookConfiguration {
 			.bodyFilter(oversizedBodyFilter(bodyCapturePolicy));
 
 		builder.sink(new DefaultSink(
-			new JsonHttpLogFormatter(jsonMapper),
+			// Asked to validate the body, so that one that is not JSON is written as a quoted string rather than put
+			// into the entry as it is. Without it the formatter asks only whether the first and last character could
+			// begin and end a document, which a masked, truncated or replaced body can pass while being no document at
+			// all - and the entry it lands in is then unparseable, which costs that entry its fields wherever the log
+			// server reads it as JSON. The cost is one streaming parse per JSON body.
+			new JsonHttpLogFormatter(jsonMapper, true),
 			new NamedLoggerHttpLogWriter(loggerName)))
 			.responseFilters(List.of(
 				fileAttachmentFilter(),

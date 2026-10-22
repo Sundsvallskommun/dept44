@@ -109,9 +109,13 @@ tjänst som spårar en incident via `errandId`/`attachmentId` – eller som mask
 fält för fält och medvetet behåller identifierarna – förlorar det om varje UUID i varje loggrad
 kortas av. Den tjänsten kan stänga av `uuid` och ändå få övriga kategorier maskade.
 
-Maska i så fall `partyId` vid källan (`PiiMasker.maskUuid`, eller en payload-maskning som inte
-behåller det). `partyId` är en direkt identifierare mot Party-tjänsten, vilket är hela skälet till
-att UUID-maskning finns.
+Med `uuid=false` loggas varje `partyId` i klartext, om inte koden har maskat det själv.
+UUID-regeln kan inte skilja ett `partyId` från ett `errandId`, så skyddsnätet täcker det inte
+längre i någon loggrad, payload-loggen inräknad. `partyId` är en direkt identifierare mot
+Party-tjänsten och kan slås upp till personnummer, vilket är hela skälet till att UUID-maskning
+finns. Att stänga av `uuid` är ett avsteg från kärnregeln överst i den här policyn och kräver ett
+beslut, inte bara en ändring i konfigurationen. Maska `partyId` vid källan (`PiiMasker.maskUuid`,
+eller en payload-maskning som inte behåller det) innan `uuid` stängs av.
 
 Kräver dept44 **8.0.13+**; tidigare versioner har bara `enabled` och maskar alla kategorier.
 

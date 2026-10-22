@@ -192,8 +192,25 @@ class PiiMaskerTest {
 				"ssn ******-**** id 12345678-1234-1234-1234-123456789012 mail a***@b.co"));
 	}
 
+	@ParameterizedTest
+	@MethodSource("emailCarryingAUuidArguments")
+	void maskPiiMasksAnEmailAddressCarryingAKeptUuidAsOneAddress(final String input, final String expected) {
+		// Stepping over the UUID would cut such an address in two, and neither half reads as an e-mail address
+		assertThat(PiiMasker.maskPii(input, EnumSet.complementOf(EnumSet.of(Category.UUID)))).isEqualTo(expected);
+	}
+
+	private static Stream<Arguments> emailCarryingAUuidArguments() {
+		return Stream.of(
+			Arguments.of("to john.doe+f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com", "to j***@example.com"),
+			Arguments.of("to anna.svensson.f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com", "to a***@example.com"),
+			Arguments.of("to f47ac10b-58cc-4372-a567-0e02b2c3d479@reply.sundsvall.se", "to f***@reply.sundsvall.se"),
+			// The domain is kept whole when masking, and so is a UUID in it
+			Arguments.of("to john@f47ac10b-58cc-4372-a567-0e02b2c3d479.example.com",
+				"to j***@f47ac10b-58cc-4372-a567-0e02b2c3d479.example.com"));
+	}
+
 	@Test
-	void maskPiiScansALongValueWithManyKeptUuidsInOnePass() {
+	void maskPiiStaysLinearWithManyKeptUuids() {
 		// A kept UUID splits the value, and each part is masked on its own: that must stay linear in the length
 		final var value = IntStream.range(0, 10_000)
 			.mapToObj(index -> "{\"id\":\"12345678-1234-1234-1234-12345678901" + (index % 10) + "\",\"ssn\":\"900101-1234\"}")

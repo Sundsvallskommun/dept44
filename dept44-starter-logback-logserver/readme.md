@@ -96,12 +96,17 @@ dept44:
       uuid: false
 ```
 
-Mask `partyId` at the source in that case (`PiiMasker.maskUuid`, or a payload mask that does not keep it) - a `partyId`
-is a direct identifier against the Party service, which is why UUID masking exists at all.
+With `uuid: false`, every `partyId` is logged in clear text unless the code masked it itself. The UUID rule cannot tell
+a `partyId` from an `errandId`, so the safety net no longer covers it in any log line, the payload log included. A
+`partyId` is a direct identifier against the Party service and can be looked up to a personal identity number, which is
+why UUID masking exists at all. Turning `uuid` off is an exception to the core rule of the
+[PII logging policy](../docs/pii-logging-policy.md) and needs a decision, not just a configuration change. Mask `partyId`
+at the source (`PiiMasker.maskUuid`, or a payload mask that does not keep it) before turning it off.
 
-A UUID that is **not** masked is stepped over rather than scanned, because the personal-identity-number shape matches
-the digits of one: the first two groups of `12345678-1234-1234-1234-123456789012` are a ten-digit number as far as that
-pattern is concerned. Leaving UUIDs readable therefore costs nothing in correctness.
+A UUID that is **not** masked is stepped over by the phone-number and personal-identity-number rules, because the
+personal-identity-number shape matches the digits of one: the first two groups of `12345678-1234-1234-1234-123456789012`
+are a ten-digit number as far as that pattern is concerned. E-mail addresses are still read from the whole line, so an
+address carrying a UUID, such as `john.doe+f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com`, is masked as one address.
 
 > **Note:** this is distinct from `LogUtils.sanitizeForLogging`, which guards against *log injection*, not PII.
 

@@ -138,9 +138,10 @@ public final class PiiMasker {
 	 *
 	 * <p>
 	 * The categories are applied in the order described on {@link #maskPii(String)}. A UUID that is <em>not</em> masked
-	 * is stepped over rather than scanned, because the personal-number shape matches the digits of one: the first two
-	 * groups of {@code 12345678-1234-1234-1234-123456789012} are a ten-digit number as far as that pattern is
-	 * concerned. Leaving UUIDs readable therefore costs nothing in correctness.
+	 * is stepped over by the phone-number and personal-number matchers, because the personal-number shape matches the
+	 * digits of one: the first two groups of {@code 12345678-1234-1234-1234-123456789012} are a ten-digit number as far
+	 * as that pattern is concerned. E-mail addresses are still read from the whole value, so that an address carrying a
+	 * UUID, such as {@code john.doe+f47ac10b-58cc-4372-a567-0e02b2c3d479@example.com}, is masked as one address.
 	 *
 	 * @param  input      the string to mask
 	 * @param  categories the kinds of personal data to mask; nothing is masked when this is empty or {@code null}
@@ -150,45 +151,45 @@ public final class PiiMasker {
 		if (input == null || categories == null || categories.isEmpty()) {
 			return input;
 		}
-		if (categories.contains(Category.UUID)) {
-			// A masked UUID cannot be mistaken for anything else, so the rest read the whole value as they always have
-			return maskNamed(maskUuid(input), categories);
-		}
-		return maskAroundUuids(input, categories);
+		// A masked UUID cannot be mistaken for anything else, so the numbers read the whole value as they always have
+		final var masked = categories.contains(Category.UUID)
+			? maskNumbers(maskUuid(input), categories)
+			: maskNumbersAroundUuids(input, categories);
+		// Read from the whole value even when the UUIDs are kept: stepping over a UUID in the local part of an e-mail
+		// address would cut the address in two, and neither half would be masked
+		return categories.contains(Category.EMAIL) ? maskEmail(masked) : masked;
 	}
 
 	/**
-	 * Masks every category but {@link Category#UUID} in the parts of the value that are not a UUID. A UUID that stays
-	 * readable has to be stepped over: its digits are a personal identity number as far as that pattern is concerned.
+	 * Masks the phone numbers and personal identity numbers named, in the parts of the value that are not a UUID. A UUID
+	 * that stays readable has to be stepped over: its digits are a personal identity number as far as that pattern is
+	 * concerned.
 	 */
-	private static String maskAroundUuids(final String input, final Set<Category> categories) {
+	private static String maskNumbersAroundUuids(final String input, final Set<Category> categories) {
 		final var uuids = UUID_PATTERN.matcher(input);
 		if (!uuids.find()) {
-			return maskNamed(input, categories);
+			return maskNumbers(input, categories);
 		}
 
 		final var masked = new StringBuilder(input.length());
 		var from = 0;
 		do {
-			masked.append(maskNamed(input.substring(from, uuids.start()), categories))
+			masked.append(maskNumbers(input.substring(from, uuids.start()), categories))
 				.append(uuids.group());
 			from = uuids.end();
 		} while (uuids.find());
 
-		return masked.append(maskNamed(input.substring(from), categories)).toString();
+		return masked.append(maskNumbers(input.substring(from), categories)).toString();
 	}
 
-	/** Masks every category named but {@link Category#UUID}, which the callers have already answered for. */
-	private static String maskNamed(final String input, final Set<Category> categories) {
+	/** Masks the phone numbers and then the personal identity numbers, each only if its category is named. */
+	private static String maskNumbers(final String input, final Set<Category> categories) {
 		var masked = input;
 		if (categories.contains(Category.PHONE_NUMBER)) {
 			masked = maskPhoneNumber(masked);
 		}
 		if (categories.contains(Category.PERSONAL_NUMBER)) {
 			masked = maskPersonalNumber(masked);
-		}
-		if (categories.contains(Category.EMAIL)) {
-			masked = maskEmail(masked);
 		}
 		return masked;
 	}

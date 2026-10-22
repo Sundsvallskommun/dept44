@@ -62,7 +62,7 @@ public class PiiMaskingConverter extends ClassicConverter {
 
 	@Override
 	public void start() {
-		this.enabled = Boolean.parseBoolean(getContext().getProperty(ENABLED_PROPERTY));
+		this.enabled = isEnabled();
 		this.categories = readCategories();
 		super.start();
 	}
@@ -73,18 +73,24 @@ public class PiiMaskingConverter extends ClassicConverter {
 		return enabled ? PiiMasker.maskPii(message, categories) : message;
 	}
 
+	/** Read the way the categories are, so that surrounding whitespace means the same to both. */
+	private boolean isEnabled() {
+		final var value = getContext().getProperty(ENABLED_PROPERTY);
+		return value != null && Boolean.parseBoolean(value.strip());
+	}
+
 	private Set<Category> readCategories() {
-		final var categories = EnumSet.noneOf(Category.class);
+		final var categoriesSet = EnumSet.noneOf(Category.class);
 		for (final var category : Category.values()) {
 			if (!isTurnedOff(category)) {
-				categories.add(category);
+				categoriesSet.add(category);
 			}
 		}
-		return categories;
+		return categoriesSet;
 	}
 
 	private boolean isTurnedOff(final Category category) {
 		final var value = getContext().getProperty(propertyOf(category));
-		return value != null && DISABLED.equalsIgnoreCase(value.trim());
+		return value != null && DISABLED.equalsIgnoreCase(value.strip());
 	}
 }

@@ -22,9 +22,12 @@ class PiiMaskingConverterTest {
 
 	private final LoggerContext context = new LoggerContext();
 
-	@Test
-	void masksWhenEnabled() {
-		assertThat(startedConverter("true").convert(event(MESSAGE))).isEqualTo(MASKED);
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"true", "TRUE", " true "
+	})
+	void masksWhenEnabled(final String value) {
+		assertThat(startedConverter(value).convert(event(MESSAGE))).isEqualTo(MASKED);
 	}
 
 	@Test

@@ -108,7 +108,7 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was nacked by the broker: Channel closed by application")
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED));
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(NACKED, "message-id"));
 	}
 
 	@Test
@@ -121,7 +121,7 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was returned by the broker: 312 NO_ROUTE")
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(RETURNED));
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(RETURNED, "message-id"));
 	}
 
 	@Test
@@ -131,7 +131,7 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was not confirmed within PT0.2S")
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(TIMEOUT));
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(TIMEOUT, "message-id"));
 	}
 
 	@Test
@@ -141,7 +141,7 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Interrupted while waiting for the confirm of Message message-id to exchange 'exchange' with routing key 'routing-key'")
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(INTERRUPTED))
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(INTERRUPTED, "message-id"))
 			.withCauseInstanceOf(InterruptedException.class);
 		// Thread.interrupted() also clears the flag, so that it does not leak into the next test
 		assertThat(Thread.interrupted()).isTrue();
@@ -155,8 +155,17 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was not confirmed")
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED))
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(NACKED, "message-id"))
 			.withCause(cause);
+	}
+
+	@Test
+	void exceptionCarriesTheGeneratedMessageId() {
+		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(false, "nacked")));
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message()))
+			.satisfies(e -> assertThat(e.getMessageId()).isNotBlank().isEqualTo(sent.get().getMessageProperties().getMessageId()));
 	}
 
 	@Test

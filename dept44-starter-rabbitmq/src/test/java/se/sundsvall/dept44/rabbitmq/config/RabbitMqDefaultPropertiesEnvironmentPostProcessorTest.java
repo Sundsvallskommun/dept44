@@ -29,7 +29,16 @@ class RabbitMqDefaultPropertiesEnvironmentPostProcessorTest {
 		assertThat(environment.getProperty("spring.rabbitmq.template.observation-enabled")).isEqualTo("true");
 		assertThat(environment.getProperty("spring.rabbitmq.listener.simple.observation-enabled")).isEqualTo("true");
 		assertThat(environment.getProperty("spring.rabbitmq.listener.direct.observation-enabled")).isEqualTo("true");
-		assertThat(environment.getProperty("management.health.rabbit.enabled")).isEqualTo("false");
+		for (final var container : new String[] {
+			"simple", "direct"
+		}) {
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.enabled")).isEqualTo("true");
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.initial-interval")).isEqualTo("1s");
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.multiplier")).isEqualTo("2");
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.max-interval")).isEqualTo("30s");
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.max-retries")).isEqualTo("20");
+			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".prefetch")).isEqualTo("1");
+		}
 	}
 
 	@Test

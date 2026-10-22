@@ -5,11 +5,14 @@ benchmarks keep compiling as the code changes. It is never published, and the be
 
 ## Running
 
-Build dept44 first, so that the benchmarks run against the current code:
+Build the module and the modules it depends on first, so that the benchmarks run against the current code. Do it
+again after a change to `dept44-starter` or `dept44-starter-logback-logserver`:
 
 ```bash
-mvn install -DskipTests
+mvn install -pl dept44-benchmarks -am -DskipTests
 ```
+
+A plain `mvn install -DskipTests` does not work, since dept44-example then fails its coverage check.
 
 Run every benchmark. This takes about an hour:
 
@@ -30,8 +33,7 @@ mvn -pl dept44-benchmarks exec:exec -Djmh.args="-f 1 -wi 1 -i 1 -w 200ms -r 200m
 ```
 
 Other JMH options go in `jmh.args` as well. For example, `-p bodyKiB=100` runs a single value of a parameter, and
-`-h` lists the options. After a change to `dept44-starter` or `dept44-starter-logback-logserver`, install it again,
-for example with `mvn install -pl dept44-starter -DskipTests`, before running.
+`-h` lists the options.
 
 ## Reading the results
 

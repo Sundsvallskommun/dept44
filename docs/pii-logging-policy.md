@@ -44,7 +44,7 @@ För ett värde vars typ är känd kan du använda en riktad metod – tydligare
 |               Metod                |                            Använd för                            |
 |------------------------------------|------------------------------------------------------------------|
 | `PiiMasker.maskPii(s)`             | Generellt – godtycklig sträng som kan innehålla flera kategorier |
-| `PiiMasker.maskPii(s, kategorier)` | Som ovan, men bara de kategorier som anges (8.0.13+)             |
+| `PiiMasker.maskPii(s, kategorier)` | Som ovan, men bara de kategorier som anges (8.1.0+)              |
 | `PiiMasker.maskUuid(s)`            | Ett `partyId`/UUID                                               |
 | `PiiMasker.maskPersonalNumber(s)`  | Ett personnummer / `legalId`                                     |
 | `PiiMasker.maskEmail(s)`           | En e-postadress                                                  |
@@ -123,19 +123,55 @@ finns. Att stänga av `uuid` är ett avsteg från kärnregeln överst i den här
 beslut, inte bara en ändring i konfigurationen. Maska `partyId` vid källan (`PiiMasker.maskUuid`,
 eller en payload-maskning som inte behåller det) innan `uuid` stängs av.
 
-Kräver dept44 **8.0.13+**; tidigare versioner har bara `enabled` och maskar alla kategorier.
+Kräver dept44 **8.1.0+**; tidigare versioner har bara `enabled` och maskar alla kategorier.
 
 Se `dept44-starter-logback-logserver/readme.md` för detaljer och begränsningar.
+
+### Payload-loggen maskas med en vitlista
+
+Från dept44 **8.1.0** maskar `dept44-starter` alla bodies i payload-loggen
+(`se.sundsvall.dept44.payload`) med en vitlista som är påslagen som default. Det gäller inkommande
+anrop och utgående anrop via Feign, WebClient och WebServiceTemplate. Bara värdena i de fält som
+står på listan loggas. Alla andra värden i en JSON-body ersätts med `[masked]`, oavsett typ, och en
+body som inte är JSON loggas utan body. Fältnamnen behålls, så att strukturen syns. Listan är tom
+som default, så inga värden loggas förrän tjänsten själv namnger fälten:
+
+```yaml
+logbook:
+  body-filters:
+    allowlist:
+      paths:
+        - '$..errandId'
+        - '$..status'
+```
+
+Vitlista bara fält som du vet inte innehåller persondata, till exempel ärende-id och statusar.
+`partyId`, personnummer, namn, adresser och fritextfält hör inte hemma på listan. En path pekar på
+ett fält med ett enskilt värde, så ett fält som läggs till i ett objekt senare loggas inte förrän
+någon lägger till det på listan.
+
+Med `logbook.body-filters.allowlist.enabled: false` loggas hela bodies, som före 8.1.0. Det är ett
+avsteg från kärnregeln och passar bara en tjänst vars payloads inte innehåller persondata.
+
+Logback-maskeraren körs även över payload-loggen. Med `uuid` påslaget kortas därför också
+vitlistade UUID:n av, till exempel ett `errandId`. En tjänst som behöver dem i klartext kan stänga
+av `uuid` enligt avsnittet ovan. Vitlistan ser då fortfarande till att ett `partyId` i en payload
+inte loggas, så länge det inte står på listan. I övriga loggrader gäller fortfarande att koden själv
+maskar det.
+
+Se `dept44-starter/README.md` för syntaxen och fler inställningar.
 
 ## Checklista vid PR
 
 - [ ] Loggar har granskats för PII – inga `partyId`, personnummer/`legalId`, namn, e-post eller
   telefonnummer i klartext.
 - [ ] Där PII loggas är värdet maskat med `PiiMasker` (inte enbart `sanitizeForLogging`).
+- [ ] Nya fält på vitlistan (`logbook.body-filters.allowlist.paths`) innehåller ingen persondata.
 
 ## Referenser
 
 - `se.sundsvall.dept44.util.PiiMasker` (`dept44-starter`)
 - `se.sundsvall.dept44.util.LogUtils#sanitizeForLogging` – *endast* log injection
 - `dept44-starter-logback-logserver/readme.md` – ramverkets opt-in-maskerare
+- `dept44-starter/README.md` – vitlistan för payload-loggen (`logbook.body-filters.allowlist`)
 

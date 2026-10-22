@@ -39,6 +39,7 @@
 		<module>dept44-starter-scheduler</module>
 		<module>dept44-starter-jpa</module>
 		<module>dept44-starter-jpa-test</module>
+		<module>dept44-benchmarks</module>
 	</modules>
 	<scm>
 		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
@@ -73,6 +74,7 @@
 		<json-unit.version>6.3.0</json-unit.version>
 		<logback-gelf.version>6.1.2</logback-gelf.version>
 		<janino.version>3.1.12</janino.version>
+		<jmh.version>1.37</jmh.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
 		<spring-boot-admin.version>4.1.4</spring-boot-admin.version>
@@ -95,6 +97,7 @@
 		<spotless-maven-plugin-version>3.10.4</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.16.0</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.16.0</maven-plugin-plugin.version>
+		<exec-maven-plugin.version>3.6.4</exec-maven-plugin.version>
 		<lombok.version>1.18.48</lombok.version>
 		<spotbugs-annotations.version>4.10.5</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.12.0</central-publishing-maven-plugin.version>
@@ -274,6 +277,17 @@
 				<groupId>org.apache.maven.plugin-tools</groupId>
 				<artifactId>maven-plugin-annotations</artifactId>
 				<version>${maven-plugin-annotations.version}</version>
+			</dependency>
+			<!-- Benchmarks -->
+			<dependency>
+				<groupId>org.openjdk.jmh</groupId>
+				<artifactId>jmh-core</artifactId>
+				<version>${jmh.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openjdk.jmh</groupId>
+				<artifactId>jmh-generator-annprocess</artifactId>
+				<version>${jmh.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

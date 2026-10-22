@@ -10,7 +10,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import static java.lang.Boolean.TRUE;
+import static java.lang.Boolean.FALSE;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -106,30 +106,30 @@ public class Dept44RabbitPublisher {
 			return amqpMessage;
 		}, correlationData);
 
-		awaitConfirm(describe(message, messageId), correlationData);
+		awaitConfirm(messageId, describe(message, messageId), correlationData);
 	}
 
-	private void awaitConfirm(final String description, final CorrelationData correlationData) {
+	private void awaitConfirm(final String messageId, final String description, final CorrelationData correlationData) {
 		final CorrelationData.Confirm confirm;
 		try {
 			confirm = correlationData.getFuture().get(confirmTimeout.toMillis(), MILLISECONDS);
 		} catch (final TimeoutException _) {
-			throw new RabbitPublishException(TIMEOUT, "%s was not confirmed within %s".formatted(description, confirmTimeout));
+			throw new RabbitPublishException(TIMEOUT, messageId, "%s was not confirmed within %s".formatted(description, confirmTimeout));
 		} catch (final InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new RabbitPublishException(INTERRUPTED, "Interrupted while waiting for the confirm of %s".formatted(description), e);
+			throw new RabbitPublishException(INTERRUPTED, messageId, "Interrupted while waiting for the confirm of %s".formatted(description), e);
 		} catch (final ExecutionException e) {
 			// Spring AMQP completes the future with a nack, not exceptionally, when the channel closes
-			throw new RabbitPublishException(NACKED, "%s was not confirmed".formatted(description), e.getCause());
+			throw new RabbitPublishException(NACKED, messageId, "%s was not confirmed".formatted(description), e.getCause());
 		}
 
 		if (!confirm.ack()) {
-			throw new RabbitPublishException(NACKED, "%s was nacked by the broker: %s".formatted(description, confirm.reason()));
+			throw new RabbitPublishException(NACKED, messageId, "%s was nacked by the broker: %s".formatted(description, confirm.reason()));
 		}
 		// The broker sends a return before the ack, and Spring AMQP sets it before it completes the future
 		final var returned = correlationData.getReturned();
 		if (nonNull(returned)) {
-			throw new RabbitPublishException(RETURNED, "%s was returned by the broker: %d %s".formatted(description, returned.getReplyCode(), returned.getReplyText()));
+			throw new RabbitPublishException(RETURNED, messageId, "%s was returned by the broker: %d %s".formatted(description, returned.getReplyCode(), returned.getReplyText()));
 		}
 	}
 
@@ -149,7 +149,7 @@ public class Dept44RabbitPublisher {
 		if (!connectionFactory.isPublisherReturns()) {
 			throw new IllegalStateException("Dept44RabbitPublisher requires spring.rabbitmq.publisher-returns=true");
 		}
-		if (!TRUE.equals(rabbitTemplate.isMandatoryFor(PROBE))) {
+		if (FALSE.equals(rabbitTemplate.isMandatoryFor(PROBE))) {
 			throw new IllegalStateException("Dept44RabbitPublisher requires spring.rabbitmq.template.mandatory=true");
 		}
 	}

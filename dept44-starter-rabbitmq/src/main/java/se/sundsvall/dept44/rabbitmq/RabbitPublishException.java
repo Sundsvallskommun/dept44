@@ -11,19 +11,29 @@ public class RabbitPublishException extends AmqpException {
 	private static final long serialVersionUID = 1L;
 
 	private final Reason reason;
+	private final String messageId;
 
-	public RabbitPublishException(final Reason reason, final String message) {
+	public RabbitPublishException(final Reason reason, final String messageId, final String message) {
 		super(message);
 		this.reason = reason;
+		this.messageId = messageId;
 	}
 
-	public RabbitPublishException(final Reason reason, final String message, final Throwable cause) {
+	public RabbitPublishException(final Reason reason, final String messageId, final String message, final Throwable cause) {
 		super(message, cause);
 		this.reason = reason;
+		this.messageId = messageId;
 	}
 
 	public Reason getReason() {
 		return reason;
+	}
+
+	/**
+	 * @return the message id the message was published with, the generated one when the service set none
+	 */
+	public String getMessageId() {
+		return messageId;
 	}
 
 	public enum Reason {

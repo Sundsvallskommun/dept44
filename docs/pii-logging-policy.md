@@ -83,6 +83,12 @@ LOG.info("Hittade {} poster utan partyId", records.size());   // ok – ingen PI
 dept44.logback.pii-masking.enabled=true
 ```
 
+Före dept44 **8.1.0** maskades inte GELF, bara konsolen. GELF-layouterna var konfigurerade med
+namn som logback-gelf 6 inte känner till, så encodern använde sina egna layouter utan maskering. En
+tjänst med egen `logback-spring.xml` som har kopierat GELF-encodern måste byta `shortPatternLayout`
+och `fullPatternLayout` mot `shortMessageLayout` och `fullMessageLayout`. Varningen
+`Ignoring unknown property [shortPatternLayout]` vid start visar felet.
+
 Detta är ett skyddsnät (defense-in-depth), **inte** en ersättning för att maska vid källan:
 
 - Det maskar bara det renderade **meddelandet**. MDC-värden, caller data och stack traces som

@@ -54,8 +54,9 @@
                     <!-- The names logback-gelf 6 reads. Logback ignores an element it does not know, and the encoder then
                          falls back to its own %m layouts, without masking -->
                     <shortMessageLayout class="ch.qos.logback.classic.PatternLayout">
-                        <!-- Only display the first 100 chars in the short message -->
-                        <pattern>%.-100maskPii%nopex</pattern>
+                        <!-- Only display the first 100 chars in the short message. The option, rather than %.-100, makes
+                             %maskPii mask only what it takes to know them, not the whole message -->
+                        <pattern>%maskPii{100}%nopex</pattern>
                     </shortMessageLayout>
                     <fullMessageLayout class="ch.qos.logback.classic.PatternLayout">
                         <pattern>%maskPii%n</pattern>

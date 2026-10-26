@@ -6,6 +6,7 @@ import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import java.util.EnumSet;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -113,12 +114,91 @@ class PiiMaskingConverterTest {
 		assertThat(layout.doLayout(event(MESSAGE))).isEqualTo(MASKED);
 	}
 
+	/**
+	 * Values are placed across the limit and across the end of every window the converter may mask, after text that
+	 * masking leaves alone, shortens or lengthens, and after a value cut in two. The step is a prime that divides the
+	 * length of no filler, so that a value lands in a different place of the filler each time.
+	 */
+	@ParameterizedTest
+	@ValueSource(booleans = {
+		true, false
+	})
+	void returnsTheBeginningOfTheWholeMessageMaskedWithALimit(final boolean uuidsMasked) {
+		context.putProperty(PiiMaskingConverter.propertyOf(Category.UUID), String.valueOf(uuidsMasked));
+		final var categories = uuidsMasked ? EnumSet.allOf(Category.class) : EnumSet.complementOf(EnumSet.of(Category.UUID));
+		final var converter = startedConverter("true", "100");
+		final var fillers = List.of("ordinary words ", "f47ac10b-58cc-4372-a567-0e02b2c3d479 ", "a@b.se ", "a".repeat(64) + "@b.se ");
+		final var values = List.of("anna.andersson@sundsvall.se", "199001011234", "900101-1234", "070-123 45 67", "+46 70 123 45 67",
+			"f47ac10b-58cc-4372-a567-0e02b2c3d479", "2024-03-08 09:15:22");
+
+		for (final var filler : fillers) {
+			for (final var value : values) {
+				for (var offset = 0; offset < 2400; offset += 17) {
+					final var message = filler.repeat(offset / filler.length() + 1).substring(0, offset) + value + " " + filler.repeat(10);
+					final var whole = PiiMasker.maskPii(message, categories);
+
+					assertThat(converter.convert(event(message)))
+						.as("%s after %d characters of '%s'", value, offset, filler)
+						.isEqualTo(whole.substring(0, Math.min(100, whole.length())));
+				}
+			}
+		}
+	}
+
+	@Test
+	void masksAMessageShorterThanTheLimitWhole() {
+		assertThat(startedConverter("true", "100").convert(event(MESSAGE))).isEqualTo(MASKED);
+	}
+
+	@Test
+	void cutsAMessageThatIsNotMaskedAtTheLimit() {
+		assertThat(startedConverter("false", "10").convert(event(MESSAGE))).isEqualTo(MESSAGE.substring(0, 10));
+	}
+
+	@Test
+	void returnsNoMessageForAnEventWithout() {
+		assertThat(startedConverter("true", "100").convert(event(null))).isNull();
+		assertThat(startedConverter("false", "100").convert(event(null))).isNull();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"many", "-1", ""
+	})
+	void ignoresALimitThatIsNotANumberOfCharacters(final String option) {
+		final var converter = startedConverter("true", option);
+
+		assertThat(converter.convert(event(MESSAGE))).isEqualTo(MASKED);
+		assertThat(context.getStatusManager().getCopyOfStatusList())
+			.anySatisfy(status -> assertThat(status.getMessage()).contains("Ignoring the option of %maskPii{" + option + "}"));
+	}
+
+	@Test
+	void readsTheLimitThroughPatternLayout() {
+		context.putProperty(PiiMaskingConverter.ENABLED_PROPERTY, "true");
+
+		final var layout = new PatternLayout();
+		layout.setContext(context);
+		layout.getInstanceConverterMap().put("maskPii", PiiMaskingConverter::new);
+		layout.setPattern("%maskPii{20}");
+		layout.start();
+
+		assertThat(layout.doLayout(event(MESSAGE))).isEqualTo(MASKED.substring(0, 20));
+	}
+
 	private PiiMaskingConverter startedConverter(final String enabledValue) {
+		return startedConverter(enabledValue, null);
+	}
+
+	private PiiMaskingConverter startedConverter(final String enabledValue, final String option) {
 		if (enabledValue != null) {
 			context.putProperty(PiiMaskingConverter.ENABLED_PROPERTY, enabledValue);
 		}
 		final var converter = new PiiMaskingConverter();
 		converter.setContext(context);
+		if (option != null) {
+			converter.setOptionList(List.of(option));
+		}
 		converter.start();
 		return converter;
 	}

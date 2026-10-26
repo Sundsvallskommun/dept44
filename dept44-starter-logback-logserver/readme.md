@@ -84,6 +84,11 @@ The masking is performed by the `%maskPii` pattern conversion word (class
 `se.sundsvall.dept44.util.PiiMasker` / `se.sundsvall.dept44.logback.PiiMaskingConverter`). When disabled it renders
 identically to `%m`, so there is no behavioural change in the default configuration.
 
+`%maskPii{100}` returns at most 100 characters, the same first 100 as `%.-100maskPii`, but masks only as much of the
+message as that takes, about a thousand characters, instead of all of it. The GELF short message uses it, since a
+payload line can be a megabyte. A service with its own `logback-spring.xml` that copied `%.-100maskPii` can change it to
+`%maskPii{100}`.
+
 #### Turning a single category off
 
 Each category is masked unless its own property says `false`, so enabling masking masks everything, as before.

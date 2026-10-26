@@ -148,7 +148,12 @@ logbook:
 Vitlista bara fält som du vet inte innehåller persondata, till exempel ärende-id och statusar.
 `partyId`, personnummer, namn, adresser och fritextfält hör inte hemma på listan. En path pekar på
 ett fält med ett enskilt värde, så ett fält som läggs till i ett objekt senare loggas inte förrän
-någon lägger till det på listan.
+någon lägger till det på listan. Undantaget är en array av enskilda värden: en path till den loggar
+alla värden i den, till exempel alla adresser i `$..recipients`.
+
+Fältnamn loggas alltid, även när de är data. En map med personnummer eller e-postadresser som
+nycklar loggas alltså med nycklarna i klartext, eftersom vitlistan inte kan skilja en sådan map från
+ett objekt. Logback-maskeraren ovan maskar de kategorier den känner till var de än står i raden.
 
 Med `logbook.body-filters.allowlist.enabled: false` loggas hela bodies, som före 8.1.0. Det är ett
 avsteg från kärnregeln och passar bara en tjänst vars payloads inte innehåller persondata.

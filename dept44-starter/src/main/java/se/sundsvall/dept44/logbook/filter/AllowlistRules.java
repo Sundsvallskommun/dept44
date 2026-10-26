@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * The paths of {@code logbook.body-filters.allowlist.paths}, compiled into something a walk of a body can ask per
@@ -13,26 +12,35 @@ import java.util.regex.Pattern;
  * <p>
  * A path is the part of JSONPath that a field can be named by, and no more. {@code $} is the root, {@code .field} a
  * child, {@code ..field} a descendant at any depth, {@code *} any one field, and {@code [*]} the elements of an array.
- * A predicate, a slice, an index or a function is refused when the paths are compiled, rather than quietly never
- * matching.
+ * A field whose name holds a '.' is named in brackets: {@code $.Data['PriorityInfo.Priority']} or
+ * {@code $..["PriorityInfo.Priority"]}. A predicate, a slice, an index, a union or a function is refused when the paths
+ * are compiled, rather than quietly never matching.
  * <p>
  * {@code $..errandNumber} therefore keeps that field wherever it occurs, and {@code $.content[*].title} keeps the title
  * of the rows of a page and nothing else. Every path must start with {@code $}, so that the difference between the two
  * is visible on every line of a list that people maintain by hand.
  * <p>
  * Array nesting is transparent, so {@code [*]} may be left out: {@code $.content.title} and {@code $.content[*].title}
- * are the same path.
+ * are the same path. It follows that {@code [*]} does not require an array. {@code $[*].name} also keeps the
+ * {@code name} of an object at the root, and {@code $.content[*].title} the {@code title} of a {@code content} object.
+ * A
+ * path is anchored by its fields, not by its arrays.
  * <p>
- * A path names a field that holds a single value. A path to an object or an array keeps nothing below it, so that a
- * field added to it later is not logged without anyone asking for it. {@code $.address..*} keeps every value below
- * {@code address}.
+ * A path only holds one {@code ..}. Matching a path with several costs, for every value, a power of how deeply the body
+ * nests, and the sender decides that.
+ * <p>
+ * A path names a field that holds a single value, or an array of single values, which it then keeps all of. A path to
+ * an object, or to an array of objects, keeps nothing below it, so that a field added to it later is not logged without
+ * anyone asking for it. {@code $.address..*} keeps every value below {@code address}.
  */
 final class AllowlistRules {
 
 	private static final String INVALID_PATH = "Invalid path '%s' in logbook.body-filters.allowlist.paths: %s";
+	private static final String UNSUPPORTED_BRACKET = "a predicate, a slice or an index cannot be used. Only '[*]' and a quoted name such as ['a.b'] are supported";
+	private static final String NO_FIELD_AFTER_ROOT = "it must continue with '.', '..' or '[' after the root";
 
-	/** A {@code [*]} directly followed by a field name, which removing it would join to the field before it. */
-	private static final Pattern ELEMENTS_BEFORE_FIELD = Pattern.compile("\\[\\*](?![.\\[]|$)");
+	/** The elements of an array, which the walk of a body does not count as a field of their own. */
+	private static final String ELEMENTS = "[*]";
 
 	/** Stands for {@code ..} in a compiled rule: any number of fields, including none, before the next segment. */
 	private static final String DESCENDANT = "..";
@@ -123,31 +131,33 @@ final class AllowlistRules {
 			throw invalid(path, "it is not a path. Write '$..%s' to keep the field wherever it occurs, or anchor it from the root".formatted(path));
 		}
 
-		final var withElements = path.substring(1);
-		if (ELEMENTS_BEFORE_FIELD.matcher(withElements).find()) {
-			throw invalid(path, "'[*]' must be followed by '.' or end the path");
-		}
-		final var fields = withElements.replace("[*]", "");
-		refuse(fields, path);
-
+		// Read from left to right rather than split on '.', since a quoted name may hold a '.', a '[*]' or a '('
 		final var segments = new ArrayList<String>();
-		var i = 0;
-		while (i < fields.length()) {
-			if (fields.startsWith(DESCENDANT, i)) {
+		var i = 1;
+		while (i < path.length()) {
+			if (path.startsWith(ELEMENTS, i)) {
+				// Array nesting is transparent, so the marker adds no segment of its own
+				i = afterElements(path, i);
+			} else if (isQuotedName(path, i)) {
+				i = readQuotedName(path, i, segments);
+			} else if (path.startsWith(DESCENDANT, i)) {
+				if (segments.contains(DESCENDANT)) {
+					throw invalid(path, "only one '..' can be used, since each one more multiplies what matching a deeply nested body costs");
+				}
 				segments.add(DESCENDANT);
-				i += 2;
-			} else if (fields.charAt(i) == '.') {
-				i++;
+				i += DESCENDANT.length();
+				i = isQuotedName(path, i) ? readQuotedName(path, i, segments) : readName(path, i, segments);
+			} else if (path.charAt(i) == '.') {
+				i = readName(path, i + 1, segments);
+			} else if (path.charAt(i) == '[') {
+				throw invalid(path, UNSUPPORTED_BRACKET);
 			} else {
-				throw invalid(path, "a field must follow a '.'");
+				// Every segment ends where the next can begin, so only the first character after the root can get here
+				throw invalid(path, NO_FIELD_AFTER_ROOT);
 			}
-			final var end = indexOfDot(fields, i);
-			final var field = fields.substring(i, end);
-			if (field.isEmpty()) {
-				throw invalid(path, "it names an empty field");
-			}
-			segments.add(field);
-			i = end;
+		}
+		if (segments.isEmpty()) {
+			throw invalid(path, NO_FIELD_AFTER_ROOT);
 		}
 
 		// A '..' is always followed by a field, since reading one is what the loop does next, so the last segment of a
@@ -155,21 +165,72 @@ final class AllowlistRules {
 		return segments.toArray(String[]::new);
 	}
 
-	private static int indexOfDot(final String fields, final int from) {
-		final var dot = fields.indexOf('.', from);
-		return dot < 0 ? fields.length() : dot;
+	private static int afterElements(final String path, final int from) {
+		final var end = from + ELEMENTS.length();
+		if (!atBoundary(path, end)) {
+			throw invalid(path, "'[*]' must be followed by '.' or end the path");
+		}
+		return end;
 	}
 
-	private static void refuse(final String fields, final String path) {
-		if (fields.indexOf('[') >= 0 || fields.indexOf(']') >= 0) {
-			throw invalid(path, "a predicate, a slice or an index cannot be used. Only '[*]' is supported, and it may be left out");
+	private static int readName(final String path, final int from, final List<String> segments) {
+		var end = from;
+		while (!atBoundary(path, end)) {
+			end++;
 		}
-		if (fields.indexOf('(') >= 0) {
+		final var name = path.substring(from, end);
+		if (name.isEmpty()) {
+			throw invalid(path, "it names an empty field");
+		}
+		if (name.indexOf(']') >= 0) {
+			throw invalid(path, UNSUPPORTED_BRACKET);
+		}
+		if (name.indexOf('(') >= 0) {
 			throw invalid(path, "a function cannot be used");
 		}
-		if (!fields.startsWith(".")) {
-			throw invalid(path, "it must continue with '.' or '..' after the root");
+		segments.add(name);
+		return end;
+	}
+
+	/**
+	 * Reads a name in brackets, such as {@code ['PriorityInfo.Priority']}, which is how a field whose name holds a '.' is
+	 * named. Escapes are not read, so a name that holds a quote is written in the other kind.
+	 */
+	private static int readQuotedName(final String path, final int from, final List<String> segments) {
+		final var quote = path.charAt(from + 1);
+		final var close = path.indexOf(quote + "]", from + 2);
+		if (close < 0) {
+			throw invalid(path, "a quoted name must end with %c]".formatted(quote));
 		}
+		final var name = path.substring(from + 2, close);
+		if (name.isEmpty()) {
+			throw invalid(path, "it names an empty field");
+		}
+		// A union such as ['a','b'] ends up here too, as a name that holds its own quote
+		if (name.indexOf(quote) >= 0 || name.indexOf('\\') >= 0) {
+			throw invalid(path, "a quoted name cannot hold its own quote or a '\\'. Write a name that holds ' in double quotes, and the other way around");
+		}
+		// They stand for the wildcard and the descendant in a compiled rule, so a field by either name would keep far more
+		if (ANY.equals(name) || DESCENDANT.equals(name)) {
+			throw invalid(path, "a quoted name cannot be '*' or '..'");
+		}
+		final var end = close + 2;
+		if (!atBoundary(path, end)) {
+			throw invalid(path, "a quoted name must be followed by '.', '[' or end the path");
+		}
+		segments.add(name);
+		return end;
+	}
+
+	private static boolean isQuotedName(final String path, final int at) {
+		return path.startsWith("['", at) || path.startsWith("[\"", at);
+	}
+
+	/**
+	 * @return whether a segment that ends at {@code at} is followed by the start of another, or by the end of the path
+	 */
+	private static boolean atBoundary(final String path, final int at) {
+		return at == path.length() || path.charAt(at) == '.' || path.charAt(at) == '[';
 	}
 
 	private static IllegalArgumentException invalid(final String path, final String reason) {

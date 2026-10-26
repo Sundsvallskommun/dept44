@@ -93,6 +93,16 @@ class BodyCapturePolicyTest {
 		assertThat(policy.omittedNote(null)).isEqualTo("<body omitted: larger than 100 bytes>");
 	}
 
+	@Test
+	void isOmittedNote() {
+		assertThat(BodyCapturePolicy.isOmittedNote(policy.omittedNote("application/json"))).isTrue();
+		assertThat(BodyCapturePolicy.isOmittedNote(new BodyCapturePolicy(1048576).omittedNote("application/problem+json"))).isTrue();
+		assertThat(BodyCapturePolicy.isOmittedNote("{ \"bodyOmitted\" : \"larger than 100 bytes\" }")).isTrue();
+
+		assertThat(BodyCapturePolicy.isOmittedNote("{\"bodyOmitted\":\"Anna Andersson\"}")).isFalse();
+		assertThat(BodyCapturePolicy.isOmittedNote("{\"bodyOmitted\":\"larger than 100 bytes\",\"name\":\"Anna\"}")).isFalse();
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"application/x-www-form-urlencoded", "multipart/form-data; boundary=abc", "multipart/mixed", "not a media type"

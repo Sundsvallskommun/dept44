@@ -12,8 +12,11 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AllowlistBodyFilterTest {
 
@@ -94,6 +97,25 @@ class AllowlistBodyFilterTest {
 				{"content":[{"id":"1","content":"[masked]"}],"totalElements":1}""");
 	}
 
+	/**
+	 * JSON does not tell a map from an object, so a key that is data is logged like the name of a field.
+	 */
+	@Test
+	void keepsTheKeysOfAMap() {
+		assertThat(filter("$..id").filter(JSON, """
+			{"byPersonalNumber":{"199001011234":{"id":"1","name":"Anna"}}}"""))
+			.isEqualTo("""
+				{"byPersonalNumber":{"199001011234":{"id":"1","name":"[masked]"}}}""");
+	}
+
+	@Test
+	void logsAKeptNumberAsItWasSent() {
+		assertThat(filter("$..amount").filter(JSON, """
+			{"amount":[100.50,0.10000000000000000001,12345678901234567890]}"""))
+			.isEqualTo("""
+				{"amount":[100.50,0.10000000000000000001,12345678901234567890]}""");
+	}
+
 	@Test
 	void dropsABodyThatIsNotJson() {
 		assertThat(filter().filter("text/plain", "Testing! :)")).isEmpty();
@@ -139,6 +161,30 @@ class AllowlistBodyFilterTest {
 
 		assertThat(appender.list).singleElement()
 			.satisfies(event -> assertThat(event.getFormattedMessage()).doesNotContain("Anna"));
+	}
+
+	/**
+	 * A fault of the filter's own is not taken for a body that is not JSON: it is withheld all the same, but warned about.
+	 */
+	@Test
+	void withholdsTheBodyAndWarnsWhenTheFilterItselfFails() {
+		final var rules = mock(AllowlistRules.class);
+		when(rules.keeps(anyList())).thenThrow(new IllegalStateException("A fault"));
+		final var logger = (Logger) LoggerFactory.getLogger(AllowlistBodyFilter.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			assertThat(new AllowlistBodyFilter(rules, MAX_SIZE).filter(JSON, "{\"name\":\"Anna\"}"))
+				.isEqualTo("{\"bodyOmitted\":\"the allowlist could not be applied\"}");
+		} finally {
+			logger.detachAppender(appender);
+		}
+
+		assertThat(appender.list).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.WARN);
+			assertThat(event.getThrowableProxy().getClassName()).isEqualTo(IllegalStateException.class.getName());
+		});
 	}
 
 	@Test
@@ -224,6 +270,22 @@ class AllowlistBodyFilterTest {
 				{"sender":{"name":"[masked]","address":"[masked]"}}""");
 	}
 
+	/**
+	 * Array nesting is transparent both ways, so the element marker does not require an array either.
+	 */
+	@Test
+	void keepsAFieldOfAnObjectForAPathThroughAnArray() {
+		assertThat(filter("$[*].name").filter(JSON, """
+			{"name":"Kept","id":"1"}"""))
+			.isEqualTo("""
+				{"name":"Kept","id":"[masked]"}""");
+
+		assertThat(filter("$.content[*].title").filter(JSON, """
+			{"content":{"title":"Kept"}}"""))
+			.isEqualTo("""
+				{"content":{"title":"Kept"}}""");
+	}
+
 	@Test
 	void treatsArrayNestingAsTransparentSoTheElementMarkerIsOptional() {
 		final var withMarker = filter("$.content[*].title").filter(JSON, """
@@ -258,23 +320,80 @@ class AllowlistBodyFilterTest {
 
 	@Test
 	void refusesAPathItCannotRead() {
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$.a[?(@.b=='c')].d"))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a[?(@.b=='c')].d"))
 			.withMessage("Invalid path '$.a[?(@.b=='c')].d' in logbook.body-filters.allowlist.paths: a predicate, a slice or an index cannot be used. "
-				+ "Only '[*]' is supported, and it may be left out");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$.a[0].b"))
+				+ "Only '[*]' and a quoted name such as ['a.b'] are supported");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a[0].b"))
 			.withMessageContaining("a predicate, a slice or an index cannot be used");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$.content[*]title"))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.content[*]title"))
 			.withMessageContaining("'[*]' must be followed by '.' or end the path");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$.a.length()"))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a.length()"))
 			.withMessageContaining("a function cannot be used");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$.."))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.."))
 			.withMessageContaining("it names an empty field");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("$a.b"))
-			.withMessageContaining("it must continue with '.' or '..' after the root");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter("title"))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..a..id"))
+			.withMessageContaining("only one '..' can be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..a['b']..id"))
+			.withMessageContaining("only one '..' can be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$a.b"))
+			.withMessageContaining("it must continue with '.', '..' or '[' after the root");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$[*]"))
+			.withMessageContaining("it must continue with '.', '..' or '[' after the root");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("title"))
 			.withMessageContaining("it is not a path. Write '$..title'");
-		assertThatIllegalArgumentException().isThrownBy(() -> filter(" "))
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter(" "))
 			.withMessageContaining("a path cannot be blank");
+	}
+
+	@Test
+	void keepsAFieldWhoseNameHoldsADotWhenTheNameIsQuoted() {
+		final var body = """
+			{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"a@b.c","PriorityInfo":{"Priority":"nested"}}}""";
+
+		assertThat(filter("$.Data['PriorityInfo.Priority']").filter(JSON, body))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"[masked]","PriorityInfo":{"Priority":"[masked]"}}}""");
+		assertThat(filter("$..[\"PriorityInfo.Priority\"]").filter(JSON, body))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"[masked]","PriorityInfo":{"Priority":"[masked]"}}}""");
+	}
+
+	@Test
+	void readsTheDotsOfAnUnquotedPathAsSteps() {
+		assertThat(filter("$.Data.PriorityInfo.Priority").filter(JSON, """
+			{"Data":{"PriorityInfo.Priority":"IT4","PriorityInfo":{"Priority":"nested"}}}"""))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"[masked]","PriorityInfo":{"Priority":"nested"}}}""");
+	}
+
+	@Test
+	void readsAQuotedNameAsItIsWritten() {
+		assertThat(filter("$['a.b']", "$['c'][*]['d[*]e']").filter(JSON, """
+			{"a.b":"1","a":{"b":"2"},"c":[{"d[*]e":"3","f":"4"}]}"""))
+			.isEqualTo("""
+				{"a.b":"1","a":{"b":"[masked]"},"c":[{"d[*]e":"3","f":"[masked]"}]}""");
+	}
+
+	@Test
+	void refusesAQuotedNameItCannotRead() {
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b','c']"))
+			.withMessageContaining("a quoted name cannot hold its own quote");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['it's']"))
+			.withMessageContaining("a quoted name cannot hold its own quote");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b\\'c']"))
+			.withMessageContaining("a quoted name cannot hold its own quote or a '\\'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b'"))
+			.withMessageContaining("a quoted name must end with ']");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['']"))
+			.withMessageContaining("it names an empty field");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$['*']"))
+			.withMessageContaining("a quoted name cannot be '*' or '..'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..['..']"))
+			.withMessageContaining("a quoted name cannot be '*' or '..'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b']c"))
+			.withMessageContaining("a quoted name must be followed by '.', '[' or end the path");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a.['b']"))
+			.withMessageContaining("it names an empty field");
 	}
 
 	@ParameterizedTest

@@ -65,6 +65,8 @@ import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content
 })
 public class LogbookConfiguration {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(LogbookConfiguration.class);
+
 	private final String loggerName;
 	private final Set<String> excludedPaths;
 	private final int maxBodySizeToLog;
@@ -156,6 +158,7 @@ public class LogbookConfiguration {
 			// After every other body filter, so that only what the allowlist names is logged, whatever they leave
 			builder.bodyFilter(allowlistFilter);
 		}
+		logAllowlist(allowlist, xPathFilters);
 
 		// Truncated last: a body cut short is no longer valid JSON or XML, so the filters above could not mask it
 		setMaxBodySizeToLog(builder);
@@ -163,6 +166,23 @@ public class LogbookConfiguration {
 		return builder
 			.condition(exclude(getExclusions()))
 			.build();
+	}
+
+	/**
+	 * Says once, at startup, what the payload log does with bodies, since a service that upgrades into the allowlist sees
+	 * its log change without having changed anything itself.
+	 */
+	private static void logAllowlist(final BodyFilterProperties.Allowlist allowlist, final List<BodyFilter> xPathFilters) {
+		if (!allowlist.isEnabled()) {
+			LOGGER.info("Payload log bodies are logged in full, since logbook.body-filters.allowlist.enabled is false");
+			return;
+		}
+		LOGGER.info("Payload log bodies are masked except for the values of the {} field(s) in logbook.body-filters.allowlist.paths. "
+			+ "A body that is not JSON is logged without its body", allowlist.getPaths().size());
+		if (!xPathFilters.isEmpty()) {
+			LOGGER.warn("logbook.body-filters.x-path is not applied while logbook.body-filters.allowlist is enabled, since a body that is "
+				+ "not JSON is then logged without its body");
+		}
 	}
 
 	private void setMaxBodySizeToLog(final LogbookCreator.Builder builder) {

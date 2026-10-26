@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.zalando.logbook.HttpMessage;
@@ -49,6 +50,11 @@ public record BodyCapturePolicy(long maxBodySize) {
 	public static final long DEFAULT_MAX_BODY_SIZE = 1024L * 1024L;
 
 	private static final MediaType MULTIPART = MediaType.valueOf("multipart/*");
+	private static final String NOTE = "larger than %d bytes";
+	private static final String JSON_NOTE = "{\"bodyOmitted\":\"%s\"}";
+
+	/** The JSON note of {@link #omittedNote(String)}, whatever the limit, and with any whitespace a filter adds. */
+	private static final Pattern OMITTED_JSON_NOTE = Pattern.compile("\\{\\s*\"bodyOmitted\"\\s*:\\s*\"larger than \\d+ bytes\"\\s*}");
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
@@ -94,15 +100,23 @@ public record BodyCapturePolicy(long maxBodySize) {
 	 * itself JSON or XML, so that json-path and xpath filters can still process it.
 	 */
 	public String omittedNote(final String contentType) {
-		final var note = "larger than " + maxBodySize + " bytes";
+		final var note = NOTE.formatted(maxBodySize);
 		final var type = String.valueOf(contentType).toLowerCase(Locale.ROOT);
 		if (type.contains("json")) {
-			return "{\"bodyOmitted\":\"" + note + "\"}";
+			return JSON_NOTE.formatted(note);
 		}
 		if (type.contains("xml")) {
 			return "<bodyOmitted>" + note + "</bodyOmitted>";
 		}
 		return "<body omitted: " + note + ">";
+	}
+
+	/**
+	 * Whether a JSON body is the note {@link #omittedNote(String)} logs in place of a body larger than allowed. Matched as
+	 * a whole, so that a body that only has a field of the same name is not taken for the note.
+	 */
+	public static boolean isOmittedNote(final String body) {
+		return OMITTED_JSON_NOTE.matcher(body).matches();
 	}
 
 	/**

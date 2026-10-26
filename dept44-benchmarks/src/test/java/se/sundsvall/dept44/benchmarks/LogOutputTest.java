@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.zalando.logbook.Logbook;
@@ -19,6 +20,7 @@ import se.sundsvall.dept44.benchmarks.LogbookChainBenchmark.Calls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * That each {@link LogOutput} writes the payload log where it says it does, masked when it says so, so that the
@@ -74,6 +76,15 @@ class LogOutputTest {
 				assertThat(message).contains(PARTY_ID);
 			}
 		}
+	}
+
+	@Test
+	void startThatFailsLeavesNoLogServerBehind() {
+		assertThatExceptionOfType(RuntimeException.class)
+			.isThrownBy(() -> LogbookContexts.start(List.of("logbook.body-filters.allowlist.paths=title"), LogOutput.CONSOLE_GELF));
+
+		assertThat(System.getProperty("LOGSERVER_HOST")).isNull();
+		assertThat(System.getProperty("LOGSERVER_PORT")).isNull();
 	}
 
 	private static ByteArrayOutputStream captureConsole() {

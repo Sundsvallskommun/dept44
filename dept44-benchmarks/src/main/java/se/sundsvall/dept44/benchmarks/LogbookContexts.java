@@ -71,11 +71,18 @@ public final class LogbookContexts {
 		arguments.add("--dept44.logback.pii-masking.enabled=" + output.masked());
 		properties.forEach(property -> arguments.add("--" + property));
 
-		final var context = new SpringApplicationBuilder(JacksonAutoConfiguration.class, ObjectMapperConfiguration.class, LogbookConfiguration.class)
-			.web(WebApplicationType.NONE)
-			.bannerMode(Banner.Mode.OFF)
-			.logStartupInfo(false)
-			.run(arguments.toArray(String[]::new));
+		final ConfigurableApplicationContext context;
+		try {
+			context = new SpringApplicationBuilder(JacksonAutoConfiguration.class, ObjectMapperConfiguration.class, LogbookConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.bannerMode(Banner.Mode.OFF)
+				.logStartupInfo(false)
+				.run(arguments.toArray(String[]::new));
+		} catch (final RuntimeException e) {
+			// There is no StartedLogbook to close, and a later start in the same JVM would otherwise send GELF to this port
+			closeLogServer(logServer);
+			throw e;
+		}
 
 		if (output == LogOutput.DISCARD) {
 			discardPayloadLog();
@@ -115,6 +122,14 @@ public final class LogbookContexts {
 		logger.addAppender(appender);
 	}
 
+	private static void closeLogServer(final DatagramSocket logServer) {
+		if (logServer != null) {
+			logServer.close();
+			System.clearProperty(LOGSERVER_HOST);
+			System.clearProperty(LOGSERVER_PORT);
+		}
+	}
+
 	private static DatagramSocket openLogServer() {
 		try {
 			return new DatagramSocket(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
@@ -150,11 +165,7 @@ public final class LogbookContexts {
 		@Override
 		public void close() {
 			context.close();
-			if (logServer != null) {
-				logServer.close();
-				System.clearProperty(LOGSERVER_HOST);
-				System.clearProperty(LOGSERVER_PORT);
-			}
+			closeLogServer(logServer);
 		}
 	}
 }

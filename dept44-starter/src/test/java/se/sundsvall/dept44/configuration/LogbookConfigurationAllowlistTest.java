@@ -200,6 +200,23 @@ class LogbookConfigurationAllowlistTest {
 	}
 
 	@Test
+	void emptyMaxSizeKeepsTheDefault() {
+		contextRunner
+			.withPropertyValues("logbook.body-filters.allowlist.max-size=", "logbook.body-filters.allowlist.paths[0]=$..id")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+
+				context.getBean(Logbook.class)
+					.process(MockHttpRequest.create().withContentType("application/json")
+						.withBodyAsString("{\"id\":\"case-1\",\"description\":\"" + "x".repeat(300_000) + "\"}"))
+					.write();
+
+				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").get("bodyOmitted").asString())
+					.isEqualTo("larger than 262144 characters, so the allowlist could not be applied"));
+			});
+	}
+
+	@Test
 	void negativeMaxSizeDisablesTheLimit() {
 		contextRunner
 			.withPropertyValues("logbook.body-filters.allowlist.max-size=-1", "logbook.body-filters.allowlist.paths[0]=$..id")
@@ -270,6 +287,56 @@ class LogbookConfigurationAllowlistTest {
 				assertThat(context).hasFailed();
 				assertThat(context.getStartupFailure()).hasStackTraceContaining("Invalid xpath 'count(//secret)' in logbook.body-filters.x-path");
 			});
+	}
+
+	@Test
+	void whatIsDoneWithBodiesIsLoggedAtStartup() {
+		final var events = configurationLog(() -> contextRunner
+			.withPropertyValues("logbook.body-filters.allowlist.paths[0]=$..id", "logbook.body-filters.allowlist.paths[1]=$..status")
+			.run(context -> assertThat(context).hasNotFailed()));
+
+		assertThat(events).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.INFO);
+			assertThat(event.getFormattedMessage()).startsWith("Payload log bodies are masked except for the values of the 2 field(s)");
+		});
+	}
+
+	@Test
+	void bodiesLoggedInFullAreLoggedAtStartup() {
+		final var events = configurationLog(() -> contextRunner
+			.withPropertyValues("logbook.body-filters.allowlist.enabled=false", "logbook.body-filters.x-path[0].key=//secret/text()",
+				"logbook.body-filters.x-path[0].value=***")
+			.run(context -> assertThat(context).hasNotFailed()));
+
+		assertThat(events).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.INFO);
+			assertThat(event.getFormattedMessage()).startsWith("Payload log bodies are logged in full");
+		});
+	}
+
+	@Test
+	void xPathFiltersThatAreNotAppliedAreWarnedAboutAtStartup() {
+		final var events = configurationLog(() -> contextRunner
+			.withPropertyValues("logbook.body-filters.x-path[0].key=//secret/text()", "logbook.body-filters.x-path[0].value=***")
+			.run(context -> assertThat(context).hasNotFailed()));
+
+		assertThat(events).extracting(ILoggingEvent::getLevel).containsExactly(Level.INFO, Level.WARN);
+		assertThat(events.getLast().getFormattedMessage()).startsWith("logbook.body-filters.x-path is not applied");
+	}
+
+	private static List<ILoggingEvent> configurationLog(final Runnable run) {
+		final var logger = (Logger) LoggerFactory.getLogger(LogbookConfiguration.class);
+		final var events = new ListAppender<ILoggingEvent>();
+		events.start();
+		logger.addAppender(events);
+		logger.setLevel(Level.INFO);
+		try {
+			run.run();
+		} finally {
+			logger.detachAppender(events);
+			logger.setLevel(null);
+		}
+		return events.list;
 	}
 
 	private List<JsonNode> logEntries() {

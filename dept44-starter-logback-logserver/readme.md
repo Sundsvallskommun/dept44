@@ -71,7 +71,9 @@ masked:
 > `fullPatternLayout`, names that logback-gelf 6 does not know. Logback ignores such elements, so the encoder used its
 > own `%m` layouts, and only the console was masked. A service with its own `logback-spring.xml` that copied the GELF
 > encoder must rename them to `shortMessageLayout` and `fullMessageLayout`. A warning such as
-> `Ignoring unknown property [shortPatternLayout]` at startup shows the problem.
+> `Ignoring unknown property [shortPatternLayout]` at startup shows the problem. The short message, Graylog's
+> `message` field, also held the whole line then. It now holds the first 100 characters, and the whole line is in
+> `full_message`, so a search, stream rule or extractor that reads further into `message` has to read `full_message`.
 
 |           Category            |             Example input              |   Masked output    |
 |-------------------------------|----------------------------------------|--------------------|

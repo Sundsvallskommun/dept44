@@ -88,8 +88,13 @@ public final class PiiMasker {
 
 	private static final String UUID_MASK_SUFFIX = "...";
 
-	/** E-mail address. Group 1 captures the local part, group 2 captures the domain. */
-	private static final Pattern EMAIL_PATTERN = Pattern.compile("([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})");
+	/**
+	 * E-mail address. Group 1 captures the local part, group 2 captures the domain. The parts are bounded by what an
+	 * address may hold, 64 characters before the {@code @} and about 255 after it. Unbounded, a long run of such
+	 * characters without an {@code @}, such as a token, is searched again from every position in it, which takes seconds
+	 * for one of 50 000 characters.
+	 */
+	private static final Pattern EMAIL_PATTERN = Pattern.compile("([A-Za-z0-9._%+-]{1,64})@([A-Za-z0-9.-]{1,253}\\.[A-Za-z]{2,63})");
 
 	private PiiMasker() {}
 

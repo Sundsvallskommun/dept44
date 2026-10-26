@@ -146,6 +146,14 @@ class PiiMaskingConverterTest {
 	}
 
 	@Test
+	void returnsTheBeginningOfTheWholeMessageMaskedAfterARunLongerThanAnAddress() {
+		final var message = "x".repeat(2000) + "@example.com";
+		final var whole = PiiMasker.maskPii(message);
+
+		assertThat(startedConverter("true", "100").convert(event(message))).isEqualTo(whole.substring(0, Math.min(100, whole.length())));
+	}
+
+	@Test
 	void masksAMessageShorterThanTheLimitWhole() {
 		assertThat(startedConverter("true", "100").convert(event(MESSAGE))).isEqualTo(MASKED);
 	}

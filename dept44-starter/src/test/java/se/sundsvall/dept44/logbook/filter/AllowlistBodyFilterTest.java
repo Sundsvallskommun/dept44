@@ -7,8 +7,10 @@ import ch.qos.logback.core.read.ListAppender;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -188,6 +190,27 @@ class AllowlistBodyFilterTest {
 	}
 
 	@Test
+	void warnsOfAFaultOfItsOwnOnlyOnce() {
+		final var rules = mock(AllowlistRules.class);
+		when(rules.keeps(anyList())).thenThrow(new IllegalStateException("A fault"));
+		final var filter = new AllowlistBodyFilter(rules, MAX_SIZE);
+		final var logger = (Logger) LoggerFactory.getLogger(AllowlistBodyFilter.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(Level.DEBUG);
+		try {
+			filter.filter(JSON, "{\"name\":\"Anna\"}");
+			filter.filter(JSON, "{\"name\":\"Anna\"}");
+		} finally {
+			logger.detachAppender(appender);
+			logger.setLevel(null);
+		}
+
+		assertThat(appender.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.WARN, Level.DEBUG);
+	}
+
+	@Test
 	void withholdsABodyTooLargeToReadWithoutReadingIt() {
 		final var attachment = "{\"base64EncodedString\":\"" + "A".repeat(300_000) + "\"}";
 
@@ -220,6 +243,20 @@ class AllowlistBodyFilterTest {
 	void keepsTheNoteForABodyLargerThanWasCaptured() {
 		assertThat(filter().filter(JSON, "{\"bodyOmitted\":\"larger than 100 bytes\"}"))
 			.isEqualTo("{\"bodyOmitted\":\"larger than 100 bytes\"}");
+	}
+
+	/**
+	 * Kept whatever the content type, so that the log tells a body that was left out from one that was empty.
+	 */
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"application/json", "text/json", "application/xml", "text/plain", "application/pdf"
+	})
+	void keepsTheNoteForABodyLargerThanWasCapturedWhateverTheContentType(final String contentType) {
+		final var note = new BodyCapturePolicy(100).omittedNote(contentType);
+
+		assertThat(filter().filter(contentType, note)).isEqualTo(note);
 	}
 
 	@Test

@@ -184,6 +184,41 @@ class LogbookConfigurationAllowlistTest {
 	}
 
 	@Test
+	void noteForABodyThatIsNotJsonIsKept() {
+		contextRunner
+			.withPropertyValues("logbook.logs.maxBodySizeToCapture=10B")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+
+				context.getBean(Logbook.class)
+					.process(MockHttpRequest.create().withContentType("application/xml").withBodyAsString("<a>" + PERSONAL_NUMBER + "</a>"))
+					.write();
+
+				assertThat(logEntries()).singleElement()
+					.satisfies(entry -> assertThat(entry.get("body").asString()).isEqualTo("<bodyOmitted>larger than 10 bytes</bodyOmitted>"));
+			});
+	}
+
+	/**
+	 * Logbook replaces the body of a file after the body filters have run, so the allowlist never sees the placeholder.
+	 */
+	@Test
+	void jsonFileIsLoggedAsBinary() {
+		contextRunner.run(context -> {
+			assertThat(context).hasNotFailed();
+
+			context.getBean(Logbook.class)
+				.process(MockHttpRequest.create())
+				.write()
+				.process(MockHttpResponse.create().withHeaders(HttpHeaders.of("Content-Disposition", "attachment; filename=export.json"))
+					.withContentType("application/json").withBodyAsString(BODY))
+				.write();
+
+			assertThat(logEntries().getLast().get("body").asString()).isEqualTo("<binary>");
+		});
+	}
+
+	@Test
 	void maxSizeIsConfigurable() {
 		contextRunner
 			.withPropertyValues("logbook.body-filters.allowlist.max-size=10B")

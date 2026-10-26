@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.logbook;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -98,9 +99,26 @@ class BodyCapturePolicyTest {
 		assertThat(BodyCapturePolicy.isOmittedNote(policy.omittedNote("application/json"))).isTrue();
 		assertThat(BodyCapturePolicy.isOmittedNote(new BodyCapturePolicy(1048576).omittedNote("application/problem+json"))).isTrue();
 		assertThat(BodyCapturePolicy.isOmittedNote("{ \"bodyOmitted\" : \"larger than 100 bytes\" }")).isTrue();
+		assertThat(BodyCapturePolicy.isOmittedNote(policy.omittedNote("application/xml"))).isTrue();
+		assertThat(BodyCapturePolicy.isOmittedNote(policy.omittedNote("text/plain"))).isTrue();
+		assertThat(BodyCapturePolicy.isOmittedNote(policy.omittedNote(null))).isTrue();
 
 		assertThat(BodyCapturePolicy.isOmittedNote("{\"bodyOmitted\":\"Anna Andersson\"}")).isFalse();
 		assertThat(BodyCapturePolicy.isOmittedNote("{\"bodyOmitted\":\"larger than 100 bytes\",\"name\":\"Anna\"}")).isFalse();
+		assertThat(BodyCapturePolicy.isOmittedNote("<bodyOmitted>Anna Andersson</bodyOmitted>")).isFalse();
+		assertThat(BodyCapturePolicy.isOmittedNote("<body omitted: larger than 100 bytes> Anna")).isFalse();
+	}
+
+	@Test
+	void omittedNoteIsTheSameInEveryLocale() {
+		// Formatted with %d, the limit would be written in the digits of the locale, here Arabic-Indic ones
+		final var defaultLocale = Locale.getDefault(Locale.Category.FORMAT);
+		Locale.setDefault(Locale.Category.FORMAT, Locale.forLanguageTag("ar-EG"));
+		try {
+			assertThat(policy.omittedNote("application/json")).isEqualTo("{\"bodyOmitted\":\"larger than 100 bytes\"}");
+		} finally {
+			Locale.setDefault(Locale.Category.FORMAT, defaultLocale);
+		}
 	}
 
 	@ParameterizedTest

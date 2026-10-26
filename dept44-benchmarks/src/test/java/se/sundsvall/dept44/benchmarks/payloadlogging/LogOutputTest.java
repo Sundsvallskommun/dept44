@@ -134,8 +134,9 @@ class LogOutputTest {
 		}
 		packet.position(packet.position() + 2);
 		final var id = packet.getLong();
-		final var sequence = packet.get();
-		final var count = packet.get();
+		// Unsigned, since a message may have up to 128 chunks
+		final var sequence = Byte.toUnsignedInt(packet.get());
+		final var count = Byte.toUnsignedInt(packet.get());
 		final var payload = new byte[packet.remaining()];
 		packet.get(payload);
 

@@ -130,7 +130,18 @@ class PiiMaskerTest {
 			Arguments.of("a@b.co", "a***@b.co"),
 			Arguments.of("Contact john.doe@example.com today", "Contact j***@example.com today"),
 			Arguments.of("no email here", "no email here"),
-			Arguments.of("a@b.com, c@d.org", "a***@b.com, c***@d.org"));
+			Arguments.of("a@b.com, c@d.org", "a***@b.com, c***@d.org"),
+			Arguments.of("a".repeat(64) + "@example.com", "a***@example.com"));
+	}
+
+	@Test
+	void maskEmailStaysLinearOnALongRunWithoutAnAddress() {
+		// Such as a token: searched again from every position in it, 50 000 characters took 11 seconds
+		final var value = "x".repeat(200_000);
+
+		final var masked = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> PiiMasker.maskEmail(value));
+
+		assertThat(masked).isEqualTo(value);
 	}
 
 	@ParameterizedTest

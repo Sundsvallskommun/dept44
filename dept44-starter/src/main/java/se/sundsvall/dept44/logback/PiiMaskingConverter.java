@@ -16,7 +16,7 @@ import se.sundsvall.dept44.util.PiiMasker.Category;
  * {@code %m} in pattern layouts. Masking is opt-in: it is only active when the logback context property
  * {@value #ENABLED_PROPERTY} is {@code true} (wired from the Spring property
  * {@code dept44.logback.pii-masking.enabled}). When disabled, {@link #convert(ILoggingEvent)} returns the message
- * unchanged, so the output is identical to {@code %m}.
+ * unmasked, so the output is identical to {@code %m}, cut to the length an option gives.
  *
  * <p>
  * Each category can be turned off on its own, from {@code dept44.logback.pii-masking.uuid},
@@ -58,9 +58,8 @@ public class PiiMaskingConverter extends ClassicConverter {
 	private static final String DISABLED = "false";
 
 	/**
-	 * Longer than any value {@link PiiMasker} matches. The longest is an e-mail address, which holds at most 254
-	 * characters, a UUID in it included. The pattern itself has no such bound, so a longer run that it would take for an
-	 * address is only masked by a limit when it lies wholly inside the window.
+	 * Longer than any value {@link PiiMasker} matches. The longest is an e-mail address, which its pattern bounds to 382
+	 * characters, a UUID in it included.
 	 */
 	static final int LONGEST_MATCH = 512;
 

@@ -3,6 +3,7 @@ package se.sundsvall.dept44.logbook.filter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zalando.logbook.BodyFilter;
@@ -12,7 +13,9 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static se.sundsvall.dept44.logbook.BodyCapturePolicy.isOmittedNote;
+import static se.sundsvall.dept44.logbook.BodyCapturePolicy.jsonNote;
 import static se.sundsvall.dept44.logbook.filter.BodyFilterProvider.isJson;
 import static tools.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS;
 
@@ -20,6 +23,9 @@ import static tools.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_
  * Logs only the values of the fields that {@code logbook.body-filters.allowlist.paths} names. Every other value of a
  * JSON body, whatever its type, is replaced by {@value #PLACEHOLDER}. The names of the fields are kept, so that a log
  * entry still shows the shape of what was sent. A body that is not JSON is logged without its body.
+ * <p>
+ * The note dept44 logs in place of a body larger than it captures is kept whatever the content type, so that the log
+ * tells a body that was left out from one that was empty. It holds nothing of the body.
  * <p>
  * The names are kept also where they are data rather than names, such as the keys of a map keyed by personal number or
  * e-mail address. JSON does not tell such a map from an object, so this filter does not mask them.
@@ -42,12 +48,13 @@ public final class AllowlistBodyFilter implements BodyFilter {
 	 */
 	private static final JsonMapper JSON_MAPPER = JsonMapper.builder().enable(USE_BIG_DECIMAL_FOR_FLOATS).build();
 
-	private static final String TOO_LARGE_NOTE = "{\"bodyOmitted\":\"larger than %d characters, so the allowlist could not be applied\"}";
-	private static final String INVALID_JSON_NOTE = "{\"bodyOmitted\":\"not valid JSON, so the allowlist could not be applied\"}";
-	private static final String FAILED_NOTE = "{\"bodyOmitted\":\"the allowlist could not be applied\"}";
+	private static final String INVALID_JSON_NOTE = jsonNote("not valid JSON, so the allowlist could not be applied");
+	private static final String FAILED_NOTE = jsonNote("the allowlist could not be applied");
 
 	private final AllowlistRules rules;
 	private final long maxSize;
+	private final String tooLargeNote;
+	private final AtomicBoolean failureLogged = new AtomicBoolean();
 
 	/**
 	 * @param  paths                    the fields whose values are logged, in the syntax {@link AllowlistRules}
@@ -63,21 +70,19 @@ public final class AllowlistBodyFilter implements BodyFilter {
 	AllowlistBodyFilter(final AllowlistRules rules, final long maxSize) {
 		this.rules = rules;
 		this.maxSize = maxSize;
+		this.tooLargeNote = jsonNote("larger than " + maxSize + " characters, so the allowlist could not be applied");
 	}
 
 	@Override
 	public String filter(final String contentType, final String body) {
-		if (body == null || body.isBlank()) {
+		if (isBlank(body) || isOmittedNote(body)) {
 			return body;
 		}
 		if (contentType == null || !isJson(contentType)) {
 			return "";
 		}
-		if (isOmittedNote(body)) {
-			return body;
-		}
 		if (maxSize >= 0 && body.length() > maxSize) {
-			return TOO_LARGE_NOTE.formatted(maxSize);
+			return tooLargeNote;
 		}
 
 		try {
@@ -94,10 +99,22 @@ public final class AllowlistBodyFilter implements BodyFilter {
 			return INVALID_JSON_NOTE;
 		} catch (final RuntimeException e) {
 			// A fault of the filter's own, not of the body. The body is still withheld, so that a fault cannot log what the
-			// allowlist would have masked, but loudly, since every body may now be withheld
-			LOGGER.warn("Could not apply the allowlist to a body", e);
+			// allowlist would have masked
+			logFailure(e);
 			return FAILED_NOTE;
 		}
+	}
+
+	/**
+	 * A fault of the filter's own may hit every body, so it is warned about loudly, though only once, so that it does not
+	 * add a stack trace to every request.
+	 */
+	private void logFailure(final RuntimeException e) {
+		if (failureLogged.compareAndSet(false, true)) {
+			LOGGER.warn("Could not apply the allowlist to a body", e);
+			return;
+		}
+		LOGGER.debug("Could not apply the allowlist to a body ({})", e.getClass().getSimpleName());
 	}
 
 	/**

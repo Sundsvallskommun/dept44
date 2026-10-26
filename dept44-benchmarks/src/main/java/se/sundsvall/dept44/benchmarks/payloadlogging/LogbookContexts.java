@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;

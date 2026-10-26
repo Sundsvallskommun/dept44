@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 /**
  * Where the payload log goes, set up by the {@code logback-spring.xml} of dept44-starter-logback-logserver as in a

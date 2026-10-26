@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import java.util.UUID;
 
@@ -15,6 +15,8 @@ public final class Payloads {
 
 	/** How deep the objects of {@link #nested(int)} are nested. */
 	static final int DEPTH = 10;
+
+	private static final String FIELD = "field";
 
 	private Payloads() {}
 
@@ -49,7 +51,7 @@ public final class Payloads {
 			if (field > 0) {
 				json.append(',');
 			}
-			appendField(json, "field" + field, 0, field);
+			appendField(json, FIELD + field, 0, field);
 			field++;
 		}
 		return json.append('}').toString();
@@ -96,7 +98,7 @@ public final class Payloads {
 			if (field > 0) {
 				json.append(',');
 			}
-			appendField(json, "field" + field, row, field);
+			appendField(json, FIELD + field, row, field);
 		}
 		json.append('}');
 	}
@@ -104,7 +106,7 @@ public final class Payloads {
 	private static void appendLevel(final StringBuilder json, final int chain, final int level) {
 		json.append('{');
 		for (var field = 0; field < 4; field++) {
-			appendField(json, "field" + field, chain, level * 4 + field);
+			appendField(json, FIELD + field, chain, level * 4 + field);
 			json.append(',');
 		}
 		if (level + 1 < DEPTH) {

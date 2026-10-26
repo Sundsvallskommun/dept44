@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -12,7 +12,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import se.sundsvall.dept44.benchmarks.AllowlistPaths.RuleKind;
+import se.sundsvall.dept44.benchmarks.payloadlogging.AllowlistPaths.RuleKind;
 import se.sundsvall.dept44.logbook.filter.AllowlistBodyFilter;
 
 /**

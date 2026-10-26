@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,9 +20,10 @@ import org.zalando.logbook.HttpHeaders;
 import org.zalando.logbook.Logbook;
 import org.zalando.logbook.test.MockHttpRequest;
 import org.zalando.logbook.test.MockHttpResponse;
-import se.sundsvall.dept44.benchmarks.LogbookContexts.StartedLogbook;
+import se.sundsvall.dept44.benchmarks.payloadlogging.LogbookContexts.StartedLogbook;
 
-import static se.sundsvall.dept44.benchmarks.AllowlistPaths.RuleKind.DESCENDANT;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static se.sundsvall.dept44.benchmarks.payloadlogging.AllowlistPaths.RuleKind.DESCENDANT;
 
 /**
  * The whole payload logging of one call, as a service runs it: a GET without a body, answered with a JSON
@@ -101,10 +102,10 @@ public class LogbookChainBenchmark {
 	static final class Calls {
 
 		private static final HttpHeaders REQUEST_HEADERS = HttpHeaders.of(Map.of(
-			"Accept", List.of("application/json"),
+			"Accept", List.of(APPLICATION_JSON_VALUE),
 			"x-request-id", List.of("9690dfc1-ea62-480b-af16-118a7a1dba85")));
 		private static final HttpHeaders RESPONSE_HEADERS = HttpHeaders.of(Map.of(
-			"Content-Type", List.of("application/json"),
+			"Content-Type", List.of(APPLICATION_JSON_VALUE),
 			"x-request-id", List.of("9690dfc1-ea62-480b-af16-118a7a1dba85")));
 
 		private Calls() {}
@@ -120,7 +121,7 @@ public class LogbookChainBenchmark {
 			return MockHttpResponse.create()
 				.withStatus(200)
 				.withHeaders(RESPONSE_HEADERS)
-				.withContentType("application/json")
+				.withContentType(APPLICATION_JSON_VALUE)
 				.withBodyAsString(body);
 		}
 	}

@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -15,9 +15,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.zalando.logbook.Logbook;
-import se.sundsvall.dept44.benchmarks.LogbookChainBenchmark.Allowlist;
-import se.sundsvall.dept44.benchmarks.LogbookChainBenchmark.Calls;
-import se.sundsvall.dept44.benchmarks.LogbookContexts.StartedLogbook;
+import se.sundsvall.dept44.benchmarks.payloadlogging.LogbookChainBenchmark.Allowlist;
+import se.sundsvall.dept44.benchmarks.payloadlogging.LogbookChainBenchmark.Calls;
+import se.sundsvall.dept44.benchmarks.payloadlogging.LogbookContexts.StartedLogbook;
 
 /**
  * The payload logging of {@link LogbookChainBenchmark}, written where a service writes it: to the console, and to a

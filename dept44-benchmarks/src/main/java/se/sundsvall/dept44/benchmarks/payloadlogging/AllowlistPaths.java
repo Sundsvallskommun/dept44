@@ -1,4 +1,4 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,7 +31,7 @@ public final class AllowlistPaths {
 		WILDCARD
 	}
 
-	private static final String SUPPORT_MANAGEMENT = "/support-management-allowlist.txt";
+	private static final String SUPPORT_MANAGEMENT = "support-management-allowlist.txt";
 
 	private AllowlistPaths() {}
 

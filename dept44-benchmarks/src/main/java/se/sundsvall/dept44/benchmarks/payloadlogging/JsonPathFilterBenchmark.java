@@ -1,5 +1,7 @@
-package se.sundsvall.dept44.benchmarks;
+package se.sundsvall.dept44.benchmarks.payloadlogging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -12,16 +14,14 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import se.sundsvall.dept44.logbook.filter.AllowlistBodyFilter;
+import org.zalando.logbook.BodyFilter;
+import se.sundsvall.dept44.logbook.filter.BodyFilterProvider;
 
-import static se.sundsvall.dept44.benchmarks.AllowlistPaths.RuleKind.DESCENDANT;
+import static se.sundsvall.dept44.benchmarks.payloadlogging.AllowlistPaths.RuleKind.DESCENDANT;
 
 /**
- * How the allowlist filter scales with the number of paths and the size of the body.
- * <p>
- * The body is a page of rows of twenty fields, and the paths are {@code $..fieldN}, so that the first twenty paths name
- * fields the body has and the rest name fields it does not. The maximum size is disabled, so that a body of any size is
- * parsed: that is what shows what a higher {@code logbook.body-filters.allowlist.max-size} would cost.
+ * The json-path filters of {@code logbook.body-filters.json-path}, with the same paths and bodies as
+ * {@link AllowlistBodyFilterBenchmark}, for comparison. These mask the fields they name rather than keep them.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -31,10 +31,10 @@ import static se.sundsvall.dept44.benchmarks.AllowlistPaths.RuleKind.DESCENDANT;
 })
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-public class AllowlistBodyFilterBenchmark {
+public class JsonPathFilterBenchmark {
 
 	@Param({
-		"0", "10", "50", "200", "500"
+		"10", "50", "200"
 	})
 	public int paths;
 
@@ -43,12 +43,15 @@ public class AllowlistBodyFilterBenchmark {
 	})
 	public int bodyKiB;
 
-	private AllowlistBodyFilter filter;
+	private BodyFilter filter;
 	private String body;
 
 	@Setup
 	public void setUp() {
-		filter = new AllowlistBodyFilter(AllowlistPaths.of(DESCENDANT, paths), -1);
+		final var masks = new LinkedHashMap<String, String>();
+		AllowlistPaths.of(DESCENDANT, paths).forEach(path -> masks.put(path, "***"));
+		// Like the Jackson 2 mapper ObjectMapperConfiguration gives LogbookConfiguration
+		filter = BodyFilterProvider.buildJsonPathFilters(new ObjectMapper().findAndRegisterModules(), masks).getFirst();
 		body = Payloads.page(bodyKiB * 1024);
 	}
 

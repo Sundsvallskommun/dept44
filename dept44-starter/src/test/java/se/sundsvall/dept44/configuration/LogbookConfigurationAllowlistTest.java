@@ -68,8 +68,8 @@ class LogbookConfigurationAllowlistTest {
 				.write();
 
 			final var entries = logEntries();
-			assertThat(entries).hasSize(2).allSatisfy(entry -> assertThat(entry.get("body").toString())
-				.isEqualTo("{\"id\":\"[masked]\",\"personalNumber\":\"[masked]\"}"));
+			assertThat(entries).hasSize(2).allSatisfy(entry -> assertThat(entry.get("body"))
+				.hasToString("{\"id\":\"[masked]\",\"personalNumber\":\"[masked]\"}"));
 			assertThat(entries.getFirst().get("method").asString()).isEqualTo("POST");
 			assertThat(entries.getFirst().get("uri").asString()).endsWith("/cases");
 			assertThat(entries.getLast().get("status").asInt()).isEqualTo(201);
@@ -89,8 +89,8 @@ class LogbookConfigurationAllowlistTest {
 					.process(MockHttpRequest.create().withContentType("application/json").withBodyAsString(BODY))
 					.write();
 
-				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").toString())
-					.isEqualTo("{\"id\":\"case-1\",\"personalNumber\":\"[masked]\"}"));
+				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body"))
+					.hasToString("{\"id\":\"case-1\",\"personalNumber\":\"[masked]\"}"));
 			});
 	}
 
@@ -140,8 +140,8 @@ class LogbookConfigurationAllowlistTest {
 					.process(MockHttpRequest.create().withContentType("application/json").withBodyAsString(BODY))
 					.write();
 
-				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").toString())
-					.isEqualTo("{\"added\":\"[masked]\"}"));
+				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body"))
+					.hasToString("{\"added\":\"[masked]\"}"));
 			});
 	}
 
@@ -228,8 +228,8 @@ class LogbookConfigurationAllowlistTest {
 						.withBodyAsString("{\"id\":\"case-1\",\"description\":\"" + "x".repeat(300_000) + "\"}"))
 					.write();
 
-				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").toString())
-					.isEqualTo("{\"id\":\"case-1\",\"description\":\"[masked]\"}"));
+				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body"))
+					.hasToString("{\"id\":\"case-1\",\"description\":\"[masked]\"}"));
 			});
 	}
 

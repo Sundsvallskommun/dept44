@@ -59,6 +59,13 @@ and an earlier run into `embedded-baseline` to compare with it.
 
 ## The benchmarks
 
+Each area has a package of its own under `se.sundsvall.dept44.benchmarks`. There is one so far:
+
+### Payload logging
+
+`se.sundsvall.dept44.benchmarks.payloadlogging` measures the payload logging of `dept44-starter`: the allowlist, the
+Logbook chain, and the log output with and without PII masking.
+
 |            Benchmark            |                                      Measures                                       |               Parameters               |
 |---------------------------------|-------------------------------------------------------------------------------------|----------------------------------------|
 | AllowlistBodyFilterBenchmark    | The allowlist filter alone, with the maximum size disabled                          | `paths` 0–500, `bodyKiB` 1–1000        |
@@ -81,6 +88,10 @@ stops the masking of GELF fails the build.
 
 ## Adding a benchmark
 
-Add a class to `se.sundsvall.dept44.benchmarks` with `@Benchmark` methods, annotated like the others. `@Param` fields
-must be public. `Payloads` generates bodies, `AllowlistPaths` generates paths, and `LogbookContexts` starts the
+Add a class with `@Benchmark` methods, annotated like the others, to the package of its area, or to a new package
+under `se.sundsvall.dept44.benchmarks` for an area that has none. `@Param` fields must be public. In
+`payloadlogging`, `Payloads` generates bodies, `AllowlistPaths` generates paths, and `LogbookContexts` starts the
 Logbook that `LogbookConfiguration` sets up.
+
+`report.html` knows a benchmark by the name of its class, without the package, so two benchmark classes should not
+share a name. It draws charts only for the benchmarks it was written for, but compares every result two runs have.

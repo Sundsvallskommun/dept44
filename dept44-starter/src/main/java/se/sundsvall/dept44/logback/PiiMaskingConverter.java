@@ -58,10 +58,13 @@ public class PiiMaskingConverter extends ClassicConverter {
 	private static final String DISABLED = "false";
 
 	/**
-	 * Longer than any value {@link PiiMasker} matches. The longest is an e-mail address, which its pattern bounds to 382
-	 * characters, a UUID in it included.
+	 * Longer than any value {@link PiiMasker} matches, apart from an e-mail address, whose parts have no length limit. The
+	 * longest of the others is a UUID, of 36 characters.
 	 */
 	static final int LONGEST_MATCH = 512;
+
+	/** The characters of an e-mail address that are not letters or digits, as {@link PiiMasker} reads one. */
+	private static final String ADDRESS_PUNCTUATION = "._%+-@";
 
 	/** The most characters at the end of a masked window that may differ from the whole message masked. */
 	private static final int UNSURE_TAIL = LONGEST_MATCH * 3 / 2;
@@ -100,22 +103,41 @@ public class PiiMaskingConverter extends ClassicConverter {
 	 * Masks a window at the start of the message, large enough that its first {@link #maxLength} characters masked are
 	 * the same as those of the whole message masked.
 	 * <p>
-	 * A value that the end of a window cuts in two is not recognised, so the masked text of the last
-	 * {@link #LONGEST_MATCH} characters of a window may be wrong. Masking makes that text at most half as long again, as
-	 * {@code a@b.se} becomes {@code a***@b.se}, so all but the last {@link #UNSURE_TAIL} characters of a masked window
-	 * are right. A window starts large enough for that to cover the limit unless masking shortens it by a lot, and one
-	 * that masking does shorten that much, such as one full of UUIDs, is doubled.
+	 * A window never ends inside what could be an e-mail address, since an address has no length limit: it ends at the
+	 * first character from its size on that no address holds. A message that is one long run of such characters is
+	 * masked whole. Any other value that the end of a window cuts in two is not recognised, so the masked text of the
+	 * last {@link #LONGEST_MATCH} characters of a window may be wrong. Masking makes that text at most half as long
+	 * again, as {@code a@b.se} becomes {@code a***@b.se}, so all but the last {@link #UNSURE_TAIL} characters of a masked
+	 * window are right. A window starts large enough for that to cover the limit unless masking shortens it by a lot,
+	 * and one that masking does shorten that much, such as one full of UUIDs, is doubled.
 	 */
 	private String maskBeginning(final String message) {
 		if (message != null) {
-			for (var window = (long) maxLength + 2 * LONGEST_MATCH; window < message.length(); window *= 2) {
-				final var masked = PiiMasker.maskPii(message.substring(0, (int) window), categories);
-				if (masked.length() - UNSURE_TAIL >= maxLength) {
+			var window = (long) maxLength + 2 * LONGEST_MATCH;
+			while (window < message.length()) {
+				final var end = endOfAddressCharacters(message, (int) window);
+				final var masked = PiiMasker.maskPii(message.substring(0, end), categories);
+				if (end == message.length() || masked.length() - UNSURE_TAIL >= maxLength) {
 					return masked;
 				}
+				window = 2L * end;
 			}
 		}
 		return PiiMasker.maskPii(message, categories);
+	}
+
+	/** The index of the first character at or after the given one that no e-mail address holds, or the length. */
+	private static int endOfAddressCharacters(final String message, final int from) {
+		var index = from;
+		while (index < message.length() && isAddressCharacter(message.charAt(index))) {
+			index++;
+		}
+		return index;
+	}
+
+	private static boolean isAddressCharacter(final char character) {
+		return (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9')
+			|| ADDRESS_PUNCTUATION.indexOf(character) >= 0;
 	}
 
 	private String truncate(final String message) {

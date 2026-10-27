@@ -87,7 +87,7 @@ public final class AllowlistBodyFilter implements BodyFilter {
 
 		try {
 			final var root = JSON_MAPPER.readTree(body);
-			if (!isContainer(root)) {
+			if (!root.isContainer()) {
 				// A body that is a single value has no field that could keep it
 				return JSON_MAPPER.writeValueAsString(PLACEHOLDER);
 			}
@@ -135,7 +135,7 @@ public final class AllowlistBodyFilter implements BodyFilter {
 		final var masked = new ArrayList<String>();
 		object.properties().forEach(property -> {
 			path.add(property.getKey());
-			if (isContainer(property.getValue())) {
+			if (property.getValue().isContainer()) {
 				mask(property.getValue(), path);
 			} else if (!rules.keeps(path)) {
 				masked.add(property.getKey());
@@ -148,15 +148,11 @@ public final class AllowlistBodyFilter implements BodyFilter {
 	private void maskElements(final ArrayNode array, final List<String> path) {
 		for (var i = 0; i < array.size(); i++) {
 			final var element = array.get(i);
-			if (isContainer(element)) {
+			if (element.isContainer()) {
 				mask(element, path);
 			} else if (!rules.keeps(path)) {
 				array.set(i, PLACEHOLDER);
 			}
 		}
-	}
-
-	private static boolean isContainer(final JsonNode node) {
-		return node.isObject() || node.isArray();
 	}
 }

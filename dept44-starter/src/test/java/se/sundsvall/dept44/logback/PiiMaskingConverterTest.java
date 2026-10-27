@@ -129,7 +129,7 @@ class PiiMaskingConverterTest {
 		final var converter = startedConverter("true", "100");
 		final var fillers = List.of("ordinary words ", "f47ac10b-58cc-4372-a567-0e02b2c3d479 ", "a@b.se ", "a".repeat(64) + "@b.se ");
 		final var values = List.of("anna.andersson@sundsvall.se", "199001011234", "900101-1234", "070-123 45 67", "+46 70 123 45 67",
-			"f47ac10b-58cc-4372-a567-0e02b2c3d479", "2024-03-08 09:15:22");
+			"f47ac10b-58cc-4372-a567-0e02b2c3d479", "2024-03-08 09:15:22", "x".repeat(1500) + "@example.com", "0701-23-45." + "1".repeat(1500) + "-5");
 
 		for (final var filler : fillers) {
 			for (final var value : values) {
@@ -146,11 +146,19 @@ class PiiMaskingConverterTest {
 	}
 
 	@Test
-	void returnsTheBeginningOfTheWholeMessageMaskedAfterARunLongerThanAnAddress() {
+	void masksAnAddressLongerThanAWindow() {
+		// A window that cut the address would leave the beginning of its local part in clear
 		final var message = "x".repeat(2000) + "@example.com";
-		final var whole = PiiMasker.maskPii(message);
 
-		assertThat(startedConverter("true", "100").convert(event(message))).isEqualTo(whole.substring(0, Math.min(100, whole.length())));
+		assertThat(startedConverter("true", "100").convert(event(message))).isEqualTo("x***@example.com");
+	}
+
+	@Test
+	void masksAPhoneNumberBeforeARunOfDigitsThatAWindowCuts() {
+		// Cut by a window, an unlimited fraction of a second would take the phone number for a date, which is left alone
+		final var message = "Call 0701-23-45." + "1".repeat(3000) + "-5 done";
+
+		assertThat(startedConverter("true", "100").convert(event(message))).isEqualTo(("Call ****-**-**." + "1".repeat(3000)).substring(0, 100));
 	}
 
 	@Test

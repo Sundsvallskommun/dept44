@@ -31,8 +31,7 @@
 		<url>https://github.com/Sundsvallskommun/dept44</url>
 	</scm>
 	<properties>
-		<central.skipPublishing>true</central.skipPublishing>
-		<maven.deploy.skip>true</maven.deploy.skip>
+		<!-- Kept off Central by excludeArtifacts in the root pom -->
 		<maven.source.skip>true</maven.source.skip>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
 		<!-- Which benchmarks to run, as a regular expression. Empty runs them all -->

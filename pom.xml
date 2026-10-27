@@ -454,6 +454,11 @@
 							<publishingServerId>central</publishingServerId>
 							<skipPublishing>${central.skipPublishing}</skipPublishing>
 							<autoPublish>${central.autoPublish}</autoPublish>
+							<!-- Built and tested with the project, but never published. central.skipPublishing in the module would
+							     not do it, since the release sets -Dcentral.skipPublishing=false for every module -->
+							<excludeArtifacts>
+								<artifact>dept44-benchmarks</artifact>
+							</excludeArtifacts>
 						</configuration>
 					</plugin>
 					<!-- Signs artifacts with GPG before deployment -->

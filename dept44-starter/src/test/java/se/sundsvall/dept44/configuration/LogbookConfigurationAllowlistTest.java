@@ -230,7 +230,7 @@ class LogbookConfigurationAllowlistTest {
 					.write();
 
 				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").get("bodyOmitted").asString())
-					.isEqualTo("larger than 10 characters, so the allowlist could not be applied"));
+					.isEqualTo("larger than 10 bytes, so the allowlist could not be applied"));
 			});
 	}
 
@@ -247,7 +247,7 @@ class LogbookConfigurationAllowlistTest {
 					.write();
 
 				assertThat(logEntries()).singleElement().satisfies(entry -> assertThat(entry.get("body").get("bodyOmitted").asString())
-					.isEqualTo("larger than 262144 characters, so the allowlist could not be applied"));
+					.isEqualTo("larger than 262144 bytes, so the allowlist could not be applied"));
 			});
 	}
 

@@ -51,7 +51,7 @@ public class BodyFilterProperties {
 		private boolean enabled = true;
 
 		/**
-		 * The longest body, in characters, that is parsed to apply the allowlist. A longer one is replaced by a note. A
+		 * The longest body, in bytes of UTF-8, that is parsed to apply the allowlist. A longer one is replaced by a note. A
 		 * negative value disables the limit.
 		 */
 		private DataSize maxSize = DataSize.ofKilobytes(256);

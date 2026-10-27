@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import tools.jackson.databind.json.JsonMapper;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -217,7 +218,7 @@ class AllowlistBodyFilterTest {
 		final var result = filter().filter(JSON, attachment);
 
 		assertThat(result)
-			.isEqualTo("{\"bodyOmitted\":\"larger than 262144 characters, so the allowlist could not be applied\"}")
+			.isEqualTo("{\"bodyOmitted\":\"larger than 262144 bytes, so the allowlist could not be applied\"}")
 			.doesNotContain("AAAA");
 	}
 
@@ -229,6 +230,22 @@ class AllowlistBodyFilterTest {
 	void replacesABodyWithSomethingThatIsStillJson() {
 		assertThat(filter().filter(JSON, "{not json at all")).satisfies(AllowlistBodyFilterTest::isJson);
 		assertThat(new AllowlistBodyFilter(List.of(), 8).filter(JSON, "{\"a\":\"bbbbbbbbbbbbbbbb\"}")).satisfies(AllowlistBodyFilterTest::isJson);
+	}
+
+	/**
+	 * {"name":"…"} with ten characters of two bytes each, å, and {"a":"…"} with one of four, an emoji, which Java holds as
+	 * two characters. Each fits the limit in characters but not in bytes, and is read with a limit of its size in bytes.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"{\"name\":\"åååååååååå\"}", "{\"a\":\"😀\"}"
+	})
+	void countsTheMaxSizeInBytesOfUtf8(final String body) {
+		final var bytes = body.getBytes(UTF_8).length;
+
+		assertThat(new AllowlistBodyFilter(List.of(), bytes - 1).filter(JSON, body))
+			.isEqualTo("{\"bodyOmitted\":\"larger than " + (bytes - 1) + " bytes, so the allowlist could not be applied\"}");
+		assertThat(new AllowlistBodyFilter(List.of(), bytes).filter(JSON, body)).contains("[masked]");
 	}
 
 	@Test

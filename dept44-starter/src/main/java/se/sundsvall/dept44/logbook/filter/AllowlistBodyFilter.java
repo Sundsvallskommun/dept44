@@ -59,8 +59,8 @@ public final class AllowlistBodyFilter implements BodyFilter {
 	/**
 	 * @param  paths                    the fields whose values are logged, in the syntax {@link AllowlistRules}
 	 *                                  describes
-	 * @param  maxSize                  the longest body, in characters, that is parsed. A longer body is replaced by a
-	 *                                  note. A negative value disables the limit.
+	 * @param  maxSize                  the longest body, in bytes of UTF-8, that is parsed. A longer body is replaced by
+	 *                                  a note. A negative value disables the limit.
 	 * @throws IllegalArgumentException if a path is not within the supported syntax
 	 */
 	public AllowlistBodyFilter(final Collection<String> paths, final long maxSize) {
@@ -70,7 +70,7 @@ public final class AllowlistBodyFilter implements BodyFilter {
 	AllowlistBodyFilter(final AllowlistRules rules, final long maxSize) {
 		this.rules = rules;
 		this.maxSize = maxSize;
-		this.tooLargeNote = jsonNote("larger than " + maxSize + " characters, so the allowlist could not be applied");
+		this.tooLargeNote = jsonNote("larger than " + maxSize + " bytes, so the allowlist could not be applied");
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public final class AllowlistBodyFilter implements BodyFilter {
 		if (contentType == null || !isJson(contentType)) {
 			return "";
 		}
-		if (maxSize >= 0 && body.length() > maxSize) {
+		if (maxSize >= 0 && exceedsMaxSize(body)) {
 			return tooLargeNote;
 		}
 
@@ -103,6 +103,37 @@ public final class AllowlistBodyFilter implements BodyFilter {
 			logFailure(e);
 			return FAILED_NOTE;
 		}
+	}
+
+	/**
+	 * Whether the body takes more than the maximum size in UTF-8, the encoding of JSON sent between systems. Counted
+	 * without encoding it, since that would copy the whole body. A character takes one to three bytes, so most bodies are
+	 * decided by their length alone, and only one near the limit is counted.
+	 */
+	private boolean exceedsMaxSize(final String body) {
+		final var length = (long) body.length();
+		if (length > maxSize) {
+			return true;
+		}
+		if (length * 3 <= maxSize) {
+			return false;
+		}
+		var bytes = 0L;
+		for (var index = 0; index < body.length(); index++) {
+			bytes += utf8Length(body.charAt(index));
+		}
+		return bytes > maxSize;
+	}
+
+	/** A surrogate counts two, so that a pair counts the four bytes it takes. */
+	private static int utf8Length(final char character) {
+		if (character < 0x80) {
+			return 1;
+		}
+		if (character < 0x800 || Character.isSurrogate(character)) {
+			return 2;
+		}
+		return 3;
 	}
 
 	/**

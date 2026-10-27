@@ -83,7 +83,7 @@ e-mail address. JSON does not tell such a map from an object, so the allowlist d
 (`dept44.logback.pii-masking.enabled`, see `dept44-starter-logback-logserver`) masks the categories it knows wherever
 they appear in the line.
 
-A body longer than `logbook.body-filters.allowlist.max-size` (default `256KB`, counted in characters, `-1` for no
+A body longer than `logbook.body-filters.allowlist.max-size` (default `256KB`, counted in bytes of UTF-8, `-1` for no
 limit) is not parsed, and is logged as a note instead. The note logged in place of a body larger than
 `logbook.logs.maxBodySizeToCapture` is kept whatever the content type, so an XML body that was too large shows that note
 rather than nothing. A service whose payloads hold no personal data can log bodies in

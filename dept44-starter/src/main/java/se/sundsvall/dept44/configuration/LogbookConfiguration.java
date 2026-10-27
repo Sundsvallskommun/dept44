@@ -42,6 +42,7 @@ import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
 import org.zalando.logbook.servlet.LogbookFilter;
 import se.sundsvall.dept44.logbook.BodyCapturePolicy;
 import se.sundsvall.dept44.logbook.BodyCaptureStrategy;
+import se.sundsvall.dept44.logbook.filter.AllowlistBodyFilter;
 import se.sundsvall.dept44.logbook.servlet.LogbookServletFilter;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -63,6 +64,8 @@ import static se.sundsvall.dept44.util.EncodingUtils.fixDoubleEncodedUTF8Content
 	BodyFilterProperties.class
 })
 public class LogbookConfiguration {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LogbookConfiguration.class);
 
 	private final String loggerName;
 	private final Set<String> excludedPaths;
@@ -126,22 +129,36 @@ public class LogbookConfiguration {
 			// Logbook's own masking of tokens and credentials, which it drops as soon as any body filter is configured
 			.bodyFilter(BodyFilters.defaultValue());
 
+		// Built even when they are not used, so that an invalid xpath or allowlist path still stops startup
+		final var xPathFilters = buildXPathFilters(
+			Optional.ofNullable(bodyFilterProperties.getxPath())
+				.orElseGet(Collections::emptyList)
+				.stream()
+				.reduce(new HashMap<>(), (acc, map) -> {
+					acc.put(map.get("key"), map.get("value"));
+					return acc;
+				}));
+		final var allowlist = bodyFilterProperties.getAllowlist();
+		final var allowlistFilter = new AllowlistBodyFilter(allowlist.getPaths(), allowlist.getMaxSize().toBytes());
+
 		builder.bodyFilters(buildJsonPathFilters(objectMapper, Optional.ofNullable(bodyFilterProperties.getJsonPath())
 			.orElseGet(Collections::emptyList)
 			.stream()
 			.reduce(new HashMap<>(), (acc, map) -> {
 				acc.put(map.get("key"), map.get("value"));
 				return acc;
-			})))
-			.bodyFilters(buildXPathFilters(
-				Optional.ofNullable(bodyFilterProperties.getxPath())
-					.orElseGet(Collections::emptyList)
-					.stream()
-					.reduce(new HashMap<>(), (acc, map) -> {
-						acc.put(map.get("key"), map.get("value"));
-						return acc;
-					})))
-			.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()));
+			})));
+		if (!allowlist.isEnabled()) {
+			// With the allowlist enabled, an XML body is logged without its body, so these would only cost a parse
+			builder.bodyFilters(xPathFilters);
+		}
+		builder.bodyFilters(Optional.ofNullable(bodyFilters).orElse(List.of()));
+
+		if (allowlist.isEnabled()) {
+			// After every other body filter, so that only what the allowlist names is logged, whatever they leave
+			builder.bodyFilter(allowlistFilter);
+		}
+		logAllowlist(allowlist, xPathFilters);
 
 		// Truncated last: a body cut short is no longer valid JSON or XML, so the filters above could not mask it
 		setMaxBodySizeToLog(builder);
@@ -149,6 +166,23 @@ public class LogbookConfiguration {
 		return builder
 			.condition(exclude(getExclusions()))
 			.build();
+	}
+
+	/**
+	 * Says once, at startup, what the payload log does with bodies, since a service that upgrades into the allowlist sees
+	 * its log change without having changed anything itself.
+	 */
+	private static void logAllowlist(final BodyFilterProperties.Allowlist allowlist, final List<BodyFilter> xPathFilters) {
+		if (!allowlist.isEnabled()) {
+			LOGGER.info("Payload log bodies are logged in full, since logbook.body-filters.allowlist.enabled is false");
+			return;
+		}
+		LOGGER.info("Payload log bodies are masked except for the values of the {} field(s) in logbook.body-filters.allowlist.paths. "
+			+ "A body that is not JSON is logged without its body", allowlist.getPaths().size());
+		if (!xPathFilters.isEmpty()) {
+			LOGGER.warn("logbook.body-filters.x-path is not applied while logbook.body-filters.allowlist is enabled, since a body that is "
+				+ "not JSON is then logged without its body");
+		}
 	}
 
 	private void setMaxBodySizeToLog(final LogbookCreator.Builder builder) {

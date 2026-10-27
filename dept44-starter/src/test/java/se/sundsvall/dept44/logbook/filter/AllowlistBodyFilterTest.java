@@ -1,0 +1,475 @@
+package se.sundsvall.dept44.logbook.filter;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
+import se.sundsvall.dept44.logbook.BodyCapturePolicy;
+import tools.jackson.databind.json.JsonMapper;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class AllowlistBodyFilterTest {
+
+	private static final String JSON = "application/json";
+	private static final int MAX_SIZE = 262144;
+
+	private static AllowlistBodyFilter filter(final String... paths) {
+		return new AllowlistBodyFilter(List.of(paths), MAX_SIZE);
+	}
+
+	@Test
+	void keepsWhatIsListedAndMasksTheRest() {
+		final var result = filter("$..id", "$..status").filter(JSON,
+			"""
+				{"id":"abc","status":"ONGOING","title":"Something broken","description":"Free text"}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"id":"abc","status":"ONGOING","title":"[masked]","description":"[masked]"}""");
+	}
+
+	@Test
+	void keepsEveryPropertyNameAndMasksEveryValueThatIsNotListed() {
+		final var result = filter("$..fileSize").filter(JSON,
+			"""
+				{"fileSize":274,"internal":false,"viewed":null,"legalId":199001011234,"fileName":"anna.pdf"}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"fileSize":274,"internal":"[masked]","viewed":"[masked]","legalId":"[masked]","fileName":"[masked]"}""");
+	}
+
+	@Test
+	void masksNestedObjectsAndArraysWithoutLosingTheirShape() {
+		final var result = filter("$..id", "$..type").filter(JSON,
+			"""
+				{"stakeholders":[{"id":"1","firstName":"Anna","contactChannels":[{"type":"Email","value":"a@b.c"}]}]}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"stakeholders":[{"id":"1","firstName":"[masked]","contactChannels":[{"type":"Email","value":"[masked]"}]}]}""");
+	}
+
+	@Test
+	void judgesValuesInAnArrayByTheFieldTheArrayBelongsTo() {
+		final var result = filter("$..relationIds").filter(JSON,
+			"""
+				{"recipients":["a@b.c","d@e.f"],"relationIds":["REL-1",2],"counts":[1,2]}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"recipients":["[masked]","[masked]"],"relationIds":["REL-1",2],"counts":["[masked]","[masked]"]}""");
+	}
+
+	@Test
+	void keepsAFieldOnlyUnderTheParentItIsListedWith() {
+		final var filter = filter("$..key", "$..metadata.value");
+
+		assertThat(filter.filter(JSON, """
+			{"metadata":[{"key":"Status","value":"STATUS-3"}]}"""))
+			.isEqualTo("""
+				{"metadata":[{"key":"Status","value":"STATUS-3"}]}""");
+
+		assertThat(filter.filter(JSON, """
+			{"operations":[{"op":"replace","path":"/title","value":"It is my birthday"}]}"""))
+			.isEqualTo("""
+				{"operations":[{"op":"[masked]","path":"[masked]","value":"[masked]"}]}""");
+	}
+
+	@Test
+	void masksThePageRowsWithoutReplacingThePageItself() {
+		final var result = filter("$..id", "$.totalElements").filter(JSON,
+			"""
+				{"content":[{"id":"1","content":"Bifogar en fil"}],"totalElements":1}""");
+
+		assertThat(result).isEqualTo(
+			"""
+				{"content":[{"id":"1","content":"[masked]"}],"totalElements":1}""");
+	}
+
+	/**
+	 * JSON does not tell a map from an object, so a key that is data is logged like the name of a field.
+	 */
+	@Test
+	void keepsTheKeysOfAMap() {
+		assertThat(filter("$..id").filter(JSON, """
+			{"byPersonalNumber":{"199001011234":{"id":"1","name":"Anna"}}}"""))
+			.isEqualTo("""
+				{"byPersonalNumber":{"199001011234":{"id":"1","name":"[masked]"}}}""");
+	}
+
+	@Test
+	void logsAKeptNumberAsItWasSent() {
+		assertThat(filter("$..amount").filter(JSON, """
+			{"amount":[100.50,0.10000000000000000001,12345678901234567890]}"""))
+			.isEqualTo("""
+				{"amount":[100.50,0.10000000000000000001,12345678901234567890]}""");
+	}
+
+	@Test
+	void dropsABodyThatIsNotJson() {
+		assertThat(filter().filter("text/plain", "Testing! :)")).isEmpty();
+		assertThat(filter().filter("application/xml", "<a>b</a>")).isEmpty();
+		assertThat(filter().filter("application/x-www-form-urlencoded", "name=Anna")).isEmpty();
+		assertThat(filter().filter(null, "{\"a\":\"b\"}")).isEmpty();
+	}
+
+	@Test
+	void masksAProblemResponseToo() {
+		assertThat(filter("$..status").filter("application/problem+json",
+			"""
+				{"status":404,"title":"Not Found","detail":"No errand with id 1"}"""))
+			.isEqualTo("""
+				{"status":404,"title":"[masked]","detail":"[masked]"}""");
+	}
+
+	@Test
+	void passesOnAnEmptyBody() {
+		assertThat(filter().filter(JSON, null)).isNull();
+		assertThat(filter().filter(JSON, "  ")).isEqualTo("  ");
+	}
+
+	@Test
+	void withholdsABodyItCannotRead() {
+		assertThat(filter().filter(JSON, "{not json at all"))
+			.isEqualTo("{\"bodyOmitted\":\"not valid JSON, so the allowlist could not be applied\"}");
+	}
+
+	@Test
+	void logsNothingOfABodyItCannotRead() {
+		final var logger = (Logger) LoggerFactory.getLogger(AllowlistBodyFilter.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(Level.DEBUG);
+		try {
+			filter().filter(JSON, "{\"name\":Anna Andersson}");
+		} finally {
+			logger.detachAppender(appender);
+			logger.setLevel(null);
+		}
+
+		assertThat(appender.list).singleElement()
+			.satisfies(event -> assertThat(event.getFormattedMessage()).doesNotContain("Anna"));
+	}
+
+	/**
+	 * A fault of the filter's own is not taken for a body that is not JSON: it is withheld all the same, but warned about.
+	 */
+	@Test
+	void withholdsTheBodyAndWarnsWhenTheFilterItselfFails() {
+		final var rules = mock(AllowlistRules.class);
+		when(rules.keeps(anyList())).thenThrow(new IllegalStateException("A fault"));
+		final var logger = (Logger) LoggerFactory.getLogger(AllowlistBodyFilter.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		try {
+			assertThat(new AllowlistBodyFilter(rules, MAX_SIZE).filter(JSON, "{\"name\":\"Anna\"}"))
+				.isEqualTo("{\"bodyOmitted\":\"the allowlist could not be applied\"}");
+		} finally {
+			logger.detachAppender(appender);
+		}
+
+		assertThat(appender.list).singleElement().satisfies(event -> {
+			assertThat(event.getLevel()).isEqualTo(Level.WARN);
+			assertThat(event.getThrowableProxy().getClassName()).isEqualTo(IllegalStateException.class.getName());
+		});
+	}
+
+	@Test
+	void warnsOfAFaultOfItsOwnOnlyOnce() {
+		final var rules = mock(AllowlistRules.class);
+		when(rules.keeps(anyList())).thenThrow(new IllegalStateException("A fault"));
+		final var filter = new AllowlistBodyFilter(rules, MAX_SIZE);
+		final var logger = (Logger) LoggerFactory.getLogger(AllowlistBodyFilter.class);
+		final var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(Level.DEBUG);
+		try {
+			filter.filter(JSON, "{\"name\":\"Anna\"}");
+			filter.filter(JSON, "{\"name\":\"Anna\"}");
+		} finally {
+			logger.detachAppender(appender);
+			logger.setLevel(null);
+		}
+
+		assertThat(appender.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.WARN, Level.DEBUG);
+	}
+
+	@Test
+	void withholdsABodyTooLargeToReadWithoutReadingIt() {
+		final var attachment = "{\"base64EncodedString\":\"" + "A".repeat(300_000) + "\"}";
+
+		final var result = filter().filter(JSON, attachment);
+
+		assertThat(result)
+			.isEqualTo("{\"bodyOmitted\":\"larger than 262144 bytes, so the allowlist could not be applied\"}")
+			.doesNotContain("AAAA");
+	}
+
+	/**
+	 * A body that looks like JSON is embedded into the log entry as it is, so a replacement that is not JSON costs the
+	 * entry its fields wherever the log server reads it as JSON.
+	 */
+	@Test
+	void replacesABodyWithSomethingThatIsStillJson() {
+		assertThat(filter().filter(JSON, "{not json at all")).satisfies(AllowlistBodyFilterTest::isJson);
+		assertThat(new AllowlistBodyFilter(List.of(), 8).filter(JSON, "{\"a\":\"bbbbbbbbbbbbbbbb\"}")).satisfies(AllowlistBodyFilterTest::isJson);
+	}
+
+	/**
+	 * {"name":"…"} with ten characters of two bytes each, å, and {"a":"…"} with one of four, an emoji, which Java holds as
+	 * two characters. Each fits the limit in characters but not in bytes, and is read with a limit of its size in bytes.
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"{\"name\":\"åååååååååå\"}", "{\"a\":\"😀\"}"
+	})
+	void countsTheMaxSizeInBytesOfUtf8(final String body) {
+		final var bytes = body.getBytes(UTF_8).length;
+
+		assertThat(new AllowlistBodyFilter(List.of(), bytes - 1).filter(JSON, body))
+			.isEqualTo("{\"bodyOmitted\":\"larger than " + (bytes - 1) + " bytes, so the allowlist could not be applied\"}");
+		assertThat(new AllowlistBodyFilter(List.of(), bytes).filter(JSON, body)).contains("[masked]");
+	}
+
+	@Test
+	void readsABodyOfAnySizeWithANegativeMaxSize() {
+		final var body = "{\"id\":\"1\",\"description\":\"" + "x".repeat(MAX_SIZE) + "\"}";
+
+		assertThat(new AllowlistBodyFilter(List.of("$..id"), -1).filter(JSON, body))
+			.isEqualTo("{\"id\":\"1\",\"description\":\"[masked]\"}");
+	}
+
+	@Test
+	void keepsTheNoteForABodyLargerThanWasCaptured() {
+		assertThat(filter().filter(JSON, "{\"bodyOmitted\":\"larger than 100 bytes\"}"))
+			.isEqualTo("{\"bodyOmitted\":\"larger than 100 bytes\"}");
+	}
+
+	/**
+	 * Kept whatever the content type, so that the log tells a body that was left out from one that was empty.
+	 */
+	@ParameterizedTest
+	@NullSource
+	@ValueSource(strings = {
+		"application/json", "text/json", "application/xml", "text/plain", "application/pdf"
+	})
+	void keepsTheNoteForABodyLargerThanWasCapturedWhateverTheContentType(final String contentType) {
+		final var note = new BodyCapturePolicy(100).omittedNote(contentType);
+
+		assertThat(filter().filter(contentType, note)).isEqualTo(note);
+	}
+
+	@Test
+	void masksAFieldThatIsOnlyNamedLikeTheNote() {
+		assertThat(filter().filter(JSON, "{\"bodyOmitted\":\"Anna Andersson\"}"))
+			.isEqualTo("{\"bodyOmitted\":\"[masked]\"}");
+		assertThat(filter().filter(JSON, "{\"bodyOmitted\":\"larger than 100 bytes\",\"name\":\"Anna\"}"))
+			.isEqualTo("{\"bodyOmitted\":\"[masked]\",\"name\":\"[masked]\"}");
+	}
+
+	@Test
+	void keepsNothingBelowAPathToAnObject() {
+		assertThat(filter("$.address").filter(JSON, """
+			{"address":{"street":"Storgatan 1","city":"Sundsvall"}}"""))
+			.isEqualTo("""
+				{"address":{"street":"[masked]","city":"[masked]"}}""");
+	}
+
+	@Test
+	void keepsEveryValueBelowAFieldWithADescendantWildcard() {
+		assertThat(filter("$.address..*").filter(JSON, """
+			{"address":{"street":"Storgatan 1","city":{"name":"Sundsvall"}},"name":"Anna"}"""))
+			.isEqualTo("""
+				{"address":{"street":"Storgatan 1","city":{"name":"Sundsvall"}},"name":"[masked]"}""");
+	}
+
+	@Test
+	void keepsTheValuesOfNestedArrays() {
+		assertThat(filter("$.matrix[*][*]").filter(JSON, """
+			{"matrix":[["a","b"]],"name":"Anna"}"""))
+			.isEqualTo("""
+				{"matrix":[["a","b"]],"name":"[masked]"}""");
+	}
+
+	@Test
+	void keepsAFieldOnlyWhereAnAnchoredPathSaysSo() {
+		// $[*].name is a metadata list; $.sender.name is the name of whoever sent an e-mail
+		final var filter = filter("$[*].name", "$..id");
+
+		assertThat(filter.filter(JSON, """
+			[{"id":"1","name":"STATUS-1"},{"id":"2","name":"STATUS-2"}]"""))
+			.isEqualTo("""
+				[{"id":"1","name":"STATUS-1"},{"id":"2","name":"STATUS-2"}]""");
+
+		assertThat(filter.filter(JSON, """
+			{"sender":{"name":"Bender Bending Rodriguez","address":"bender@rodriguez.com"}}"""))
+			.isEqualTo("""
+				{"sender":{"name":"[masked]","address":"[masked]"}}""");
+	}
+
+	/**
+	 * Array nesting is transparent both ways, so the element marker does not require an array either.
+	 */
+	@Test
+	void keepsAFieldOfAnObjectForAPathThroughAnArray() {
+		assertThat(filter("$[*].name").filter(JSON, """
+			{"name":"Kept","id":"1"}"""))
+			.isEqualTo("""
+				{"name":"Kept","id":"[masked]"}""");
+
+		assertThat(filter("$.content[*].title").filter(JSON, """
+			{"content":{"title":"Kept"}}"""))
+			.isEqualTo("""
+				{"content":{"title":"Kept"}}""");
+	}
+
+	@Test
+	void treatsArrayNestingAsTransparentSoTheElementMarkerIsOptional() {
+		final var withMarker = filter("$.content[*].title").filter(JSON, """
+			{"content":[{"title":"Kept","description":"Masked"}]}""");
+		final var withoutMarker = filter("$.content.title").filter(JSON, """
+			{"content":[{"title":"Kept","description":"Masked"}]}""");
+
+		assertThat(withMarker).isEqualTo(withoutMarker).isEqualTo("""
+			{"content":[{"title":"Kept","description":"[masked]"}]}""");
+	}
+
+	@Test
+	void anchorsAPathAtTheRootAndKeepsADescendantAtAnyDepth() {
+		assertThat(filter("$.title").filter(JSON, """
+			{"title":"Kept","errand":{"title":"Masked"}}"""))
+			.isEqualTo("""
+				{"title":"Kept","errand":{"title":"[masked]"}}""");
+
+		assertThat(filter("$..title").filter(JSON, """
+			{"title":"Kept","errand":{"title":"Kept"}}"""))
+			.isEqualTo("""
+				{"title":"Kept","errand":{"title":"Kept"}}""");
+	}
+
+	@Test
+	void keepsAnyOneFieldForAWildcardSegment() {
+		assertThat(filter("$.*.id").filter(JSON, """
+			{"a":{"id":"1","x":"m"},"b":{"id":"2"},"c":{"d":{"id":"3"}}}"""))
+			.isEqualTo("""
+				{"a":{"id":"1","x":"[masked]"},"b":{"id":"2"},"c":{"d":{"id":"[masked]"}}}""");
+	}
+
+	@Test
+	void refusesAPathItCannotRead() {
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a[?(@.b=='c')].d"))
+			.withMessage("Invalid path '$.a[?(@.b=='c')].d' in logbook.body-filters.allowlist.paths: a predicate, a slice or an index cannot be used. "
+				+ "Only '[*]' and a quoted name such as ['a.b'] are supported");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a[0].b"))
+			.withMessageContaining("a predicate, a slice or an index cannot be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.content[*]title"))
+			.withMessageContaining("'[*]' must be followed by '.' or end the path");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a.length()"))
+			.withMessageContaining("a function cannot be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.."))
+			.withMessageContaining("it names an empty field");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..a..id"))
+			.withMessageContaining("only one '..' can be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..a['b']..id"))
+			.withMessageContaining("only one '..' can be used");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$a.b"))
+			.withMessageContaining("it must continue with '.', '..' or '[' after the root");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$[*]"))
+			.withMessageContaining("it must continue with '.', '..' or '[' after the root");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("title"))
+			.withMessageContaining("it is not a path. Write '$..title'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter(" "))
+			.withMessageContaining("a path cannot be blank");
+	}
+
+	@Test
+	void keepsAFieldWhoseNameHoldsADotWhenTheNameIsQuoted() {
+		final var body = """
+			{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"a@b.c","PriorityInfo":{"Priority":"nested"}}}""";
+
+		assertThat(filter("$.Data['PriorityInfo.Priority']").filter(JSON, body))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"[masked]","PriorityInfo":{"Priority":"[masked]"}}}""");
+		assertThat(filter("$..[\"PriorityInfo.Priority\"]").filter(JSON, body))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"IT4","Virtual.Shop_Epost":"[masked]","PriorityInfo":{"Priority":"[masked]"}}}""");
+	}
+
+	@Test
+	void readsTheDotsOfAnUnquotedPathAsSteps() {
+		assertThat(filter("$.Data.PriorityInfo.Priority").filter(JSON, """
+			{"Data":{"PriorityInfo.Priority":"IT4","PriorityInfo":{"Priority":"nested"}}}"""))
+			.isEqualTo("""
+				{"Data":{"PriorityInfo.Priority":"[masked]","PriorityInfo":{"Priority":"nested"}}}""");
+	}
+
+	@Test
+	void readsAQuotedNameAsItIsWritten() {
+		assertThat(filter("$['a.b']", "$['c'][*]['d[*]e']").filter(JSON, """
+			{"a.b":"1","a":{"b":"2"},"c":[{"d[*]e":"3","f":"4"}]}"""))
+			.isEqualTo("""
+				{"a.b":"1","a":{"b":"[masked]"},"c":[{"d[*]e":"3","f":"[masked]"}]}""");
+	}
+
+	@Test
+	void refusesAQuotedNameItCannotRead() {
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b','c']"))
+			.withMessageContaining("a quoted name cannot hold its own quote");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['it's']"))
+			.withMessageContaining("a quoted name cannot hold its own quote");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b\\'c']"))
+			.withMessageContaining("a quoted name cannot hold its own quote or a '\\'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b'"))
+			.withMessageContaining("a quoted name must end with ']");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['']"))
+			.withMessageContaining("it names an empty field");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$['*']"))
+			.withMessageContaining("a quoted name cannot be '*' or '..'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$..['..']"))
+			.withMessageContaining("a quoted name cannot be '*' or '..'");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a['b']c"))
+			.withMessageContaining("a quoted name must be followed by '.', '[' or end the path");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> filter("$.a.['b']"))
+			.withMessageContaining("it names an empty field");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"\"Anna Andersson, Storgatan 1\"", "199001011234", "true", "null"
+	})
+	void masksABodyThatIsASingleValue(final String body) {
+		// No field names it, so nothing keeps it. Quoted, so that what replaces it is still a JSON document
+		assertThat(filter("$..title").filter(JSON, body))
+			.isEqualTo("\"[masked]\"")
+			.satisfies(AllowlistBodyFilterTest::isJson);
+	}
+
+	@Test
+	void withholdsABodyNestedTooDeeplyToRead() {
+		final var deep = "{\"a\":".repeat(6000) + "\"x\"" + "}".repeat(6000);
+
+		assertThat(filter().filter(JSON, deep))
+			.isEqualTo("{\"bodyOmitted\":\"not valid JSON, so the allowlist could not be applied\"}");
+	}
+
+	private static void isJson(final String body) {
+		assertThatNoException().isThrownBy(() -> JsonMapper.builder().build().readTree(body));
+	}
+}

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>se.sundsvall.dept44</groupId>
+		<artifactId>dept44-starter-parent</artifactId>
+		<version>8.1.0-SNAPSHOT</version>
+		<relativePath>../dept44-starter-parent</relativePath>
+	</parent>
+	<artifactId>dept44-benchmarks</artifactId>
+	<name>dept44-benchmarks</name>
+	<description>JMH benchmarks for dept44. Built with the project, never published, run by hand.</description>
+	<url>https://github.com/Sundsvallskommun/dept44</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Utvecklingsfabriken Sundsvall kommun</name>
+			<url>https://github.com/orgs/Sundsvallskommun/people</url>
+			<organization>Sundsvalls kommun</organization>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Sundsvallskommun/dept44.git</connection>
+		<developerConnection>scm:git:https://github.com/Sundsvallskommun/dept44.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Sundsvallskommun/dept44</url>
+	</scm>
+	<properties>
+		<!-- Kept off Central by excludeArtifacts in the root pom -->
+		<maven.source.skip>true</maven.source.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+		<!-- Which benchmarks to run, as a regular expression. Empty runs them all -->
+		<jmh.include />
+		<!-- Further JMH options, such as -f 1 -wi 1 -i 2 for a quick run -->
+		<jmh.args />
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter</artifactId>
+		</dependency>
+		<!-- Its logback-spring.xml sets up the console and GELF appenders, as in a service -->
+		<dependency>
+			<groupId>se.sundsvall.dept44</groupId>
+			<artifactId>dept44-starter-logback-logserver</artifactId>
+		</dependency>
+		<!-- The requests and responses that are logged. Managed as a test dependency by Logbook's BOM -->
+		<dependency>
+			<groupId>org.zalando</groupId>
+			<artifactId>logbook-test</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.openjdk.jmh</groupId>
+			<artifactId>jmh-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openjdk.jmh</groupId>
+			<artifactId>jmh-generator-annprocess</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<!-- Runs the benchmarks: mvn -pl dept44-benchmarks compile exec:exec -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>${exec-maven-plugin.version}</version>
+				<configuration>
+					<executable>java</executable>
+					<commandlineArgs>-classpath %classpath org.openjdk.jmh.Main -prof gc -rf json -rff ${project.build.directory}/jmh-result.json ${jmh.args} ${jmh.include}</commandlineArgs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

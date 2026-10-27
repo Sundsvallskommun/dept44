@@ -75,6 +75,7 @@ class PiiMaskerTest {
 			Arguments.of("Period 2024-05-01 2024-06-01", "Period 2024-05-01 2024-06-01"),
 			Arguments.of("08.05.2024 07:30", "08.05.2024 07:30"),
 			Arguments.of("2024-03-08T09:15:22.123 done", "2024-03-08T09:15:22.123 done"),
+			Arguments.of("2024-03-08T09:15:22.123456789 done", "2024-03-08T09:15:22.123456789 done"),
 			// A phone number right after a digit and a slash or hyphen, or before a decimal point, is still masked whole
 			Arguments.of("Tel 060-123 45/070-123 45 67", "Tel ***-*** **/***-*** ** **"),
 			Arguments.of("08-123 45 67/+46 70 123 45 67", "**-*** ** **/+** ** *** ** **"),
@@ -130,7 +131,33 @@ class PiiMaskerTest {
 			Arguments.of("a@b.co", "a***@b.co"),
 			Arguments.of("Contact john.doe@example.com today", "Contact j***@example.com today"),
 			Arguments.of("no email here", "no email here"),
-			Arguments.of("a@b.com, c@d.org", "a***@b.com, c***@d.org"));
+			Arguments.of("a@b.com, c@d.org", "a***@b.com, c***@d.org"),
+			Arguments.of("a".repeat(64) + "@example.com", "a***@example.com"),
+			// Longer than the standard allows, and still masked from the first character
+			Arguments.of("firstname.middlename.lastname.department.unit.subunit.sundsvall.kommun@sundsvall.se", "f***@sundsvall.se"),
+			Arguments.of("anna@" + "a".repeat(300) + ".se", "a***@" + "a".repeat(300) + ".se"),
+			// An address that starts where the one before it ends
+			Arguments.of("anna@x.se+bob@y.se", "a***@x.se+***@y.se"),
+			Arguments.of("anna@x.se%20bob@y.se", "a***@x.se%***@y.se"));
+	}
+
+	@Test
+	void maskEmailStaysLinearOnALongRunWithoutAnAddress() {
+		// Such as a token: searched again from every position in it, 50 000 characters took 11 seconds
+		final var value = "x".repeat(200_000);
+
+		final var masked = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> PiiMasker.maskEmail(value));
+
+		assertThat(masked).isEqualTo(value);
+	}
+
+	@Test
+	void maskEmailStaysLinearOnALongDomainWithoutATopLevelDomain() {
+		final var value = "x@" + "a.".repeat(100_000);
+
+		final var masked = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> PiiMasker.maskEmail(value));
+
+		assertThat(masked).isEqualTo(value);
 	}
 
 	@ParameterizedTest

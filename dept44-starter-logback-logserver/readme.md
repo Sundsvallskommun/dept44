@@ -67,6 +67,14 @@ Set `dept44.logback.pii-masking.enabled=true` to mask personally identifiable in
 console and GELF - regardless of whether the producing code remembered to mask the value itself. The following are
 masked:
 
+> **Before 8.1.0, GELF was not masked.** The GELF layouts were configured as `shortPatternLayout` and
+> `fullPatternLayout`, names that logback-gelf 6 does not know. Logback ignores such elements, so the encoder used its
+> own `%m` layouts, and only the console was masked. A service with its own `logback-spring.xml` that copied the GELF
+> encoder must rename them to `shortMessageLayout` and `fullMessageLayout`. A warning such as
+> `Ignoring unknown property [shortPatternLayout]` at startup shows the problem. The short message, Graylog's
+> `message` field, also held the whole line then. It now holds the first 100 characters, and the whole line is in
+> `full_message`, so a search, stream rule or extractor that reads further into `message` has to read `full_message`.
+
 |           Category            |             Example input              |   Masked output    |
 |-------------------------------|----------------------------------------|--------------------|
 | Swedish personal identity no. | `900101-1234` / `199001011234`         | `******-****`      |
@@ -77,6 +85,11 @@ masked:
 The masking is performed by the `%maskPii` pattern conversion word (class
 `se.sundsvall.dept44.util.PiiMasker` / `se.sundsvall.dept44.logback.PiiMaskingConverter`). When disabled it renders
 identically to `%m`, so there is no behavioural change in the default configuration.
+
+`%maskPii{100}` returns at most 100 characters, the same first 100 as `%.-100maskPii`, but masks only as much of the
+message as that takes, about a thousand characters, instead of all of it. The GELF short message uses it, since a
+payload line can be a megabyte. A service with its own `logback-spring.xml` that copied `%.-100maskPii` can change it to
+`%maskPii{100}`.
 
 #### Turning a single category off
 

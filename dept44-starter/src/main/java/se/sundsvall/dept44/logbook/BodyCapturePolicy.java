@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.zalando.logbook.HttpMessage;
@@ -49,6 +50,13 @@ public record BodyCapturePolicy(long maxBodySize) {
 	public static final long DEFAULT_MAX_BODY_SIZE = 1024L * 1024L;
 
 	private static final MediaType MULTIPART = MediaType.valueOf("multipart/*");
+
+	/**
+	 * The notes of {@link #omittedNote(String)}, whatever the limit, since a WebClient or WebServiceTemplate may log with a
+	 * policy of its own. The JSON note with any whitespace a filter adds.
+	 */
+	private static final Pattern OMITTED_NOTE = Pattern.compile(
+		"\\{\\s*\"bodyOmitted\"\\s*:\\s*\"larger than \\d+ bytes\"\\s*}|<bodyOmitted>larger than \\d+ bytes</bodyOmitted>|<body omitted: larger than \\d+ bytes>");
 	private static final String ATTACHMENT = "attachment";
 	private static final long UNKNOWN_LENGTH = -1;
 	private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
@@ -94,15 +102,34 @@ public record BodyCapturePolicy(long maxBodySize) {
 	 * itself JSON or XML, so that json-path and xpath filters can still process it.
 	 */
 	public String omittedNote(final String contentType) {
+		// Concatenated rather than formatted, since %d writes the digits of the default locale, which isOmittedNote may not
+		// read as digits
 		final var note = "larger than " + maxBodySize + " bytes";
 		final var type = String.valueOf(contentType).toLowerCase(Locale.ROOT);
 		if (type.contains("json")) {
-			return "{\"bodyOmitted\":\"" + note + "\"}";
+			return jsonNote(note);
 		}
 		if (type.contains("xml")) {
 			return "<bodyOmitted>" + note + "</bodyOmitted>";
 		}
 		return "<body omitted: " + note + ">";
+	}
+
+	/**
+	 * A note logged in place of a JSON body, itself JSON, so that the log formatter embeds it into the entry.
+	 *
+	 * @param reason why the body was left out, as text that needs no escaping in a JSON string
+	 */
+	public static String jsonNote(final String reason) {
+		return "{\"bodyOmitted\":\"" + reason + "\"}";
+	}
+
+	/**
+	 * Whether a body is a note {@link #omittedNote(String)} logs in place of a body larger than allowed, of any content
+	 * type. Matched as a whole, so that a body that only has a field of the same name is not taken for the note.
+	 */
+	public static boolean isOmittedNote(final String body) {
+		return OMITTED_NOTE.matcher(body).matches();
 	}
 
 	/**

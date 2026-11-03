@@ -20,6 +20,7 @@ import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.CannotCreateTransactionException;
 import se.sundsvall.dept44.exception.ServerProblem;
 
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.BLOCKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRUPTED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT;
@@ -79,11 +80,11 @@ public final class TransientFailures {
 	}
 
 	/**
-	 * A publish that timed out or was interrupted: the broker may still have the message. One that was returned does not
-	 * pass by trying again.
+	 * A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked was not
+	 * sent, and waits out the alarm. One that was returned does not pass by trying again.
 	 */
 	private static boolean isOutage(final Set<Throwable> causes) {
-		return causes.stream().anyMatch(cause -> isAny(cause, OUTAGES) || isPublish(cause, TIMEOUT) || isPublish(cause, INTERRUPTED));
+		return causes.stream().anyMatch(cause -> isAny(cause, OUTAGES) || isPublish(cause, TIMEOUT) || isPublish(cause, INTERRUPTED) || isPublish(cause, BLOCKED));
 	}
 
 	/**

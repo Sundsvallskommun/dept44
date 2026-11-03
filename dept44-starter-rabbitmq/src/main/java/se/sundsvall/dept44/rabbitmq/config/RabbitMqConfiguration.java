@@ -119,8 +119,8 @@ class RabbitMqConfiguration {
 	 * Gets the registry through a provider: a bean that depends on the registry is started after it, whatever its phase.
 	 */
 	@Bean
-	RequestIdErrorHandlerInstaller dept44RequestIdErrorHandlerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
-		return new RequestIdErrorHandlerInstaller(registry);
+	RequestIdContainerInstaller dept44RequestIdContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
+		return new RequestIdContainerInstaller(registry);
 	}
 
 	@Bean

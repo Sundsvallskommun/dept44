@@ -47,7 +47,8 @@ class TransientFailuresTest {
 			new AmqpConnectException(new ConnectException("Connection refused")),
 			CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("database")),
 			new RabbitPublishException(RabbitPublishException.Reason.TIMEOUT, "message-id", "not confirmed in time"),
-			new RabbitPublishException(RabbitPublishException.Reason.INTERRUPTED, "message-id", "interrupted"));
+			new RabbitPublishException(RabbitPublishException.Reason.INTERRUPTED, "message-id", "interrupted"),
+			new RabbitPublishException(RabbitPublishException.Reason.BLOCKED, "message-id", "the broker blocks publishing"));
 	}
 
 	static Stream<Throwable> serverErrors() {

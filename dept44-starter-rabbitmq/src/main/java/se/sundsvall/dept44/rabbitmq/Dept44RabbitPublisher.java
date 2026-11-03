@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -15,6 +16,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.BLOCKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRUPTED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
@@ -28,6 +30,10 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT
  * that does not wait for that can lose the message without anyone noticing: on a nack, on an exchange no queue is bound
  * to, or on a connection that drops.
  * <p>
+ * While the broker blocks publishing, during a memory or disk alarm, a publish fails at once instead of waiting in the
+ * socket until the alarm clears. The broker blocks a connection once it publishes during the alarm, so the first
+ * publish of an alarm ends in a timeout.
+ * <p>
  * Each publish waits for a round trip to the broker.
  */
 public class Dept44RabbitPublisher {
@@ -36,6 +42,7 @@ public class Dept44RabbitPublisher {
 
 	private final RabbitTemplate rabbitTemplate;
 	private final Duration confirmTimeout;
+	private final BlockedConnections blockedConnections = new BlockedConnections();
 
 	/**
 	 * @param  rabbitTemplate           the template to publish with, on a connection with correlated publisher confirms and
@@ -52,12 +59,14 @@ public class Dept44RabbitPublisher {
 		requireConfirmsAndReturns(rabbitTemplate);
 		this.rabbitTemplate = rabbitTemplate;
 		this.confirmTimeout = confirmTimeout;
+		publishingConnectionFactory(rabbitTemplate).addConnectionListener(blockedConnections);
 	}
 
 	/**
 	 * Publishes and waits for the broker to confirm. A message without a message id gets a generated one.
 	 *
-	 * @throws RabbitPublishException if the broker nacks or returns the message, or does not confirm it in time
+	 * @throws RabbitPublishException if the broker nacks or returns the message, does not confirm it in time, or blocks
+	 *                                publishing
 	 * @throws AmqpException          if the message could not be sent at all, such as when the broker cannot be reached
 	 */
 	public void publish(final OutgoingMessage message) {
@@ -66,7 +75,8 @@ public class Dept44RabbitPublisher {
 
 	/**
 	 * As {@link #publish(OutgoingMessage)}, for a request that expects a reply. The responder replies to the reply-to
-	 * address and copies the correlation id, and the message id lets it recognize a duplicate.
+	 * address and copies the correlation id, and the message id lets it recognize a duplicate. It does not wait for the
+	 * reply, which reaches the sender's listener on its reply queue.
 	 *
 	 * @throws IllegalArgumentException if the message lacks a message id, a correlation id or a reply-to address
 	 */
@@ -92,6 +102,11 @@ public class Dept44RabbitPublisher {
 			throw new IllegalArgumentException("A message to exchange '%s' has no payload".formatted(message.getExchange()));
 		}
 		final var messageId = ofNullable(message.getMessageId()).orElseGet(() -> UUID.randomUUID().toString());
+		final var description = describe(message, messageId);
+		final var blockedReason = blockedConnections.reason();
+		if (blockedReason.isPresent()) {
+			throw new RabbitPublishException(BLOCKED, messageId, "%s was not sent, the broker blocks publishing: %s".formatted(description, blockedReason.get()));
+		}
 		// An id of its own: two publishes of the same message id must not share a confirm
 		final var correlationData = new CorrelationData(UUID.randomUUID().toString());
 
@@ -106,7 +121,7 @@ public class Dept44RabbitPublisher {
 			return amqpMessage;
 		}, correlationData);
 
-		awaitConfirm(messageId, describe(message, messageId), correlationData);
+		awaitConfirm(messageId, description, correlationData);
 	}
 
 	private void awaitConfirm(final String messageId, final String description, final CorrelationData correlationData) {
@@ -131,6 +146,17 @@ public class Dept44RabbitPublisher {
 		if (nonNull(returned)) {
 			throw new RabbitPublishException(RETURNED, messageId, "%s was returned by the broker: %d %s".formatted(description, returned.getReplyCode(), returned.getReplyText()));
 		}
+	}
+
+	/**
+	 * The connection factory the template publishes on: its publisher connection factory, when it uses one.
+	 */
+	private static ConnectionFactory publishingConnectionFactory(final RabbitTemplate rabbitTemplate) {
+		final var connectionFactory = rabbitTemplate.getConnectionFactory();
+		if (rabbitTemplate.isUsePublisherConnection()) {
+			return ofNullable(connectionFactory.getPublisherConnectionFactory()).orElse(connectionFactory);
+		}
+		return connectionFactory;
 	}
 
 	private static String describe(final OutgoingMessage message, final String messageId) {

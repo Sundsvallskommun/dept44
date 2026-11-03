@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -13,6 +14,7 @@ import org.springframework.amqp.rabbit.config.StatelessRetryOperationsIntercepto
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.AbstractAdaptableMessageListener;
 import org.springframework.amqp.rabbit.retry.MessageRecoverer;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
@@ -74,12 +76,15 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
-	void errorHandlersAreWrappedBeforeTheContainersStart() {
+	void errorHandlersAndRepliesCarryTheRequestIdBeforeTheContainersStart() {
 		RecordingContainers.ERROR_HANDLERS_AT_START.clear();
+		RecordingContainers.REPLY_POST_PROCESSORS_AT_START.clear();
 
 		contextRunner.withUserConfiguration(RecordingContainers.class).run(context -> {
 			assertThat(context).hasNotFailed();
 			assertThat(RecordingContainers.ERROR_HANDLERS_AT_START).singleElement().isInstanceOf(RequestIdErrorHandler.class);
+			assertThat(RecordingContainers.REPLY_POST_PROCESSORS_AT_START).singleElement()
+				.satisfies(postProcessors -> assertThat(postProcessors).singleElement().isInstanceOf(RequestIdHeaders.class));
 		});
 	}
 
@@ -220,12 +225,14 @@ class RabbitMqConfigurationTest {
 	}
 
 	/**
-	 * Containers that record the error handler they start with, instead of connecting to a broker.
+	 * Containers that record the error handler and the reply post-processors they start with, instead of connecting to a
+	 * broker.
 	 */
 	@Configuration(proxyBeanMethods = false)
 	static class RecordingContainers {
 
 		static final List<ErrorHandler> ERROR_HANDLERS_AT_START = new CopyOnWriteArrayList<>();
+		static final List<MessagePostProcessor[]> REPLY_POST_PROCESSORS_AT_START = new CopyOnWriteArrayList<>();
 
 		@Bean
 		SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(final SimpleRabbitListenerContainerFactoryConfigurer configurer, final ConnectionFactory connectionFactory) {
@@ -236,6 +243,7 @@ class RabbitMqConfigurationTest {
 						@Override
 						protected void doStart() {
 							ERROR_HANDLERS_AT_START.add(getErrorHandler());
+							REPLY_POST_PROCESSORS_AT_START.add(((AbstractAdaptableMessageListener) getMessageListener()).getBeforeSendReplyPostProcessors());
 						}
 					};
 				}

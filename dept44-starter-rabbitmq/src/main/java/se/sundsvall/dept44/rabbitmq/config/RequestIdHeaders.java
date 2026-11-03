@@ -8,8 +8,8 @@ import se.sundsvall.dept44.support.Identifier;
 import static java.util.Optional.ofNullable;
 
 /**
- * Sends the request id and the identifier of the user along with every message, as headers under the same names Feign
- * and WebClient use over HTTP. A header the service has set itself is left as it is.
+ * Sends the request id and the identifier of the user along with every message and every reply a listener returns, as
+ * headers under the same names Feign and WebClient use over HTTP. A header the service has set itself is left as it is.
  */
 class RequestIdHeaders implements MessagePostProcessor {
 

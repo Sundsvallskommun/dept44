@@ -44,6 +44,8 @@ public class RabbitPublishException extends AmqpException {
 		/** No confirm within the timeout. The broker may still have the message. */
 		TIMEOUT,
 		/** The thread was interrupted while waiting for the confirm. The broker may still have the message. */
-		INTERRUPTED
+		INTERRUPTED,
+		/** Not sent: the broker blocks publishing during a memory or disk alarm. */
+		BLOCKED
 	}
 }

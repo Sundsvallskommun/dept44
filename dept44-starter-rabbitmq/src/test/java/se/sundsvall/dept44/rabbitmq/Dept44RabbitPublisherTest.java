@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.rabbitmq;
 
+import com.rabbitmq.client.BlockedListener;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -9,18 +10,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.core.Address;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.ReturnedMessage;
+import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionListener;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,6 +33,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.BLOCKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRUPTED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
@@ -45,6 +51,12 @@ class Dept44RabbitPublisherTest {
 
 	@Mock
 	private ConnectionFactory connectionFactory;
+
+	@Mock
+	private ConnectionFactory publisherConnectionFactory;
+
+	@Mock
+	private Connection connection;
 
 	private Dept44RabbitPublisher publisher;
 
@@ -160,6 +172,45 @@ class Dept44RabbitPublisherTest {
 	}
 
 	@Test
+	void aBlockedConnectionFailsThePublishAtOnceUntilTheBrokerUnblocksIt() throws Exception {
+		final var blockedListener = blockedListener(connectionListener());
+
+		blockedListener.handleBlocked("low on memory");
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was not sent, the broker blocks publishing: low on memory")
+			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(BLOCKED, "message-id"));
+		verifyNothingSent();
+
+		blockedListener.handleUnblocked();
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		assertThatNoException().isThrownBy(() -> publisher.publish(message()));
+	}
+
+	@Test
+	void aBlockedConnectionThatClosesNoLongerFailsThePublish() throws Exception {
+		final var connectionListener = connectionListener();
+		blockedListener(connectionListener).handleBlocked("low on disk");
+
+		connectionListener.onClose(connection);
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		assertThatNoException().isThrownBy(() -> publisher.publish(message()));
+	}
+
+	@Test
+	void watchesThePublisherConnectionWhenTheTemplatePublishesOnIt() {
+		when(rabbitTemplate.isUsePublisherConnection()).thenReturn(true);
+		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
+
+		new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1));
+
+		verify(publisherConnectionFactory).addConnectionListener(any(BlockedConnections.class));
+	}
+
+	@Test
 	void exceptionCarriesTheGeneratedMessageId() {
 		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(false, "nacked")));
 
@@ -218,6 +269,25 @@ class Dept44RabbitPublisherTest {
 
 	private static OutgoingMessage message() {
 		return OutgoingMessage.to(EXCHANGE, ROUTING_KEY).withPayload(PAYLOAD);
+	}
+
+	/**
+	 * The listener the publisher added to the template's connection factory, in setUp.
+	 */
+	private ConnectionListener connectionListener() {
+		final var captor = ArgumentCaptor.forClass(ConnectionListener.class);
+		verify(connectionFactory).addConnectionListener(captor.capture());
+		return captor.getValue();
+	}
+
+	/**
+	 * Opens the connection, as the factory does, and returns what the broker's blocked notifications reach.
+	 */
+	private BlockedListener blockedListener(final ConnectionListener connectionListener) {
+		connectionListener.onCreate(connection);
+		final var captor = ArgumentCaptor.forClass(BlockedListener.class);
+		verify(connection).addBlockedListener(captor.capture());
+		return captor.getValue();
 	}
 
 	/**

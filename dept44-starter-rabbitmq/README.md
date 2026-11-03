@@ -81,9 +81,10 @@ Spring Boot's RabbitMQ health indicator stays on. It counts in `/actuator/health
 that does not answer, but not in the liveness and readiness groups the probes use. A service that wants the broker in
 readiness adds it itself, with `management.endpoint.health.group.readiness.include=readinessState,rabbit`.
 
-Every `RabbitTemplate`, Spring Boot's or the service's own, publishes on a connection of its own, apart from the one the
-listeners consume on. During a memory or disk alarm the broker blocks a connection that publishes, and on a shared
-connection the listeners' acks would go unread too, so the alarm would never clear.
+Every `RabbitTemplate` bean, Spring Boot's or the service's own, publishes on a connection of its own, apart from the
+one the listeners consume on. During a memory or disk alarm the broker blocks a connection that publishes, and on a
+shared connection the listeners' acks would go unread too, so the alarm would never clear. A template the service
+creates with `new` outside a bean gets neither this nor the request id headers.
 
 A listener prefetches one message rather than Spring AMQP's 250. A prefetched message waits unacknowledged while the
 listener retries the one before it, and the broker's `consumer_timeout`, 30 minutes by default, counts from the
@@ -109,9 +110,16 @@ whatever the setting.
 | `RETURNED`    | The broker could not route the message to any queue                                                           |
 | `TIMEOUT`     | No confirm within `dept44.rabbitmq.publish-confirm-timeout`. The broker may still have the message            |
 | `INTERRUPTED` | The thread was interrupted while waiting. The broker may still have the message                               |
+| `BLOCKED`     | Not sent. The broker blocks publishing during a memory or disk alarm                                          |
 
 When the broker cannot be reached at all, Spring AMQP's own `AmqpException` is thrown. `RabbitPublishException`
 extends it.
+
+During a memory or disk alarm the broker stops reading from a connection that publishes, and tells the client so. A
+publish on that connection would wait in the socket until the alarm clears, whatever the confirm timeout, so the
+publisher fails it with `BLOCKED` instead. The broker only blocks a connection once it publishes during the alarm, so
+the first publish of an alarm ends in `TIMEOUT`. A publish already under way when the alarm starts can still wait until
+it clears, if it does not fit in the socket's buffers.
 
 For a returned message Spring AMQP also logs `Returned message but no callback available` at WARN. The publisher gets
 the return together with the confirm, so the line does not mean that anything is misconfigured. The starter sets no
@@ -134,19 +142,21 @@ reason is worth trying again:
 
 - `TIMEOUT` and `INTERRUPTED` may pass. The broker may already have the message, so publish it again with the same
   message id.
+- `BLOCKED` passes when the alarm clears. Nothing was sent.
 - `RETURNED` does not pass: no queue is bound for the routing key, and that is a topology error.
 - `NACKED` can go either way. The message says why: a missing exchange does not pass, a channel that closed may.
 
 A listener that publishes and lets the exception out is handled as [Failures in a listener](#failures-in-a-listener)
-describes: `TIMEOUT` and `INTERRUPTED` as an outage, `NACKED` as a server error, and `RETURNED` is dead-lettered at
-once.
+describes: `TIMEOUT`, `INTERRUPTED` and `BLOCKED` as an outage, `NACKED` as a server error, and `RETURNED` is
+dead-lettered at once.
 
 Each publish waits for a round trip to the broker.
 
 ### Requests that expect a reply
 
 `request` publishes like `publish`, but refuses a message without a message id, a correlation id and a reply-to address.
-The responder publishes its reply to the reply-to address and copies the correlation id.
+It does not wait for the reply, which arrives on the sender's own reply queue. The responder publishes its reply to the
+reply-to address and copies the correlation id.
 
 ```java
 publisher.request(OutgoingMessage.to("my-namespace.responder", "send")
@@ -159,35 +169,45 @@ publisher.request(OutgoingMessage.to("my-namespace.responder", "send")
 The reply-to address is an exchange owned by the responder and the routing key the sender's reply queue is bound with.
 It is sent as `exchange/routing-key`.
 
+A responder should reply with `Dept44RabbitPublisher` rather than return the reply from its `@RabbitListener` method.
+Spring AMQP sends a return value on the consumer's channel, not through a `RabbitTemplate`. The broker does not confirm
+it, and during an alarm the broker blocks the consumer's connection, so the listener's acks go unread until the alarm
+clears.
+
 ## Request id over the queue
 
 A message carries the request id and the identifier of the user as the headers `x-request-id` and `X-Sent-By`, the same
 names Feign and WebClient use over HTTP. The listener handles the message under them, so the log lines on both sides
 of the queue have the same request id. A message without a request id gets a new one, as an HTTP request does.
 
-Both work without any code in the service: every message from a `RabbitTemplate`, Spring Boot's or the service's own,
-gets the headers, and every listener container factory, Spring Boot's and the service's own, sets them on its listener
-threads. A header the service sets itself is left as it is.
+Both work without any code in the service: every message from a `RabbitTemplate` bean, Spring Boot's or the service's
+own, gets the headers, and so does a reply a listener returns. Every listener container factory, Spring Boot's and the
+service's own, sets them on its listener threads. A header the service sets itself is left as it is. A batch listener
+handles its whole batch under a new request id.
 
 That includes the line that reports a failed listener. The container's error handler logs it after the listener has
 returned, so the starter wraps the error handler each container has, Spring AMQP's or the service's own, to run it
 under the failed message's request id. A container the service declares as a bean of its own, outside Spring's
-listener registry, keeps its error handler as it is.
+listener registry, gets none of this: no request id on its listener threads, in its error handler or on its replies.
 
 ## Failures in a listener
 
 A listener that throws is not delivered the message again at once. Delivered again within milliseconds, a message would
 use up the queue's `x-delivery-limit` during an outage of a second, and be dead-lettered.
 
+All of this counts on each queue being a quorum queue with a dead-letter exchange and an `x-delivery-limit`. Without a
+dead-letter exchange the broker drops a rejected message, and all that is left of it is the starter's WARN line
+`Rejecting message ... for the queue to dead-letter`.
+
 `TransientFailures` tells a failure that may pass from one that fails the same way every time:
 
 - **Outage**: the service's own database cannot be reached or times out, a connection is refused, reset or times out,
-  a host name does not resolve, a circuit breaker has opened, or a publish is not confirmed in time. Every message meets
-  it alike while it lasts. The listener retries it in place with a growing delay: 1 s, 2 s, 4 s and so on up to every
-  30 s, about 8 minutes in all. Meanwhile the message stays unacknowledged and the rest wait, as when the service is
-  down. After the retries the message goes back in the queue, at its place first in line, and counts against its
-  `x-delivery-limit`. A queue with a limit of 5 allows six deliveries, so the message waits out an outage of about 50
-  minutes before it dead-letters.
+  a host name does not resolve, a circuit breaker has opened, a publish is not confirmed in time, or the broker blocks
+  publishing. Every message meets it alike while it lasts. The listener retries it in place with a growing delay: 1 s,
+  2 s, 4 s and so on up to every 30 s, about 8 minutes in all. Meanwhile the message stays unacknowledged and the rest
+  wait, as when the service is down. After the retries the message goes back in the queue, at its place first in line,
+  and counts against its `x-delivery-limit`. A queue with a limit of 5 allows six deliveries, so the message waits out
+  an outage of about 50 minutes before it dead-letters.
 - **Server error**: a service called through dept44's Feign answers with a 5xx (`ServerProblem`). It may be the
   service restarting or overloaded, which passes, or this message's data that it fails on every time, which does not.
   dept44's Feign error decoder answers 502 for all of them, so they cannot be told apart. The listener retries it the
@@ -198,6 +218,15 @@ use up the queue's `x-delivery-limit` during an outage of a second, and be dead-
   dead-lettered at once, without retries.
 
 The whole cause chain counts, so a service's own exception that wraps one of the transient ones is retried too.
+
+The split knows dept44's Feign clients and the database. These may pass, but are dead-lettered at once:
+
+- A read timeout through WebClient. Netty's `ReadTimeoutException` is not a `SocketTimeoutException`.
+- A 5xx through WebClient, which is a `WebClientResponseException` and not a `ServerProblem`.
+- A 429 or 408 through Feign. dept44's error decoder turns it into a `ClientProblem` with status 502, so the original
+  status is gone.
+
+A service that needs them retried declares a split of its own, see below.
 
 dept44 services put a circuit breaker on their Feign clients and repositories, and an open one counts as an outage
 whatever opened it. A message whose server errors open the breaker can therefore go back in the queue rather than be
@@ -211,11 +240,11 @@ one.
 
 The retries hold the message unacknowledged, which is why a listener prefetches only one, see [Defaults](#defaults).
 
-The delivery limit only ends an outage while the broker counts a message that is put back. Up to RabbitMQ 4.2, the
-version in TEST, it counts every requeue. From 4.3 it counts only a failed delivery: `basic.reject` and a channel that
-closes count, `basic.nack` does not. Spring AMQP 4.1.1 puts the message back with `basic.nack`, so against RabbitMQ 4.3
-or later an outage is waited out however long it lasts. Spring AMQP rejects each delivery from 4.1.2 and 4.2.0
-([spring-amqp#3507](https://github.com/spring-projects/spring-amqp/issues/3507)), so upgrade it before the broker.
+The delivery limit only ends an outage while the broker counts a message that is put back. From RabbitMQ 4.3 it counts
+only a failed delivery: `basic.reject` and a channel that closes count, `basic.nack` does not. Spring AMQP before 4.1.2
+puts the message back with `basic.nack`, and an outage would then be waited out however long it lasts
+([spring-amqp#3507](https://github.com/spring-projects/spring-amqp/issues/3507)). dept44 therefore manages Spring AMQP
+4.1.2 ahead of Spring Boot. A service must not pin an older Spring AMQP.
 
 A service that needs another split declares a `RabbitListenerRetrySettingsCustomizer` with its own exception predicate,
 which runs after the starter's, and a `MessageRecoverer` of its own. With batch listeners it must be a

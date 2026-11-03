@@ -40,8 +40,6 @@ import static org.awaitility.Awaitility.await;
  */
 class ListenerRetryBrokerTest {
 
-	// The version in TEST and production. From 4.3 a requeue with basic.nack, as Spring AMQP before 4.1.2 sends it, no
-	// longer counts against the queue's delivery limit, see spring-amqp.version in the root pom
 	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.3.6-management-alpine");
 
 	private static final String PASSES = "dept44.retry.passes";

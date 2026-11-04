@@ -61,7 +61,9 @@ class RabbitMqConfiguration {
 	 * <p>
 	 * It publishes on a connection of its own. The broker blocks a connection that publishes during a memory or disk
 	 * alarm, and on a connection shared with the listeners their acks would then go unread too: the memory is never
-	 * freed, and the alarm never clears. And it sends the request id along, see {@link RequestIdHeaders}.
+	 * freed, and the alarm never clears. A transacted template is left on the listener's channel, so that what it
+	 * publishes from a listener commits or rolls back with that listener's transaction. And it sends the request id
+	 * along, see {@link RequestIdHeaders}.
 	 */
 	@Bean
 	static BeanPostProcessor dept44RabbitTemplateAdvisor() {
@@ -69,7 +71,7 @@ class RabbitMqConfiguration {
 			@Override
 			public Object postProcessAfterInitialization(final Object bean, final String beanName) {
 				if (bean instanceof final RabbitTemplate rabbitTemplate) {
-					rabbitTemplate.setUsePublisherConnection(true);
+					rabbitTemplate.setUsePublisherConnection(!rabbitTemplate.isChannelTransacted());
 					rabbitTemplate.addBeforePublishPostProcessors(new RequestIdHeaders());
 				}
 				return bean;
@@ -80,7 +82,7 @@ class RabbitMqConfiguration {
 	/**
 	 * Puts {@link RequestIdListenerAdvice} first in the advice chain of every listener container factory, Spring Boot's
 	 * and the service's own, so that whatever else is in the chain, such as Spring Boot's retry, already logs under the
-	 * message's request id.
+	 * message's request id. {@link ListenerLogAdvice} comes next, before the retry, so that it logs each delivery once.
 	 */
 	@Bean
 	static BeanPostProcessor dept44RequestIdListenerAdvisor() {
@@ -90,7 +92,10 @@ class RabbitMqConfiguration {
 				if (bean instanceof final AbstractRabbitListenerContainerFactory<?> factory) {
 					final var adviceChain = new ArrayList<Advice>();
 					adviceChain.add(new RequestIdListenerAdvice());
-					ofNullable(factory.getAdviceChain()).map(Arrays::asList).ifPresent(adviceChain::addAll);
+					adviceChain.add(new ListenerLogAdvice());
+					// Once each, also in a chain taken from a factory the advisor has already been through
+					ofNullable(factory.getAdviceChain()).map(Arrays::stream)
+						.ifPresent(advice -> advice.filter(a -> !(a instanceof RequestIdListenerAdvice || a instanceof ListenerLogAdvice)).forEach(adviceChain::add));
 					factory.setAdviceChain(adviceChain.toArray(Advice[]::new));
 				}
 				return bean;

@@ -49,11 +49,11 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 		final var rootCause = ofNullable(cause).map(NestedExceptionUtils::getMostSpecificCause).map(Throwable::toString).orElse(null);
 
 		if (Thread.currentThread().isInterrupted()) {
-			LOG.warn("Interrupted while handling message {} from queue {}, putting it back in the queue: {}", messageIds, queue, rootCause);
+			LOG.warn("Interrupted while handling message {} from queue {}, putting it back in the queue, which dead-letters it past its x-delivery-limit: {}", messageIds, queue, rootCause);
 			throw new ListenerExecutionFailedException("Interrupted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
 		}
 		if (TransientFailures.isOutage(cause)) {
-			LOG.warn("Retries exhausted for message {} from queue {}, putting it back in the queue: {}", messageIds, queue, rootCause);
+			LOG.warn("Retries exhausted for message {} from queue {}, putting it back in the queue, which dead-letters it past its x-delivery-limit: {}", messageIds, queue, rootCause);
 			throw new ListenerExecutionFailedException("Retries exhausted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
 		}
 		if (askedForRequeueOrAcknowledge(cause)) {

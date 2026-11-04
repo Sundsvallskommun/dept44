@@ -54,18 +54,18 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
-	void requestIdAdviceComesFirstInTheListenerAdviceChain() {
+	void requestIdAndLogAdviceComeFirstInTheListenerAdviceChain() {
 		contextRunner.run(context -> {
 			final var adviceChain = context.getBean(SimpleRabbitListenerContainerFactory.class).getAdviceChain();
 
-			assertThat(adviceChain).hasSize(2);
+			assertThat(adviceChain).hasSize(3);
 			assertThat(adviceChain[0]).isInstanceOf(RequestIdListenerAdvice.class);
-			assertThat(adviceChain[1]).isInstanceOf(StatelessRetryOperationsInterceptor.class);
+			assertThat(adviceChain[1]).isInstanceOf(ListenerLogAdvice.class);
+			assertThat(adviceChain[2]).isInstanceOf(StatelessRetryOperationsInterceptor.class);
 		});
 		contextRunner.withPropertyValues("spring.rabbitmq.listener.simple.retry.enabled=false")
 			.run(context -> assertThat(context.getBean(SimpleRabbitListenerContainerFactory.class).getAdviceChain())
-				.singleElement()
-				.isInstanceOf(RequestIdListenerAdvice.class));
+				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, ListenerLogAdvice.class));
 	}
 
 	@Test
@@ -115,6 +115,21 @@ class RabbitMqConfigurationTest {
 			assertThat(context).hasSingleBean(RabbitTemplate.class);
 			assertPublisherConnectionAndRequestId(context.getBean(RabbitTemplate.class));
 		});
+	}
+
+	@Test
+	void aTransactedTemplatePublishesOnTheListenersChannelWithTheRequestId() {
+		contextRunner.withUserConfiguration(TransactedTemplate.class).run(context -> {
+			final var rabbitTemplate = context.getBean(RabbitTemplate.class);
+			assertThat(rabbitTemplate.isUsePublisherConnection()).isFalse();
+			assertThat(rabbitTemplate.getBeforePublishPostProcessors()).singleElement().isInstanceOf(RequestIdHeaders.class);
+		});
+	}
+
+	@Test
+	void aFactoryGivenAnotherFactorysAdviceChainGetsTheAdviceOnce() {
+		contextRunner.withUserConfiguration(CopiedAdviceChain.class).run(context -> assertThat(context.getBean("copiedFactory", SimpleRabbitListenerContainerFactory.class).getAdviceChain())
+			.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, ListenerLogAdvice.class, StatelessRetryOperationsInterceptor.class));
 	}
 
 	private static void assertPublisherConnectionAndRequestId(final RabbitTemplate rabbitTemplate) {
@@ -221,6 +236,32 @@ class RabbitMqConfigurationTest {
 			final var rabbitTemplate = new RabbitTemplate();
 			configurer.configure(rabbitTemplate, connectionFactory);
 			return rabbitTemplate;
+		}
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class TransactedTemplate {
+
+		@Bean
+		RabbitTemplate rabbitTemplate(final RabbitTemplateConfigurer configurer, final ConnectionFactory connectionFactory) {
+			final var rabbitTemplate = new RabbitTemplate();
+			configurer.configure(rabbitTemplate, connectionFactory);
+			rabbitTemplate.setChannelTransacted(true);
+			return rabbitTemplate;
+		}
+	}
+
+	/**
+	 * A second factory set up from Spring Boot's, which the advisor has already been through
+	 */
+	@Configuration(proxyBeanMethods = false)
+	static class CopiedAdviceChain {
+
+		@Bean
+		SimpleRabbitListenerContainerFactory copiedFactory(final SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory) {
+			final var factory = new SimpleRabbitListenerContainerFactory();
+			factory.setAdviceChain(rabbitListenerContainerFactory.getAdviceChain());
+			return factory;
 		}
 	}
 

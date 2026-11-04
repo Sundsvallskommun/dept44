@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -15,7 +17,7 @@ import static java.lang.Boolean.FALSE;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.BLOCKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRUPTED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
@@ -34,10 +36,12 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT
  * socket until the alarm clears. The broker blocks a connection once it publishes during the alarm, so the first
  * publish of an alarm ends in a timeout.
  * <p>
- * Each publish waits for a round trip to the broker.
+ * Each publish waits for a round trip to the broker. A message the broker has confirmed is logged, without its body,
+ * on the logger the listeners log their messages on.
  */
 public class Dept44RabbitPublisher {
 
+	private static final Logger LOG = LoggerFactory.getLogger("se.sundsvall.dept44.rabbitmq.messages");
 	private static final Message PROBE = new Message(new byte[0]);
 
 	private final RabbitTemplate rabbitTemplate;
@@ -122,12 +126,13 @@ public class Dept44RabbitPublisher {
 		}, correlationData);
 
 		awaitConfirm(messageId, description, correlationData);
+		LOG.info("{} was confirmed by the broker", description);
 	}
 
 	private void awaitConfirm(final String messageId, final String description, final CorrelationData correlationData) {
 		final CorrelationData.Confirm confirm;
 		try {
-			confirm = correlationData.getFuture().get(confirmTimeout.toMillis(), MILLISECONDS);
+			confirm = correlationData.getFuture().get(confirmTimeout.toNanos(), NANOSECONDS);
 		} catch (final TimeoutException _) {
 			throw new RabbitPublishException(TIMEOUT, messageId, "%s was not confirmed within %s".formatted(description, confirmTimeout));
 		} catch (final InterruptedException e) {

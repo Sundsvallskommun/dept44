@@ -243,13 +243,50 @@ The retries hold the message unacknowledged, which is why a listener prefetches 
 The delivery limit only ends an outage while the broker counts a message that is put back. From RabbitMQ 4.3 it counts
 only a failed delivery: `basic.reject` and a channel that closes count, `basic.nack` does not. Spring AMQP before 4.1.2
 puts the message back with `basic.nack`, and an outage would then be waited out however long it lasts
-([spring-amqp#3507](https://github.com/spring-projects/spring-amqp/issues/3507)). dept44 therefore manages Spring AMQP
-4.1.2 ahead of Spring Boot. A service must not pin an older Spring AMQP.
+([spring-amqp#3507](https://github.com/spring-projects/spring-amqp/issues/3507)). Spring Boot 4.1.2, which dept44
+builds on, manages Spring AMQP 4.1.2. A service must not pin an older Spring AMQP.
 
 A service that needs another split declares a `RabbitListenerRetrySettingsCustomizer` with its own exception predicate,
 which runs after the starter's, and a `MessageRecoverer` of its own. With batch listeners it must be a
 `MessageBatchRecoverer`, or Spring AMQP acknowledges a failed batch. Both can build on `TransientFailures.isTransient`
 and `isOutage`. The delays are Spring Boot's `spring.rabbitmq.listener.simple.retry.*` properties.
+
+## A line for each message
+
+The starter logs a line at INFO for each message, on the logger `se.sundsvall.dept44.rabbitmq.messages`.
+`Dept44RabbitPublisher` logs a message once the broker has confirmed it. A listener logs a message once it has handled
+it, with how long that took and what became of the message:
+
+```
+Message 0f28f6e7-... to exchange 'my-namespace.my-service' with routing key 'errand.updated' was confirmed by the broker
+Message 0f28f6e7-... from queue 'my-namespace.other-service.errands' with routing key 'errand.updated' (delivery count 0, 14 ms) was acknowledged
+```
+
+|                                   Ends in                                    |                                                    When                                                    |
+|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `was acknowledged`                                                           | The listener returned, or threw `ImmediateAcknowledgeAmqpException`                                        |
+| `was put back in the queue, which dead-letters it past its x-delivery-limit` | An outage outlasted the retries, the listener was interrupted, or it threw `ImmediateRequeueAmqpException` |
+| `was rejected, for the queue to dead-letter`                                 | Any other failure, see [Failures in a listener](#failures-in-a-listener)                                   |
+| `failed`                                                                     | The failure asks for none of the above. The container decides what becomes of the message, see below       |
+
+A failure is logged as `failed` when nothing in the chain has said what becomes of the message: with the retry turned
+off, with `spring.rabbitmq.listener.simple.retry.stateless=false`, with a `MessageRecoverer` of the service's own that
+throws the failure on, and with a container factory of the service's own that is not set up with Spring Boot's
+configurer.
+
+A message gets one line for each delivery, not one for each attempt, and the line has the message's request id. The
+delivery count is the broker's `x-delivery-count`. A message put back in the queue when its delivery count has already
+reached the queue's `x-delivery-limit` is dead-lettered by the queue rather than delivered again. The service never sees
+that step, so its last line for the message says it was put back, and the message is in the dead letter queue. A batch
+listener logs one line for the batch, with its message ids.
+
+The lines leave out the body and the headers, which may hold personal data. A message that is rejected, or put back in
+the queue once its retries are over, also gets the starter's WARN line with the cause. A publish that fails throws and
+logs nothing, and a publish through a `RabbitTemplate` is not logged.
+
+A service turns the lines off with `logging.level.se.sundsvall.dept44.rabbitmq.messages=WARN`. With
+`dept44.logback.pii-masking.enabled=true`, a message id that is a UUID, as the generated ones are, is masked like any
+other UUID, unless the service also sets `dept44.logback.pii-masking.uuid=false`.
 
 ## JSON
 

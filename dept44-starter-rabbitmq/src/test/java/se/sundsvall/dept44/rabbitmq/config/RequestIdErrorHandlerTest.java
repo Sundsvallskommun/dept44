@@ -1,6 +1,9 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import com.rabbitmq.client.Channel;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
@@ -9,6 +12,8 @@ import se.sundsvall.dept44.support.Identifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class RequestIdErrorHandlerTest {
 
@@ -25,6 +30,37 @@ class RequestIdErrorHandlerTest {
 
 		assertThat(seen.get()).isEqualTo("request-id");
 		assertThat(seenIdentifier.get()).isEqualTo(Identifier.parse("joe01doe; type=adAccount"));
+		assertClearedAfterwards();
+	}
+
+	@Test
+	void aFailedBatchIsHandledUnderTheRequestIdTheBatchWasHandledUnder() throws Throwable {
+		final var batch = List.of(message("first-request-id"), message("second-request-id"));
+		final var handledUnder = new AtomicReference<String>();
+		final var seen = new AtomicReference<String>();
+		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
+
+		// As the container does: the advice chain throws, and then the container calls its error handler
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(batch, handledUnder)));
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), batch.toArray(Message[]::new)));
+
+		assertThat(seen.get()).isNotBlank().isEqualTo(handledUnder.get());
+		assertClearedAfterwards();
+	}
+
+	@Test
+	void theRequestIdOfAFailedBatchIsNotKeptPastTheNextDelivery() throws Throwable {
+		final var advice = new RequestIdListenerAdvice();
+		final var seen = new AtomicReference<String>();
+		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
+		// A batch fails in a container whose error handler is not this one
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> advice.invoke(failing(List.of(message("batch-request-id")), new AtomicReference<>())));
+
+		final var next = message("request-id");
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> advice.invoke(failing(next, new AtomicReference<>())));
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), next));
+
+		assertThat(seen.get()).isEqualTo("request-id");
 		assertClearedAfterwards();
 	}
 
@@ -52,6 +88,21 @@ class RequestIdErrorHandlerTest {
 			.isThrownBy(() -> errorHandler.handleError(failure))
 			.isSameAs(rejection);
 		assertClearedAfterwards();
+	}
+
+	/**
+	 * The container's call to a listener that fails, with a message or a batch, and records the request id it ran under
+	 */
+	private static MethodInvocation failing(final Object data, final AtomicReference<String> handledUnder) throws Throwable {
+		final var invocation = mock(MethodInvocation.class);
+		when(invocation.getArguments()).thenReturn(new Object[] {
+			mock(Channel.class), data
+		});
+		when(invocation.proceed()).thenAnswer(_ -> {
+			handledUnder.set(RequestId.get());
+			throw new IllegalStateException("listener failed");
+		});
+		return invocation;
 	}
 
 	private static Message message(final String requestId) {

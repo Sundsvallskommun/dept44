@@ -187,8 +187,10 @@ handles its whole batch under a new request id.
 
 That includes the line that reports a failed listener. The container's error handler logs it after the listener has
 returned, so the starter wraps the error handler each container has, Spring AMQP's or the service's own, to run it
-under the failed message's request id. A container the service declares as a bean of its own, outside Spring's
-listener registry, gets none of this: no request id on its listener threads, in its error handler or on its replies.
+under the failed message's request id, or the batch's. A container the service declares as a bean of its own, outside
+Spring's listener registry, gets none of this: no request id on its listener threads, in its error handler or on its
+replies. A container created after startup, such as one for a `@RabbitListener` on a `@Lazy` bean, gets no request id
+in its error handler or on its replies.
 
 ## Failures in a listener
 
@@ -239,6 +241,9 @@ down, puts its message back in the queue whatever the failure. A batch listener'
 one.
 
 The retries hold the message unacknowledged, which is why a listener prefetches only one, see [Defaults](#defaults).
+All of this counts on the container acknowledging or rejecting each message as the listener returns or throws, Spring
+AMQP's `auto` acknowledge mode. With `manual`, a message the listener fails on is neither put back nor rejected, and
+stays unacknowledged until the channel closes.
 
 The delivery limit only ends an outage while the broker counts a message that is put back. From RabbitMQ 4.3 it counts
 only a failed delivery: `basic.reject` and a channel that closes count, `basic.nack` does not. Spring AMQP before 4.1.2
@@ -279,6 +284,12 @@ delivery count is the broker's `x-delivery-count`. A message put back in the que
 reached the queue's `x-delivery-limit` is dead-lettered by the queue rather than delivered again. The service never sees
 that step, so its last line for the message says it was put back, and the message is in the dead letter queue. A batch
 listener logs one line for the batch, with its message ids.
+
+A listener logs no line where the container does not settle each message as the listener returns or throws: with
+`acknowledge-mode` set to `manual` or `none`, and with a `simple.batch-size` above 1 without `consumer-batch-enabled`,
+where a failure rejects the messages handled before it as well. The starter reads this from Spring Boot's
+`spring.rabbitmq.listener.*` properties. A `@RabbitListener` with an `ackMode` of its own, or one that returns a
+`CompletableFuture` or a `Mono`, which Spring AMQP acknowledges manually, still logs a line, and the line may be wrong.
 
 The lines leave out the body and the headers, which may hold personal data. A message that is rejected, or put back in
 the queue once its retries are over, also gets the starter's WARN line with the cause. A publish that fails throws and

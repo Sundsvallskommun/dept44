@@ -5,10 +5,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -66,6 +69,42 @@ class RabbitMqConfigurationTest {
 		contextRunner.withPropertyValues("spring.rabbitmq.listener.simple.retry.enabled=false")
 			.run(context -> assertThat(context.getBean(SimpleRabbitListenerContainerFactory.class).getAdviceChain())
 				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, ListenerLogAdvice.class));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"spring.rabbitmq.listener.simple.acknowledge-mode=manual",
+		"spring.rabbitmq.listener.simple.acknowledge-mode=none",
+		// Acknowledged together, and a failure rejects those already handled as well
+		"spring.rabbitmq.listener.simple.batch-size=2"
+	})
+	void noLineForEachMessageWhenTheContainerDoesNotSettleEachOneAsTheListenerEnds(final String property) {
+		contextRunner.withPropertyValues(property)
+			.run(context -> assertThat(context.getBean(SimpleRabbitListenerContainerFactory.class).getAdviceChain())
+				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, StatelessRetryOperationsInterceptor.class));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"spring.rabbitmq.listener.direct.acknowledge-mode=manual",
+		"spring.rabbitmq.listener.direct.acknowledge-mode=none"
+	})
+	void noLineForEachMessageWhenADirectContainerDoesNotSettleEachOneAsTheListenerEnds(final String property) {
+		contextRunner.withPropertyValues("spring.rabbitmq.listener.type=direct", property)
+			.run(context -> assertThat(context.getBean(DirectRabbitListenerContainerFactory.class).getAdviceChain())
+				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, StatelessRetryOperationsInterceptor.class));
+	}
+
+	@Test
+	void aLineForEachMessageWhenSeveralAreSettledTogetherAsTheListenerEnds() {
+		// A batch listener's batch is settled as one
+		contextRunner.withPropertyValues("spring.rabbitmq.listener.simple.consumer-batch-enabled=true", "spring.rabbitmq.listener.simple.batch-size=2")
+			.run(context -> assertThat(context.getBean(SimpleRabbitListenerContainerFactory.class).getAdviceChain())
+				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, ListenerLogAdvice.class, StatelessRetryOperationsInterceptor.class));
+		// A direct container acknowledges those already handled before it rejects one
+		contextRunner.withPropertyValues("spring.rabbitmq.listener.type=direct", "spring.rabbitmq.listener.direct.messages-per-ack=2")
+			.run(context -> assertThat(context.getBean(DirectRabbitListenerContainerFactory.class).getAdviceChain())
+				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, ListenerLogAdvice.class, StatelessRetryOperationsInterceptor.class));
 	}
 
 	@Test

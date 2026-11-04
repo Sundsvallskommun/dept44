@@ -68,6 +68,9 @@ public class Dept44RabbitPublisher {
 
 	/**
 	 * Publishes and waits for the broker to confirm. A message without a message id gets a generated one.
+	 * <p>
+	 * After a {@code TIMEOUT} or an {@code INTERRUPTED} the broker may already have the message, so publishing it again
+	 * can deliver it twice. Publish it again with the same message id, for the receiver to recognize the duplicate.
 	 *
 	 * @throws RabbitPublishException if the broker nacks or returns the message, does not confirm it in time, or blocks
 	 *                                publishing

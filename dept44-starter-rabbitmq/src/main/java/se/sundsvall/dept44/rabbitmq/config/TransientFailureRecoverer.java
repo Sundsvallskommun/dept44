@@ -48,7 +48,7 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 		final var queue = messages.getFirst().getMessageProperties().getConsumerQueue();
 		final var rootCause = ofNullable(cause).map(NestedExceptionUtils::getMostSpecificCause).map(Throwable::toString).orElse(null);
 
-		if (Thread.currentThread().isInterrupted()) {
+		if (wasInterrupted(cause)) {
 			LOG.warn("Interrupted while handling message {} from queue {}, putting it back in the queue, which dead-letters it past its x-delivery-limit: {}", messageIds, queue, rootCause);
 			throw new ListenerExecutionFailedException("Interrupted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
 		}
@@ -61,6 +61,14 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 		}
 		LOG.warn("Rejecting message {} from queue {}, for the queue to dead-letter: {}", messageIds, queue, rootCause);
 		throw new ListenerExecutionFailedException("Rejected without requeue", new AmqpRejectAndDontRequeueException(cause), failed);
+	}
+
+	/**
+	 * The interrupt flag, or an {@link InterruptedException} from a listener that caught it and threw it on wrapped
+	 * without interrupting itself again.
+	 */
+	private static boolean wasInterrupted(final Throwable cause) {
+		return Thread.currentThread().isInterrupted() || ExceptionUtils.indexOfType(cause, InterruptedException.class) != -1;
 	}
 
 	private static boolean askedForRequeueOrAcknowledge(final Throwable cause) {

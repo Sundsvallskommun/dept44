@@ -14,7 +14,7 @@ import static java.util.Optional.ofNullable;
 
 /**
  * Carries the request id into what a listener container does after the listener's own code, in every container in the
- * registry:
+ * registry when the context starts:
  * <ul>
  * <li>Wraps the container's error handler, Spring AMQP's or the service's own, in a {@link RequestIdErrorHandler}.</li>
  * <li>Adds {@link RequestIdHeaders} to the replies a listener sends as its return value. Spring AMQP sends those on the
@@ -23,7 +23,7 @@ import static java.util.Optional.ofNullable;
  * </ul>
  * Done here rather than on the container factory, which has no getter for either: setting one there would replace the
  * service's. Runs in the phase just before the registry, which starts the containers. A container the service declares
- * as a bean of its own, outside the registry, keeps both as they are.
+ * as a bean of its own, outside the registry, keeps both as they are, and so does one created after startup.
  */
 class RequestIdContainerInstaller implements SmartLifecycle {
 

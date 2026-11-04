@@ -65,6 +65,17 @@ class TransientFailureRecovererTest {
 	}
 
 	@Test
+	void aListenerThatWasInterruptedButClearedTheFlagPutsTheMessageBack() {
+		// As a listener that catches the interrupt and throws it on wrapped, without interrupting itself again
+		final var failure = listenerFailed(new IllegalStateException("interrupted", new InterruptedException()));
+
+		assertThat(Thread.currentThread().isInterrupted()).isFalse();
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(message, failure))
+			.withCauseInstanceOf(ImmediateRequeueAmqpException.class);
+	}
+
+	@Test
 	void aListenerThatAsksForTheMessageBackGetsIt() {
 		final var failure = listenerFailed(new ImmediateRequeueAmqpException("put it back"));
 

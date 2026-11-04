@@ -2,6 +2,7 @@ package se.sundsvall.dept44.rabbitmq;
 
 import com.rabbitmq.client.BlockedListener;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,8 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionListener;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -30,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +43,9 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({
+	MockitoExtension.class, OutputCaptureExtension.class
+})
 class Dept44RabbitPublisherTest {
 
 	private static final String EXCHANGE = "exchange";
@@ -81,7 +87,21 @@ class Dept44RabbitPublisherTest {
 	}
 
 	@Test
-	void publishSetsThePropertiesAndReturnsOnAck() {
+	void aConfirmTimeoutUnderAMillisecondIsWaitedOut() {
+		final var confirmTimeout = Duration.ofNanos(900_000);
+		final var sentAt = new AtomicLong();
+		// The broker never confirms
+		brokerAnswers(_ -> sentAt.set(System.nanoTime()));
+		final var subMillisecondPublisher = new Dept44RabbitPublisher(rabbitTemplate, confirmTimeout);
+
+		assertThatExceptionOfType(RabbitPublishException.class)
+			.isThrownBy(() -> subMillisecondPublisher.publish(message()))
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(TIMEOUT));
+		assertThat(System.nanoTime() - sentAt.get()).isGreaterThanOrEqualTo(confirmTimeout.toNanos());
+	}
+
+	@Test
+	void publishSetsThePropertiesAndReturnsOnAck(final CapturedOutput output) {
 		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
 
 		publisher.publish(message()
@@ -95,6 +115,7 @@ class Dept44RabbitPublisherTest {
 		assertThat(properties.getCorrelationId()).isEqualTo("correlation-id");
 		assertThat(properties.getReplyToAddress()).isEqualTo(new Address("reply-exchange", "reply-key"));
 		assertThat(properties.<String>getHeader("x-custom")).isEqualTo("value");
+		assertThat(output.getOut()).contains("Message message-id to exchange 'exchange' with routing key 'routing-key' was confirmed by the broker");
 	}
 
 	@Test
@@ -114,13 +135,15 @@ class Dept44RabbitPublisherTest {
 	}
 
 	@Test
-	void nackedMessage() {
+	void nackedMessage(final CapturedOutput output) {
 		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(false, "Channel closed by application")));
 
 		assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
 			.withMessage("Message message-id to exchange 'exchange' with routing key 'routing-key' was nacked by the broker: Channel closed by application")
 			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(NACKED, "message-id"));
+		// The exception says it, and the service logs it
+		assertThat(output.getOut()).doesNotContain("was confirmed by the broker");
 	}
 
 	@Test
@@ -174,6 +197,7 @@ class Dept44RabbitPublisherTest {
 	@Test
 	void aBlockedConnectionFailsThePublishAtOnceUntilTheBrokerUnblocksIt() throws Exception {
 		final var blockedListener = blockedListener(connectionListener());
+		when(connection.isOpen()).thenReturn(true);
 
 		blockedListener.handleBlocked("low on memory");
 
@@ -195,6 +219,30 @@ class Dept44RabbitPublisherTest {
 		blockedListener(connectionListener).handleBlocked("low on disk");
 
 		connectionListener.onClose(connection);
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		assertThatNoException().isThrownBy(() -> publisher.publish(message()));
+	}
+
+	@Test
+	void aBlockedConnectionThatDiesNoLongerFailsThePublish() throws Exception {
+		blockedListener(connectionListener()).handleBlocked("low on memory");
+
+		// The broker restarts to clear the alarm. The connection dies without an unblock, and the factory tells no listener
+		when(connection.isOpen()).thenReturn(false);
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		assertThatNoException().isThrownBy(() -> publisher.publish(message()));
+	}
+
+	@Test
+	void aBlockedConnectionThatTheFactoryOpensAgainNoLongerFailsThePublish() throws Exception {
+		final var connectionListener = connectionListener();
+		blockedListener(connectionListener).handleBlocked("low on memory");
+
+		// The factory opens a dead connection again behind the same proxy, and tells its listeners only that it opened it
+		lenient().when(connection.isOpen()).thenReturn(true);
+		connectionListener.onCreate(connection);
 		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
 
 		assertThatNoException().isThrownBy(() -> publisher.publish(message()));

@@ -18,6 +18,8 @@ final class BlockedConnections implements ConnectionListener {
 
 	@Override
 	public void onCreate(final Connection connection) {
+		// The factory opens a dead connection again behind the same proxy, and does not tell its listeners it closed
+		blocked.remove(connection);
 		connection.addBlockedListener(new BlockedListener() {
 			@Override
 			public void handleBlocked(final String reason) {
@@ -40,6 +42,10 @@ final class BlockedConnections implements ConnectionListener {
 	 * @return why the broker blocks publishing, such as {@code low on memory}, or empty when it does not
 	 */
 	Optional<String> reason() {
-		return blocked.values().stream().findFirst();
+		// A connection that died while blocked, as when the broker restarts to clear the alarm, is never unblocked
+		return blocked.entrySet().stream()
+			.filter(entry -> entry.getKey().isOpen())
+			.map(Map.Entry::getValue)
+			.findFirst();
 	}
 }

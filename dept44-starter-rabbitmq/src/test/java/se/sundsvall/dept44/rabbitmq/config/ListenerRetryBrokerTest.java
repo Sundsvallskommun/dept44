@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.QueueBuilder;
@@ -22,6 +24,8 @@ import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
@@ -36,8 +40,11 @@ import static org.awaitility.Awaitility.await;
 
 /**
  * The listener retry the starter sets up, against a real broker: what is retried, what goes back in the queue and what
- * is dead-lettered. The delays are cut to milliseconds, and each queue allows one redelivery before it dead-letters.
+ * is dead-lettered, and the line logged for each delivery. The delays are cut to milliseconds, and each queue allows
+ * one
+ * redelivery before it dead-letters.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class ListenerRetryBrokerTest {
 
 	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.3.6-management-alpine");
@@ -77,69 +84,91 @@ class ListenerRetryBrokerTest {
 	}
 
 	@Test
-	void aTransientFailureThatPassesIsRetriedUntilTheMessageIsHandled() {
+	void aTransientFailureThatPassesIsRetriedUntilTheMessageIsHandled(final CapturedOutput output) {
 		run(Listeners.class, context -> {
 			publish(context, PASSES);
 
 			await().atMost(Duration.ofSeconds(10)).until(() -> Listeners.HANDLED.get() == 1);
 			assertThat(Listeners.PASSES_ATTEMPTS.get()).isEqualTo(3);
 			assertThat(context.getBean(RabbitTemplate.class).receive(PASSES + ".dlq", 500)).isNull();
+			// One line for the delivery, not one for each attempt
+			assertLoggedOnce(output, PASSES, 0, "was acknowledged");
 		});
 	}
 
 	@Test
-	void anyOtherFailureIsDeadLetteredAtOnce() {
+	void anyOtherFailureIsDeadLetteredAtOnce(final CapturedOutput output) {
 		run(Listeners.class, context -> {
 			publish(context, PERMANENT);
 
 			assertThat(context.getBean(RabbitTemplate.class).receive(PERMANENT + ".dlq", 10_000)).isNotNull();
 			assertThat(Listeners.PERMANENT_ATTEMPTS.get()).isEqualTo(1);
+			assertLoggedOnce(output, PERMANENT, 0, "was rejected, for the queue to dead-letter");
 		});
 	}
 
 	@Test
-	void aTransientFailureThatLastsGoesBackInTheQueueUntilItsDeliveryLimit() {
+	void aTransientFailureThatLastsGoesBackInTheQueueUntilItsDeliveryLimit(final CapturedOutput output) {
 		run(Listeners.class, context -> {
 			publish(context, STUCK);
 
 			assertThat(context.getBean(RabbitTemplate.class).receive(STUCK + ".dlq", 10_000)).isNotNull();
 			// Retried on each delivery, and delivered again once after the retries of the first
 			assertThat(Listeners.STUCK_ATTEMPTS.get()).isEqualTo(2 * (MAX_RETRIES + 1));
+			// The broker counts the first delivery against the limit, and dead-letters the message after the second
+			assertLoggedOnce(output, STUCK, 0, "was put back in the queue, which dead-letters it past its x-delivery-limit");
+			assertLoggedOnce(output, STUCK, 1, "was put back in the queue, which dead-letters it past its x-delivery-limit");
 		});
 	}
 
 	@Test
-	void aServerErrorThatLastsIsDeadLetteredOnceItsRetriesAreOver() {
+	void aServerErrorThatLastsIsDeadLetteredOnceItsRetriesAreOver(final CapturedOutput output) {
 		run(Listeners.class, context -> {
 			publish(context, SERVER_ERROR);
 
 			assertThat(context.getBean(RabbitTemplate.class).receive(SERVER_ERROR + ".dlq", 10_000)).isNotNull();
 			// Retried on the first delivery, and not put back in the queue for another
 			assertThat(Listeners.SERVER_ERROR_ATTEMPTS.get()).isEqualTo(MAX_RETRIES + 1);
+			assertLoggedOnce(output, SERVER_ERROR, 0, "was rejected, for the queue to dead-letter");
 		});
 	}
 
 	@Test
-	void aMessageTheListenerAcknowledgesIsNeitherRetriedNorDeadLettered() {
+	void aMessageTheListenerAcknowledgesIsNeitherRetriedNorDeadLettered(final CapturedOutput output) {
 		run(Listeners.class, context -> {
 			publish(context, ACKNOWLEDGED);
 
 			await().atMost(Duration.ofSeconds(10)).until(() -> Listeners.ACKNOWLEDGED_ATTEMPTS.get() == 1);
 			assertThat(context.getBean(RabbitTemplate.class).receive(ACKNOWLEDGED + ".dlq", 1_000)).isNull();
 			assertThat(Listeners.ACKNOWLEDGED_ATTEMPTS.get()).isEqualTo(1);
+			assertLoggedOnce(output, ACKNOWLEDGED, 0, "was acknowledged");
 		});
 	}
 
 	@Test
-	void aBatchThatFailsIsDeadLetteredRatherThanDropped() {
+	void aBatchThatFailsIsDeadLetteredRatherThanDropped(final CapturedOutput output) {
 		run(BatchListener.class, context -> {
-			publish(context, BATCH);
-			publish(context, BATCH);
+			final var messageIds = List.of("first-message", "second-message");
+			messageIds.forEach(messageId -> context.getBean(Dept44RabbitPublisher.class)
+				.publish(OutgoingMessage.to("", BATCH).withMessageId(messageId).withPayload(new RabbitMqBrokerTest.Payload("value"))));
 
 			final var rabbitTemplate = context.getBean(RabbitTemplate.class);
 			assertThat(rabbitTemplate.receive(BATCH + ".dlq", 10_000)).isNotNull();
 			assertThat(rabbitTemplate.receive(BATCH + ".dlq", 10_000)).isNotNull();
+			// In one batch, or in one each when the second message comes later than the container waits to fill a batch
+			messageIds.forEach(messageId -> assertThat(output.getOut())
+				.containsPattern("Batch of messages [^\\n]*" + messageId + "[^\\n]* from queue '" + Pattern.quote(BATCH) + "' \\(\\d+ ms\\) was rejected, for the queue to dead-letter"));
 		}, "spring.rabbitmq.listener.simple.consumer-batch-enabled=true", "spring.rabbitmq.listener.simple.batch-size=2");
+	}
+
+	/**
+	 * The listener logs its line once it has handled the message, which can be after the test has seen the outcome
+	 */
+	private static void assertLoggedOnce(final CapturedOutput output, final String queue, final int deliveryCount, final String outcome) {
+		final var line = Pattern.compile(Pattern.quote("from queue '%s' with routing key '%s' (delivery count %d, ".formatted(queue, queue, deliveryCount)) + "\\d+"
+			+ Pattern.quote(" ms) " + outcome));
+		await().atMost(Duration.ofSeconds(5)).until(() -> line.matcher(output.getOut()).find());
+		assertThat(line.matcher(output.getOut()).results()).hasSize(1);
 	}
 
 	private static void publish(final ApplicationContext context, final String queue) {

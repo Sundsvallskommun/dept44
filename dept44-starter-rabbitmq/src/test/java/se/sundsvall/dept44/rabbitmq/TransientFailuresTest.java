@@ -8,12 +8,14 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientConnectionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import org.springframework.amqp.AmqpTimeoutException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.Message;
@@ -45,6 +47,7 @@ class TransientFailuresTest {
 			new SocketTimeoutException("Read timed out"),
 			new UnknownHostException("rabbitmq.example.se"),
 			new AmqpConnectException(new ConnectException("Connection refused")),
+			new AmqpTimeoutException(new TimeoutException("The broker did not finish the handshake in time")),
 			CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("database")),
 			new RabbitPublishException(RabbitPublishException.Reason.TIMEOUT, "message-id", "not confirmed in time"),
 			new RabbitPublishException(RabbitPublishException.Reason.INTERRUPTED, "message-id", "interrupted"),

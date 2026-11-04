@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import org.springframework.amqp.AmqpTimeoutException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -56,6 +57,8 @@ public final class TransientFailures {
 		SocketTimeoutException.class,
 		UnknownHostException.class,
 		AmqpConnectException.class,
+		// Such as a broker that does not finish the handshake in time
+		AmqpTimeoutException.class,
 		// A circuit breaker that has opened, on a repository or a Feign client, does not even try the call
 		CallNotPermittedException.class);
 

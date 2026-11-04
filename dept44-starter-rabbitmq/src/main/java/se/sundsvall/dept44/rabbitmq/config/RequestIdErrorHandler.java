@@ -5,7 +5,7 @@ import org.springframework.util.ErrorHandler;
 
 /**
  * Runs a listener container's error handler, the one that logs a failed listener, under the request id of the message
- * that failed. The container calls it after the listener and its advice chain have returned, when
+ * or the batch that failed. The container calls it after the listener and its advice chain have returned, when
  * {@link RequestIdListenerAdvice} has already cleared the request id.
  */
 class RequestIdErrorHandler implements ErrorHandler {
@@ -22,7 +22,7 @@ class RequestIdErrorHandler implements ErrorHandler {
 
 	@Override
 	public void handleError(final Throwable throwable) {
-		MessageRequestId.set(throwable instanceof final ListenerExecutionFailedException failed ? failed.getFailedMessage() : null);
+		MessageRequestId.setForErrorHandler(throwable instanceof final ListenerExecutionFailedException failed ? failed.getFailedMessage() : null);
 		try {
 			delegate.handleError(throwable);
 		} finally {

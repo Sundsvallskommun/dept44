@@ -33,6 +33,19 @@ class Dept44DefaultPropertiesEnvironmentPostProcessorTest {
 		assertThat(environment.getPropertySources().stream().toList().getLast().getName()).isEqualTo("dept44Defaults");
 	}
 
+	/**
+	 * Spring Boot Admin shows {@code info.tags.*} as tags on each instance. The value is filled in when dept44 is
+	 * built, so it is the version of the dept44-starter on the service's classpath.
+	 */
+	@Test
+	void defaultsExposeTheDept44VersionAsAnInfoTag() {
+		final var environment = new StandardEnvironment();
+
+		postProcessor.postProcessEnvironment(environment, new SpringApplication());
+
+		assertThat(environment.getProperty("info.tags.dept44")).isNotBlank().isEqualTo(System.getProperty("dept44.version"));
+	}
+
 	@Test
 	void defaultsAreAddedOnce() {
 		final var environment = new StandardEnvironment();

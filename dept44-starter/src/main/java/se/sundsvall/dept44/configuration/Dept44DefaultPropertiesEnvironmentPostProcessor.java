@@ -2,6 +2,7 @@ package se.sundsvall.dept44.configuration;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Properties;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.Ordered;
@@ -18,27 +19,34 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
  * service's
  * {@code classpath:/application.yml}: a service could not override them there. Runs after Spring Boot has loaded the
  * application's config data, since that is added last as well.
+ * <p>
+ * The dept44 version is kept in its own file, which Maven filters when dept44 is built. The defaults are not filtered,
+ * since they contain Spring placeholders that filtering could replace.
  */
 public class Dept44DefaultPropertiesEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
 	static final String PROPERTY_SOURCE_NAME = "dept44Defaults";
 	static final String DEFAULTS_LOCATION = "dept44-default.properties";
+	static final String VERSION_LOCATION = "dept44-version.properties";
 
 	@Override
 	public void postProcessEnvironment(final ConfigurableEnvironment environment, final SpringApplication application) {
-		addDefaults(environment, DEFAULTS_LOCATION);
+		addDefaults(environment, DEFAULTS_LOCATION, VERSION_LOCATION);
 	}
 
-	static void addDefaults(final ConfigurableEnvironment environment, final String location) {
+	static void addDefaults(final ConfigurableEnvironment environment, final String... locations) {
 		if (environment.getPropertySources().contains(PROPERTY_SOURCE_NAME)) {
 			return;
 		}
-		try {
-			final var defaults = PropertiesLoaderUtils.loadProperties(new ClassPathResource(location, Dept44DefaultPropertiesEnvironmentPostProcessor.class.getClassLoader()));
-			environment.getPropertySources().addLast(new PropertiesPropertySource(PROPERTY_SOURCE_NAME, defaults));
-		} catch (final IOException e) {
-			throw new UncheckedIOException("Could not load " + location, e);
+		final var defaults = new Properties();
+		for (final var location : locations) {
+			try {
+				PropertiesLoaderUtils.fillProperties(defaults, new ClassPathResource(location, Dept44DefaultPropertiesEnvironmentPostProcessor.class.getClassLoader()));
+			} catch (final IOException e) {
+				throw new UncheckedIOException("Could not load " + location, e);
+			}
 		}
+		environment.getPropertySources().addLast(new PropertiesPropertySource(PROPERTY_SOURCE_NAME, defaults));
 	}
 
 	@Override

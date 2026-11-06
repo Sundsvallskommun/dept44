@@ -13,5 +13,8 @@
 		"time": "${json-unit.any-string}",
 		"version": "${json-unit.any-string}",
 		"group": "se.sundsvall"
+	},
+	"tags": {
+		"dept44": "${json-unit.any-string}"
 	}
 }

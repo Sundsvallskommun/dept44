@@ -134,6 +134,16 @@ The practical consequences:
 
 The set of trust anchors actually installed is logged at `INFO` on startup.
 
+### Dept44 Version in Spring Boot Admin
+
+`/actuator/info` includes `tags.dept44`, the version of the dept44-starter on the classpath, for example `8.1.0`.
+Spring Boot Admin shows `info.tags.*` as tags on each instance, so it shows which dept44 version each running service
+uses.
+
+Maven fills in the value when dept44 is built, not when the service is. It is normally the `dept44-service-parent`
+version in the service's `pom.xml`. A service that overrides the `dept44-starter` version shows the overridden one,
+since that is the one running.
+
 ## Key Dependencies
 
 - Spring Boot (actuator, security, webmvc, validation, oauth2-client)

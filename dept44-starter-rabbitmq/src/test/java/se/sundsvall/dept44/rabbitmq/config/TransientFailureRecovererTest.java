@@ -104,6 +104,18 @@ class TransientFailureRecovererTest {
 			.satisfies(exception -> assertThat(exception.getFailedMessages()).containsExactly(message, other));
 	}
 
+	@Test
+	void aBatchInAnOutageIsRejected() {
+		// Spring AMQP puts a batch back with a basic.nack, which the queue's delivery limit does not count
+		final var other = new Message(new byte[0]);
+		final var failure = listenerFailed(new ConnectException("Connection refused"));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(List.of(message, other), failure))
+			.withCauseInstanceOf(AmqpRejectAndDontRequeueException.class)
+			.satisfies(exception -> assertThat(exception.getFailedMessages()).containsExactly(message, other));
+	}
+
 	private void isForTheMessage(final ListenerExecutionFailedException exception) {
 		// The container's error handler logs under the request id of the message it finds here
 		assertThat(exception.getFailedMessage()).isSameAs(message);

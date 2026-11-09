@@ -2,10 +2,14 @@ package se.sundsvall.dept44.rabbitmq.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.AbstractAdaptableMessageListener;
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareBatchMessageListener;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.SmartLifecycle;
 
@@ -21,11 +25,16 @@ import static java.util.Optional.ofNullable;
  * consumer's channel, not through a {@code RabbitTemplate}. It is added after the listener's own reply post-processors,
  * so that a header the service sets itself wins.</li>
  * </ul>
+ * It also warns about a listener whose messages never reach the dead letter queue after an outage, see
+ * {@link #warnIfPutBackUncounted}.
+ * <p>
  * Done here rather than on the container factory, which has no getter for either: setting one there would replace the
  * service's. Runs in the phase just before the registry, which starts the containers. A container the service declares
  * as a bean of its own, outside the registry, keeps both as they are, and so does one created after startup.
  */
 class RequestIdContainerInstaller implements SmartLifecycle {
+
+	private static final Logger LOG = LoggerFactory.getLogger(RequestIdContainerInstaller.class);
 
 	private final ObjectProvider<RabbitListenerEndpointRegistry> registry;
 	private volatile boolean running;
@@ -42,6 +51,7 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 			.forEach(container -> {
 				wrapErrorHandler(container);
 				addReplyHeaders(container);
+				warnIfPutBackUncounted(container);
 			});
 		running = true;
 	}
@@ -63,6 +73,24 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 				postProcessors.add(new RequestIdHeaders());
 				listener.setBeforeSendReplyPostProcessors(postProcessors.toArray(MessagePostProcessor[]::new));
 			}
+		}
+	}
+
+	/**
+	 * Where the listener may settle a message itself, Spring AMQP puts a failed one back with a {@code basic.nack}, which
+	 * RabbitMQ does not count against {@code x-delivery-limit}. Left out are a batch listener, whose batch
+	 * {@link TransientFailureRecoverer} dead-letters rather than puts back, and an async listener, which Spring AMQP has
+	 * switched to manual acknowledgement by now and whose failed message it rejects.
+	 */
+	private static void warnIfPutBackUncounted(final AbstractMessageListenerContainer container) {
+		if (container.getAcknowledgeMode() == AcknowledgeMode.AUTO
+			&& container.isExposeListenerChannel()
+			&& container.getMessageListener() instanceof final AbstractAdaptableMessageListener listener
+			&& !(listener instanceof ChannelAwareBatchMessageListener)
+			&& listener.maySettleDelivery()) {
+			LOG.warn(
+				"Listener {} on queues {} may settle a message itself, through a Channel parameter or an errorHandler. Spring AMQP then puts a failed message back with a basic.nack, which RabbitMQ does not count against x-delivery-limit, so a message put back after an outage never reaches the dead letter queue",
+				container.getListenerId(), Arrays.toString(container.getQueueNames()));
 		}
 	}
 

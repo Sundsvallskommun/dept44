@@ -134,7 +134,8 @@ within an outage of a second. This counts on two things:
   that timed out or was blocked. The listener retries with a growing delay, 1 s up to every 30 s, about 8 minutes in
   all, while the message stays unacknowledged and the rest wait. Then the message goes back first in the queue and
   counts against its `x-delivery-limit`. With a limit of 5 it waits out an outage of about 50 minutes before it is
-  dead-lettered.
+  dead-lettered. A batch listener's batch is dead-lettered once its retries are over instead, see RabbitMQ 4.3 and
+  Spring AMQP below.
 - **Server error**: a 5xx from a service called through dept44's Feign (`ServerProblem`), or a publish the broker
   nacked. It may pass, or it may be this message's data that fails every time, and dept44's Feign error decoder answers
   502 for both. The listener retries it the same way and then dead-letters it, so a message that always fails holds up
@@ -155,6 +156,10 @@ A listener can decide for itself, without retries and whatever the exception wra
 dead-letters the message, `ImmediateRequeueAmqpException` puts it back in the queue and
 `ImmediateAcknowledgeAmqpException` acknowledges it. A listener interrupted at shutdown puts its message back. A batch
 listener's batch is retried and recovered as one.
+
+A listener that returns a `CompletableFuture` or a `Mono` fails after the listener method has returned, and gets no
+retries. Spring AMQP puts each failed message back in the queue, so it is delivered again at once and dead-lettered as
+soon as it reaches its `x-delivery-limit`, after an outage too.
 
 A service that needs another split declares a `RabbitListenerRetrySettingsCustomizer` with its own exception predicate,
 which runs after the starter's, and a `MessageRecoverer`. With batch listeners it must be a `MessageBatchRecoverer`, or
@@ -190,6 +195,14 @@ From RabbitMQ 4.3 the delivery limit counts only a failed delivery, a `basic.rej
 ([spring-amqp#3507](https://github.com/spring-projects/spring-amqp/issues/3507)). Spring Boot 4.1.2 manages Spring AMQP
 4.1.2. A service must not pin an older one.
 
+Spring AMQP 4.1.2 still puts a batch listener's batch back with `basic.nack`, and the batch would come back for as long
+as the outage lasts. The starter therefore dead-letters a batch once an outage outlasts its retries.
+
+Spring AMQP also uses `basic.nack` where the listener may settle a message itself: a listener method with a `Channel`
+parameter, or a `@RabbitListener` with an `errorHandler`. A message put back after an outage then comes back until the
+outage is over, and never reaches the dead letter queue. The starter logs a warning for each such listener at startup.
+Without the parameter and the error handler, the message is counted.
+
 ### Health
 
 Spring Boot's RabbitMQ health indicator counts in `/actuator/health`, where Spring Boot Admin shows a broker that does
@@ -219,12 +232,12 @@ Message 0f28f6e7-... to exchange 'my-namespace.my-service' with routing key 'err
 Message 0f28f6e7-... from queue 'my-namespace.other-service.errands' with routing key 'errand.updated' (delivery count 0, 14 ms) was acknowledged
 ```
 
-|                                   Ends in                                    |                                                    When                                                    |
-|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `was acknowledged`                                                           | The listener returned, or threw `ImmediateAcknowledgeAmqpException`                                        |
-| `was put back in the queue, which dead-letters it past its x-delivery-limit` | An outage outlasted the retries, the listener was interrupted, or it threw `ImmediateRequeueAmqpException` |
-| `was rejected, for the queue to dead-letter`                                 | Any other failure                                                                                          |
-| `failed`                                                                     | Nothing said what becomes of the message, and the container decides                                        |
+|                                   Ends in                                    |                                                           When                                                            |
+|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `was acknowledged`                                                           | The listener returned, or threw `ImmediateAcknowledgeAmqpException`                                                       |
+| `was put back in the queue, which dead-letters it past its x-delivery-limit` | An outage outlasted a single message's retries, the listener was interrupted, or it threw `ImmediateRequeueAmqpException` |
+| `was rejected, for the queue to dead-letter`                                 | Any other failure                                                                                                         |
+| `failed`                                                                     | Nothing said what becomes of the message, and the container decides                                                       |
 
 A failure ends in `failed` with the retry turned off, with `spring.rabbitmq.listener.simple.retry.stateless=false`,
 with a `MessageRecoverer` of the service's own that throws the failure on, and with a container factory not set up with

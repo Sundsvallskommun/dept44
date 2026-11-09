@@ -1,13 +1,17 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import com.rabbitmq.client.Channel;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,8 +20,12 @@ import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFacto
 import org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.AbstractAdaptableMessageListener;
+import org.springframework.amqp.rabbit.listener.adapter.BatchMessagingMessageListenerAdapter;
+import org.springframework.amqp.rabbit.listener.api.RabbitListenerErrorHandler;
 import org.springframework.amqp.rabbit.retry.MessageRecoverer;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
@@ -29,6 +37,8 @@ import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainer
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.ErrorHandler;
@@ -39,6 +49,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@ExtendWith(OutputCaptureExtension.class)
 class RabbitMqConfigurationTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -264,6 +275,36 @@ class RabbitMqConfigurationTest {
 			.hasMessage("Dept44RabbitPublisher requires spring.rabbitmq.template.mandatory=true"));
 	}
 
+	@Test
+	void warnsAboutAListenerWhoseMessagesSpringAmqpPutsBackUncounted(final CapturedOutput output) {
+		contextRunner.withUserConfiguration(SettlingListeners.class)
+			.withPropertyValues("spring.rabbitmq.listener.simple.auto-startup=false")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				assertThat(output.getOut())
+					.contains("on queues [dept44.channel] may settle a message itself")
+					.contains("on queues [dept44.error-handler] may settle a message itself")
+					// Spring AMQP rejects an async listener's failed message, one at a time
+					.doesNotContain("[dept44.async] may settle")
+					.doesNotContain("[dept44.plain] may settle");
+			});
+	}
+
+	@Test
+	void doesNotWarnAboutABatchListenerWhoseBatchIsDeadLetteredInstead(final CapturedOutput output) {
+		contextRunner.withUserConfiguration(BatchListener.class)
+			.withPropertyValues("spring.rabbitmq.listener.simple.auto-startup=false", "spring.rabbitmq.listener.simple.consumer-batch-enabled=true",
+				"spring.rabbitmq.listener.simple.batch-size=2")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				// A batch listener may settle a message itself, as far as Spring AMQP knows
+				assertThat(context.getBean(RabbitListenerEndpointRegistry.class).getListenerContainers()).singleElement()
+					.satisfies(container -> assertThat(((AbstractMessageListenerContainer) container).getMessageListener())
+						.isInstanceOfSatisfying(BatchMessagingMessageListenerAdapter.class, listener -> assertThat(listener.maySettleDelivery()).isTrue()));
+				assertThat(output.getOut()).doesNotContain("[dept44.batch] may settle");
+			});
+	}
+
 	record Payload(String someValue, LocalDate someDate) {
 	}
 
@@ -334,6 +375,47 @@ class RabbitMqConfigurationTest {
 
 		@RabbitListener(queues = "dept44.recorded")
 		void listen(final String payload) {
+			// Never started
+		}
+	}
+
+	/**
+	 * Never started
+	 */
+	static class SettlingListeners {
+
+		@RabbitListener(queues = "dept44.channel")
+		void channel(final String payload, final Channel channel) {
+			// Never started
+		}
+
+		@RabbitListener(queues = "dept44.error-handler", errorHandler = "rethrow")
+		void errorHandler(final String payload) {
+			// Never started
+		}
+
+		@RabbitListener(queues = "dept44.async")
+		CompletableFuture<Void> async(final String payload) {
+			return CompletableFuture.completedFuture(null);
+		}
+
+		@RabbitListener(queues = "dept44.plain")
+		void plain(final String payload) {
+			// Never started
+		}
+
+		@Bean
+		static RabbitListenerErrorHandler rethrow() {
+			return (amqpMessage, channel, message, exception) -> {
+				throw exception;
+			};
+		}
+	}
+
+	static class BatchListener {
+
+		@RabbitListener(queues = "dept44.batch")
+		void batch(final List<Message> messages) {
 			// Never started
 		}
 	}

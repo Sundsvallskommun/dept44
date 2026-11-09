@@ -55,6 +55,7 @@ class ListenerRetryBrokerTest {
 	private static final String SERVER_ERROR = "dept44.retry.server-error";
 	private static final String ACKNOWLEDGED = "dept44.retry.acknowledged";
 	private static final String BATCH = "dept44.retry.batch";
+	private static final String BATCH_STUCK = "dept44.retry.batch-stuck";
 	private static final int MAX_RETRIES = 2;
 
 	@BeforeAll
@@ -66,7 +67,7 @@ class ListenerRetryBrokerTest {
 		connectionFactory.setPassword(BROKER.getAdminPassword());
 		final var admin = new RabbitAdmin(connectionFactory);
 		for (final var name : new String[] {
-			PASSES, PERMANENT, STUCK, SERVER_ERROR, ACKNOWLEDGED, BATCH
+			PASSES, PERMANENT, STUCK, SERVER_ERROR, ACKNOWLEDGED, BATCH, BATCH_STUCK
 		}) {
 			// As the topology for a consumer looks: a delivery limit, and a dead letter queue through the default exchange
 			admin.declareQueue(QueueBuilder.durable(name).quorum().withArguments(Map.of(
@@ -162,6 +163,30 @@ class ListenerRetryBrokerTest {
 	}
 
 	/**
+	 * Spring AMQP puts a batch back with a basic.nack, which the delivery limit does not count, so a batch put back would
+	 * come back for as long as the outage lasts
+	 */
+	@Test
+	void aBatchWhoseOutageLastsIsDeadLetteredOnceItsRetriesAreOver(final CapturedOutput output) {
+		run(StuckBatchListener.class, context -> {
+			final var messageIds = List.of("first-message", "second-message");
+			messageIds.forEach(messageId -> context.getBean(Dept44RabbitPublisher.class)
+				.publish(OutgoingMessage.to("", BATCH_STUCK).withMessageId(messageId).withPayload(new RabbitMqBrokerTest.Payload("value"))));
+
+			final var rabbitTemplate = context.getBean(RabbitTemplate.class);
+			for (var i = 0; i < messageIds.size(); i++) {
+				assertThat(rabbitTemplate.receive(BATCH_STUCK + ".dlq", 10_000))
+					.as(() -> "dead-lettered after %d attempts".formatted(StuckBatchListener.ATTEMPTS.get()))
+					.isNotNull();
+			}
+			// Retried on the first delivery, in one batch or in one each, and not put back in the queue for another
+			assertThat(StuckBatchListener.ATTEMPTS.get()).isIn(MAX_RETRIES + 1, 2 * (MAX_RETRIES + 1));
+			messageIds.forEach(messageId -> await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> assertThat(output.getOut())
+				.containsPattern("Batch of messages [^\\n]*" + messageId + "[^\\n]* from queue '" + Pattern.quote(BATCH_STUCK) + "' \\(\\d+ ms\\) was rejected, for the queue to dead-letter")));
+		}, "spring.rabbitmq.listener.simple.consumer-batch-enabled=true", "spring.rabbitmq.listener.simple.batch-size=2");
+	}
+
+	/**
 	 * The listener logs its line once it has handled the message, which can be after the test has seen the outcome
 	 */
 	private static void assertLoggedOnce(final CapturedOutput output, final String queue, final int deliveryCount, final String outcome) {
@@ -229,6 +254,7 @@ class ListenerRetryBrokerTest {
 			STUCK_ATTEMPTS.set(0);
 			SERVER_ERROR_ATTEMPTS.set(0);
 			ACKNOWLEDGED_ATTEMPTS.set(0);
+			StuckBatchListener.ATTEMPTS.set(0);
 			ConsumerFailures.EVENTS.clear();
 		}
 
@@ -274,6 +300,18 @@ class ListenerRetryBrokerTest {
 		@RabbitListener(queues = BATCH)
 		void batch(final List<Message> messages) {
 			throw new IllegalStateException("A bug, the same for the whole batch");
+		}
+	}
+
+	static class StuckBatchListener {
+
+		static final AtomicInteger ATTEMPTS = new AtomicInteger();
+
+		/** As a database that does not come back */
+		@RabbitListener(queues = BATCH_STUCK)
+		void batch(final List<Message> messages) {
+			ATTEMPTS.incrementAndGet();
+			throw new CannotCreateTransactionException("Could not open JPA EntityManager for transaction", new ConnectException("Connection refused"));
 		}
 	}
 }

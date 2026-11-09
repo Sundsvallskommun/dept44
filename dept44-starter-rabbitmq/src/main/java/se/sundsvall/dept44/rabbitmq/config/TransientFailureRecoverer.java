@@ -24,7 +24,10 @@ import static java.util.stream.Collectors.joining;
  * failure, a server error that outlasted its retries included, is rejected, and the queue dead-letters it. See
  * {@link TransientFailures}.
  * <p>
- * A batch listener's batch is handled as one: Spring AMQP acknowledges a batch whose recoverer does nothing with it.
+ * A batch listener's batch is handled as one: Spring AMQP acknowledges a batch whose recoverer does nothing with it. A
+ * batch in an outage is rejected rather than put back. Spring AMQP puts a batch back with a {@code basic.nack}, which
+ * RabbitMQ from 4.3 does not count against the delivery limit, so the batch would come back for as long as the outage
+ * lasts.
  * <p>
  * Each outcome is thrown inside a {@link ListenerExecutionFailedException}. The container carries on with the next
  * message after one, and restarts its consumer after anything else.
@@ -38,11 +41,15 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 
 	@Override
 	public void recover(final Message message, final Throwable cause) {
-		recover(List.of(message), cause);
+		throw outcome(List.of(message), cause, true);
 	}
 
 	@Override
 	public void recover(final List<Message> messages, final Throwable cause) {
+		throw outcome(messages, cause, false);
+	}
+
+	private static ListenerExecutionFailedException outcome(final List<Message> messages, final Throwable cause, final boolean outageGoesBack) {
 		final var failed = messages.toArray(Message[]::new);
 		final var messageIds = messages.stream().map(message -> String.valueOf(message.getMessageProperties().getMessageId())).collect(joining(", "));
 		final var queue = messages.getFirst().getMessageProperties().getConsumerQueue();
@@ -50,17 +57,17 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 
 		if (wasInterrupted(cause)) {
 			LOG.warn("Interrupted while handling message {} from queue {}, putting it back in the queue, which dead-letters it past its x-delivery-limit: {}", messageIds, queue, rootCause);
-			throw new ListenerExecutionFailedException("Interrupted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
+			return new ListenerExecutionFailedException("Interrupted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
 		}
-		if (TransientFailures.isOutage(cause)) {
+		if (outageGoesBack && TransientFailures.isOutage(cause)) {
 			LOG.warn("Retries exhausted for message {} from queue {}, putting it back in the queue, which dead-letters it past its x-delivery-limit: {}", messageIds, queue, rootCause);
-			throw new ListenerExecutionFailedException("Retries exhausted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
+			return new ListenerExecutionFailedException("Retries exhausted, put back in the queue", new ImmediateRequeueAmqpException(cause), failed);
 		}
 		if (askedForRequeueOrAcknowledge(cause)) {
-			throw new ListenerExecutionFailedException("Handled as the listener asked", cause, failed);
+			return new ListenerExecutionFailedException("Handled as the listener asked", cause, failed);
 		}
 		LOG.warn("Rejecting message {} from queue {}, for the queue to dead-letter: {}", messageIds, queue, rootCause);
-		throw new ListenerExecutionFailedException("Rejected without requeue", new AmqpRejectAndDontRequeueException(cause), failed);
+		return new ListenerExecutionFailedException("Rejected without requeue", new AmqpRejectAndDontRequeueException(cause), failed);
 	}
 
 	/**

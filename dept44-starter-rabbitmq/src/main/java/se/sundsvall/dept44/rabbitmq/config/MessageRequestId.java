@@ -14,8 +14,8 @@ import static java.util.Optional.ofNullable;
  */
 final class MessageRequestId {
 
-	// The request id a batch that failed was handled under, for the container's error handler
-	private static final ThreadLocal<String> FAILED_BATCH = new ThreadLocal<>();
+	// What a delivery that failed was handled under, for the container's error handler
+	private static final ThreadLocal<HandledUnder> FAILED = new ThreadLocal<>();
 
 	private MessageRequestId() {}
 
@@ -27,28 +27,30 @@ final class MessageRequestId {
 	}
 
 	/**
-	 * Keeps the current request id, that of a batch that failed. The container calls its error handler once the advice
-	 * has cleared it, see {@link #setForErrorHandler(Message)}.
+	 * Keeps the current request id and identifier, those of a delivery that failed. A message without a request id, and
+	 * a batch, were handled under a new one that no message carries. The container calls its error handler once the
+	 * advice has cleared them, see {@link #setForErrorHandler(Message)}.
 	 */
-	static void keepFailedBatch() {
-		FAILED_BATCH.set(RequestId.get());
+	static void keepFailed() {
+		FAILED.set(new HandledUnder(RequestId.get(), Identifier.get()));
 	}
 
 	/**
-	 * Forgets a failed batch that no error handler has taken the request id of, before the next delivery.
+	 * Forgets a failed delivery that no error handler has taken the request id of, before the next delivery.
 	 */
-	static void forgetFailedBatch() {
-		FAILED_BATCH.remove();
+	static void forgetFailed() {
+		FAILED.remove();
 	}
 
 	/**
-	 * As {@link #set(Message)}, but with the request id of the batch that just failed, when one has.
+	 * As {@link #set(Message)}, but with what the delivery that just failed was handled under, when it was kept.
 	 */
 	static void setForErrorHandler(final Message failedMessage) {
-		final var batchRequestId = FAILED_BATCH.get();
-		FAILED_BATCH.remove();
-		if (nonNull(batchRequestId)) {
-			set(batchRequestId, null);
+		final var handledUnder = FAILED.get();
+		FAILED.remove();
+		if (nonNull(handledUnder)) {
+			RequestId.init(handledUnder.requestId());
+			Identifier.set(handledUnder.identifier());
 		} else {
 			set(failedMessage);
 		}
@@ -62,6 +64,9 @@ final class MessageRequestId {
 	static void clear() {
 		RequestId.reset();
 		Identifier.remove();
+	}
+
+	private record HandledUnder(String requestId, Identifier identifier) {
 	}
 
 	private static String header(final Message message, final String name) {

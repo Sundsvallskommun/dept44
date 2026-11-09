@@ -41,6 +41,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.util.ErrorHandler;
 import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
 
@@ -276,6 +277,22 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
+	void twoTemplatesWithoutAPrimaryOneLeaveOutThePublisher() {
+		contextRunner.withUserConfiguration(TwoTemplates.class).run(context -> {
+			assertThat(context).hasNotFailed();
+			assertThat(context).doesNotHaveBean(Dept44RabbitPublisher.class);
+		});
+	}
+
+	@Test
+	void twoTemplatesWithAPrimaryOneGiveThePublisherThePrimaryOne() {
+		contextRunner.withUserConfiguration(TwoTemplates.class, PrimaryTemplate.class).run(context -> {
+			assertThat(context).hasNotFailed();
+			assertThat(context.getBean(Dept44RabbitPublisher.class)).hasFieldOrPropertyWithValue("rabbitTemplate", context.getBean("primaryTemplate"));
+		});
+	}
+
+	@Test
 	void warnsAboutAListenerWhoseMessagesSpringAmqpPutsBackUncounted(final CapturedOutput output) {
 		contextRunner.withUserConfiguration(SettlingListeners.class)
 			.withPropertyValues("spring.rabbitmq.listener.simple.auto-startup=false")
@@ -313,6 +330,39 @@ class RabbitMqConfigurationTest {
 
 		@Bean
 		RabbitTemplate rabbitTemplate(final RabbitTemplateConfigurer configurer, final ConnectionFactory connectionFactory) {
+			final var rabbitTemplate = new RabbitTemplate();
+			configurer.configure(rabbitTemplate, connectionFactory);
+			return rabbitTemplate;
+		}
+	}
+
+	/**
+	 * As a service with a template for each of two vhosts, neither named rabbitTemplate
+	 */
+	@Configuration(proxyBeanMethods = false)
+	static class TwoTemplates {
+
+		@Bean
+		RabbitTemplate fooTemplate(final RabbitTemplateConfigurer configurer, final ConnectionFactory connectionFactory) {
+			final var rabbitTemplate = new RabbitTemplate();
+			configurer.configure(rabbitTemplate, connectionFactory);
+			return rabbitTemplate;
+		}
+
+		@Bean
+		RabbitTemplate barTemplate(final RabbitTemplateConfigurer configurer, final ConnectionFactory connectionFactory) {
+			final var rabbitTemplate = new RabbitTemplate();
+			configurer.configure(rabbitTemplate, connectionFactory);
+			return rabbitTemplate;
+		}
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class PrimaryTemplate {
+
+		@Bean
+		@Primary
+		RabbitTemplate primaryTemplate(final RabbitTemplateConfigurer configurer, final ConnectionFactory connectionFactory) {
 			final var rabbitTemplate = new RabbitTemplate();
 			configurer.configure(rabbitTemplate, connectionFactory);
 			return rabbitTemplate;

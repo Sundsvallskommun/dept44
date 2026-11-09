@@ -34,6 +34,39 @@ class RequestIdErrorHandlerTest {
 	}
 
 	@Test
+	void aFailedMessageWithoutRequestIdIsHandledUnderTheOneItWasHandledUnder() throws Throwable {
+		final var withoutRequestId = new Message(new byte[0]);
+		final var handledUnder = new AtomicReference<String>();
+		final var seen = new AtomicReference<String>();
+		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
+
+		// As the container does: the advice chain throws, and then the container calls its error handler
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(withoutRequestId, handledUnder)));
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), withoutRequestId));
+
+		assertThat(seen.get()).isNotBlank().isEqualTo(handledUnder.get());
+		assertClearedAfterwards();
+	}
+
+	@Test
+	void aFailedMessageIsHandledUnderItsRequestIdAndIdentifierAfterTheAdvice() throws Throwable {
+		final var message = message("request-id");
+		final var seen = new AtomicReference<String>();
+		final var seenIdentifier = new AtomicReference<Identifier>();
+		final var errorHandler = new RequestIdErrorHandler(_ -> {
+			seen.set(RequestId.get());
+			seenIdentifier.set(Identifier.get());
+		});
+
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(message, new AtomicReference<>())));
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), message));
+
+		assertThat(seen.get()).isEqualTo("request-id");
+		assertThat(seenIdentifier.get()).isEqualTo(Identifier.parse("joe01doe; type=adAccount"));
+		assertClearedAfterwards();
+	}
+
+	@Test
 	void aFailedBatchIsHandledUnderTheRequestIdTheBatchWasHandledUnder() throws Throwable {
 		final var batch = List.of(message("first-request-id"), message("second-request-id"));
 		final var handledUnder = new AtomicReference<String>();

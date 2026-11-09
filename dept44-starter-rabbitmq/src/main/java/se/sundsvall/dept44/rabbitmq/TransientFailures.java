@@ -83,6 +83,13 @@ public final class TransientFailures {
 	}
 
 	/**
+	 * @return true when the listener has said what becomes of the message, see {@link #decidedByTheListener(Set)}
+	 */
+	public static boolean isDecidedByTheListener(final Throwable throwable) {
+		return decidedByTheListener(causes(throwable));
+	}
+
+	/**
 	 * A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked was not
 	 * sent, and waits out the alarm. One that was returned does not pass by trying again.
 	 */

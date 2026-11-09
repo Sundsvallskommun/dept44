@@ -103,6 +103,7 @@ class TransientFailuresTest {
 		assertThat(TransientFailures.isTransient(failure)).isFalse();
 		assertThat(TransientFailures.isOutage(failure)).isFalse();
 		assertThat(TransientFailures.isTransient(listenerFailed(failure))).isFalse();
+		assertThat(TransientFailures.isDecidedByTheListener(listenerFailed(failure))).isFalse();
 	}
 
 	@ParameterizedTest
@@ -112,6 +113,7 @@ class TransientFailuresTest {
 
 		assertThat(TransientFailures.isTransient(failure)).isFalse();
 		assertThat(TransientFailures.isOutage(failure)).isFalse();
+		assertThat(TransientFailures.isDecidedByTheListener(failure)).isTrue();
 	}
 
 	@Test
@@ -127,6 +129,7 @@ class TransientFailuresTest {
 	void nothingIsNotTransient() {
 		assertThat(TransientFailures.isTransient(null)).isFalse();
 		assertThat(TransientFailures.isOutage(null)).isFalse();
+		assertThat(TransientFailures.isDecidedByTheListener(null)).isFalse();
 	}
 
 	private static ListenerExecutionFailedException listenerFailed(final Throwable cause) {

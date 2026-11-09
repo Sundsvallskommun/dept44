@@ -94,6 +94,33 @@ class TransientFailureRecovererTest {
 	}
 
 	@Test
+	void aListenerThatRejectsTheMessageGetsItAlsoWhenInterrupted() {
+		// As a listener that catches the interrupt and gives up on the message
+		final var failure = listenerFailed(new AmqpRejectAndDontRequeueException("give up", new InterruptedException()));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(message, failure))
+			.satisfies(exception -> assertThat(ContainerUtils.shouldRequeue(true, exception, LogFactory.getLog(TransientFailureRecovererTest.class))).isFalse());
+	}
+
+	@Test
+	void aListenerThatAsksForTheMessageToBeAcknowledgedGetsItAlsoWhenInterrupted() {
+		final var failure = listenerFailed(new ImmediateAcknowledgeAmqpException("nothing to do"));
+
+		Thread.currentThread().interrupt();
+		try {
+			assertThatExceptionOfType(ListenerExecutionFailedException.class)
+				.isThrownBy(() -> recoverer.recover(message, failure))
+				.satisfies(exception -> {
+					assertThat(ContainerUtils.isImmediateAcknowledge(exception)).isTrue();
+					assertThat(ContainerUtils.shouldRequeue(false, exception, LogFactory.getLog(TransientFailureRecovererTest.class))).isFalse();
+				});
+		} finally {
+			Thread.interrupted();
+		}
+	}
+
+	@Test
 	void aBatchIsHandledAsOne() {
 		final var other = new Message(new byte[0]);
 		final var failure = listenerFailed(new IllegalStateException("a bug"));

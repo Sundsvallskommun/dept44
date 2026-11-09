@@ -96,6 +96,9 @@ retried as an outage, `NACKED` as a server error, and `RETURNED` is dead-lettere
 Every message gets a message id. The publisher generates one when the service sets none, and the exception's
 `getMessageId()` returns it. Set your own with `withMessageId` when the receiver must recognize a duplicate.
 
+A service with more than one `RabbitTemplate` gets a publisher for the `@Primary` one. Without a primary template the
+starter declares no publisher, and the service declares its own with `new Dept44RabbitPublisher(template, timeout)`.
+
 For a returned message Spring AMQP also logs `Returned message but no callback available` at WARN. The publisher gets
 the return with the confirm, so the line does not mean anything is misconfigured.
 

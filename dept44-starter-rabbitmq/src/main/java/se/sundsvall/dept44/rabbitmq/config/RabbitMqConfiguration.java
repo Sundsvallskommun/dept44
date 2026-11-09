@@ -21,6 +21,7 @@ import org.springframework.boot.amqp.autoconfigure.RabbitListenerRetrySettingsCu
 import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
@@ -158,8 +159,13 @@ class RabbitMqConfiguration {
 		return new RequestIdContainerInstaller(registry);
 	}
 
+	/**
+	 * Left out where the service has more than one template and none of them is primary. It then declares its own, with
+	 * the template it wants.
+	 */
 	@Bean
 	@ConditionalOnMissingBean
+	@ConditionalOnSingleCandidate(RabbitTemplate.class)
 	Dept44RabbitPublisher dept44RabbitPublisher(final RabbitTemplate rabbitTemplate, final RabbitMqProperties properties) {
 		return new Dept44RabbitPublisher(rabbitTemplate, properties.publishConfirmTimeout());
 	}

@@ -95,6 +95,9 @@ class ListenerLogAdviceTest {
 			// The first of the two in the cause chain counts, as for the container
 			Arguments.of(failed(new ImmediateRequeueAmqpException(new AmqpRejectAndDontRequeueException(cause))), "was put back in the queue, which dead-letters it past its x-delivery-limit"),
 			Arguments.of(failed(new AmqpRejectAndDontRequeueException(new ImmediateRequeueAmqpException(cause))), "was rejected, for the queue to dead-letter"),
+			// The container looks for an acknowledgement up to a reject or an Error only
+			Arguments.of(failed(new AmqpRejectAndDontRequeueException(new ImmediateAcknowledgeAmqpException("nothing to do"))), "was rejected, for the queue to dead-letter"),
+			Arguments.of(failed(new IllegalStateException(new Error("fatal", new ImmediateAcknowledgeAmqpException("nothing to do")))), "failed"),
 			// Only with the retry turned off, where the container decides
 			Arguments.of(cause, "failed"));
 	}

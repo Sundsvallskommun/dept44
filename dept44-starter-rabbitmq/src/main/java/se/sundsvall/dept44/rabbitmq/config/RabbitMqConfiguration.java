@@ -93,6 +93,9 @@ class RabbitMqConfiguration {
 	 * message's request id. {@link ListenerLogAdvice} comes next, before the retry, so that it logs each delivery once.
 	 * It is left out where the container does not settle each message as the listener ends, since it would log what
 	 * becomes of a message wrongly there.
+	 * <p>
+	 * Fails the startup for a simple container that would settle several messages together, see
+	 * {@link #requireEachMessageSettledOnItsOwn}.
 	 */
 	@Bean
 	static BeanPostProcessor dept44RequestIdListenerAdvisor(final Environment environment) {
@@ -101,6 +104,9 @@ class RabbitMqConfiguration {
 			@Override
 			public Object postProcessAfterInitialization(final Object bean, final String beanName) {
 				if (bean instanceof final AbstractRabbitListenerContainerFactory<?> factory) {
+					if (factory instanceof SimpleRabbitListenerContainerFactory) {
+						requireEachMessageSettledOnItsOwn(listener.getSimple());
+					}
 					final var adviceChain = new ArrayList<Advice>();
 					adviceChain.add(new RequestIdListenerAdvice());
 					if (settlesEachMessageAsTheListenerEnds(factory, listener)) {
@@ -117,14 +123,24 @@ class RabbitMqConfiguration {
 	}
 
 	/**
+	 * Above a batch size of one, the simple container settles the messages it has taken together, unless they are a batch
+	 * listener's batch. When one fails it puts back those handled before it as well, to be handled again, with a
+	 * {@code basic.nack} that RabbitMQ does not count against {@code x-delivery-limit}.
+	 */
+	private static void requireEachMessageSettledOnItsOwn(final RabbitProperties.SimpleContainer simple) {
+		if (!simple.isConsumerBatchEnabled() && requireNonNullElse(simple.getBatchSize(), 1) > 1) {
+			throw new IllegalStateException("spring.rabbitmq.listener.simple.batch-size above 1 requires spring.rabbitmq.listener.simple.consumer-batch-enabled=true. "
+				+ "Without it, a failed message puts back the messages handled before it, with a basic.nack that RabbitMQ does not count against x-delivery-limit");
+		}
+	}
+
+	/**
 	 * Whether the container acknowledges or rejects each message as the listener returns or throws, which is what
 	 * {@link ListenerLogAdvice} logs. Read from Spring Boot's properties, since a factory has no getters for them.
 	 */
 	private static boolean settlesEachMessageAsTheListenerEnds(final AbstractRabbitListenerContainerFactory<?> factory, final RabbitProperties.Listener listener) {
 		return switch (factory) {
-			// Above one, a failure also rejects the messages handled before it, unless they are a batch listener's batch
-			case final SimpleRabbitListenerContainerFactory _ -> isAuto(listener.getSimple())
-				&& (listener.getSimple().isConsumerBatchEnabled() || requireNonNullElse(listener.getSimple().getBatchSize(), 1) <= 1);
+			case final SimpleRabbitListenerContainerFactory _ -> isAuto(listener.getSimple());
 			case final DirectRabbitListenerContainerFactory _ -> isAuto(listener.getDirect());
 			default -> true;
 		};

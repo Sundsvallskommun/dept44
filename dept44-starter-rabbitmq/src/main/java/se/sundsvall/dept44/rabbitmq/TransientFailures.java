@@ -6,10 +6,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientException;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Set;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.AmqpTimeoutException;
@@ -83,7 +81,7 @@ public final class TransientFailures {
 	}
 
 	/**
-	 * @return true when the listener has said what becomes of the message, see {@link #decidedByTheListener(Set)}
+	 * @return true when the listener has said what becomes of the message, see {@link #decidedByTheListener(List)}
 	 */
 	public static boolean isDecidedByTheListener(final Throwable throwable) {
 		return decidedByTheListener(causes(throwable));
@@ -93,7 +91,7 @@ public final class TransientFailures {
 	 * A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked was not
 	 * sent, and waits out the alarm. One that was returned does not pass by trying again.
 	 */
-	private static boolean isOutage(final Set<Throwable> causes) {
+	private static boolean isOutage(final List<Throwable> causes) {
 		return causes.stream().anyMatch(cause -> isAny(cause, OUTAGES) || isPublish(cause, TIMEOUT) || isPublish(cause, INTERRUPTED) || isPublish(cause, BLOCKED));
 	}
 
@@ -101,7 +99,7 @@ public final class TransientFailures {
 	 * A listener that throws {@link AmqpRejectAndDontRequeueException}, {@link ImmediateRequeueAmqpException} or
 	 * {@link ImmediateAcknowledgeAmqpException} has said what becomes of the message, whatever it wraps.
 	 */
-	private static boolean decidedByTheListener(final Set<Throwable> causes) {
+	private static boolean decidedByTheListener(final List<Throwable> causes) {
 		return causes.stream().anyMatch(cause -> cause instanceof AmqpRejectAndDontRequeueException
 			|| cause instanceof ImmediateRequeueAmqpException
 			|| cause instanceof ImmediateAcknowledgeAmqpException);
@@ -119,13 +117,8 @@ public final class TransientFailures {
 	 * The whole cause chain counts, since the listener's exception reaches the retry wrapped by Spring AMQP, and often by
 	 * the service too.
 	 */
-	private static Set<Throwable> causes(final Throwable throwable) {
-		// By identity, which also ends a cause chain that loops
-		final Set<Throwable> causes = Collections.newSetFromMap(new IdentityHashMap<>());
-		var cause = throwable;
-		while (cause != null && causes.add(cause)) {
-			cause = cause.getCause();
-		}
-		return causes;
+	private static List<Throwable> causes(final Throwable throwable) {
+		// Also ends a cause chain that loops
+		return ExceptionUtils.getThrowableList(throwable);
 	}
 }

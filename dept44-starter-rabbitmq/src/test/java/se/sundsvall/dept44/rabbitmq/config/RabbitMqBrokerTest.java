@@ -49,7 +49,7 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNE
 class RabbitMqBrokerTest {
 
 	// The version in TEST and production
-	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.3.6-management-alpine");
+	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.4.0-management-alpine");
 
 	private static final String EXCHANGE = "dept44.test";
 	private static final String QUEUE = "dept44.test.work";

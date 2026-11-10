@@ -51,9 +51,10 @@ void onErrandUpdated(final ErrandUpdated event) {
 ```
 
 Messages are JSON, written and read with the service's own `JsonMapper`, so dates and null handling match its REST API.
-They are not indented, though dept44 indents the REST API's JSON. The producer sends no `__TypeId__` header. The contract is the JSON, and a consumer gets its type from the listener's
-parameter. That rules out a `@RabbitListener` class with several `@RabbitHandler` methods, since Spring AMQP picks the
-handler by the payload's type. A `MessageConverter` bean of the service's own replaces the starter's.
+They are not indented, though dept44 indents the REST API's JSON. The producer sends no `__TypeId__` header. The
+contract is the JSON, and a consumer gets its type from the listener's parameter. That rules out a `@RabbitListener`
+class with several `@RabbitHandler` methods, since Spring AMQP picks the handler by the payload's type. A
+`MessageConverter` bean of the service's own replaces the starter's.
 
 ### Turned off
 
@@ -154,11 +155,11 @@ within an outage of a second. This counts on three things:
 `TransientFailures` sorts a failure into one of three kinds, by the whole cause chain:
 
 - **Outage**: the database, a connection or a host name that does not answer, an open circuit breaker, or a publish
-  that timed out or was blocked. The listener retries with a growing delay, 1 s up to every 30 s, about 8 minutes in
-  all plus the time the attempts take, and stops after 15 minutes. Meanwhile the message stays unacknowledged and the
-  rest wait. Then the message goes back first in the queue and counts against its `x-delivery-limit`. With a limit of
-  5 it waits out an outage of about 50 minutes before it is dead-lettered. A batch listener's batch is dead-lettered once its retries are over instead, see RabbitMQ 4.3 and
-  Spring AMQP below.
+  that timed out, was interrupted or was blocked. The listener retries with a growing delay, 1 s up to every 30 s,
+  about 8 minutes in all plus the time the attempts take, and stops after 15 minutes. Meanwhile the message stays
+  unacknowledged and the rest wait. Then the message goes back first in the queue and counts against its
+  `x-delivery-limit`. With a limit of 5 it waits out an outage of about 50 minutes before it is dead-lettered. A batch
+  listener's batch is dead-lettered once its retries are over instead, see RabbitMQ 4.3 and Spring AMQP below.
 - **Server error**: a 5xx from a service called through dept44's Feign (`ServerProblem`), or a publish the broker
   nacked. It may pass, or it may be this message's data that fails every time, and dept44's Feign error decoder answers
   502 for both. The listener retries it the same way and then dead-letters it, so a message that always fails holds up
@@ -250,6 +251,28 @@ Spring Boot's RabbitMQ health indicator counts in `/actuator/health`, where Spri
 not answer, but not in the probes' liveness and readiness groups. To have it in readiness, set
 `management.endpoint.health.group.readiness.include=readinessState,rabbit`.
 
+That indicator only checks that a connection opens. It says nothing about the listeners. Spring AMQP's simple
+container, Spring Boot's default, stops for good when the broker refuses its login, as when the broker is rebuilt and
+the service's user comes back after the service has tried to reconnect, or when its queue stays missing. Nothing
+starts the container again, and its queue fills while the service reports UP. The starter therefore adds two things:
+
+- `rabbitListeners` in `/actuator/health` is DOWN for each container in the registry that should run but does not,
+  with its queues. Running is not consuming: a container that retries a broker it cannot reach, or a vhost it may not
+  use, is UP. `management.health.rabbit-listeners.enabled=false` turns it off, as any other health indicator.
+- Once Spring AMQP has stopped a container for good because the broker lacks the user or the queue, the starter marks
+  the application `LivenessState.BROKEN`. The liveness probe then fails, and Kubernetes restarts the pod. The restart
+  starts the container again, or fails until the user or the queue is back. This covers a container the service
+  declares as a bean of its own too, and cannot be turned off.
+
+The restart costs the REST API as well. The pod is down while it restarts, and crash-loops while the user or the queue
+is missing. After a broker rebuild that is about a minute. A queue removed from the topology while its consumer still
+listens to it keeps the service down until one of the two is fixed.
+
+A container the service stops itself shows as DOWN in `rabbitListeners`, but does not restart the pod. Neither does a
+fatal failure the listener causes, such as a message it cannot handle, since the restarted service would only get the
+message again. The direct container retries a refused login and a missing queue until they are back, and needs
+neither.
+
 ### Request id over the queue
 
 A message carries the request id and the user's identifier as the headers `x-request-id` and `X-Sent-By`, as Feign and
@@ -323,4 +346,49 @@ The starter also sets these Spring Boot defaults, with the lowest precedence so 
 | `spring.rabbitmq.listener.direct.observation-enabled`                  | `true`                      | As above, for a service that uses the direct listener container                         |
 | `spring.rabbitmq.listener.simple.retry.*`, `listener.direct.retry.*`   | on, 1 s to 30 s, 20 retries | See [Failures in a listener](#failures-in-a-listener)                                   |
 | `spring.rabbitmq.listener.simple.prefetch`, `listener.direct.prefetch` | `1`                         | See [Prefetch](#prefetch)                                                               |
+
+# dept44-starter-rabbitmq: the classes
+
+## Overview
+
+The starter connects a dept44 service to RabbitMQ. It publishes with confirms from the broker, retries transient failures in listeners and dead-letters the rest. It also carries the request id across messages and reports the health of the listeners. Everything is off until the service sets `dept44.rabbitmq.enabled=true`.
+
+- `se.sundsvall.dept44.rabbitmq` is what services use: the publisher, the message, the publish exception and the rules for which failures are transient.
+- `se.sundsvall.dept44.rabbitmq.config` wires it all together. Its classes are package-private, except the two that Spring Boot loads by name and `RabbitMqProperties`.
+
+The defaults live in `dept44-rabbitmq-default.properties`, and a service overrides any of them in its own configuration. They turn on publisher confirms and returns, set prefetch to 1, retry for about 8 minutes (15 at most) and set `dynamic=false`, since the topology is declared through rabbitmq-topology.
+
+## The `se.sundsvall.dept44.rabbitmq` package
+
+This is what a service writes code against. Every class except `BlockedConnections` is public.
+
+|          Class           |                                                                                                                                                                                                                       What it does                                                                                                                                                                                                                        |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Dept44RabbitPublisher`  | Publishes a message and returns only once the broker has confirmed it and not returned it as unroutable. Otherwise it throws `RabbitPublishException`. `publish` sends, and `request` also requires a message id, a correlation id and a reply-to. It generates a message id when the message has none. It refuses a template that shares a connection with the listeners or lacks confirms and returns. It logs each confirmed message without its body. |
+| `OutgoingMessage`        | The message for the publisher: exchange, routing key, payload (sent as JSON), message id, correlation id, reply-to and headers. Immutable, so every `with` method returns a new message. Not a record, so `toString` never prints the payload.                                                                                                                                                                                                            |
+| `RabbitPublishException` | Thrown when the broker has not taken responsibility for the message. `getReason()` says why: `NACKED`, `RETURNED`, `TIMEOUT`, `INTERRUPTED` or `BLOCKED`. After `TIMEOUT` and `INTERRUPTED` the broker may still have the message, so publish it again with the same message id.                                                                                                                                                                          |
+| `TransientFailures`      | Decides which failures are transient. An outage (database, network, broker, open circuit breaker) is retried and then put back in the queue. A server error (a 5xx from a called service, a nacked publish) is retried and then dead-lettered. Anything else is dead-lettered at once. A service adds failures of its own with a bean built on `defaults()`.                                                                                              |
+| `BlockedConnections`     | Tracks the connections the broker blocks during a memory or disk alarm. The publisher then fails with `BLOCKED` at once instead of waiting in the socket until the alarm clears. Package-private.                                                                                                                                                                                                                                                         |
+
+## The `se.sundsvall.dept44.rabbitmq.config` package
+
+This wires everything together, and a service touches none of it directly. Only the three classes marked public are visible outside the package.
+
+|    Area    |                            Class                             |                                                                                                                                                                                                                                                              What it does                                                                                                                                                                                                                                                              |
+|------------|--------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| On and off | `RabbitMqAutoConfigurationImportFilter` (public)             | Reads `dept44.rabbitmq.enabled`, where only `true` turns RabbitMQ on. Off removes every RabbitMQ auto-configuration, Spring Boot's and the starter's: no beans, no connection, no listeners. `RabbitMqDisabledConfiguration` loads instead.                                                                                                                                                                                                                                                                                            |
+| On and off | `RabbitMqDisabledConfiguration`                              | Loads when RabbitMQ is off and declares only `DisabledListenerWarning`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| On and off | `DisabledListenerWarning`                                    | Warns at startup when the service has a `@RabbitListener` but RabbitMQ is off. Without it, a listener would stop receiving without a trace while its queue grows.                                                                                                                                                                                                                                                                                                                                                                      |
+| Settings   | `RabbitMqDefaultPropertiesEnvironmentPostProcessor` (public) | Adds `dept44-rabbitmq-default.properties` last in the environment, so that the service's own configuration wins.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Settings   | `RabbitMqProperties` (public)                                | The starter's own settings under `dept44.rabbitmq`. Today only `publish-confirm-timeout`, 5 s by default.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Settings   | `RabbitMqConfiguration`                                      | The auto-configuration when RabbitMQ is on. It declares the JSON converter without type headers, gives every `RabbitTemplate` a publishing connection of its own and the request id, and puts the request id and log advice first in every listener container factory. It ties the retry to `TransientFailures` with a 15-minute cap, and declares the recoverer, the publisher and the health beans. It fails the startup for a transacted channel with publisher confirms, and for a `batch-size` above 1 without consumer batching. |
+| Listeners  | `TransientFailureRecoverer`                                  | Decides what becomes of a message once its retries are over. An outage goes back in the queue and counts against `x-delivery-limit`. A listener that threw `AmqpRejectAndDontRequeueException`, or one of the two other exceptions that set the outcome, gets what it asked for. Anything else is rejected and dead-lettered. It logs the id and the queue, never the body.                                                                                                                                                            |
+| Listeners  | `ListenerLogAdvice`                                          | Logs a line per delivery with the message id, queue, routing key, delivery count, outcome and time taken. It leaves out the body and the headers, which may hold personal data. It sits before the retry, so there is one line per delivery, not per attempt.                                                                                                                                                                                                                                                                          |
+| Request id | `MessageRequestId`                                           | Puts the message's request id and user identifier on the thread while the message is handled. A message without a request id gets a new one, as an HTTP request does.                                                                                                                                                                                                                                                                                                                                                                  |
+| Request id | `RequestIdListenerAdvice`                                    | First in the advice chain. Runs the listener under the message's request id and clears it afterwards, so that the log lines on both sides of the queue carry the same id.                                                                                                                                                                                                                                                                                                                                                              |
+| Request id | `RequestIdHeaders`                                           | Sends the request id and user identifier as headers on every outgoing message and reply, under the names Feign and WebClient use. A header the service has set itself stays as it is.                                                                                                                                                                                                                                                                                                                                                  |
+| Request id | `RequestIdErrorHandler`                                      | Runs the container's error handler under the message's request id. The container calls it after the advice has already cleared the id.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Request id | `RequestIdContainerInstaller`                                | Goes through every container in the registry before they start. It wraps the error handler in `RequestIdErrorHandler` and adds `RequestIdHeaders` to the replies a listener returns. It warns about a listener whose failed messages go back with a `basic.nack`, which does not count against `x-delivery-limit`, and fails the startup for a transacted container while publisher confirms are on.                                                                                                                                   |
+| Health     | `RabbitListenersHealthIndicator`                             | The `rabbitListeners` health indicator. It is DOWN, with the queues listed, when a container that should start automatically has stopped, and UNKNOWN before the context has started. `management.health.rabbit-listeners.enabled=false` turns it off.                                                                                                                                                                                                                                                                                 |
+| Health     | `StoppedListenerLiveness`                                    | Marks liveness BROKEN when a container has stopped for good because the broker lacks the service's user or queue. The liveness probe then fails, and Kubernetes restarts the pod. It cannot be turned off.                                                                                                                                                                                                                                                                                                                             |
 

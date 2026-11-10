@@ -201,6 +201,23 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
+	void listenersReportTheirHealthAsRabbitListenersAndRestartTheApplicationOnceStoppedForGood() {
+		contextRunner.run(context -> assertThat(context).hasBean("rabbitListenersHealthIndicator")
+			.hasSingleBean(RabbitListenersHealthIndicator.class)
+			.hasSingleBean(StoppedListenerLiveness.class));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"management.health.rabbit-listeners.enabled=false", "management.health.defaults.enabled=false"
+	})
+	void theListenersHealthCanBeTurnedOffButNotTheRestart(final String property) {
+		contextRunner.withPropertyValues(property).run(context -> assertThat(context)
+			.doesNotHaveBean(RabbitListenersHealthIndicator.class)
+			.hasSingleBean(StoppedListenerLiveness.class));
+	}
+
+	@Test
 	void aServicesOwnRecovererWins() {
 		final var recoverer = mock(MessageRecoverer.class);
 
@@ -223,7 +240,8 @@ class RabbitMqConfigurationTest {
 
 	@Test
 	void aTransactedTemplateWithoutPublisherConfirmsPublishesOnTheListenersChannelWithTheRequestId() {
-		// The starter's publisher needs the confirms, so the service has a publisher of its own, or none
+		// The starter's publisher fails without the confirms, so only a service without it gets here, such as one with two
+		// templates and neither of them primary
 		contextRunner.withUserConfiguration(TransactedTemplate.class)
 			.withPropertyValues("spring.rabbitmq.publisher-confirm-type=none")
 			.withBean(Dept44RabbitPublisher.class, () -> mock(Dept44RabbitPublisher.class))
@@ -249,7 +267,8 @@ class RabbitMqConfigurationTest {
 				.getFailure()
 				.rootCause()
 				.isInstanceOf(IllegalStateException.class)
-				.hasMessageStartingWith("RabbitTemplate 'rabbitTemplate' is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms"));
+				.hasMessage("RabbitTemplate 'rabbitTemplate' is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms. "
+					+ "Leave out the transaction, since Dept44RabbitPublisher depends on the confirms"));
 	}
 
 	@Test

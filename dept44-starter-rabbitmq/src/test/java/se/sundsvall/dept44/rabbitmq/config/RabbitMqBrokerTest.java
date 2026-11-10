@@ -1,6 +1,11 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
@@ -21,6 +26,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.AvailabilityChangeEvent;
+import org.springframework.boot.availability.LivenessState;
+import org.springframework.boot.health.contributor.Status;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ApplicationContext;
@@ -63,6 +73,7 @@ class RabbitMqBrokerTest {
 	private static final String REQUEST_QUEUE = "dept44.test.requests";
 	private static final String REQUEST_ROUTING_KEY = "requests";
 	private static final String REPLY_QUEUE = "dept44.test.replies";
+	private static final String HEALTH_QUEUE = "dept44.test.health";
 
 	@BeforeAll
 	static void startBroker() {
@@ -91,6 +102,7 @@ class RabbitMqBrokerTest {
 		admin.declareQueue(requestQueue);
 		admin.declareBinding(BindingBuilder.bind(requestQueue).to(exchange).with(REQUEST_ROUTING_KEY));
 		admin.declareQueue(QueueBuilder.durable(REPLY_QUEUE).quorum().build());
+		admin.declareQueue(QueueBuilder.durable(HEALTH_QUEUE).quorum().build());
 		connectionFactory.destroy();
 	}
 
@@ -222,6 +234,56 @@ class RabbitMqBrokerTest {
 	}
 
 	/**
+	 * As when the broker is rebuilt under a running service, and its user comes back after the service has tried to
+	 * reconnect. Spring AMQP stops the container for good on the refused login, while Spring Boot's rabbit health only
+	 * checks that a connection opens, and reports UP once the user is back.
+	 */
+	@Test
+	void aListenerWhoseLoginIsRefusedReportsDownAndMarksTheApplicationBroken() throws Exception {
+		rabbitmqctl("add_user", "dept44-health", "secret");
+		rabbitmqctl("set_permissions", "-p", "/", "dept44-health", ".*", ".*", ".*");
+
+		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
+			.withUserConfiguration(HealthListener.class)
+			// One address, as the broker's service name has in Kubernetes. localhost can be ::1 as well, where the connection
+			// is refused, and the client reports the failure on the last address it tried rather than the refused login
+			.withPropertyValues("spring.rabbitmq.host=" + ipv4(BROKER.getHost()), "spring.rabbitmq.username=dept44-health", "spring.rabbitmq.password=secret")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				// As SpringApplication sets it once the application has started, which the context runner does not
+				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+				final var availability = context.getBean(ApplicationAvailability.class);
+				final var health = context.getBean(RabbitListenersHealthIndicator.class);
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+				assertThat(health.health().getStatus()).isEqualTo(Status.UP);
+
+				rabbitmqctl("delete_user", "dept44-health");
+				rabbitmqctl("close_all_connections", "the user is gone");
+
+				await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
+					assertThat(health.health().getStatus()).isEqualTo(Status.DOWN);
+					assertThat(health.health().getDetails()).containsEntry("stopped", Map.of(HealthListener.ID, List.of(HEALTH_QUEUE)));
+					assertThat(availability.getLivenessState()).isEqualTo(LivenessState.BROKEN);
+				});
+			});
+	}
+
+	private static String ipv4(final String host) throws Exception {
+		return Arrays.stream(InetAddress.getAllByName(host))
+			.filter(Inet4Address.class::isInstance)
+			.findFirst()
+			.orElseThrow()
+			.getHostAddress();
+	}
+
+	private static void rabbitmqctl(final String... arguments) throws Exception {
+		final var command = new String[arguments.length + 1];
+		command[0] = "rabbitmqctl";
+		System.arraycopy(arguments, 0, command, 1, arguments.length);
+		assertThat(BROKER.execInContainer(command).getExitCode()).isZero();
+	}
+
+	/**
 	 * @return why a publish failed, or null when the broker took the message
 	 */
 	private static RabbitPublishException.Reason reasonOfAlarmPublish(final Dept44RabbitPublisher publisher) {
@@ -274,6 +336,16 @@ class RabbitMqBrokerTest {
 		@RabbitListener(queues = LISTENED_QUEUE)
 		void receive(final Payload payload) {
 			SEEN.add(new Seen(payload, RequestId.get(), Identifier.get()));
+		}
+	}
+
+	static class HealthListener {
+
+		static final String ID = "dept44.health";
+
+		@RabbitListener(id = ID, queues = HEALTH_QUEUE)
+		void receive(final Payload payload) {
+			// Never gets a message
 		}
 	}
 

@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import com.rabbitmq.client.Channel;
+import java.io.EOFException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,10 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.listener.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -36,6 +40,7 @@ import org.springframework.boot.amqp.autoconfigure.RabbitTemplateConfigurer;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
+import org.springframework.boot.retry.RetryPolicySettings;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -44,10 +49,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.util.ErrorHandler;
 import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
+import se.sundsvall.dept44.rabbitmq.TransientFailures;
+import tools.jackson.databind.json.JsonMapper;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -157,8 +165,38 @@ class RabbitMqConfigurationTest {
 	@Test
 	void transientFailuresAreRetriedAndRecovered() {
 		contextRunner.run(context -> {
+			assertThat(context).hasSingleBean(TransientFailures.class);
 			assertThat(context).getBean(MessageRecoverer.class).isInstanceOf(TransientFailureRecoverer.class);
 			assertThat(context).getBean(RabbitListenerRetrySettingsCustomizer.class).isNotNull();
+		});
+	}
+
+	@Test
+	void aServicesOwnTransientFailuresDecideBothTheRetryAndWhatBecomesOfTheMessage() {
+		final var transientFailures = TransientFailures.defaults().withOutage(EOFException.class::isInstance);
+		final var message = new Message(new byte[0]);
+		final var failure = new ListenerExecutionFailedException("Listener method failed", new UncheckedIOException(new EOFException("unexpected end of stream")), message);
+
+		contextRunner.withBean(TransientFailures.class, () -> transientFailures).run(context -> {
+			final var settings = new RetryPolicySettings();
+			context.getBean(RabbitListenerRetrySettingsCustomizer.class).customize(settings);
+
+			assertThat(settings.getExceptionPredicate()).accepts(failure);
+			assertThatExceptionOfType(ListenerExecutionFailedException.class)
+				.isThrownBy(() -> context.getBean(MessageRecoverer.class).recover(message, failure))
+				.withCauseInstanceOf(ImmediateRequeueAmqpException.class);
+		});
+	}
+
+	@Test
+	void aListenerRetriesForFifteenMinutesAtMost() {
+		contextRunner.run(context -> {
+			final var settings = new RetryPolicySettings();
+
+			context.getBean(RabbitListenerRetrySettingsCustomizer.class).customize(settings);
+
+			// The broker's consumer_timeout of 30 minutes leaves the last attempt as long again
+			assertThat(settings.createRetryPolicy().getTimeout()).isEqualTo(Duration.ofMinutes(15));
 		});
 	}
 
@@ -184,12 +222,45 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
-	void aTransactedTemplatePublishesOnTheListenersChannelWithTheRequestId() {
-		contextRunner.withUserConfiguration(TransactedTemplate.class).run(context -> {
-			final var rabbitTemplate = context.getBean(RabbitTemplate.class);
-			assertThat(rabbitTemplate.isUsePublisherConnection()).isFalse();
-			assertThat(rabbitTemplate.getBeforePublishPostProcessors()).singleElement().isInstanceOf(RequestIdHeaders.class);
-		});
+	void aTransactedTemplateWithoutPublisherConfirmsPublishesOnTheListenersChannelWithTheRequestId() {
+		// The starter's publisher needs the confirms, so the service has a publisher of its own, or none
+		contextRunner.withUserConfiguration(TransactedTemplate.class)
+			.withPropertyValues("spring.rabbitmq.publisher-confirm-type=none")
+			.withBean(Dept44RabbitPublisher.class, () -> mock(Dept44RabbitPublisher.class))
+			.run(context -> {
+				final var rabbitTemplate = context.getBean(RabbitTemplate.class);
+				assertThat(rabbitTemplate.isUsePublisherConnection()).isFalse();
+				assertThat(rabbitTemplate.getBeforePublishPostProcessors()).singleElement().isInstanceOf(RequestIdHeaders.class);
+			});
+	}
+
+	/**
+	 * RabbitMQ closes a channel that is asked for both a transaction and publisher confirms, so every publish would fail
+	 * as if the broker could not be reached
+	 */
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"correlated", "simple"
+	})
+	void aTransactedTemplateFailsTheStartupWhileThePublisherConfirms(final String confirmType) {
+		contextRunner.withUserConfiguration(TransactedTemplate.class)
+			.withPropertyValues("spring.rabbitmq.publisher-confirm-type=" + confirmType)
+			.run(context -> assertThat(context).hasFailed()
+				.getFailure()
+				.rootCause()
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageStartingWith("RabbitTemplate 'rabbitTemplate' is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms"));
+	}
+
+	@Test
+	void aTransactedListenerContainerFailsTheStartupWhileThePublisherConfirms() {
+		contextRunner.withUserConfiguration(TransactedListener.class)
+			.withPropertyValues("spring.rabbitmq.listener.simple.auto-startup=false")
+			.run(context -> assertThat(context).hasFailed()
+				.getFailure()
+				.rootCause()
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageStartingWith("Listener dept44.transacted on queues [dept44.transacted] is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms"));
 	}
 
 	@Test
@@ -213,6 +284,20 @@ class RabbitMqConfigurationTest {
 			assertThatJson(new String(message.getBody(), UTF_8)).isEqualTo("{\"some_value\":\"value\",\"some_date\":\"2026-10-19\"}");
 			assertThat(message.getMessageProperties().getContentType()).isEqualTo(MessageProperties.CONTENT_TYPE_JSON);
 			assertThat(message.getMessageProperties().getHeaders()).isEmpty();
+		});
+	}
+
+	@Test
+	void jsonIsWrittenWithoutTheIndentationOfTheServicesRestApi() {
+		// As dept44-starter sets it for the REST API
+		contextRunner.withPropertyValues("spring.jackson.serialization.indent-output=true").run(context -> {
+			final var payload = new Payload("value", LocalDate.of(2026, 10, 19));
+
+			final var message = context.getBean(MessageConverter.class).toMessage(payload, new MessageProperties());
+
+			assertThat(new String(message.getBody(), UTF_8)).isEqualTo("{\"someValue\":\"value\",\"someDate\":\"2026-10-19\"}");
+			// The service's own mapper still indents
+			assertThat(context.getBean(JsonMapper.class).writeValueAsString(payload)).contains("\n");
 		});
 	}
 
@@ -393,6 +478,26 @@ class RabbitMqConfigurationTest {
 			configurer.configure(rabbitTemplate, connectionFactory);
 			rabbitTemplate.setChannelTransacted(true);
 			return rabbitTemplate;
+		}
+	}
+
+	/**
+	 * Never started
+	 */
+	@Configuration(proxyBeanMethods = false)
+	static class TransactedListener {
+
+		@Bean
+		SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(final SimpleRabbitListenerContainerFactoryConfigurer configurer, final ConnectionFactory connectionFactory) {
+			final var factory = new SimpleRabbitListenerContainerFactory();
+			configurer.configure(factory, connectionFactory);
+			factory.setChannelTransacted(true);
+			return factory;
+		}
+
+		@RabbitListener(id = "dept44.transacted", queues = "dept44.transacted")
+		void listen(final String payload) {
+			// Never started
 		}
 	}
 

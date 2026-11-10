@@ -68,6 +68,8 @@ class Dept44RabbitPublisherTest {
 
 	@BeforeEach
 	void setUp() {
+		// No publisher connection factory of its own, so the template publishes on connectionFactory
+		when(rabbitTemplate.isUsePublisherConnection()).thenReturn(true);
 		when(rabbitTemplate.getConnectionFactory()).thenReturn(connectionFactory);
 		when(connectionFactory.isPublisherConfirms()).thenReturn(true);
 		when(connectionFactory.isPublisherReturns()).thenReturn(true);
@@ -222,6 +224,8 @@ class Dept44RabbitPublisherTest {
 	void aBlockedConnectionThatClosesNoLongerFailsThePublish() throws Exception {
 		final var connectionListener = connectionListener();
 		blockedListener(connectionListener).handleBlocked("low on disk");
+		// Open, as the proxy is once the factory has opened the connection again, so that only onClose lets the publish through
+		lenient().when(connection.isOpen()).thenReturn(true);
 
 		connectionListener.onClose(connection);
 		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
@@ -255,12 +259,33 @@ class Dept44RabbitPublisherTest {
 
 	@Test
 	void watchesThePublisherConnectionWhenTheTemplatePublishesOnIt() {
-		when(rabbitTemplate.isUsePublisherConnection()).thenReturn(true);
 		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
+		when(publisherConnectionFactory.isPublisherConfirms()).thenReturn(true);
+		when(publisherConnectionFactory.isPublisherReturns()).thenReturn(true);
 
 		new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1));
 
 		verify(publisherConnectionFactory).addConnectionListener(any(BlockedConnections.class));
+	}
+
+	@Test
+	void confirmsAndReturnsAreRequiredOnTheConnectionTheTemplatePublishesOn() {
+		// The template's own factory confirms, see setUp, but it publishes on another
+		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
+
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
+			.withMessage("Dept44RabbitPublisher requires spring.rabbitmq.publisher-confirm-type=correlated");
+	}
+
+	@Test
+	void aTemplateThatPublishesOnTheListenersConnectionIsRefused() {
+		// As a template created with new outside a bean, which the starter never sees
+		when(rabbitTemplate.isUsePublisherConnection()).thenReturn(false);
+
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
+			.withMessageStartingWith("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own");
 	}
 
 	@Test

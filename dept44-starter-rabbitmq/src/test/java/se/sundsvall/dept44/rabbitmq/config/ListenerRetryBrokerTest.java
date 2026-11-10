@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import java.io.EOFException;
+import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.time.Duration;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -34,6 +37,7 @@ import org.testcontainers.rabbitmq.RabbitMQContainer;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
 import se.sundsvall.dept44.rabbitmq.OutgoingMessage;
+import se.sundsvall.dept44.rabbitmq.TransientFailures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -56,6 +60,7 @@ class ListenerRetryBrokerTest {
 	private static final String ACKNOWLEDGED = "dept44.retry.acknowledged";
 	private static final String BATCH = "dept44.retry.batch";
 	private static final String BATCH_STUCK = "dept44.retry.batch-stuck";
+	private static final String SERVICE_OUTAGE = "dept44.retry.service-outage";
 	private static final int MAX_RETRIES = 2;
 
 	@BeforeAll
@@ -67,13 +72,16 @@ class ListenerRetryBrokerTest {
 		connectionFactory.setPassword(BROKER.getAdminPassword());
 		final var admin = new RabbitAdmin(connectionFactory);
 		for (final var name : new String[] {
-			PASSES, PERMANENT, STUCK, SERVER_ERROR, ACKNOWLEDGED, BATCH, BATCH_STUCK
+			PASSES, PERMANENT, STUCK, SERVER_ERROR, ACKNOWLEDGED, BATCH, BATCH_STUCK, SERVICE_OUTAGE
 		}) {
-			// As the topology for a consumer looks: a delivery limit, and a dead letter queue through the default exchange
+			// As the topology for a consumer looks: a delivery limit, and a dead letter queue through the default exchange that
+			// the broker confirms it has taken each message
 			admin.declareQueue(QueueBuilder.durable(name).quorum().withArguments(Map.of(
 				"x-delivery-limit", 1,
 				"x-dead-letter-exchange", "",
-				"x-dead-letter-routing-key", name + ".dlq")).build());
+				"x-dead-letter-routing-key", name + ".dlq",
+				"x-dead-letter-strategy", "at-least-once",
+				"x-overflow", "reject-publish")).build());
 			admin.declareQueue(QueueBuilder.durable(name + ".dlq").quorum().build());
 		}
 		connectionFactory.destroy();
@@ -119,6 +127,18 @@ class ListenerRetryBrokerTest {
 			// The broker counts the first delivery against the limit, and dead-letters the message after the second
 			assertLoggedOnce(output, STUCK, 0, "was put back in the queue, which dead-letters it past its x-delivery-limit");
 			assertLoggedOnce(output, STUCK, 1, "was put back in the queue, which dead-letters it past its x-delivery-limit");
+		});
+	}
+
+	@Test
+	void aFailureTheServiceCountsAsAnOutageGoesBackInTheQueueUntilItsDeliveryLimit(final CapturedOutput output) {
+		run(ServiceOutageListener.class, context -> {
+			publish(context, SERVICE_OUTAGE);
+
+			assertThat(context.getBean(RabbitTemplate.class).receive(SERVICE_OUTAGE + ".dlq", 10_000)).isNotNull();
+			// Put back after the retries of the first delivery, rather than dead-lettered as the starter's split alone would
+			assertThat(ServiceOutageListener.ATTEMPTS.get()).isEqualTo(2 * (MAX_RETRIES + 1));
+			assertLoggedOnce(output, SERVICE_OUTAGE, 0, "was put back in the queue, which dead-letters it past its x-delivery-limit");
 		});
 	}
 
@@ -255,6 +275,7 @@ class ListenerRetryBrokerTest {
 			SERVER_ERROR_ATTEMPTS.set(0);
 			ACKNOWLEDGED_ATTEMPTS.set(0);
 			StuckBatchListener.ATTEMPTS.set(0);
+			ServiceOutageListener.ATTEMPTS.set(0);
 			ConsumerFailures.EVENTS.clear();
 		}
 
@@ -312,6 +333,26 @@ class ListenerRetryBrokerTest {
 		void batch(final List<Message> messages) {
 			ATTEMPTS.incrementAndGet();
 			throw new CannotCreateTransactionException("Could not open JPA EntityManager for transaction", new ConnectException("Connection refused"));
+		}
+	}
+
+	/**
+	 * As a service that calls another through a client the starter does not know, and counts the end of stream it gets
+	 * when that service goes away mid-request as an outage
+	 */
+	static class ServiceOutageListener {
+
+		static final AtomicInteger ATTEMPTS = new AtomicInteger();
+
+		@Bean
+		TransientFailures transientFailures() {
+			return TransientFailures.defaults().withOutage(EOFException.class::isInstance);
+		}
+
+		@RabbitListener(queues = SERVICE_OUTAGE)
+		void serviceOutage(final RabbitMqBrokerTest.Payload payload) {
+			ATTEMPTS.incrementAndGet();
+			throw new UncheckedIOException(new EOFException("unexpected end of stream"));
 		}
 	}
 }

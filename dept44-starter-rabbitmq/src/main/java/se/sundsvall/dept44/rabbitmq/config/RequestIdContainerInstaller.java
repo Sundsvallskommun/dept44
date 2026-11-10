@@ -26,7 +26,8 @@ import static java.util.Optional.ofNullable;
  * so that a header the service sets itself wins.</li>
  * </ul>
  * It also warns about a listener whose messages never reach the dead letter queue after an outage, see
- * {@link #warnIfPutBackUncounted}.
+ * {@link #warnIfPutBackUncounted}, and fails the startup for a channel-transacted container while the publisher
+ * confirms are on, see {@link RabbitMqConfiguration#requireNoTransactionWithConfirms}.
  * <p>
  * Done here rather than on the container factory, which has no getter for either: setting one there would replace the
  * service's. Runs in the phase just before the registry, which starts the containers. A container the service declares
@@ -49,6 +50,8 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 			.filter(AbstractMessageListenerContainer.class::isInstance)
 			.map(AbstractMessageListenerContainer.class::cast)
 			.forEach(container -> {
+				RabbitMqConfiguration.requireNoTransactionWithConfirms(container.isChannelTransacted(), container.getConnectionFactory(),
+					"Listener %s on queues %s".formatted(container.getListenerId(), Arrays.toString(container.getQueueNames())));
 				wrapErrorHandler(container);
 				addReplyHeaders(container);
 				warnIfPutBackUncounted(container);

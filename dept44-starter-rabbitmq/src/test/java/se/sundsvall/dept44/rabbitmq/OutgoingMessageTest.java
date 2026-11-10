@@ -50,6 +50,25 @@ class OutgoingMessageTest {
 	}
 
 	@Test
+	void eachWithReturnsACopyAndLeavesTheMessageItCameFromAsItWas() {
+		final var base = OutgoingMessage.to("exchange", "routing-key").withHeader("x-first", "one");
+
+		final var derived = base.withPayload("payload")
+			.withMessageId("message-id")
+			.withCorrelationId("correlation-id")
+			.withReplyTo("reply-exchange", "reply-key")
+			.withHeader("x-second", "two");
+
+		assertThat(derived).isNotSameAs(base);
+		assertThat(base.getPayload()).isNull();
+		assertThat(base.getMessageId()).isNull();
+		assertThat(base.getCorrelationId()).isNull();
+		assertThat(base.getReplyTo()).isNull();
+		assertThat(base.getHeaders()).containsExactly(entry("x-first", "one"));
+		assertThat(derived.getHeaders()).containsExactly(entry("x-first", "one"), entry("x-second", "two"));
+	}
+
+	@Test
 	void headersCannotBeChangedFromOutside() {
 		final var headers = OutgoingMessage.to("exchange", "routing-key").withHeader("x-first", "one").getHeaders();
 

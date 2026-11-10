@@ -51,7 +51,7 @@ void onErrandUpdated(final ErrandUpdated event) {
 ```
 
 Messages are JSON, written and read with the service's own `JsonMapper`, so dates and null handling match its REST API.
-The producer sends no `__TypeId__` header. The contract is the JSON, and a consumer gets its type from the listener's
+They are not indented, though dept44 indents the REST API's JSON. The producer sends no `__TypeId__` header. The contract is the JSON, and a consumer gets its type from the listener's
 parameter. That rules out a `@RabbitListener` class with several `@RabbitHandler` methods, since Spring AMQP picks the
 handler by the payload's type. A `MessageConverter` bean of the service's own replaces the starter's.
 
@@ -96,8 +96,21 @@ retried as an outage, `NACKED` as a server error, and `RETURNED` is dead-lettere
 Every message gets a message id. The publisher generates one when the service sets none, and the exception's
 `getMessageId()` returns it. Set your own with `withMessageId` when the receiver must recognize a duplicate.
 
+A listener that publishes should derive the id from the message it handles, such as its message id followed by what it
+publishes. A retry or a redelivery then publishes the message again under the same id. A generated id is new each
+time, so the receiver cannot tell the copies apart.
+
+`publish` sends at once and waits for the broker, also inside `@Transactional`. A rollback after it leaves the message
+sent, and a consumer can act on it before the commit is visible. Publish after the commit instead, for example from a
+`@TransactionalEventListener(phase = AFTER_COMMIT)`. The message is then lost if the service stops between the commit
+and the publish. Where that matters, write the message to an outbox table in the same transaction and publish from
+there.
+
 A service with more than one `RabbitTemplate` gets a publisher for the `@Primary` one. Without a primary template the
 starter declares no publisher, and the service declares its own with `new Dept44RabbitPublisher(template, timeout)`.
+
+A channel-transacted `RabbitTemplate` or listener container fails the startup. RabbitMQ closes a channel that has both
+a transaction and publisher confirms, and the publisher depends on the confirms.
 
 For a returned message Spring AMQP also logs `Returned message but no callback available` at WARN. The publisher gets
 the return with the confirm, so the line does not mean anything is misconfigured.
@@ -126,8 +139,12 @@ the broker does not confirm it, and during an alarm the broker blocks the listen
 A listener that throws is not delivered the message again at once, which would use up the queue's `x-delivery-limit`
 within an outage of a second. This counts on three things:
 
-- Each queue is a quorum queue with a dead-letter exchange and an `x-delivery-limit`. Without a dead-letter exchange
-  the broker drops a rejected message.
+- Each queue is a quorum queue with a dead-letter exchange, an `x-delivery-limit` and
+  `x-dead-letter-strategy: at-least-once`, which also needs `x-overflow: reject-publish`. Without a dead-letter
+  exchange the broker drops a rejected message. With the default strategy, `at-most-once`, it dead-letters without
+  confirms, and a message the dead letter queue does not take, because it is missing or unavailable, is lost. Set the
+  two with a policy (`dead-letter-strategy`, `overflow`): it also applies to a queue that already exists, which RabbitMQ
+  refuses to declare again with other arguments.
 - The container acknowledges or rejects each message as the listener returns or throws, the `auto` acknowledge mode
   Spring AMQP defaults to. With `manual`, a message the listener fails on stays unacknowledged until the channel closes.
 - The container settles each message on its own. A `spring.rabbitmq.listener.simple.batch-size` above 1 fails the
@@ -138,9 +155,9 @@ within an outage of a second. This counts on three things:
 
 - **Outage**: the database, a connection or a host name that does not answer, an open circuit breaker, or a publish
   that timed out or was blocked. The listener retries with a growing delay, 1 s up to every 30 s, about 8 minutes in
-  all, while the message stays unacknowledged and the rest wait. Then the message goes back first in the queue and
-  counts against its `x-delivery-limit`. With a limit of 5 it waits out an outage of about 50 minutes before it is
-  dead-lettered. A batch listener's batch is dead-lettered once its retries are over instead, see RabbitMQ 4.3 and
+  all plus the time the attempts take, and stops after 15 minutes. Meanwhile the message stays unacknowledged and the
+  rest wait. Then the message goes back first in the queue and counts against its `x-delivery-limit`. With a limit of
+  5 it waits out an outage of about 50 minutes before it is dead-lettered. A batch listener's batch is dead-lettered once its retries are over instead, see RabbitMQ 4.3 and
   Spring AMQP below.
 - **Server error**: a 5xx from a service called through dept44's Feign (`ServerProblem`), or a publish the broker
   nacked. It may pass, or it may be this message's data that fails every time, and dept44's Feign error decoder answers
@@ -148,15 +165,17 @@ within an outage of a second. This counts on three things:
   the others for 8 minutes, not 50.
 - **Anything else**: a message that cannot be read or does not validate, a 4xx, a bug. Dead-lettered at once.
 
-These may pass, but the split does not know them and dead-letters them at once: a read timeout or a 5xx through
-WebClient, and a 429 or 408 through Feign, which dept44's error decoder turns into a `ClientProblem`.
+These may pass, but the starter's split does not know them and dead-letters them at once: a read timeout or a 5xx
+through WebClient, and a 429 or 408 through Feign, which dept44's error decoder turns into a `ClientProblem`. A service
+that meets them adds them to the split, see below.
 
 An open circuit breaker counts as an outage whatever opened it, so a message whose server errors open it goes back in
 the queue and reaches the dead letter queue through its delivery limit instead.
 
 A listener must be idempotent, since a message can reach it more than once. The retries call it again, a message put
 back in the queue is delivered again, and so is one whose channel closes before the ack. A publish retried after a
-`TIMEOUT` can also send the same message twice. The message id lets the listener recognize a duplicate.
+`TIMEOUT` can also send the same message twice. The message id lets the listener recognize a duplicate, when the
+sender sets it rather than lets the publisher generate one.
 
 A listener can decide for itself, without retries and whatever the exception wraps. `AmqpRejectAndDontRequeueException`
 dead-letters the message, `ImmediateRequeueAmqpException` puts it back in the queue and
@@ -167,9 +186,22 @@ A listener that returns a `CompletableFuture` or a `Mono` fails after the listen
 retries. Spring AMQP puts each failed message back in the queue, so it is delivered again at once and dead-lettered as
 soon as it reaches its `x-delivery-limit`, after an outage too.
 
-A service that needs another split declares a `RabbitListenerRetrySettingsCustomizer` with its own exception predicate,
-which runs after the starter's, and a `MessageRecoverer`. With batch listeners it must be a `MessageBatchRecoverer`, or
-Spring AMQP acknowledges a failed batch. Both can build on `TransientFailures.isTransient` and `isOutage`.
+The retries and what becomes of the message once they are over both follow the `TransientFailures` bean. A service
+that knows more failures declares its own, built on the starter's. Each addition is tested against every exception in
+the cause chain:
+
+```java
+@Bean
+TransientFailures transientFailures() {
+	return TransientFailures.defaults()
+		.withOutage(WebClientRequestException.class::isInstance)
+		.withServerError(e -> e instanceof WebClientResponseException response && response.getStatusCode().is5xxServerError());
+}
+```
+
+A listener that decides for itself, as above, still gets what it asked for. A service that needs more than another
+split declares a `MessageRecoverer` of its own. With batch listeners it must be a `MessageBatchRecoverer`, or Spring
+AMQP acknowledges a failed batch.
 
 ## Operational considerations
 
@@ -177,7 +209,8 @@ Spring AMQP acknowledges a failed batch. Both can build on `TransientFailures.is
 
 During an alarm the broker blocks a connection once it publishes. Every `RabbitTemplate` bean therefore publishes on a
 connection of its own. On a connection shared with the listeners their acks would go unread too, and the alarm would
-never clear. A template created with `new` outside a bean gets neither this nor the request id headers.
+never clear. A template created with `new` outside a bean gets neither this nor the request id headers, and
+`Dept44RabbitPublisher` refuses it unless it calls `setUsePublisherConnection(true)`.
 
 The template also receives on that connection. Once it has published during an alarm, `receive()` waits until the
 alarm clears or its timeout runs out. A `@RabbitListener` consumes on the listeners' connection and is not affected.
@@ -190,8 +223,7 @@ clears. The first publish of an alarm is the one that gets the connection blocke
 A listener prefetches one message, not Spring AMQP's 250. A prefetched message waits unacknowledged while the listener
 retries the one before it, and the broker's `consumer_timeout`, 30 minutes by default, counts from the delivery. Past it
 the broker closes the channel and delivers the messages again. Prefetch times the time a message can take must stay
-below it, and against a database that does not answer a message takes some 18 minutes: the retries plus Hikari's 30 s
-per attempt.
+below it. The retries stop after 15 minutes, which leaves the last attempt as long again.
 
 Prefetch does not limit how many messages are handled at once. `spring.rabbitmq.listener.simple.concurrency` or more
 replicas give more consumers. A higher prefetch saves about a millisecond per message, and a service that raises it must

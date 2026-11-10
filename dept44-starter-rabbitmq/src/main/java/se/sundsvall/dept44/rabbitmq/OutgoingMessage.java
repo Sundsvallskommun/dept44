@@ -12,6 +12,9 @@ import static java.util.Objects.requireNonNull;
  * needs.
  * <p>
  * The payload is converted by the application's {@code MessageConverter}, which is JSON unless the service replaces it.
+ * <p>
+ * Immutable: each {@code with} method returns a new message and leaves the one it was called on as it was, so a message
+ * can be shared between threads and serve as the base for others.
  *
  * <pre>{@code
  * OutgoingMessage.to("my-exchange", "my-routing-key")
@@ -25,15 +28,22 @@ public final class OutgoingMessage {
 
 	private final String exchange;
 	private final String routingKey;
-	private final Map<String, Object> headers = new LinkedHashMap<>();
-	private Object payload;
-	private String messageId;
-	private String correlationId;
-	private Address replyTo;
+	private final Object payload;
+	private final String messageId;
+	private final String correlationId;
+	private final Address replyTo;
+	// Never changed once the message has it, which lets the messages derived from it share it. withHeader copies it
+	private final Map<String, Object> headers;
 
-	private OutgoingMessage(final String exchange, final String routingKey) {
+	private OutgoingMessage(final String exchange, final String routingKey, final Object payload, final String messageId, final String correlationId, final Address replyTo,
+		final Map<String, Object> headers) {
 		this.exchange = requireNonNull(exchange, "exchange");
 		this.routingKey = requireNonNull(routingKey, "routingKey");
+		this.payload = payload;
+		this.messageId = messageId;
+		this.correlationId = correlationId;
+		this.replyTo = replyTo;
+		this.headers = headers;
 	}
 
 	/**
@@ -42,12 +52,11 @@ public final class OutgoingMessage {
 	 * @return            a message to that exchange, with no payload yet
 	 */
 	public static OutgoingMessage to(final String exchange, final String routingKey) {
-		return new OutgoingMessage(exchange, routingKey);
+		return new OutgoingMessage(exchange, routingKey, null, null, null, null, new LinkedHashMap<>());
 	}
 
 	public OutgoingMessage withPayload(final Object payload) {
-		this.payload = payload;
-		return this;
+		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, headers);
 	}
 
 	/**
@@ -56,16 +65,14 @@ public final class OutgoingMessage {
 	 * broker.
 	 */
 	public OutgoingMessage withMessageId(final String messageId) {
-		this.messageId = messageId;
-		return this;
+		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, headers);
 	}
 
 	/**
 	 * Copied unchanged to a reply. What it holds is up to the sender.
 	 */
 	public OutgoingMessage withCorrelationId(final String correlationId) {
-		this.correlationId = correlationId;
-		return this;
+		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, headers);
 	}
 
 	/**
@@ -73,13 +80,13 @@ public final class OutgoingMessage {
 	 * Sent as {@code exchange/routingKey}, the format Spring AMQP reads a reply address in.
 	 */
 	public OutgoingMessage withReplyTo(final String exchange, final String routingKey) {
-		this.replyTo = new Address(exchange, routingKey);
-		return this;
+		return new OutgoingMessage(this.exchange, this.routingKey, payload, messageId, correlationId, new Address(exchange, routingKey), headers);
 	}
 
 	public OutgoingMessage withHeader(final String name, final Object value) {
-		headers.put(name, value);
-		return this;
+		final var copy = new LinkedHashMap<>(headers);
+		copy.put(name, value);
+		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, copy);
 	}
 
 	public String getExchange() {

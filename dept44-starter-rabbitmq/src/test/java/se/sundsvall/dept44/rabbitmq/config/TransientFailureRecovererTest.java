@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import java.io.EOFException;
+import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.util.List;
 import org.apache.commons.logging.LogFactory;
@@ -12,14 +14,25 @@ import org.springframework.amqp.listener.ContainerUtils;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
 import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.exception.ServerProblem;
+import se.sundsvall.dept44.rabbitmq.TransientFailures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TransientFailureRecovererTest {
 
-	private final TransientFailureRecoverer recoverer = new TransientFailureRecoverer();
+	private final TransientFailureRecoverer recoverer = new TransientFailureRecoverer(TransientFailures.defaults());
 	private final Message message = new Message(new byte[0]);
+
+	@Test
+	void aFailureTheServiceCountsAsAnOutageGoesBackInTheQueue() {
+		final var serviceRecoverer = new TransientFailureRecoverer(TransientFailures.defaults().withOutage(EOFException.class::isInstance));
+		final var failure = listenerFailed(new UncheckedIOException(new EOFException("unexpected end of stream")));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> serviceRecoverer.recover(message, failure))
+			.withCauseInstanceOf(ImmediateRequeueAmqpException.class);
+	}
 
 	@Test
 	void anOutageGoesBackInTheQueue() {

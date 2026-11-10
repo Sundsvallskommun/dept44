@@ -1,5 +1,6 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.aopalliance.aop.Advice;
@@ -8,6 +9,7 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.AbstractRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.retry.MessageRecoverer;
@@ -31,6 +33,7 @@ import org.springframework.core.env.Environment;
 import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
 import tools.jackson.databind.JavaType;
+import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 import static java.util.Objects.requireNonNullElse;
@@ -45,7 +48,8 @@ class RabbitMqConfiguration {
 
 	/**
 	 * JSON written and read with the service's own {@link JsonMapper}, so that dates and null handling are the same as in
-	 * its REST API. Spring Boot hands it to both the template and the listener containers.
+	 * its REST API. Spring Boot hands it to both the template and the listener containers. Not indented, as dept44-starter
+	 * has the REST API's JSON: whitespace in every message is size and nothing else.
 	 * <p>
 	 * The producer's class name is not sent in {@code __TypeId__}: the contract is the JSON, not a Java class. A consumer
 	 * gets its type from the parameter of its listener method.
@@ -53,7 +57,7 @@ class RabbitMqConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(MessageConverter.class)
 	MessageConverter dept44RabbitMessageConverter(final JsonMapper jsonMapper) {
-		final var converter = new JacksonJsonMessageConverter(jsonMapper);
+		final var converter = new JacksonJsonMessageConverter(jsonMapper.rebuild().disable(SerializationFeature.INDENT_OUTPUT).build());
 		converter.setJavaTypeMapper(new DefaultJacksonJavaTypeMapper() {
 			@Override
 			public void fromJavaType(final JavaType javaType, final MessageProperties properties) {
@@ -70,8 +74,9 @@ class RabbitMqConfiguration {
 	 * It publishes on a connection of its own. The broker blocks a connection that publishes during a memory or disk
 	 * alarm, and on a connection shared with the listeners their acks would then go unread too: the memory is never
 	 * freed, and the alarm never clears. A transacted template is left on the listener's channel, so that what it
-	 * publishes from a listener commits or rolls back with that listener's transaction. And it sends the request id
-	 * along, see {@link RequestIdHeaders}.
+	 * publishes from a listener commits or rolls back with that listener's transaction. It fails the startup while the
+	 * publisher confirms are on, see {@link #requireNoTransactionWithConfirms}. And it sends the request id along, see
+	 * {@link RequestIdHeaders}.
 	 */
 	@Bean
 	static BeanPostProcessor dept44RabbitTemplateAdvisor() {
@@ -79,6 +84,7 @@ class RabbitMqConfiguration {
 			@Override
 			public Object postProcessAfterInitialization(final Object bean, final String beanName) {
 				if (bean instanceof final RabbitTemplate rabbitTemplate) {
+					requireNoTransactionWithConfirms(rabbitTemplate.isChannelTransacted(), rabbitTemplate.getConnectionFactory(), "RabbitTemplate '%s'".formatted(beanName));
 					rabbitTemplate.setUsePublisherConnection(!rabbitTemplate.isChannelTransacted());
 					rabbitTemplate.addBeforePublishPostProcessors(new RequestIdHeaders());
 				}
@@ -135,6 +141,17 @@ class RabbitMqConfiguration {
 	}
 
 	/**
+	 * RabbitMQ closes a channel that is asked for both a transaction and publisher confirms, which the starter turns on.
+	 * Every publish on it would fail as if the broker could not be reached, and a listener would retry that as an outage.
+	 */
+	static void requireNoTransactionWithConfirms(final boolean channelTransacted, final ConnectionFactory connectionFactory, final String description) {
+		if (channelTransacted && (connectionFactory.isPublisherConfirms() || connectionFactory.isSimplePublisherConfirms())) {
+			throw new IllegalStateException(description + " is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms. "
+				+ "Leave out the transaction, or set spring.rabbitmq.publisher-confirm-type=none and do without Dept44RabbitPublisher");
+		}
+	}
+
+	/**
 	 * Whether the container acknowledges or rejects each message as the listener returns or throws, which is what
 	 * {@link ListenerLogAdvice} logs. Read from Spring Boot's properties, since a factory has no getters for them.
 	 */
@@ -151,20 +168,34 @@ class RabbitMqConfiguration {
 	}
 
 	/**
+	 * The split between the failures that may pass and those that do not, which both the retry and the recoverer follow.
+	 * A service that knows more failures declares its own, built on {@link TransientFailures#defaults()}.
+	 */
+	@Bean
+	@ConditionalOnMissingBean
+	TransientFailures dept44TransientFailures() {
+		return TransientFailures.defaults();
+	}
+
+	/**
 	 * Retries only a transient failure, see {@link TransientFailures}. Any other goes to the recoverer at once, so that a
-	 * message that can never be handled is not tried again for minutes. Ordered first, so that a customizer of the
-	 * service's own runs after it and can change the split.
+	 * message that can never be handled is not tried again for minutes. Stops after 15 minutes, whatever the attempts
+	 * take: the broker's {@code consumer_timeout}, 30 minutes by default, counts from the delivery, and closes the channel
+	 * of a message held longer. Ordered first, so that a customizer of the service's own runs after it.
 	 */
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
-	RabbitListenerRetrySettingsCustomizer dept44TransientFailureRetry() {
-		return settings -> settings.setExceptionPredicate(TransientFailures::isTransient);
+	RabbitListenerRetrySettingsCustomizer dept44TransientFailureRetry(final TransientFailures transientFailures) {
+		return settings -> {
+			settings.setExceptionPredicate(transientFailures::isTransient);
+			settings.setFactory(builder -> builder.timeout(Duration.ofMinutes(15)).build());
+		};
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	MessageRecoverer dept44TransientFailureRecoverer() {
-		return new TransientFailureRecoverer();
+	MessageRecoverer dept44TransientFailureRecoverer(final TransientFailures transientFailures) {
+		return new TransientFailureRecoverer(transientFailures);
 	}
 
 	/**

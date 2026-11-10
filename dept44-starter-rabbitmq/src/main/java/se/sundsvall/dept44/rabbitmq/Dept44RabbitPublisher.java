@@ -49,21 +49,23 @@ public class Dept44RabbitPublisher {
 	private final BlockedConnections blockedConnections = new BlockedConnections();
 
 	/**
-	 * @param  rabbitTemplate           the template to publish with, on a connection with correlated publisher confirms and
-	 *                                  returns, and mandatory set
+	 * @param  rabbitTemplate           the template to publish with, on a connection of its own with correlated publisher
+	 *                                  confirms and returns, and mandatory set
 	 * @param  confirmTimeout           how long to wait for the broker to confirm a message
 	 * @throws IllegalArgumentException if the timeout is not positive: every publish would time out, also those the
 	 *                                  broker took
-	 * @throws IllegalStateException    if the template cannot tell whether the broker took the message
+	 * @throws IllegalStateException    if the template publishes on the listeners' connection, or cannot tell whether
+	 *                                  the broker took the message
 	 */
 	public Dept44RabbitPublisher(final RabbitTemplate rabbitTemplate, final Duration confirmTimeout) {
 		if (isNull(confirmTimeout) || !confirmTimeout.isPositive()) {
 			throw new IllegalArgumentException("The confirm timeout must be positive, was " + confirmTimeout);
 		}
-		requireConfirmsAndReturns(rabbitTemplate);
+		final var connectionFactory = publishingConnectionFactory(rabbitTemplate);
+		requireConfirmsAndReturns(rabbitTemplate, connectionFactory);
 		this.rabbitTemplate = rabbitTemplate;
 		this.confirmTimeout = confirmTimeout;
-		publishingConnectionFactory(rabbitTemplate).addConnectionListener(blockedConnections);
+		connectionFactory.addConnectionListener(blockedConnections);
 	}
 
 	/**
@@ -157,14 +159,19 @@ public class Dept44RabbitPublisher {
 	}
 
 	/**
-	 * The connection factory the template publishes on: its publisher connection factory, when it uses one.
+	 * The connection factory the template publishes on: its publisher connection factory, when it has one.
+	 * <p>
+	 * On the listeners' connection a publish during a memory or disk alarm would get their acks blocked too, and the
+	 * alarm would never clear. The starter sets every {@code RabbitTemplate} bean to publish on a connection of its own,
+	 * but never sees a template created with {@code new} outside a bean.
 	 */
 	private static ConnectionFactory publishingConnectionFactory(final RabbitTemplate rabbitTemplate) {
-		final var connectionFactory = rabbitTemplate.getConnectionFactory();
-		if (rabbitTemplate.isUsePublisherConnection()) {
-			return ofNullable(connectionFactory.getPublisherConnectionFactory()).orElse(connectionFactory);
+		if (!rabbitTemplate.isUsePublisherConnection()) {
+			throw new IllegalStateException("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own. "
+				+ "The starter sets that on every RabbitTemplate bean; a template created outside a bean needs setUsePublisherConnection(true)");
 		}
-		return connectionFactory;
+		final var connectionFactory = rabbitTemplate.getConnectionFactory();
+		return ofNullable(connectionFactory.getPublisherConnectionFactory()).orElse(connectionFactory);
 	}
 
 	private static String describe(final OutgoingMessage message, final String messageId) {
@@ -173,10 +180,10 @@ public class Dept44RabbitPublisher {
 
 	/**
 	 * Without confirms the wait never ends, and without returns or mandatory an unroutable message is confirmed and
-	 * dropped. Each of these is a default of the starter, so this only fails when a service has overridden one.
+	 * dropped. Each of these is a default of the starter, so this only fails when a service has overridden one. Checked
+	 * on the connection factory the template publishes on.
 	 */
-	private static void requireConfirmsAndReturns(final RabbitTemplate rabbitTemplate) {
-		final var connectionFactory = rabbitTemplate.getConnectionFactory();
+	private static void requireConfirmsAndReturns(final RabbitTemplate rabbitTemplate, final ConnectionFactory connectionFactory) {
 		if (!connectionFactory.isPublisherConfirms()) {
 			throw new IllegalStateException("Dept44RabbitPublisher requires spring.rabbitmq.publisher-confirm-type=correlated");
 		}

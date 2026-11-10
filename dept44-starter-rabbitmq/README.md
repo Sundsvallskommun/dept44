@@ -124,12 +124,15 @@ the broker does not confirm it, and during an alarm the broker blocks the listen
 ## Failures in a listener
 
 A listener that throws is not delivered the message again at once, which would use up the queue's `x-delivery-limit`
-within an outage of a second. This counts on two things:
+within an outage of a second. This counts on three things:
 
 - Each queue is a quorum queue with a dead-letter exchange and an `x-delivery-limit`. Without a dead-letter exchange
   the broker drops a rejected message.
 - The container acknowledges or rejects each message as the listener returns or throws, the `auto` acknowledge mode
   Spring AMQP defaults to. With `manual`, a message the listener fails on stays unacknowledged until the channel closes.
+- The container settles each message on its own. A `spring.rabbitmq.listener.simple.batch-size` above 1 fails the
+  startup unless `consumer-batch-enabled` is on. The container would otherwise put back the messages handled before a
+  failed one, to be handled again, with a `basic.nack` that the delivery limit does not count.
 
 `TransientFailures` sorts a failure into one of three kinds, by the whole cause chain:
 
@@ -175,6 +178,9 @@ Spring AMQP acknowledges a failed batch. Both can build on `TransientFailures.is
 During an alarm the broker blocks a connection once it publishes. Every `RabbitTemplate` bean therefore publishes on a
 connection of its own. On a connection shared with the listeners their acks would go unread too, and the alarm would
 never clear. A template created with `new` outside a bean gets neither this nor the request id headers.
+
+The template also receives on that connection. Once it has published during an alarm, `receive()` waits until the
+alarm clears or its timeout runs out. A `@RabbitListener` consumes on the listeners' connection and is not affected.
 
 The publisher fails a publish on a blocked connection at once with `BLOCKED` rather than waiting until the alarm
 clears. The first publish of an alarm is the one that gets the connection blocked, so it ends in `TIMEOUT`.
@@ -251,9 +257,9 @@ count has reached the queue's `x-delivery-limit` is dead-lettered by the queue, 
 A batch listener logs one line for the batch, with its message ids.
 
 A listener logs no line where the container does not settle each message as the listener returns or throws: with
-`acknowledge-mode` `manual` or `none`, and with a `simple.batch-size` above 1 without `consumer-batch-enabled`. The
-starter reads these from Spring Boot's properties, so a `@RabbitListener` with an `ackMode` of its own, or one that
-returns a `CompletableFuture` or a `Mono`, still logs a line, and the line may be wrong.
+`acknowledge-mode` `manual` or `none`. The starter reads it from Spring Boot's properties, so a `@RabbitListener` with
+an `ackMode` of its own, or one that returns a `CompletableFuture` or a `Mono`, still logs a line, and the line may be
+wrong.
 
 The lines leave out the body and the headers, which may hold personal data. A message that is rejected, or put back once
 its retries are over, also gets a WARN line with the cause. A failed publish and a publish through a `RabbitTemplate`

@@ -8,6 +8,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ContainerUtils;
 
@@ -53,13 +55,32 @@ class ListenerLogAdvice implements MethodInterceptor {
 	 * in the cause chain. A failure with neither is left to the container's default, which the advice cannot see.
 	 */
 	private static Outcome outcomeOf(final Throwable failure) {
-		if (ContainerUtils.isImmediateAcknowledge(failure)) {
+		if (acknowledgedByTheContainer(failure)) {
 			return Outcome.ACKNOWLEDGED;
 		}
 		if (ContainerUtils.shouldRequeue(false, failure, NO_LOG)) {
 			return Outcome.REQUEUED;
 		}
 		return ContainerUtils.isAmqpReject(failure) ? Outcome.REJECTED : Outcome.FAILED;
+	}
+
+	/**
+	 * As the container's own check, which {@link ContainerUtils#isImmediateAcknowledge} is not: the failure itself, or its
+	 * cause chain up to a reject or an {@link Error}.
+	 */
+	private static boolean acknowledgedByTheContainer(final Throwable failure) {
+		if (failure instanceof ImmediateAcknowledgeAmqpException) {
+			return true;
+		}
+		for (var cause = failure.getCause(); cause != null; cause = cause.getCause()) {
+			if (cause instanceof ImmediateAcknowledgeAmqpException) {
+				return true;
+			}
+			if (cause instanceof AmqpRejectAndDontRequeueException || cause instanceof Error) {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	/**

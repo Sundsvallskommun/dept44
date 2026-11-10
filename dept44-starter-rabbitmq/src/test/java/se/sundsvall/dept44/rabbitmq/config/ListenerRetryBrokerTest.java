@@ -47,7 +47,7 @@ import static org.awaitility.Awaitility.await;
 @ExtendWith(OutputCaptureExtension.class)
 class ListenerRetryBrokerTest {
 
-	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.3.6-management-alpine");
+	private static final RabbitMQContainer BROKER = new RabbitMQContainer("rabbitmq:4.4.0-management-alpine");
 
 	private static final String PASSES = "dept44.retry.passes";
 	private static final String PERMANENT = "dept44.retry.permanent";

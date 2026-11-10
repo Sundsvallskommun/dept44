@@ -173,13 +173,18 @@ class Dept44RabbitPublisherTest {
 	void interruptedWhileWaiting() {
 		brokerAnswers(_ -> Thread.currentThread().interrupt());
 
-		assertThatExceptionOfType(RabbitPublishException.class)
-			.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
-			.withMessage("Interrupted while waiting for the confirm of Message message-id to exchange 'exchange' with routing key 'routing-key'")
-			.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(INTERRUPTED, "message-id"))
-			.withCauseInstanceOf(InterruptedException.class);
-		// Thread.interrupted() also clears the flag, so that it does not leak into the next test
-		assertThat(Thread.interrupted()).isTrue();
+		try {
+			assertThatExceptionOfType(RabbitPublishException.class)
+				.isThrownBy(() -> publisher.publish(message().withMessageId("message-id")))
+				.withMessage("Interrupted while waiting for the confirm of Message message-id to exchange 'exchange' with routing key 'routing-key'")
+				.satisfies(e -> assertThat(e).extracting(RabbitPublishException::getReason, RabbitPublishException::getMessageId).containsExactly(INTERRUPTED, "message-id"))
+				.withCauseInstanceOf(InterruptedException.class);
+			// The publisher keeps the thread interrupted
+			assertThat(Thread.currentThread().isInterrupted()).isTrue();
+		} finally {
+			// Clears the flag also when an assertion fails, so that it does not leak into the next test
+			Thread.interrupted();
+		}
 	}
 
 	@Test

@@ -86,9 +86,7 @@ class RabbitMqConfigurationTest {
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"spring.rabbitmq.listener.simple.acknowledge-mode=manual",
-		"spring.rabbitmq.listener.simple.acknowledge-mode=none",
-		// Acknowledged together, and a failure rejects those already handled as well
-		"spring.rabbitmq.listener.simple.batch-size=2"
+		"spring.rabbitmq.listener.simple.acknowledge-mode=none"
 	})
 	void noLineForEachMessageWhenTheContainerDoesNotSettleEachOneAsTheListenerEnds(final String property) {
 		contextRunner.withPropertyValues(property)
@@ -105,6 +103,23 @@ class RabbitMqConfigurationTest {
 		contextRunner.withPropertyValues("spring.rabbitmq.listener.type=direct", property)
 			.run(context -> assertThat(context.getBean(DirectRabbitListenerContainerFactory.class).getAdviceChain())
 				.hasExactlyElementsOfTypes(RequestIdListenerAdvice.class, StatelessRetryOperationsInterceptor.class));
+	}
+
+	@Test
+	void aBatchSizeAboveOneWithoutABatchListenerFailsTheStartup() {
+		// The container would put back the messages handled before a failed one, with a basic.nack the delivery limit does
+		// not count
+		contextRunner.withPropertyValues("spring.rabbitmq.listener.simple.batch-size=2").run(context -> assertThat(context).hasFailed()
+			.getFailure()
+			.rootCause()
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageStartingWith("spring.rabbitmq.listener.simple.batch-size above 1 requires spring.rabbitmq.listener.simple.consumer-batch-enabled=true"));
+	}
+
+	@Test
+	void aBatchSizeForTheSimpleContainerDoesNotMatterWithTheDirectOne() {
+		contextRunner.withPropertyValues("spring.rabbitmq.listener.type=direct", "spring.rabbitmq.listener.simple.batch-size=2")
+			.run(context -> assertThat(context).hasNotFailed());
 	}
 
 	@Test

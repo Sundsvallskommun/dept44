@@ -26,6 +26,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -147,7 +149,7 @@ class RabbitMqConfiguration {
 	static void requireNoTransactionWithConfirms(final boolean channelTransacted, final ConnectionFactory connectionFactory, final String description) {
 		if (channelTransacted && (connectionFactory.isPublisherConfirms() || connectionFactory.isSimplePublisherConfirms())) {
 			throw new IllegalStateException(description + " is channel-transacted, which RabbitMQ does not allow on a connection with publisher confirms. "
-				+ "Leave out the transaction, or set spring.rabbitmq.publisher-confirm-type=none and do without Dept44RabbitPublisher");
+				+ "Leave out the transaction, since Dept44RabbitPublisher depends on the confirms");
 		}
 	}
 
@@ -204,6 +206,24 @@ class RabbitMqConfiguration {
 	@Bean
 	RequestIdContainerInstaller dept44RequestIdContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
 		return new RequestIdContainerInstaller(registry);
+	}
+
+	/**
+	 * The listener containers' health, as {@code rabbitListeners}. Turned off as any other health indicator.
+	 */
+	@Bean
+	@ConditionalOnEnabledHealthIndicator("rabbit-listeners")
+	RabbitListenersHealthIndicator rabbitListenersHealthIndicator(final ApplicationContext context, final RabbitListenerEndpointRegistry registry) {
+		return new RabbitListenersHealthIndicator(context, registry);
+	}
+
+	/**
+	 * Has the service restarted once a listener container stops for good. Not tied to the health indicator, so that
+	 * turning that off does not turn this off too.
+	 */
+	@Bean
+	StoppedListenerLiveness dept44StoppedListenerLiveness(final ApplicationContext context) {
+		return new StoppedListenerLiveness(context);
 	}
 
 	/**

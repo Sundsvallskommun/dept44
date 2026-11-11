@@ -3,6 +3,7 @@ package se.sundsvall.dept44.rabbitmq.config;
 import java.util.Arrays;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.Message;
 
 /**
@@ -14,7 +15,7 @@ import org.springframework.amqp.core.Message;
 class RequestIdListenerAdvice implements MethodInterceptor {
 
 	@Override
-	public Object invoke(final MethodInvocation invocation) throws Throwable {
+	public @Nullable Object invoke(final MethodInvocation invocation) throws Throwable {
 		// The container passes the channel and the message, or a list of them for a batch listener
 		final var message = Arrays.stream(invocation.getArguments())
 			.filter(Message.class::isInstance)

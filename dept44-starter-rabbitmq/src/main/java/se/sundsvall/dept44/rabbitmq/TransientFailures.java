@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.AmqpTimeoutException;
@@ -79,17 +80,17 @@ public final class TransientFailures {
 		CallNotPermittedException.class);
 
 	private static final TransientFailures DEFAULTS = new TransientFailures(
-		Stream.concat(OUTAGES.stream().<Predicate<Throwable>>map(type -> type::isInstance),
+		Stream.concat(OUTAGES.stream().map(type -> type::isInstance),
 			// A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked
 			// was not sent, and waits out the alarm. One that was returned does not pass by trying again.
 			Stream.of(publish(TIMEOUT), publish(INTERRUPTED), publish(BLOCKED))).toList(),
 		List.of(ServerProblem.class::isInstance, publish(NACKED)));
 
-	private final List<Predicate<Throwable>> outages;
+	private final List<Predicate<Throwable>> outageList;
 	private final List<Predicate<Throwable>> serverErrors;
 
-	private TransientFailures(final List<Predicate<Throwable>> outages, final List<Predicate<Throwable>> serverErrors) {
-		this.outages = outages;
+	private TransientFailures(final List<Predicate<Throwable>> outageList, final List<Predicate<Throwable>> serverErrors) {
+		this.outageList = outageList;
 		this.serverErrors = serverErrors;
 	}
 
@@ -105,7 +106,7 @@ public final class TransientFailures {
 	 * @return        a split that also counts it as an outage
 	 */
 	public TransientFailures withOutage(final Predicate<Throwable> outage) {
-		return new TransientFailures(append(outages, requireNonNull(outage, "outage")), serverErrors);
+		return new TransientFailures(append(outageList, requireNonNull(outage, "outage")), serverErrors);
 	}
 
 	/**
@@ -113,23 +114,23 @@ public final class TransientFailures {
 	 * @return             a split that also counts it as a server error
 	 */
 	public TransientFailures withServerError(final Predicate<Throwable> serverError) {
-		return new TransientFailures(outages, append(serverErrors, requireNonNull(serverError, "serverError")));
+		return new TransientFailures(outageList, append(serverErrors, requireNonNull(serverError, "serverError")));
 	}
 
 	/**
 	 * @return true for an outage or a server error, the failures a listener retries
 	 */
-	public boolean isTransient(final Throwable throwable) {
+	public boolean isTransient(final @Nullable Throwable throwable) {
 		final var causes = causes(throwable);
-		return !decidedByTheListener(causes) && (anyMatches(causes, outages) || anyMatches(causes, serverErrors));
+		return !decidedByTheListener(causes) && (anyMatches(causes, outageList) || anyMatches(causes, serverErrors));
 	}
 
 	/**
 	 * @return true for an outage, the failures a listener puts back in the queue once its retries are over
 	 */
-	public boolean isOutage(final Throwable throwable) {
+	public boolean isOutage(final @Nullable Throwable throwable) {
 		final var causes = causes(throwable);
-		return !decidedByTheListener(causes) && anyMatches(causes, outages);
+		return !decidedByTheListener(causes) && anyMatches(causes, outageList);
 	}
 
 	private static boolean decidedByTheListener(final List<Throwable> causes) {
@@ -154,7 +155,7 @@ public final class TransientFailures {
 	 * The whole cause chain counts, since the listener's exception reaches the retry wrapped by Spring AMQP, and often by
 	 * the service too.
 	 */
-	private static List<Throwable> causes(final Throwable throwable) {
+	private static List<Throwable> causes(final @Nullable Throwable throwable) {
 		// Also ends a cause chain that loops
 		return ExceptionUtils.getThrowableList(throwable);
 	}

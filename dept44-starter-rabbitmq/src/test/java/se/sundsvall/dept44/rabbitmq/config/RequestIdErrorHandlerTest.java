@@ -4,6 +4,7 @@ import com.rabbitmq.client.Channel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@NullUnmarked
 class RequestIdErrorHandlerTest {
 
 	@Test

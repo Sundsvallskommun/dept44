@@ -4,6 +4,7 @@ import com.rabbitmq.client.BlockedListener;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionListener;
 
@@ -17,12 +18,16 @@ final class BlockedConnections implements ConnectionListener {
 	private final Map<Connection, String> blocked = new ConcurrentHashMap<>();
 
 	@Override
-	public void onCreate(final Connection connection) {
+	public void onCreate(final @Nullable Connection connection) {
+		// Nullable in the interface, though no factory in Spring AMQP passes null
+		if (connection == null) {
+			return;
+		}
 		// The factory opens a dead connection again behind the same proxy, and does not tell its listeners it closed
 		blocked.remove(connection);
 		connection.addBlockedListener(new BlockedListener() {
 			@Override
-			public void handleBlocked(final String reason) {
+			public void handleBlocked(final @Nullable String reason) {
 				blocked.put(connection, String.valueOf(reason));
 			}
 

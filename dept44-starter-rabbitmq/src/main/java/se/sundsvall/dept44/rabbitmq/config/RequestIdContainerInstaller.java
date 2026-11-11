@@ -13,7 +13,6 @@ import org.springframework.amqp.rabbit.listener.api.ChannelAwareBatchMessageList
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.SmartLifecycle;
 
-import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -62,7 +61,7 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 	private static void wrapErrorHandler(final AbstractMessageListenerContainer container) {
 		final var errorHandler = container.getErrorHandler();
 		// A restarted context starts this again
-		if (nonNull(errorHandler) && !(errorHandler instanceof RequestIdErrorHandler)) {
+		if (!(errorHandler instanceof RequestIdErrorHandler)) {
 			container.setErrorHandler(new RequestIdErrorHandler(errorHandler));
 		}
 	}
@@ -91,9 +90,10 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 			&& container.getMessageListener() instanceof final AbstractAdaptableMessageListener listener
 			&& !(listener instanceof ChannelAwareBatchMessageListener)
 			&& listener.maySettleDelivery()) {
+			final var queueNames = Arrays.toString(container.getQueueNames());
 			LOG.warn(
 				"Listener {} on queues {} may settle a message itself, through a Channel parameter or an errorHandler. Spring AMQP then puts a failed message back with a basic.nack, which RabbitMQ does not count against x-delivery-limit, so a message put back after an outage never reaches the dead letter queue",
-				container.getListenerId(), Arrays.toString(container.getQueueNames()));
+				container.getListenerId(), queueNames);
 		}
 	}
 

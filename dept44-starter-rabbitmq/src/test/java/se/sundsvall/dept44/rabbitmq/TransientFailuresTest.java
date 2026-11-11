@@ -153,6 +153,7 @@ class TransientFailuresTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void anAdditionMustBeGiven() {
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> DEFAULTS.withOutage(null)).withMessage("outage");
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> DEFAULTS.withServerError(null)).withMessage("serverError");

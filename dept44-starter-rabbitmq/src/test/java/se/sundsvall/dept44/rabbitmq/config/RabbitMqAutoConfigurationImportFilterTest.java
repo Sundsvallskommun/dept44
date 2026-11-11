@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import java.util.List;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,6 +23,7 @@ import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(OutputCaptureExtension.class)
+@NullUnmarked
 class RabbitMqAutoConfigurationImportFilterTest {
 
 	private static final String[] AUTO_CONFIGURATIONS = {
@@ -34,6 +36,7 @@ class RabbitMqAutoConfigurationImportFilterTest {
 	};
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void leavesOutRabbitMqUnlessEnabled() {
 		final var filter = new RabbitMqAutoConfigurationImportFilter();
 		filter.setEnvironment(new MockEnvironment());
@@ -45,6 +48,7 @@ class RabbitMqAutoConfigurationImportFilterTest {
 	@ValueSource(strings = {
 		"false", "off", "no", "0", "", "ture"
 	})
+	@SuppressWarnings("DataFlowIssue")
 	void onlyTrueTurnsRabbitMqOn(final String value) {
 		final var filter = new RabbitMqAutoConfigurationImportFilter();
 		filter.setEnvironment(new MockEnvironment().withProperty("dept44.rabbitmq.enabled", value));
@@ -56,6 +60,7 @@ class RabbitMqAutoConfigurationImportFilterTest {
 	@ValueSource(strings = {
 		"true", "TRUE"
 	})
+	@SuppressWarnings("DataFlowIssue")
 	void keepsRabbitMqAndLeavesOutTheWarningWhenEnabled(final String value) {
 		final var filter = new RabbitMqAutoConfigurationImportFilter();
 		filter.setEnvironment(new MockEnvironment().withProperty("dept44.rabbitmq.enabled", value));

@@ -4,6 +4,7 @@ import com.rabbitmq.client.Channel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@NullUnmarked
 class RequestIdListenerAdviceTest {
 
 	private final RequestIdListenerAdvice advice = new RequestIdListenerAdvice();

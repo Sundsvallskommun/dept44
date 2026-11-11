@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,7 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT
 @ExtendWith({
 	MockitoExtension.class, OutputCaptureExtension.class
 })
+@NullUnmarked
 class Dept44RabbitPublisherTest {
 
 	private static final String EXCHANGE = "exchange";
@@ -116,7 +118,7 @@ class Dept44RabbitPublisherTest {
 		assertThat(properties.getMessageId()).isEqualTo("message-id");
 		assertThat(properties.getCorrelationId()).isEqualTo("correlation-id");
 		assertThat(properties.getReplyToAddress()).isEqualTo(new Address("reply-exchange", "reply-key"));
-		assertThat(properties.<String>getHeader("x-custom")).isEqualTo("value");
+		assertThat(properties.getHeaders()).containsEntry("x-custom", "value");
 		assertThat(output.getOut()).contains("Message message-id to exchange 'exchange' with routing key 'routing-key' was confirmed by the broker");
 	}
 
@@ -255,6 +257,13 @@ class Dept44RabbitPublisherTest {
 		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
 
 		assertThatNoException().isThrownBy(() -> publisher.publish(message()));
+	}
+
+	@Test
+	void aCreatedConnectionThatIsNullIsIgnored() {
+		final var connectionListener = connectionListener();
+
+		assertThatNoException().isThrownBy(() -> connectionListener.onCreate(null));
 	}
 
 	@Test

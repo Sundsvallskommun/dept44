@@ -1,9 +1,12 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Leaves out every RabbitMQ auto-configuration, Spring Boot's and this starter's, unless
@@ -22,7 +25,8 @@ public class RabbitMqAutoConfigurationImportFilter implements AutoConfigurationI
 	static final String ENABLED_CONFIGURATION = "se.sundsvall.dept44.rabbitmq.config.RabbitMqConfiguration";
 	static final String DISABLED_CONFIGURATION = "se.sundsvall.dept44.rabbitmq.config.RabbitMqDisabledConfiguration";
 
-	private Environment environment;
+	// Set by Spring before it calls match
+	private @Nullable Environment environment;
 
 	@Override
 	public void setEnvironment(final Environment environment) {
@@ -30,8 +34,8 @@ public class RabbitMqAutoConfigurationImportFilter implements AutoConfigurationI
 	}
 
 	@Override
-	public boolean[] match(final String[] autoConfigurationClasses, final AutoConfigurationMetadata autoConfigurationMetadata) {
-		final var enabled = Boolean.parseBoolean(environment.getProperty(ENABLED_PROPERTY));
+	public boolean[] match(final @Nullable String[] autoConfigurationClasses, final AutoConfigurationMetadata autoConfigurationMetadata) {
+		final var enabled = Boolean.parseBoolean(requireNonNull(environment, "environment").getProperty(ENABLED_PROPERTY));
 		final var matches = new boolean[autoConfigurationClasses.length];
 		for (var index = 0; index < autoConfigurationClasses.length; index++) {
 			final var autoConfigurationClass = autoConfigurationClasses[index];

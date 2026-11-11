@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -286,7 +287,7 @@ class RabbitMqBrokerTest {
 	/**
 	 * @return why a publish failed, or null when the broker took the message
 	 */
-	private static RabbitPublishException.Reason reasonOfAlarmPublish(final Dept44RabbitPublisher publisher) {
+	private static RabbitPublishException.@Nullable Reason reasonOfAlarmPublish(final Dept44RabbitPublisher publisher) {
 		try {
 			publisher.publish(OutgoingMessage.to(EXCHANGE, ALARM_ROUTING_KEY).withPayload(new Payload("during the alarm")));
 			return null;
@@ -326,7 +327,7 @@ class RabbitMqBrokerTest {
 	record Payload(String value) {
 	}
 
-	record Seen(Payload payload, String requestId, Identifier identifier) {
+	record Seen(Payload payload, String requestId, @Nullable Identifier identifier) {
 	}
 
 	static class Listener {

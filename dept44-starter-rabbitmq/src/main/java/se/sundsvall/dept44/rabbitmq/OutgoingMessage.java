@@ -3,6 +3,7 @@ package se.sundsvall.dept44.rabbitmq;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.Address;
 
 import static java.util.Objects.requireNonNull;
@@ -28,15 +29,15 @@ public final class OutgoingMessage {
 
 	private final String exchange;
 	private final String routingKey;
-	private final Object payload;
-	private final String messageId;
-	private final String correlationId;
-	private final Address replyTo;
+	private final @Nullable Object payload;
+	private final @Nullable String messageId;
+	private final @Nullable String correlationId;
+	private final @Nullable Address replyTo;
 	// Never changed once the message has it, which lets the messages derived from it share it. withHeader copies it
 	private final Map<String, Object> headers;
 
-	private OutgoingMessage(final String exchange, final String routingKey, final Object payload, final String messageId, final String correlationId, final Address replyTo,
-		final Map<String, Object> headers) {
+	private OutgoingMessage(final String exchange, final String routingKey, final @Nullable Object payload, final @Nullable String messageId, final @Nullable String correlationId,
+		final @Nullable Address replyTo, final Map<String, Object> headers) {
 		this.exchange = requireNonNull(exchange, "exchange");
 		this.routingKey = requireNonNull(routingKey, "routingKey");
 		this.payload = payload;
@@ -97,19 +98,19 @@ public final class OutgoingMessage {
 		return routingKey;
 	}
 
-	public Object getPayload() {
+	public @Nullable Object getPayload() {
 		return payload;
 	}
 
-	public String getMessageId() {
+	public @Nullable String getMessageId() {
 		return messageId;
 	}
 
-	public String getCorrelationId() {
+	public @Nullable String getCorrelationId() {
 		return correlationId;
 	}
 
-	public Address getReplyTo() {
+	public @Nullable Address getReplyTo() {
 		return replyTo;
 	}
 

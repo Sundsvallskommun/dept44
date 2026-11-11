@@ -1,7 +1,9 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import com.rabbitmq.client.PossibleAuthenticationFailureException;
+import java.util.Optional;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.MessageListenerContainer;
@@ -55,15 +57,16 @@ class StoppedListenerLiveness implements ApplicationListener<ApplicationEvent> {
 		}
 	}
 
-	private static boolean brokerLacksSomething(final Throwable failure) {
+	private static boolean brokerLacksSomething(final @Nullable Throwable failure) {
 		return ExceptionUtils.indexOfType(failure, FatalListenerStartupException.class) != -1
 			|| ExceptionUtils.indexOfType(failure, PossibleAuthenticationFailureException.class) != -1;
 	}
 
 	private void markBroken(final MessageListenerContainer container, final ListenerContainerConsumerFailedEvent failed) {
+		final var failure = Optional.ofNullable(failed.getThrowable()).map(Throwable::toString).orElse(null);
 		LOG.error("RabbitMQ listener {} on queues {} has stopped for good: {}. Marking the application broken, so that its liveness probe fails and it is restarted",
 			container instanceof final AbstractMessageListenerContainer listenerContainer ? listenerContainer.getListenerId() : container,
-			RabbitListenersHealthIndicator.queues(container), failed.getThrowable().toString());
+			RabbitListenersHealthIndicator.queues(container), failure);
 		AvailabilityChangeEvent.publish(context, LivenessState.BROKEN);
 	}
 }

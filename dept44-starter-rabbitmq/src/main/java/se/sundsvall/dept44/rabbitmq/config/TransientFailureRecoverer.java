@@ -13,7 +13,6 @@ import org.springframework.amqp.rabbit.retry.MessageBatchRecoverer;
 import org.springframework.core.NestedExceptionUtils;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
 
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -60,7 +59,7 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 		final var failed = messages.toArray(Message[]::new);
 		final var messageIds = messages.stream().map(message -> String.valueOf(message.getMessageProperties().getMessageId())).collect(joining(", "));
 		final var queue = messages.getFirst().getMessageProperties().getConsumerQueue();
-		final var rootCause = ofNullable(cause).map(NestedExceptionUtils::getMostSpecificCause).map(Throwable::toString).orElse(null);
+		final var rootCause = NestedExceptionUtils.getMostSpecificCause(cause).toString();
 
 		if (decidedByTheListener(cause)) {
 			return new ListenerExecutionFailedException("Handled as the listener asked", cause, failed);

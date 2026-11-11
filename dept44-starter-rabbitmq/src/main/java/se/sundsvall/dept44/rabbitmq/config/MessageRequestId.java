@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.Message;
 import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.support.Identifier;
@@ -15,14 +16,14 @@ import static java.util.Optional.ofNullable;
 final class MessageRequestId {
 
 	// What a delivery that failed was handled under, for the container's error handler
-	private static final ThreadLocal<HandledUnder> FAILED = new ThreadLocal<>();
+	private static final ThreadLocal<@Nullable HandledUnder> FAILED = new ThreadLocal<>();
 
 	private MessageRequestId() {}
 
 	/**
 	 * @param message the message, or null when there is none to take them from
 	 */
-	static void set(final Message message) {
+	static void set(final @Nullable Message message) {
 		set(header(message, RequestId.HEADER_NAME), header(message, Identifier.HEADER_NAME));
 	}
 
@@ -45,7 +46,7 @@ final class MessageRequestId {
 	/**
 	 * As {@link #set(Message)}, but with what the delivery that just failed was handled under, when it was kept.
 	 */
-	static void setForErrorHandler(final Message failedMessage) {
+	static void setForErrorHandler(final @Nullable Message failedMessage) {
 		final var handledUnder = FAILED.get();
 		FAILED.remove();
 		if (nonNull(handledUnder)) {
@@ -56,7 +57,7 @@ final class MessageRequestId {
 		}
 	}
 
-	private static void set(final String requestId, final String identifier) {
+	private static void set(final @Nullable String requestId, final @Nullable String identifier) {
 		RequestId.init(requestId);
 		Identifier.set(Identifier.parse(identifier));
 	}
@@ -69,7 +70,7 @@ final class MessageRequestId {
 	private record HandledUnder(String requestId, Identifier identifier) {
 	}
 
-	private static String header(final Message message, final String name) {
+	private static @Nullable String header(final @Nullable Message message, final String name) {
 		return ofNullable(message)
 			.map(m -> m.getMessageProperties().getHeader(name))
 			.map(Objects::toString)

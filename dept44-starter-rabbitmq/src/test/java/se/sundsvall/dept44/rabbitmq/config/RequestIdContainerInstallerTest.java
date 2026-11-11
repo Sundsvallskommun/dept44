@@ -2,6 +2,7 @@ package se.sundsvall.dept44.rabbitmq.config;
 
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -106,7 +107,7 @@ class RequestIdContainerInstallerTest {
 		return container;
 	}
 
-	private static MessagePostProcessor[] replyPostProcessors(final SimpleMessageListenerContainer container) {
+	private static MessagePostProcessor @Nullable [] replyPostProcessors(final SimpleMessageListenerContainer container) {
 		return ((MessageListenerAdapter) container.getMessageListener()).getBeforeSendReplyPostProcessors();
 	}
 

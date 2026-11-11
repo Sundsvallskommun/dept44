@@ -12,6 +12,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.util.Assert;
 
 import static java.lang.Boolean.FALSE;
 import static java.util.Objects.isNull;
@@ -58,9 +59,9 @@ public class Dept44RabbitPublisher {
 	 *                                  the broker took the message
 	 */
 	public Dept44RabbitPublisher(final RabbitTemplate rabbitTemplate, final Duration confirmTimeout) {
-		if (isNull(confirmTimeout) || !confirmTimeout.isPositive()) {
-			throw new IllegalArgumentException("The confirm timeout must be positive, was " + confirmTimeout);
-		}
+		// Non-null by contract, but a service that constructs the publisher itself may still pass null
+		Assert.notNull(confirmTimeout, "The confirm timeout must be positive, was null");
+		Assert.isTrue(confirmTimeout.isPositive(), () -> "The confirm timeout must be positive, was " + confirmTimeout);
 		final var connectionFactory = publishingConnectionFactory(rabbitTemplate);
 		requireConfirmsAndReturns(rabbitTemplate, connectionFactory);
 		this.rabbitTemplate = rabbitTemplate;

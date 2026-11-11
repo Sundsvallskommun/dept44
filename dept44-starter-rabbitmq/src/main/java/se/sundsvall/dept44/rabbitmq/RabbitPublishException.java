@@ -8,8 +8,6 @@ import org.springframework.amqp.AmqpException;
  */
 public class RabbitPublishException extends AmqpException {
 
-	private static final long serialVersionUID = 1L;
-
 	private final Reason reason;
 	private final String messageId;
 

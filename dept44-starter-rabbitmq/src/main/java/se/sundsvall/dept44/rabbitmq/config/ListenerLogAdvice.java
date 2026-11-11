@@ -6,6 +6,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.NoOpLog;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
@@ -31,11 +32,11 @@ class ListenerLogAdvice implements MethodInterceptor {
 
 	private static final Logger LOG = LoggerFactory.getLogger("se.sundsvall.dept44.rabbitmq.messages");
 	private static final String DELIVERY_COUNT = "x-delivery-count";
-	// shouldRequeue logs that it rejects the message, which the advice does not
+	// shouldRequeue debug-logs "Rejecting messages", which is only true when the container calls it, not the advice
 	private static final Log NO_LOG = new NoOpLog();
 
 	@Override
-	public Object invoke(final MethodInvocation invocation) throws Throwable {
+	public @Nullable Object invoke(final MethodInvocation invocation) throws Throwable {
 		final var start = System.nanoTime();
 		var outcome = Outcome.FAILED;
 		try {
@@ -86,7 +87,7 @@ class ListenerLogAdvice implements MethodInterceptor {
 	/**
 	 * The container passes the channel and the message, or a list of them for a batch listener
 	 */
-	private static void log(final Object[] arguments, final Outcome outcome, final long millis) {
+	private static void log(final @Nullable Object[] arguments, final Outcome outcome, final long millis) {
 		if (!LOG.isInfoEnabled()) {
 			return;
 		}
@@ -98,7 +99,7 @@ class ListenerLogAdvice implements MethodInterceptor {
 		if (data instanceof final Message message) {
 			final var properties = message.getMessageProperties();
 			// Absent on the first delivery. A Long from the broker
-			final var deliveryCount = properties.<Object>getHeader(DELIVERY_COUNT);
+			final var deliveryCount = properties.getHeader(DELIVERY_COUNT);
 			LOG.info("Message {} from queue '{}' with routing key '{}' (delivery count {}, {} ms) {}", properties.getMessageId(), properties.getConsumerQueue(),
 				properties.getReceivedRoutingKey(), requireNonNullElse(deliveryCount, 0), millis, outcome.description);
 		} else if (data instanceof final List<?> batch && !batch.isEmpty() && batch.getFirst() instanceof final Message first) {

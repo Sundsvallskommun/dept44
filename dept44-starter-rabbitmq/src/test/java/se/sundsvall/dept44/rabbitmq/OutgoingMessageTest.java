@@ -44,6 +44,7 @@ class OutgoingMessageTest {
 	}
 
 	@Test
+	@SuppressWarnings("DataFlowIssue")
 	void requiresExchangeAndRoutingKey() {
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> OutgoingMessage.to(null, "routing-key")).withMessage("exchange");
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> OutgoingMessage.to("exchange", null)).withMessage("routingKey");

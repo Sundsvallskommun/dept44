@@ -1,11 +1,17 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.SpringApplication;
-import org.springframework.core.Ordered;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
 import org.springframework.core.env.StandardEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,8 +89,26 @@ class RabbitMqDefaultPropertiesEnvironmentPostProcessorTest {
 			.withMessage("Could not load no-such-defaults.properties");
 	}
 
+	/**
+	 * Run before ConfigData, the defaults would come before the application's configuration, which ConfigData adds last.
+	 */
 	@Test
-	void runsAfterTheApplicationConfigurationIsLoaded() {
-		assertThat(postProcessor.getOrder()).isEqualTo(Ordered.LOWEST_PRECEDENCE);
+	void runsAfterTheApplicationConfigurationIsLoaded(@TempDir final Path directory) throws IOException {
+		final var configuration = Files.writeString(directory.resolve("application.properties"), "spring.rabbitmq.dynamic=true");
+		final var application = new SpringApplication(EmptyApplication.class);
+		application.setWebApplicationType(WebApplicationType.NONE);
+
+		try (final var context = application.run("--spring.config.location=" + configuration.toUri())) {
+			// The order rather than a value, which an environment variable such as SPRING_RABBITMQ_DYNAMIC would decide
+			final var names = context.getEnvironment().getPropertySources().stream().map(PropertySource::getName).toList();
+			final var applicationConfiguration = names.stream().filter(name -> name.contains("application.properties")).findFirst();
+
+			assertThat(applicationConfiguration).isPresent();
+			assertThat(names.indexOf("dept44RabbitMqDefaults")).isGreaterThan(names.indexOf(applicationConfiguration.get()));
+		}
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class EmptyApplication {
 	}
 }

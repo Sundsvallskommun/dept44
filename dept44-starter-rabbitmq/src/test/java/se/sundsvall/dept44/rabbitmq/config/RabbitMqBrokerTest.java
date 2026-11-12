@@ -12,7 +12,10 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -57,6 +60,7 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNE
 /**
  * The starter against a real broker, since confirms, returns and nacks are what the publisher is for.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RabbitMqBrokerTest {
 
 	// The version in TEST and production
@@ -266,6 +270,50 @@ class RabbitMqBrokerTest {
 					assertThat(health.health().getDetails()).containsEntry("stopped", Map.of(HealthListener.ID, List.of(HEALTH_QUEUE)));
 					assertThat(availability.getLivenessState()).isEqualTo(LivenessState.BROKEN);
 				});
+			});
+	}
+
+	/**
+	 * As when the broker restarts under a running service. The connection drops, and the listener's consumer reconnects
+	 * once the broker is back. A refused connection is not fatal, so the application stays live and is not restarted.
+	 * <p>
+	 * Last in the class, since it stops the broker the other tests share.
+	 */
+	@Test
+	@Order(Integer.MAX_VALUE)
+	void aBrokerRestartLeavesTheApplicationLiveAndTheListenerConsuming() throws Exception {
+		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
+			.withUserConfiguration(Listener.class)
+			// As in the test above, so that a refused login would show as one
+			.withPropertyValues("spring.rabbitmq.host=" + ipv4(BROKER.getHost()))
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				// As SpringApplication sets it once the application has started, which the context runner does not
+				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+				final var availability = context.getBean(ApplicationAvailability.class);
+				final var health = context.getBean(RabbitListenersHealthIndicator.class);
+
+				rabbitmqctl("stop_app");
+				try {
+					// Down for longer than the 5 s the consumer waits between its attempts to reconnect, and live all along
+					await().during(Duration.ofSeconds(8)).atMost(Duration.ofSeconds(10))
+						.untilAsserted(() -> assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT));
+				} finally {
+					rabbitmqctl("start_app");
+				}
+
+				// The consumer is back on its queue, which also tells that the queue is up again
+				await().atMost(Duration.ofSeconds(30))
+					.until(() -> BROKER.execInContainer("rabbitmqctl", "list_consumers", "-q", "queue_name").getStdout().contains(LISTENED_QUEUE));
+				// Whatever an earlier test left in the queue has reached the listener by now
+				Listener.SEEN.clear();
+				context.getBean(Dept44RabbitPublisher.class).publish(OutgoingMessage.to(EXCHANGE, LISTENED_ROUTING_KEY).withPayload(new Payload("after the restart")));
+
+				final var seen = Listener.SEEN.poll(10, SECONDS);
+				assertThat(seen).isNotNull();
+				assertThat(seen.payload()).isEqualTo(new Payload("after the restart"));
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+				assertThat(health.health().getStatus()).isEqualTo(Status.UP);
 			});
 	}
 

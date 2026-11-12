@@ -6,12 +6,15 @@ import java.net.ConnectException;
 import java.util.List;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ContainerUtils;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import se.sundsvall.dept44.exception.ServerProblem;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
@@ -19,6 +22,7 @@ import se.sundsvall.dept44.rabbitmq.TransientFailures;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+@ExtendWith(OutputCaptureExtension.class)
 class TransientFailureRecovererTest {
 
 	private final TransientFailureRecoverer recoverer = new TransientFailureRecoverer(TransientFailures.defaults());
@@ -154,6 +158,59 @@ class TransientFailureRecovererTest {
 			.isThrownBy(() -> recoverer.recover(List.of(message, other), failure))
 			.withCauseInstanceOf(AmqpRejectAndDontRequeueException.class)
 			.satisfies(exception -> assertThat(exception.getFailedMessages()).containsExactly(message, other));
+	}
+
+	@Test
+	void aBatchWhoseListenerAsksForItBackIsRejected(final CapturedOutput output) {
+		// Put back with a basic.nack, the batch would come back at once for as long as the listener asks
+		final var other = new Message(new byte[0]);
+		final var failure = listenerFailed(new ImmediateRequeueAmqpException("put it back"));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(List.of(message, other), failure))
+			.withCauseInstanceOf(AmqpRejectAndDontRequeueException.class)
+			.satisfies(exception -> assertThat(ContainerUtils.shouldRequeue(true, exception, LogFactory.getLog(TransientFailureRecovererTest.class))).isFalse())
+			.satisfies(exception -> assertThat(exception.getFailedMessages()).containsExactly(message, other));
+		assertThat(output).contains("WARN").contains("The listener asked to put back the batch of messages");
+	}
+
+	@Test
+	void aBatchWhoseListenerAsksForAnAcknowledgementGetsIt() {
+		final var failure = listenerFailed(new ImmediateAcknowledgeAmqpException("nothing to do", new ImmediateRequeueAmqpException("put it back")));
+
+		// Passed on as the listener threw it. ContainerUtils.isImmediateAcknowledge would also find the acknowledgement
+		// behind a reject, where the container no longer looks
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(List.of(message), failure))
+			.withCause(failure)
+			.satisfies(exception -> assertThat(ContainerUtils.isAmqpReject(exception)).isFalse());
+	}
+
+	@Test
+	void aBatchWhoseListenerAsksForItBackIsRejectedAlsoWithAnAcknowledgementBehindAReject() {
+		// The container stops looking for an acknowledgement at the reject, and puts the batch back for the requeue before it
+		final var failure = listenerFailed(new ImmediateRequeueAmqpException("put it back",
+			new AmqpRejectAndDontRequeueException("give up", new ImmediateAcknowledgeAmqpException("nothing to do"))));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class)
+			.isThrownBy(() -> recoverer.recover(List.of(message), failure))
+			.withCauseInstanceOf(AmqpRejectAndDontRequeueException.class);
+	}
+
+	@Test
+	void anInterruptedBatchWhoseListenerAsksForItBackGetsIt() {
+		// As at shutdown: the consumer stops, so the batch comes back once and not in a loop
+		final var failure = listenerFailed(new ImmediateRequeueAmqpException("put it back"));
+
+		Thread.currentThread().interrupt();
+		try {
+			assertThatExceptionOfType(ListenerExecutionFailedException.class)
+				.isThrownBy(() -> recoverer.recover(List.of(message), failure))
+				.withCause(failure)
+				.satisfies(exception -> assertThat(ContainerUtils.shouldRequeue(false, exception, LogFactory.getLog(TransientFailureRecovererTest.class))).isTrue());
+		} finally {
+			Thread.interrupted();
+		}
 	}
 
 	private void isForTheMessage(final ListenerExecutionFailedException exception) {

@@ -12,7 +12,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -66,6 +68,20 @@ class RabbitMqAutoConfigurationImportFilterTest {
 		filter.setEnvironment(new MockEnvironment().withProperty("dept44.rabbitmq.enabled", value));
 
 		assertThat(filter.match(AUTO_CONFIGURATIONS, null)).containsExactly(true, true, true, false, true, true);
+	}
+
+	/**
+	 * Every RabbitMQ auto-configuration Spring Boot registers. One that an upgrade moves out of the package the filter
+	 * leaves out fails here, rather than connecting a service that has RabbitMQ off.
+	 */
+	@Test
+	void everyRabbitMqAutoConfigurationOfSpringBootIsInThePackageTheFilterLeavesOut() {
+		final var autoConfigurations = ImportCandidates.load(AutoConfiguration.class, getClass().getClassLoader()).getCandidates();
+
+		assertThat(autoConfigurations)
+			.filteredOn(name -> name.startsWith("org.springframework.boot.") && (name.toLowerCase().contains("rabbit") || name.toLowerCase().contains("amqp")))
+			.isNotEmpty()
+			.allSatisfy(name -> assertThat(name).startsWith(RabbitMqAutoConfigurationImportFilter.SPRING_BOOT_RABBIT_PACKAGE));
 	}
 
 	@Test

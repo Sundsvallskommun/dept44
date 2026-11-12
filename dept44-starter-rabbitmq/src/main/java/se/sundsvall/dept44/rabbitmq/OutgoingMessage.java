@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.Address;
+import org.springframework.util.Assert;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,15 +65,22 @@ public final class OutgoingMessage {
 	 * Optional, the publisher generates one when absent. Set it when the receiver must be able to recognize a duplicate,
 	 * such as when the same message may be published again: a publish that ends in a timeout may still have reached the
 	 * broker.
+	 *
+	 * @throws IllegalArgumentException if the id is null or blank. The messages published with a blank id could not be
+	 *                                  told apart.
 	 */
 	public OutgoingMessage withMessageId(final String messageId) {
+		Assert.hasText(messageId, "The message id must not be blank");
 		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, headers);
 	}
 
 	/**
-	 * Copied unchanged to a reply. What it holds is up to the sender.
+	 * Copied unchanged to a reply. What it holds is up to the sender. A responder copies it only when the request has one.
+	 *
+	 * @throws IllegalArgumentException if the id is null or blank
 	 */
 	public OutgoingMessage withCorrelationId(final String correlationId) {
+		Assert.hasText(correlationId, "The correlation id must not be blank");
 		return new OutgoingMessage(exchange, routingKey, payload, messageId, correlationId, replyTo, headers);
 	}
 

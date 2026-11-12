@@ -3,11 +3,13 @@ package se.sundsvall.dept44.rabbitmq.config;
 import com.rabbitmq.client.Channel;
 import java.io.EOFException;
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -200,6 +202,21 @@ class RabbitMqConfigurationTest {
 			// The broker's consumer_timeout of 30 minutes leaves the last attempt as long again
 			assertThat(settings.createRetryPolicy().getTimeout()).isEqualTo(Duration.ofMinutes(15));
 		});
+	}
+
+	@Test
+	void aRetryCustomizerOfTheServicesOwnRunsAfterTheStarters() {
+		final var seenByTheService = new CopyOnWriteArrayList<Predicate<Throwable>>();
+		final var message = new Message(new byte[0]);
+		final var outage = new ListenerExecutionFailedException("Listener method failed", new ConnectException("Connection refused"), message);
+		final var bug = new ListenerExecutionFailedException("Listener method failed", new IllegalStateException("a bug"), message);
+
+		// Spring Boot calls the customizers as it sets up the retry of its listener container factory
+		contextRunner.withBean("serviceRetryCustomizer", RabbitListenerRetrySettingsCustomizer.class, () -> settings -> seenByTheService.add(settings.getExceptionPredicate()))
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				assertThat(seenByTheService).singleElement().satisfies(predicate -> assertThat(predicate).accepts(outage).rejects(bug));
+			});
 	}
 
 	@Test

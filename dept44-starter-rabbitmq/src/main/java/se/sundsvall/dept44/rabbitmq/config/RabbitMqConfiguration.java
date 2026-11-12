@@ -104,6 +104,11 @@ class RabbitMqConfiguration {
 	 * <p>
 	 * Fails the startup for a simple container that would settle several messages together, see
 	 * {@link #requireEachMessageSettledOnItsOwn}.
+	 * <p>
+	 * Whether the log advice goes in depends on the acknowledge mode, and the startup check on the batch size. Both are
+	 * read from {@code spring.rabbitmq.listener.*}, since a factory has no getters for them. A factory the service sets up
+	 * in code with another acknowledge mode, or a batch size above one, is not seen. Its listeners still get
+	 * {@link ListenerLogAdvice}, whose lines may then be wrong, and the startup does not fail for the batch size.
 	 */
 	@Bean
 	static BeanPostProcessor dept44RequestIdListenerAdvisor(final Environment environment) {

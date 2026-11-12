@@ -72,8 +72,9 @@ public class Dept44RabbitPublisher {
 	/**
 	 * Publishes and waits for the broker to confirm. A message without a message id gets a generated one.
 	 * <p>
-	 * After a {@code TIMEOUT} or an {@code INTERRUPTED} the broker may already have the message, so publishing it again
-	 * can deliver it twice. Publish it again with the same message id, for the receiver to recognize the duplicate.
+	 * After a {@code TIMEOUT}, an {@code INTERRUPTED}, or a {@code NACKED} because the channel closed on anything but a
+	 * missing exchange, the broker may already have the message, so publishing it again can deliver it twice. Publish it
+	 * again with the same message id, for the receiver to recognize the duplicate.
 	 *
 	 * @throws RabbitPublishException if the broker nacks or returns the message, does not confirm it in time, or blocks
 	 *                                publishing
@@ -160,19 +161,21 @@ public class Dept44RabbitPublisher {
 	}
 
 	/**
-	 * The connection factory the template publishes on: its publisher connection factory, when it has one.
+	 * The publisher connection factory the template publishes on.
 	 * <p>
 	 * On the listeners' connection a publish during a memory or disk alarm would get their acks blocked too, and the
 	 * alarm would never clear. The starter sets every {@code RabbitTemplate} bean to publish on a connection of its own,
-	 * but never sees a template created with {@code new} outside a bean.
+	 * but never sees a template created with {@code new} outside a bean. A template whose connection factory has no
+	 * publisher connection factory publishes on the connection factory itself, whatever it is set to.
 	 */
 	private static ConnectionFactory publishingConnectionFactory(final RabbitTemplate rabbitTemplate) {
 		if (!rabbitTemplate.isUsePublisherConnection()) {
 			throw new IllegalStateException("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own. "
 				+ "The starter sets that on every RabbitTemplate bean; a template created outside a bean needs setUsePublisherConnection(true)");
 		}
-		final var connectionFactory = rabbitTemplate.getConnectionFactory();
-		return ofNullable(connectionFactory.getPublisherConnectionFactory()).orElse(connectionFactory);
+		return ofNullable(rabbitTemplate.getConnectionFactory().getPublisherConnectionFactory())
+			.orElseThrow(() -> new IllegalStateException("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own. "
+				+ "Its connection factory has no publisher connection factory, so it would publish on the listeners' connection"));
 	}
 
 	private static String describe(final OutgoingMessage message, final String messageId) {

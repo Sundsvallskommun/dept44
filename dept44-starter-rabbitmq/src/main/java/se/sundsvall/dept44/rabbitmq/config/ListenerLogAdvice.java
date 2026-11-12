@@ -27,6 +27,11 @@ import static java.util.stream.Collectors.joining;
  * message is read from what leaves the chain, as the container reads it. By then {@link TransientFailureRecoverer} has
  * turned every failure into an acknowledgement, a requeue or a reject. Without it, as with the retry off, a failure is
  * logged as failed, and the container decides.
+ * <p>
+ * The line can still be wrong. The container's error handler runs after the chain. With one of the service's own that
+ * turns a requeue into a reject, the line says the message was put back. And a container factory the service sets up
+ * in code with another acknowledge mode than {@code auto} still gets the advice, see
+ * {@link RabbitMqConfiguration#dept44RequestIdListenerAdvisor}.
  */
 class ListenerLogAdvice implements MethodInterceptor {
 
@@ -69,7 +74,7 @@ class ListenerLogAdvice implements MethodInterceptor {
 	 * As the container's own check, which {@link ContainerUtils#isImmediateAcknowledge} is not: the failure itself, or its
 	 * cause chain up to a reject or an {@link Error}.
 	 */
-	private static boolean acknowledgedByTheContainer(final Throwable failure) {
+	static boolean acknowledgedByTheContainer(final Throwable failure) {
 		if (failure instanceof ImmediateAcknowledgeAmqpException) {
 			return true;
 		}

@@ -2,9 +2,11 @@ package se.sundsvall.dept44.rabbitmq.config;
 
 import com.rabbitmq.client.Channel;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.NullUnmarked;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
@@ -19,6 +21,12 @@ import static org.mockito.Mockito.when;
 @NullUnmarked
 class RequestIdErrorHandlerTest {
 
+	@BeforeEach
+	void forgetFailed() {
+		// What another test class's failed delivery left on this thread would otherwise decide what these tests see
+		MessageRequestId.forgetFailed();
+	}
+
 	@Test
 	void handlesTheFailureUnderTheRequestIdOfTheFailedMessage() {
 		final var seen = new AtomicReference<String>();
@@ -28,9 +36,9 @@ class RequestIdErrorHandlerTest {
 			seenIdentifier.set(Identifier.get());
 		});
 
-		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), message("request-id")));
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), message("failed-request-id")));
 
-		assertThat(seen.get()).isEqualTo("request-id");
+		assertThat(seen.get()).isEqualTo("failed-request-id");
 		assertThat(seenIdentifier.get()).isEqualTo(Identifier.parse("joe01doe; type=adAccount"));
 		assertClearedAfterwards();
 	}
@@ -106,7 +114,7 @@ class RequestIdErrorHandlerTest {
 
 		errorHandler.handleError(new IllegalStateException("not from a listener"));
 
-		assertThat(seen.get()).isNotBlank();
+		assertThat(UUID.fromString(seen.get())).hasToString(seen.get());
 		assertClearedAfterwards();
 	}
 

@@ -70,11 +70,12 @@ class Dept44RabbitPublisherTest {
 
 	@BeforeEach
 	void setUp() {
-		// No publisher connection factory of its own, so the template publishes on connectionFactory
+		// As with Spring Boot's CachingConnectionFactory, the template publishes on the publisher connection factory
 		when(rabbitTemplate.isUsePublisherConnection()).thenReturn(true);
 		when(rabbitTemplate.getConnectionFactory()).thenReturn(connectionFactory);
-		when(connectionFactory.isPublisherConfirms()).thenReturn(true);
-		when(connectionFactory.isPublisherReturns()).thenReturn(true);
+		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
+		when(publisherConnectionFactory.isPublisherConfirms()).thenReturn(true);
+		when(publisherConnectionFactory.isPublisherReturns()).thenReturn(true);
 		when(rabbitTemplate.isMandatoryFor(any())).thenReturn(true);
 		publisher = new Dept44RabbitPublisher(rabbitTemplate, Duration.ofMillis(200));
 	}
@@ -267,24 +268,38 @@ class Dept44RabbitPublisherTest {
 	}
 
 	@Test
-	void watchesThePublisherConnectionWhenTheTemplatePublishesOnIt() {
-		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
-		when(publisherConnectionFactory.isPublisherConfirms()).thenReturn(true);
-		when(publisherConnectionFactory.isPublisherReturns()).thenReturn(true);
-
-		new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1));
-
+	void watchesThePublisherConnectionTheTemplatePublishesOn() {
 		verify(publisherConnectionFactory).addConnectionListener(any(BlockedConnections.class));
+		verify(connectionFactory, never()).addConnectionListener(any());
 	}
 
 	@Test
-	void confirmsAndReturnsAreRequiredOnTheConnectionTheTemplatePublishesOn() {
-		// The template's own factory confirms, see setUp, but it publishes on another
-		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(publisherConnectionFactory);
+	void confirmsAreRequiredOnTheConnectionTheTemplatePublishesOn() {
+		// The template's own factory may confirm, but the template publishes on its publisher connection factory
+		lenient().when(connectionFactory.isPublisherConfirms()).thenReturn(true);
+		when(publisherConnectionFactory.isPublisherConfirms()).thenReturn(false);
 
 		assertThatExceptionOfType(IllegalStateException.class)
 			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
 			.withMessage("Dept44RabbitPublisher requires spring.rabbitmq.publisher-confirm-type=correlated");
+	}
+
+	@Test
+	void returnsAreRequiredOnTheConnectionTheTemplatePublishesOn() {
+		when(publisherConnectionFactory.isPublisherReturns()).thenReturn(false);
+
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
+			.withMessage("Dept44RabbitPublisher requires spring.rabbitmq.publisher-returns=true");
+	}
+
+	@Test
+	void mandatoryIsRequired() {
+		when(rabbitTemplate.isMandatoryFor(any())).thenReturn(false);
+
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
+			.withMessage("Dept44RabbitPublisher requires spring.rabbitmq.template.mandatory=true");
 	}
 
 	@Test
@@ -295,6 +310,17 @@ class Dept44RabbitPublisherTest {
 		assertThatExceptionOfType(IllegalStateException.class)
 			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
 			.withMessageStartingWith("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own");
+	}
+
+	@Test
+	void aTemplateWhoseConnectionFactoryHasNoPublisherConnectionFactoryIsRefused() {
+		// RabbitTemplate then publishes on its connection factory, which the listeners use too
+		when(connectionFactory.getPublisherConnectionFactory()).thenReturn(null);
+
+		assertThatExceptionOfType(IllegalStateException.class)
+			.isThrownBy(() -> new Dept44RabbitPublisher(rabbitTemplate, Duration.ofSeconds(1)))
+			.withMessageStartingWith("Dept44RabbitPublisher requires a RabbitTemplate that publishes on a connection of its own")
+			.withMessageContaining("has no publisher connection factory");
 	}
 
 	@Test
@@ -359,11 +385,11 @@ class Dept44RabbitPublisherTest {
 	}
 
 	/**
-	 * The listener the publisher added to the template's connection factory, in setUp.
+	 * The listener the publisher added to the publisher connection factory, in setUp.
 	 */
 	private ConnectionListener connectionListener() {
 		final var captor = ArgumentCaptor.forClass(ConnectionListener.class);
-		verify(connectionFactory).addConnectionListener(captor.capture());
+		verify(publisherConnectionFactory).addConnectionListener(captor.capture());
 		return captor.getValue();
 	}
 

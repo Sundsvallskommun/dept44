@@ -35,7 +35,10 @@ public class RabbitPublishException extends AmqpException {
 	}
 
 	public enum Reason {
-		/** The broker refused the message, or the channel closed before the broker confirmed it. */
+		/**
+		 * The broker did not confirm the message. It nacked it, or the channel closed first, as it does on a missing
+		 * exchange. Unless the exchange is missing, the broker may still have the message.
+		 */
 		NACKED,
 		/** The broker could not route the message to any queue. */
 		RETURNED,

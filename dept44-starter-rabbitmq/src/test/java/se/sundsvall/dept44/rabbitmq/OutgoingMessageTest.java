@@ -1,6 +1,10 @@
 package se.sundsvall.dept44.rabbitmq;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.Address;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +52,19 @@ class OutgoingMessageTest {
 	void requiresExchangeAndRoutingKey() {
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> OutgoingMessage.to(null, "routing-key")).withMessage("exchange");
 		assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> OutgoingMessage.to("exchange", null)).withMessage("routingKey");
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = {
+		" ", "\t"
+	})
+	@SuppressWarnings("DataFlowIssue")
+	void refusesABlankMessageIdOrCorrelationId(final @Nullable String id) {
+		final var message = OutgoingMessage.to("exchange", "routing-key");
+
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> message.withMessageId(id)).withMessage("The message id must not be blank");
+		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> message.withCorrelationId(id)).withMessage("The correlation id must not be blank");
 	}
 
 	@Test

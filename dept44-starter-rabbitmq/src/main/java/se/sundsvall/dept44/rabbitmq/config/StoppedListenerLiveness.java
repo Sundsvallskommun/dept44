@@ -32,6 +32,10 @@ import org.springframework.context.event.ContextRefreshedEvent;
  * message the listener cannot handle, which the restarted service would only get again. So does every stop as the
  * context closes. A container the service declares as a bean of its own counts too, though the health of
  * {@link RabbitListenersHealthIndicator} only shows those in the registry.
+ * <p>
+ * A container the service starts itself, with {@code autoStartup} off, counts too, though the health indicator leaves
+ * it out: Spring AMQP stops it for good in the same way. A call to {@code start()} by the service that fails because
+ * the user or the queue is missing therefore marks the application broken, besides throwing to the service.
  */
 class StoppedListenerLiveness implements ApplicationListener<ApplicationEvent> {
 

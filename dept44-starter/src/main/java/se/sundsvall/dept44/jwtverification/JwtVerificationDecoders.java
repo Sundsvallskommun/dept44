@@ -31,8 +31,6 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import se.sundsvall.dept44.jwtverification.JwtVerificationProperties.Verifier;
 
-import static org.springframework.util.StringUtils.hasText;
-
 /**
  * Builds the decoder of one verifier.
  * <p>
@@ -135,7 +133,7 @@ final class JwtVerificationDecoders {
 		final var timestamps = new JwtTimestampValidator();
 		timestamps.setAllowEmptyExpiryClaim(false);
 		final var validators = new ArrayList<OAuth2TokenValidator<Jwt>>(List.of(timestamps));
-		if (hasText(verifier.issuer())) {
+		if (verifier.issuer() != null) {
 			validators.add(new JwtIssuerValidator(verifier.issuer()));
 		}
 		if (!verifier.audiences().isEmpty()) {

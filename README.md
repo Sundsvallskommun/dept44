@@ -111,7 +111,7 @@ Per verifier, under `dept44.jwt-verification.verifiers.<name>`:
 |-------------------|---------|------------------------------------------------------------------------------------------|
 | `header-name`     |         | Required. The header that holds the JWT. Each verifier needs a header of its own         |
 | `jwk-set-uris`    |         | Required. The issuer's JWKS URLs, `https` only; their keys are merged                    |
-| `issuer`          |         | If set, the JWT's `iss` must equal it. Needed when the keys are shared, as with Entra ID |
+| `issuer`          |         | If set (not blank), the JWT's `iss` must equal it. Needed when the keys are shared, as with Entra ID |
 | `audiences`       |         | If set, the JWT's `aud` must contain one of them                                         |
 | `excluded-paths`  |         | Path patterns this verifier doesn't check, on top of the global ones                     |
 | `algorithms`      | `RS256` | Accepted signature algorithms (`RS*`, `PS*`, `ES*`)                                      |
@@ -129,6 +129,10 @@ ad:
     - https://login.microsoftonline.com/<tenant-id>/discovery/v2.0/keys
   issuer: https://login.microsoftonline.com/<tenant-id>/v2.0
 ```
+
+A placeholder with an empty default must not switch a check off. `issuer: ${ISSUER:}` with the variable unset stops
+startup. `audiences: ${AUDIENCES:}` can't be told apart from no audiences, so it turns the audience check off; write
+each audience as an entry without a default, such as `audiences[0]: ${AUDIENCE}`, which fails when the variable is unset.
 
 The index page (`/`), the OpenAPI documents, Swagger UI and actuator are always excluded, so Spring Boot Admin and the
 Kubernetes probes keep working. A request is only let through on those paths if the endpoint they belong to really

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -45,9 +46,12 @@ public record JwtVerificationProperties(
 	 *                       gateways that sign with different keys
 	 * @param issuer         the {@code iss} the JWT must have, if set. Needed when the keys are not the issuer's own: Entra
 	 *                       ID signs the tokens of every tenant with the same keys, so only {@code iss} tells a token
-	 *                       from your organisation apart, e.g. {@code https://login.microsoftonline.com/<tenant-id>/v2.0}
+	 *                       from your organisation apart, e.g. {@code https://login.microsoftonline.com/<tenant-id>/v2.0}.
+	 *                       If set it must not be blank, so that {@code ${ISSUER:}} with the variable unset stops startup
+	 *                       instead of turning the check off
 	 * @param audiences      if set, the JWT's {@code aud} must contain one of them, e.g. the service's application id and
-	 *                       its {@code api://} URI. Not set: any audience is accepted
+	 *                       its {@code api://} URI. Not set: any audience is accepted. {@code ${AUDIENCES:}} with the
+	 *                       variable unset is empty too, so it turns the check off; use {@code audiences[0]: ${AUDIENCE}}
 	 * @param excludedPaths  path patterns that this verifier does not check, in addition to the global ones
 	 * @param algorithms     the accepted signature algorithms, default {@code RS256}
 	 * @param connectTimeout connect timeout when fetching the keys, default 5 seconds. Set for the worst case: the keys
@@ -57,7 +61,7 @@ public record JwtVerificationProperties(
 	public record Verifier(
 		@NotBlank String headerName,
 		@NotEmpty List<@NotBlank String> jwkSetUris,
-		String issuer,
+		@Pattern(regexp = "(?s).*\\S.*", message = "must not be blank") String issuer,
 		@DefaultValue List<@NotBlank String> audiences,
 		@DefaultValue List<String> excludedPaths,
 		@DefaultValue("RS256") @NotEmpty List<@NotNull SignatureAlgorithm> algorithms,

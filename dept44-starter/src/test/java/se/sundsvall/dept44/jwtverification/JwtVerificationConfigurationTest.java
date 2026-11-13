@@ -146,6 +146,26 @@ class JwtVerificationConfigurationTest {
 			});
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"", " "
+	})
+	void blankIssuerStopsStartup(final String issuer) {
+		contextRunner
+			.withPropertyValues(ENABLED, HEADER_NAME, JWK_SET_URI, PREFIX + "verifiers.gateway.issuer=" + issuer)
+			.run(context -> {
+				assertThat(context).hasFailed();
+				assertThat(context.getStartupFailure()).hasStackTraceContaining("issuer");
+			});
+	}
+
+	@Test
+	void issuerFromAnUnsetVariableStopsStartup() {
+		contextRunner
+			.withPropertyValues(ENABLED, HEADER_NAME, JWK_SET_URI, PREFIX + "verifiers.gateway.issuer=${JWT_VERIFICATION_TEST_UNSET_ISSUER:}")
+			.run(context -> assertThat(context).hasFailed());
+	}
+
 	@Test
 	void twoVerifiersOnOneHeaderStopStartup() {
 		contextRunner

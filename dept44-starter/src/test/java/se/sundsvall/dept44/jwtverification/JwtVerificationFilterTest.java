@@ -218,12 +218,12 @@ class JwtVerificationFilterTest {
 	}
 
 	@Test
-	void rateLimitedFetchIsRejectedAsUnverified() throws Exception {
+	void rateLimitedFetchGivesServiceUnavailable() throws Exception {
 		when(jwtDecoderMock.decode(anyString())).thenThrow(new JwtException("Rate limit reached", new RateLimitReachedException()));
 
 		filter.doFilter(request("/things", JWT), response, chain);
 
-		assertRejected(TITLE_UNVERIFIED, DETAIL_KEYS_RATE_LIMITED.formatted(HEADER_NAME));
+		assertProblem(503, TITLE_UNVERIFIED, DETAIL_KEYS_RATE_LIMITED.formatted(HEADER_NAME));
 	}
 
 	@Test

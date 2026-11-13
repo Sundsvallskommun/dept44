@@ -13,6 +13,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+import com.nimbusds.jose.jwk.source.RateLimitReachedException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
@@ -97,9 +98,15 @@ class JwtVerificationDecodersTest {
 		internalGateway.stubFor(get(JWKS).willReturn(serviceUnavailable()));
 		final var token = signed(key);
 
+		// Also not once the failed fetches use up the rate limit, so the filter answers 503 to all of them
+		for (var i = 0; i < 5; i++) {
+			assertThatExceptionOfType(JwtException.class)
+				.isThrownBy(() -> decoder.decode(token))
+				.isNotInstanceOf(BadJwtException.class);
+		}
 		assertThatExceptionOfType(JwtException.class)
 			.isThrownBy(() -> decoder.decode(token))
-			.isNotInstanceOf(BadJwtException.class);
+			.withCauseInstanceOf(RateLimitReachedException.class);
 	}
 
 	@Test

@@ -81,7 +81,7 @@ masking methods, and the opt-in framework-level masker in `dept44-starter-logbac
 `dept44-starter` can reject incoming requests that don't carry a valid, signed JWT in a given header. Each JWT to
 check is a *verifier*: a header and the JWKS URLs of its issuer. A servlet filter verifies the signature and expiry of
 every verifier's JWT; all must pass. The JWT must have an expiry. A missing, invalid or expired JWT gives `401` with a
-problem response; if the keys can't be fetched, the response is `503`. Claims are not used. The filter is off by default and is not available in WebFlux services.
+problem response; if the keys can't be fetched, or can't be fetched again yet, the response is `503`. Claims are not used. The filter is off by default and is not available in WebFlux services.
 
 A typical use is an API gateway that adds a signed JWT to every request it forwards; the service then rejects requests
 that bypass the gateway:
@@ -143,8 +143,9 @@ The verified headers are masked in the payload log (as `XXX`, like `Authorizatio
 copied and sent to the service directly until it expires.
 
 The keys are fetched on first use and cached for five minutes, refreshed in the background shortly before they expire.
-A JWT signed with a new key makes the keys be fetched at once, at most twice per six seconds. If a key endpoint is
-down, the keys last fetched from it stay in use.
+A JWT signed with a new key makes the keys be fetched at once, at most twice per six seconds; a JWT that needs them
+fetched beyond that gets `503`, as does any request while no keys could be fetched yet. If a key endpoint is down, the
+keys last fetched from it stay in use.
 
 ## Status
 

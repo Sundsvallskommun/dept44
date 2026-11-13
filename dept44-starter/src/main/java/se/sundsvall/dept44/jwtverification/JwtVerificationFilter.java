@@ -30,7 +30,7 @@ import static org.springframework.util.StringUtils.hasText;
 /**
  * Rejects a request unless every configured verifier accepts the JWT in its header: the signature must verify against
  * the verifier's keys, and the JWT must have an expiry that has not passed. A missing, invalid or expired JWT gives
- * 401; keys that can not be fetched give 503.
+ * 401; keys that can not be fetched, or can not be fetched again yet, give 503.
  * <p>
  * Not verified are:
  * <ul>
@@ -127,8 +127,11 @@ public class JwtVerificationFilter extends OncePerRequestFilter {
 			reject(verifier, request, response, TITLE_UNVERIFIED, e.getMessage());
 		} catch (final JwtException e) {
 			if (e.getCause() instanceof RateLimitReachedException) {
-				// The keys were needed again, for an unknown key id or a refresh, within moments of the last fetches
-				reject(verifier, request, response, TITLE_UNVERIFIED, DETAIL_KEYS_RATE_LIMITED.formatted(headerName));
+				// The keys were needed again within moments of the last fetches: none could be fetched yet, or the JWT has a
+				// key id they don't hold, which a new key published since then may. Either way a retry can pass, so 503. A
+				// warning only: an endpoint that is down was logged as an error by the fetch that failed
+				LOGGER.warn("JWT verifier '{}' could not verify a {} request: the keys can not be fetched again yet", verifier.name(), request.getMethod());
+				writeProblem(response, SERVICE_UNAVAILABLE, TITLE_UNVERIFIED, DETAIL_KEYS_RATE_LIMITED.formatted(headerName));
 			} else {
 				// The keys could not be fetched; nothing the caller did wrong, so 503 and an error in the log
 				LOGGER.error("JWT verifier '{}' could not verify a {} request", verifier.name(), request.getMethod(), e);

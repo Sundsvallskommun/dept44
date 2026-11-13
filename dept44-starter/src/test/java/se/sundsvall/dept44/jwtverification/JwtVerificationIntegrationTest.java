@@ -15,6 +15,7 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import org.junit.jupiter.api.AfterAll;
@@ -121,11 +122,6 @@ class JwtVerificationIntegrationTest {
 	}
 
 	@Test
-	void assertionWithUnknownKeyId() {
-		assertRejected(assertion(GATEWAY_KEY, "unknown", Instant.now().plus(15, MINUTES)), "JWT could not be verified");
-	}
-
-	@Test
 	void malformedAssertion() {
 		assertRejected("not-a-jwt", "JWT could not be verified");
 	}
@@ -142,10 +138,18 @@ class JwtVerificationIntegrationTest {
 		webTestClient.get().uri("/things").header(HEADER_NAME, valid).header(OTHER_HEADER_NAME, otherJwt()).exchange().expectStatus().isOk();
 		final var fetchesBefore = GATEWAY.findAll(getRequestedFor(urlEqualTo("/jwks"))).size();
 
+		// A key id the fetched keys don't hold gives 401; once the keys can't be fetched again yet, 503. How many fetches
+		// are left depends on the tests before, so only the last status is certain
+		final var statuses = new ArrayList<Integer>();
 		for (var i = 0; i < 10; i++) {
-			assertRejected(madeUp, "JWT could not be verified");
+			webTestClient.get().uri("/things").header(HEADER_NAME, madeUp).header(OTHER_HEADER_NAME, otherJwt())
+				.exchange()
+				.expectStatus().value(statuses::add)
+				.expectBody()
+				.jsonPath("$.title").isEqualTo("JWT could not be verified");
 		}
 
+		assertThat(statuses).containsOnly(401, 503).last().isEqualTo(503);
 		assertThat(GATEWAY.findAll(getRequestedFor(urlEqualTo("/jwks"))).size() - fetchesBefore).isLessThanOrEqualTo(2);
 
 		// The rate limit only concerns fetching keys: an assertion with a known key is still accepted

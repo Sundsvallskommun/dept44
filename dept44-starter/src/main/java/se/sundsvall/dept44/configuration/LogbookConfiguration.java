@@ -28,6 +28,7 @@ import org.springframework.core.Ordered;
 import org.springframework.util.unit.DataSize;
 import org.zalando.logbook.BodyFilter;
 import org.zalando.logbook.Correlation;
+import org.zalando.logbook.HeaderFilter;
 import org.zalando.logbook.HttpLogWriter;
 import org.zalando.logbook.HttpRequest;
 import org.zalando.logbook.Logbook;
@@ -37,6 +38,7 @@ import org.zalando.logbook.autoconfigure.LogbookAutoConfiguration;
 import org.zalando.logbook.core.BodyFilters;
 import org.zalando.logbook.core.Conditions;
 import org.zalando.logbook.core.DefaultSink;
+import org.zalando.logbook.core.HeaderFilters;
 import org.zalando.logbook.json.JsonHttpLogFormatter;
 import org.zalando.logbook.servlet.AsyncOnCompleteListenerWrapper;
 import org.zalando.logbook.servlet.LogbookFilter;
@@ -109,10 +111,14 @@ public class LogbookConfiguration {
 	@ConditionalOnMissingBean
 	Logbook logbook(final JsonMapper jsonMapper,
 		final ObjectMapper objectMapper, final List<BodyFilter> bodyFilters, final BodyFilterProperties bodyFilterProperties,
-		final BodyCapturePolicy bodyCapturePolicy) {
+		final BodyCapturePolicy bodyCapturePolicy, final ObjectProvider<HeaderFilter> headerFilters) {
 		final var builder = Logbook.builder()
 			.strategy(new BodyCaptureStrategy(bodyCapturePolicy))
-			.bodyFilter(oversizedBodyFilter(bodyCapturePolicy));
+			.bodyFilter(oversizedBodyFilter(bodyCapturePolicy))
+			// Logbook's own masking of the Authorization header, which it drops as soon as any header filter is configured
+			.headerFilter(HeaderFilters.defaultValue())
+			// E.g. the headers that JWT verification reads, which hold credentials
+			.headerFilters(headerFilters.orderedStream().toList());
 
 		builder.sink(new DefaultSink(
 			// Asked to validate the body, so that one that is not JSON is written as a quoted string rather than put

@@ -79,9 +79,11 @@ masking methods, and the opt-in framework-level masker in `dept44-starter-logbac
 ## Verifying JWTs on incoming requests
 
 `dept44-starter` can reject incoming requests that don't carry a valid, signed JWT in a given header. Each JWT to
-check is a *verifier*: a header and the JWKS URLs of its issuer. A servlet filter verifies the signature and expiry of
-every verifier's JWT; all must pass. The JWT must have an expiry. A missing, invalid or expired JWT gives `401` with a
-problem response; if the keys can't be fetched, or can't be fetched again yet, the response is `503`. Claims are not used. The filter is off by default and is not available in WebFlux services.
+check is a *verifier*: a header and the JWKS URLs of its issuer. A servlet filter verifies the signature, expiry and
+not-before of every verifier's JWT, and its issuer and audience when configured; all verifiers must pass. The JWT must
+have an expiry. A missing, invalid or expired JWT gives `401` with a problem response; if the keys can't be fetched, or
+can't be fetched again yet, the response is `503`. Nothing from the JWT is passed on to the application, and nothing is
+put into the security context. The filter is off by default and is not available in WebFlux services.
 
 A typical use is an API gateway that adds a signed JWT to every request it forwards; the service then rejects requests
 that bypass the gateway:
@@ -91,7 +93,7 @@ dept44:
   jwt-verification:
     enabled: true
     excluded-paths:
-      - /some-callback/**
+      - /some-callback
     verifiers:
       gateway:
         header-name: x-gateway-jwt
@@ -110,7 +112,7 @@ Per verifier, under `dept44.jwt-verification.verifiers.<name>`:
 |     Property      | Default |                                       Description                                        |
 |-------------------|---------|------------------------------------------------------------------------------------------|
 | `header-name`     |         | Required. The header that holds the JWT. Each verifier needs a header of its own         |
-| `jwk-set-uris`    |         | Required. The issuer's JWKS URLs, `https` only; their keys are merged                    |
+| `jwk-set-uris`    |         | Required. The issuer's JWKS URLs, `https` only (`http` to `localhost`, `127.0.0.1` and `[::1]` is allowed); their keys are merged |
 | `issuer`          |         | If set (not blank), the JWT's `iss` must equal it. Needed when the keys are shared, as with Entra ID |
 | `audiences`       |         | If set, the JWT's `aud` must contain one of them                                         |
 | `excluded-paths`  |         | Path patterns this verifier doesn't check, on top of the global ones                     |
@@ -130,26 +132,30 @@ ad:
   issuer: https://login.microsoftonline.com/<tenant-id>/v2.0
 ```
 
-A placeholder with an empty default must not switch a check off. `issuer: ${ISSUER:}` with the variable unset stops
-startup. `audiences: ${AUDIENCES:}` can't be told apart from no audiences, so it turns the audience check off; write
-each audience as an entry without a default, such as `audiences[0]: ${AUDIENCE}`, which fails when the variable is unset.
+Mind placeholders whose variable may be unset. `issuer: ${ISSUER:}` stops startup, since a set issuer must not be
+blank. `audiences: ${AUDIENCES:}` can't be told apart from no audiences, so it turns the audience check off: don't give
+audiences an empty default. A placeholder without a default, such as `${ISSUER}` or `audiences[0]: ${AUDIENCE}`, is kept
+as the literal text `${ISSUER}` when the variable is unset; startup succeeds, but every JWT is rejected.
 
-The index page (`/`), the OpenAPI documents, Swagger UI and actuator are always excluded, so Spring Boot Admin and the
-Kubernetes probes keep working. A request is only let through on those paths if the endpoint they belong to really
+The index page (`/`), the OpenAPI documents, Swagger UI (with `/webjars/**`), `/favicon.ico` and actuator are always
+excluded, so Spring Boot Admin and the Kubernetes probes keep working. A request is only let through on those paths if the endpoint they belong to really
 serves it: `/actuator/1/things` handled by a `/{municipalityId}/{id}/things` controller is verified like any
 other request. Anything else that calls the service without the JWT, such as a direct call that bypasses the gateway, has to
 be listed in `excluded-paths`. Those patterns are matched on the path alone, so list exact paths: `/some-callback/**`
 would also let `/some-callback/1/things` through to a `/{municipalityId}/{id}/things` controller. All paths
-are relative to `spring.mvc.servlet.path`, like controller mappings. Do not enable this in a service that is used
-without the gateway, such as Spring Boot Admin.
+are relative to `spring.mvc.servlet.path`, like controller mappings. Only enable it in a service that every caller
+reaches with the JWT, apart from the excluded paths.
 
 The verified headers are masked in the payload log (as `XXX`, like `Authorization`): a logged JWT could otherwise be
 copied and sent to the service directly until it expires.
 
-The keys are fetched on first use and cached for five minutes, refreshed in the background shortly before they expire.
-A JWT signed with a new key makes the keys be fetched at once, at most twice per six seconds; a JWT that needs them
-fetched beyond that gets `503`, as does any request while no keys could be fetched yet. If a key endpoint is down, the
-keys last fetched from it stay in use.
+The keys are fetched on first use and cached for five minutes, or three times the longest fetch (twice the connect and
+read timeouts, plus a second) if that is longer. A request that comes in during the last fetch time before they expire
+has them refreshed in the background; if none does, they expire and the next request waits for the fetch. A JWT signed
+with a new key makes the keys be fetched at once, at most twice per six seconds; a JWT that needs them fetched beyond
+that gets `503`, as does any request while no keys could be fetched yet. If a key endpoint is down, the keys last
+fetched from it stay in use for ten times the cache time, 50 minutes by default; after that, requests get `503` until
+it is back.
 
 ## Status
 

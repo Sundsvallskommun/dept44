@@ -54,6 +54,9 @@ class JwtVerificationFilterTest {
 	@Mock
 	private JwtDecoder otherJwtDecoderMock;
 
+	@Mock
+	private Jwt jwtMock;
+
 	private final JsonMapper jsonMapper = JsonMapper.builder().build();
 	private final MockHttpServletResponse response = new MockHttpServletResponse();
 	private final MockFilterChain chain = new MockFilterChain();
@@ -68,7 +71,7 @@ class JwtVerificationFilterTest {
 
 	@Test
 	void validJwtContinuesTheChain() throws Exception {
-		when(jwtDecoderMock.decode(JWT)).thenReturn(mock(Jwt.class));
+		when(jwtDecoderMock.decode(JWT)).thenReturn(jwtMock);
 
 		filter.doFilter(request("/things", JWT), response, chain);
 
@@ -229,8 +232,8 @@ class JwtVerificationFilterTest {
 	@Test
 	void everyVerifierMustPass() throws Exception {
 		filter = new JwtVerificationFilter(List.of(), request -> true, List.of(), List.of(verifier(), otherVerifier()), jsonMapper);
-		when(jwtDecoderMock.decode(JWT)).thenReturn(mock(Jwt.class));
-		when(otherJwtDecoderMock.decode(OTHER_JWT)).thenReturn(mock(Jwt.class));
+		when(jwtDecoderMock.decode(JWT)).thenReturn(jwtMock);
+		when(otherJwtDecoderMock.decode(OTHER_JWT)).thenReturn(jwtMock);
 		final var request = request("/things", JWT);
 		request.addHeader(OTHER_HEADER_NAME, OTHER_JWT);
 
@@ -244,7 +247,7 @@ class JwtVerificationFilterTest {
 	@Test
 	void oneFailingVerifierRejects() throws Exception {
 		filter = new JwtVerificationFilter(List.of(), request -> true, List.of(), List.of(verifier(), otherVerifier()), jsonMapper);
-		when(jwtDecoderMock.decode(JWT)).thenReturn(mock(Jwt.class));
+		when(jwtDecoderMock.decode(JWT)).thenReturn(jwtMock);
 
 		filter.doFilter(request("/things", JWT), response, chain);
 
@@ -265,7 +268,7 @@ class JwtVerificationFilterTest {
 	void verifierExclusionsSkipOnlyThatVerifier() throws Exception {
 		final var other = new JwtVerifier("other", OTHER_HEADER_NAME, patterns("/gateway-only/**"), otherJwtDecoderMock, NO_KEY_SOURCE);
 		filter = new JwtVerificationFilter(List.of(), request -> true, List.of(), List.of(verifier(), other), jsonMapper);
-		when(jwtDecoderMock.decode(JWT)).thenReturn(mock(Jwt.class));
+		when(jwtDecoderMock.decode(JWT)).thenReturn(jwtMock);
 
 		filter.doFilter(request("/gateway-only/x", JWT), response, chain);
 

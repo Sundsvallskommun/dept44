@@ -77,7 +77,7 @@ class BuiltInEndpointsTest {
 	}
 
 	@Test
-	void noHandlerMeansNotFound() throws Exception {
+	void noHandlerMeansNotFound() {
 		givenMappings();
 
 		assertThat(builtInEndpoints().serve(request)).isTrue();

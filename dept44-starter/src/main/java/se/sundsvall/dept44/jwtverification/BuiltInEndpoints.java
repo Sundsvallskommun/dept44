@@ -7,11 +7,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.util.function.SingletonSupplier;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerExecutionChain;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import org.springframework.web.util.ServletRequestPathUtils;
 
 /**
@@ -20,9 +18,10 @@ import org.springframework.web.util.ServletRequestPathUtils;
  * <p>
  * A path matching a built-in exclusion is not enough, because the handler is chosen separately: with a controller
  * mapped to {@code /{municipalityId}/{id}/things}, {@code /actuator/1/things} matches {@code /actuator/**}
- * but is served by the controller, with {@code municipalityId} "actuator". So the handler is resolved the way the
- * DispatcherServlet will resolve it, and only a handler from Spring Boot, Spring MVC itself, springdoc or dept44's
- * index page counts.
+ * but is served by the controller, with {@code municipalityId} "actuator". So the handler is resolved with the
+ * DispatcherServlet's own handler mappings, in its order, and only a handler from Spring Boot, Spring MVC itself,
+ * springdoc or dept44's index page counts. Without the mappings the request is not counted as built-in, so it is
+ * verified.
  */
 class BuiltInEndpoints {
 
@@ -37,29 +36,28 @@ class BuiltInEndpoints {
 	 */
 	static final String INDEX_PAGE_CONTROLLER = "se.sundsvall.dept44.configuration.WebConfiguration$IndexPageController";
 
-	private final SingletonSupplier<HandlerMappingIntrospector> introspector;
+	private final DispatcherServlet dispatcherServlet;
 
-	BuiltInEndpoints(final ObjectProvider<HandlerMappingIntrospector> introspector) {
-		// Looked up on first use and kept: the filter is created before the DispatcherServlet's handler mappings
-		this.introspector = SingletonSupplier.ofNullable(introspector::getIfAvailable);
+	BuiltInEndpoints(final DispatcherServlet dispatcherServlet) {
+		this.dispatcherServlet = dispatcherServlet;
 	}
 
 	/**
 	 * @param  request the request, whose path matches a built-in exclusion
 	 * @return         {@code true} if a built-in endpoint serves it, or no handler does (the response is an error such as
-	 *                 404 or 406)
+	 *                 404 or 406); {@code false} if another handler serves it, or the handler mappings are not known
 	 */
 	boolean serve(final HttpServletRequest request) {
-		final var mvc = introspector.get();
-		if (mvc == null) {
-			// Without Spring MVC there is no controller that could answer instead
-			return true;
+		// Set when the DispatcherServlet is initialized, which the container does before it runs the filters
+		final var mappings = dispatcherServlet.getHandlerMappings();
+		if (mappings == null || mappings.isEmpty()) {
+			return false;
 		}
 
 		// The handler mappings record what they matched in request attributes; keep that away from the real request
 		final var shielded = new AttributeShieldingRequest(request);
 		ServletRequestPathUtils.parseAndCache(shielded);
-		for (final var mapping : mvc.getHandlerMappings()) {
+		for (final var mapping : mappings) {
 			final HandlerExecutionChain chain;
 			try {
 				chain = mapping.getHandler(shielded);

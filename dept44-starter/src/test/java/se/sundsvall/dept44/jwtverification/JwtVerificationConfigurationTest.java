@@ -8,6 +8,7 @@ import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.zalando.logbook.HeaderFilter;
@@ -25,7 +26,7 @@ class JwtVerificationConfigurationTest {
 	private static final String JWK_SET_URI = PREFIX + "verifiers.gateway.jwk-set-uris[0]=https://gateway.example/jwks";
 
 	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
-		.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, JwtVerificationConfiguration.class));
+		.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, DispatcherServletAutoConfiguration.class, JwtVerificationConfiguration.class));
 
 	@Test
 	void notRegisteredByDefault() {
@@ -164,6 +165,17 @@ class JwtVerificationConfigurationTest {
 		contextRunner
 			.withPropertyValues(ENABLED, HEADER_NAME, JWK_SET_URI, PREFIX + "verifiers.gateway.issuer=${JWT_VERIFICATION_TEST_UNSET_ISSUER:}")
 			.run(context -> assertThat(context).hasFailed());
+	}
+
+	@Test
+	void withoutDispatcherServletStopsStartup() {
+		new WebApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class, JwtVerificationConfiguration.class))
+			.withPropertyValues(ENABLED, HEADER_NAME, JWK_SET_URI)
+			.run(context -> {
+				assertThat(context).hasFailed();
+				assertThat(context.getStartupFailure()).hasStackTraceContaining("DispatcherServlet");
+			});
 	}
 
 	@Test

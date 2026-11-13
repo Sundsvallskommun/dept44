@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -14,7 +13,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 import org.zalando.logbook.HeaderFilter;
@@ -54,7 +53,7 @@ public class JwtVerificationConfiguration {
 
 	@Bean(FILTER_NAME)
 	FilterRegistrationBean<JwtVerificationFilter> jwtVerificationFilter(final JwtVerificationProperties properties, final Environment environment, final JsonMapper jsonMapper,
-		final ObjectProvider<HandlerMappingIntrospector> handlerMappingIntrospector) {
+		final DispatcherServlet dispatcherServlet) {
 		requireDistinctHeaders(properties);
 
 		final var builtIn = JwtVerificationExclusions.builtIn(environment);
@@ -72,8 +71,8 @@ public class JwtVerificationConfiguration {
 			})
 			.toList();
 
-		// The introspector is looked up on first use: the filter is created before the DispatcherServlet's handler mappings
-		final var builtInEndpoints = new BuiltInEndpoints(handlerMappingIntrospector);
+		// Required: without the DispatcherServlet's handler mappings a built-in exclusion could not be told from a controller
+		final var builtInEndpoints = new BuiltInEndpoints(dispatcherServlet);
 		final var filter = new JwtVerificationFilter(parse(builtIn), builtInEndpoints::serve, parse(excluded), verifiers, jsonMapper);
 		final var registration = new FilterRegistrationBean<>(filter);
 		registration.setName(FILTER_NAME);

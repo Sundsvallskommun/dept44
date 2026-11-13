@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,10 +25,7 @@ import static org.mockito.Mockito.when;
 class BuiltInEndpointsTest {
 
 	@Mock
-	private ObjectProvider<HandlerMappingIntrospector> introspectorProviderMock;
-
-	@Mock
-	private HandlerMappingIntrospector introspectorMock;
+	private DispatcherServlet dispatcherServletMock;
 
 	@Mock
 	private HandlerMapping firstMappingMock;
@@ -45,8 +41,15 @@ class BuiltInEndpointsTest {
 	}
 
 	@Test
-	void withoutSpringMvcEveryMatchCounts() {
-		assertThat(builtInEndpoints().serve(request)).isTrue();
+	void withoutHandlerMappingsTheRequestIsVerified() {
+		assertThat(builtInEndpoints().serve(request)).isFalse();
+	}
+
+	@Test
+	void withEmptyHandlerMappingsTheRequestIsVerified() {
+		when(dispatcherServletMock.getHandlerMappings()).thenReturn(List.of());
+
+		assertThat(builtInEndpoints().serve(request)).isFalse();
 	}
 
 	@Test
@@ -109,12 +112,11 @@ class BuiltInEndpointsTest {
 	}
 
 	private void givenMappings() {
-		when(introspectorProviderMock.getIfAvailable()).thenReturn(introspectorMock);
-		when(introspectorMock.getHandlerMappings()).thenReturn(List.of(firstMappingMock, secondMappingMock));
+		when(dispatcherServletMock.getHandlerMappings()).thenReturn(List.of(firstMappingMock, secondMappingMock));
 	}
 
 	private BuiltInEndpoints builtInEndpoints() {
-		return new BuiltInEndpoints(introspectorProviderMock);
+		return new BuiltInEndpoints(dispatcherServletMock);
 	}
 
 	private static HandlerMethod handlerMethod(final Object controller) throws NoSuchMethodException {

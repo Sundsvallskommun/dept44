@@ -14,9 +14,9 @@ import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ContainerUtils;
 
-import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
  * Logs a line for each message a listener has handled: its message id, queue, routing key and delivery count, what
@@ -90,7 +90,8 @@ class ListenerLogAdvice implements MethodInterceptor {
 	}
 
 	/**
-	 * The container passes the channel and the message, or a list of them for a batch listener
+	 * The container passes the channel and the message, or a list of them for a batch listener. The message id and the
+	 * routing key come from the producer, and are sanitized so that a line break in them cannot forge a line.
 	 */
 	private static void log(final @Nullable Object[] arguments, final Outcome outcome, final long millis) {
 		if (!LOG.isInfoEnabled()) {
@@ -103,14 +104,14 @@ class ListenerLogAdvice implements MethodInterceptor {
 
 		if (data instanceof final Message message) {
 			final var properties = message.getMessageProperties();
-			// Absent on the first delivery. A Long from the broker
-			final var deliveryCount = properties.getHeader(DELIVERY_COUNT);
-			LOG.info("Message {} from queue '{}' with routing key '{}' (delivery count {}, {} ms) {}", properties.getMessageId(), properties.getConsumerQueue(),
-				properties.getReceivedRoutingKey(), requireNonNullElse(deliveryCount, 0), millis, outcome.description);
+			// Absent on the first delivery. A Long from the broker, while one a producer set may be anything, a string too
+			final var deliveryCount = properties.getHeader(DELIVERY_COUNT) instanceof final Number count ? count : 0;
+			LOG.info("Message {} from queue '{}' with routing key '{}' (delivery count {}, {} ms) {}", sanitizeForLogging(properties.getMessageId()), properties.getConsumerQueue(),
+				sanitizeForLogging(properties.getReceivedRoutingKey()), deliveryCount, millis, outcome.description);
 		} else if (data instanceof final List<?> batch && !batch.isEmpty() && batch.getFirst() instanceof final Message first) {
 			final var messageIds = batch.stream()
 				.map(Message.class::cast)
-				.map(message -> String.valueOf(message.getMessageProperties().getMessageId()))
+				.map(message -> String.valueOf(sanitizeForLogging(message.getMessageProperties().getMessageId())))
 				.collect(joining(", "));
 			LOG.info("Batch of messages {} from queue '{}' ({} ms) {}", messageIds, first.getMessageProperties().getConsumerQueue(), millis, outcome.description);
 		}

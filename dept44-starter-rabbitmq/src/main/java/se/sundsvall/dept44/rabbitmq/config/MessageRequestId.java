@@ -40,10 +40,12 @@ final class MessageRequestId {
 	/**
 	 * Keeps the current request id and identifier, those of a delivery that failed. A message without a request id, and
 	 * a batch, were handled under a new one that no message carries. The container calls its error handler once the
-	 * advice has cleared them, see {@link #setForErrorHandler(Message)}.
+	 * advice has cleared them, see {@link #setForErrorHandler(Throwable, Message)}.
+	 *
+	 * @param failure what the advice chain threw, which the container hands its error handler as it is
 	 */
-	static void keepFailed() {
-		FAILED.set(new HandledUnder(RequestId.get(), Identifier.get()));
+	static void keepFailed(final Throwable failure) {
+		FAILED.set(new HandledUnder(failure, RequestId.get(), Identifier.get()));
 	}
 
 	/**
@@ -54,12 +56,14 @@ final class MessageRequestId {
 	}
 
 	/**
-	 * As {@link #set(Message)}, but with what the delivery that just failed was handled under, when it was kept.
+	 * As {@link #set(Message)}, but with what the delivery that just failed was handled under, when it was kept for this
+	 * very failure. A delivery kept but never handed to an error handler, as when its container had stopped, is not used
+	 * for a failure that did not pass the advice, such as one in an after-receive post-processor.
 	 */
-	static void setForErrorHandler(final @Nullable Message failedMessage) {
+	static void setForErrorHandler(final Throwable failure, final @Nullable Message failedMessage) {
 		final var handledUnder = FAILED.get();
 		FAILED.remove();
-		if (nonNull(handledUnder)) {
+		if (nonNull(handledUnder) && handledUnder.failure() == failure) {
 			RequestId.init(handledUnder.requestId());
 			Identifier.set(handledUnder.identifier());
 		} else {
@@ -77,7 +81,7 @@ final class MessageRequestId {
 		Identifier.remove();
 	}
 
-	private record HandledUnder(String requestId, @Nullable Identifier identifier) {
+	private record HandledUnder(Throwable failure, String requestId, @Nullable Identifier identifier) {
 	}
 
 	private static Optional<String> header(final @Nullable Message message, final String name) {

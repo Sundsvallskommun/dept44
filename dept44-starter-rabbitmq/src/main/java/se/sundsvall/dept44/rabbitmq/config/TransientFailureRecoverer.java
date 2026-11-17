@@ -17,6 +17,7 @@ import org.springframework.core.NestedExceptionUtils;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
 
 import static java.util.stream.Collectors.joining;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
  * Decides what becomes of a message the listener could not handle, once its retries are over. An outage, as the
@@ -39,7 +40,9 @@ import static java.util.stream.Collectors.joining;
  * <p>
  * Spring AMQP's own recoverers log the whole message, body included. This one logs its id, its queue and the root cause
  * of the failure. The root cause's message may quote a value from the body, as Jackson's does for a value it cannot
- * read, and so does the stack trace the container's error handler logs.
+ * read, and so does the stack trace the container's error handler logs. The message id comes from the producer, and the
+ * root cause's message often spans lines, so both are sanitized for one line, without the characters outside printable
+ * ASCII.
  */
 class TransientFailureRecoverer implements MessageBatchRecoverer {
 
@@ -65,9 +68,9 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 
 	private ListenerExecutionFailedException outcome(final List<Message> messages, final Throwable cause, final boolean batch) {
 		final var failed = messages.toArray(Message[]::new);
-		final var messageIds = messages.stream().map(message -> String.valueOf(message.getMessageProperties().getMessageId())).collect(joining(", "));
+		final var messageIds = messages.stream().map(message -> String.valueOf(sanitizeForLogging(message.getMessageProperties().getMessageId()))).collect(joining(", "));
 		final var queue = messages.getFirst().getMessageProperties().getConsumerQueue();
-		final var rootCause = NestedExceptionUtils.getMostSpecificCause(cause).toString();
+		final var rootCause = sanitizeForLogging(NestedExceptionUtils.getMostSpecificCause(cause).toString());
 
 		if (decidedByTheListener(cause)) {
 			if (batch && asksToPutBack(cause) && !wasInterrupted(cause)) {

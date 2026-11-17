@@ -1,8 +1,8 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
-import java.io.EOFException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
+import java.net.ProtocolException;
 import java.util.List;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.Test;
@@ -30,8 +30,8 @@ class TransientFailureRecovererTest {
 
 	@Test
 	void aFailureTheServiceCountsAsAnOutageGoesBackInTheQueue() {
-		final var serviceRecoverer = new TransientFailureRecoverer(TransientFailures.defaults().withOutage(EOFException.class::isInstance));
-		final var failure = listenerFailed(new UncheckedIOException(new EOFException("unexpected end of stream")));
+		final var serviceRecoverer = new TransientFailureRecoverer(TransientFailures.defaults().withOutage(ProtocolException.class::isInstance));
+		final var failure = listenerFailed(new UncheckedIOException(new ProtocolException("unexpected end of stream")));
 
 		assertThatExceptionOfType(ListenerExecutionFailedException.class)
 			.isThrownBy(() -> serviceRecoverer.recover(message, failure))
@@ -211,6 +211,20 @@ class TransientFailureRecovererTest {
 		} finally {
 			Thread.interrupted();
 		}
+	}
+
+	@Test
+	void theWarningIsOneLine(final CapturedOutput output) {
+		message.getMessageProperties().setMessageId("message-id\nForged line");
+		message.getMessageProperties().setConsumerQueue("queue");
+		final var failure = listenerFailed(new IllegalStateException("Cannot read the value\n at [Source: ärende]"));
+
+		assertThatExceptionOfType(ListenerExecutionFailedException.class).isThrownBy(() -> recoverer.recover(message, failure));
+
+		assertThat(output).contains("Rejecting message message-id Forged line from queue queue, for the queue to dead-letter: "
+			+ "java.lang.IllegalStateException: Cannot read the value  at [Source: rende]")
+			.doesNotContain("\nForged line")
+			.doesNotContain("\n at [Source");
 	}
 
 	private void isForTheMessage(final ListenerExecutionFailedException exception) {

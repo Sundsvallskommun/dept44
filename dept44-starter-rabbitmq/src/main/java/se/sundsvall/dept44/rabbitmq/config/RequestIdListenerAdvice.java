@@ -29,7 +29,7 @@ class RequestIdListenerAdvice implements MethodInterceptor {
 			return invocation.proceed();
 		} catch (final RuntimeException e) {
 			// For the container's error handler, which logs under what the delivery was handled under as well
-			MessageRequestId.keepFailed();
+			MessageRequestId.keepFailed(e);
 			throw e;
 		} finally {
 			MessageRequestId.clear();

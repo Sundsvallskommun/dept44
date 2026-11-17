@@ -50,9 +50,9 @@ class RequestIdErrorHandlerTest {
 		final var seen = new AtomicReference<String>();
 		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
 
-		// As the container does: the advice chain throws, and then the container calls its error handler
-		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(withoutRequestId, handledUnder)));
-		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), withoutRequestId));
+		// As the container does: the advice chain throws, and then the container hands what it threw to its error handler
+		final var failure = assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(withoutRequestId, handledUnder))).actual();
+		errorHandler.handleError(failure);
 
 		assertThat(seen.get()).isNotBlank().isEqualTo(handledUnder.get());
 		assertClearedAfterwards();
@@ -68,8 +68,8 @@ class RequestIdErrorHandlerTest {
 			seenIdentifier.set(Identifier.get());
 		});
 
-		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(message, new AtomicReference<>())));
-		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), message));
+		final var failure = assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(message, new AtomicReference<>()))).actual();
+		errorHandler.handleError(failure);
 
 		assertThat(seen.get()).isEqualTo("request-id");
 		assertThat(seenIdentifier.get()).isEqualTo(Identifier.parse("joe01doe; type=adAccount"));
@@ -83,9 +83,9 @@ class RequestIdErrorHandlerTest {
 		final var seen = new AtomicReference<String>();
 		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
 
-		// As the container does: the advice chain throws, and then the container calls its error handler
-		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(batch, handledUnder)));
-		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), batch.toArray(Message[]::new)));
+		// As the container does: the advice chain throws, and then the container hands what it threw to its error handler
+		final var failure = assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(batch, handledUnder))).actual();
+		errorHandler.handleError(failure);
 
 		assertThat(seen.get()).isNotBlank().isEqualTo(handledUnder.get());
 		assertClearedAfterwards();
@@ -100,8 +100,22 @@ class RequestIdErrorHandlerTest {
 		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> advice.invoke(failing(List.of(message("batch-request-id")), new AtomicReference<>())));
 
 		final var next = message("request-id");
-		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> advice.invoke(failing(next, new AtomicReference<>())));
-		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), next));
+		final var failure = assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> advice.invoke(failing(next, new AtomicReference<>()))).actual();
+		errorHandler.handleError(failure);
+
+		assertThat(seen.get()).isEqualTo("request-id");
+		assertClearedAfterwards();
+	}
+
+	@Test
+	void aDeliveryKeptForAnErrorHandlerThatNeverRanIsNotUsedForAnotherFailure() throws Throwable {
+		final var seen = new AtomicReference<String>();
+		final var errorHandler = new RequestIdErrorHandler(_ -> seen.set(RequestId.get()));
+		// A delivery fails after its container has stopped, and the container calls no error handler
+		assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> new RequestIdListenerAdvice().invoke(failing(message("stopped-request-id"), new AtomicReference<>())));
+
+		// A failure on the same thread that never passed the advice, as in an after-receive post-processor
+		errorHandler.handleError(new ListenerExecutionFailedException("failed", new IllegalStateException(), message("request-id")));
 
 		assertThat(seen.get()).isEqualTo("request-id");
 		assertClearedAfterwards();

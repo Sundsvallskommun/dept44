@@ -3,11 +3,14 @@ package se.sundsvall.dept44.rabbitmq;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.io.EOFException;
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
+import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.sql.SQLNonTransientConnectionException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientConnectionException;
 import java.util.concurrent.TimeoutException;
@@ -62,6 +65,8 @@ class TransientFailuresTest {
 	static Stream<Throwable> serverErrors() {
 		return Stream.of(
 			new ServerProblem(HttpStatus.BAD_GATEWAY, "the called service failed"),
+			// As OkHttp reports a called service that closes the connection before it answers
+			new UncheckedIOException(new IOException("unexpected end of stream on http://called-service/...", new EOFException("\\n not found: limit=0 content=..."))),
 			new RabbitPublishException(RabbitPublishException.Reason.NACKED, "message-id", "channel closed"));
 	}
 
@@ -120,11 +125,20 @@ class TransientFailuresTest {
 	}
 
 	@Test
-	void aServiceAddsAnOutage() {
-		// As the end of stream OkHttp reports when the called service closes the connection mid-request
-		final var failure = listenerFailed(new UncheckedIOException(new EOFException("unexpected end of stream")));
+	void anOutageWinsOverAServerError() {
+		// As a database driver reports a connection that closed mid-query, which Spring translates to an outage
+		final var failure = listenerFailed(new DataAccessResourceFailureException("Connection lost", new SQLNonTransientConnectionException("unexpected end of stream", new EOFException())));
 
-		final var transientFailures = DEFAULTS.withOutage(EOFException.class::isInstance);
+		assertThat(DEFAULTS.isTransient(failure)).isTrue();
+		assertThat(DEFAULTS.isOutage(failure)).isTrue();
+	}
+
+	@Test
+	void aServiceAddsAnOutage() {
+		// As OkHttp reports a response body that is cut off mid-read, which the defaults do not know
+		final var failure = listenerFailed(new UncheckedIOException(new ProtocolException("unexpected end of stream")));
+
+		final var transientFailures = DEFAULTS.withOutage(ProtocolException.class::isInstance);
 
 		assertThat(transientFailures.isTransient(failure)).isTrue();
 		assertThat(transientFailures.isOutage(failure)).isTrue();

@@ -29,11 +29,14 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
+import org.springframework.boot.amqp.autoconfigure.health.RabbitHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration;
 import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.boot.availability.AvailabilityChangeEvent;
 import org.springframework.boot.availability.LivenessState;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.health.contributor.Status;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -53,6 +56,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.BLOCKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
@@ -79,6 +83,8 @@ class RabbitMqBrokerTest {
 	private static final String REQUEST_ROUTING_KEY = "requests";
 	private static final String REPLY_QUEUE = "dept44.test.replies";
 	private static final String HEALTH_QUEUE = "dept44.test.health";
+	private static final String DIRECT_QUEUE = "dept44.test.direct";
+	private static final String DIRECT_ROUTING_KEY = "direct";
 
 	@BeforeAll
 	static void startBroker() {
@@ -108,6 +114,9 @@ class RabbitMqBrokerTest {
 		admin.declareBinding(BindingBuilder.bind(requestQueue).to(exchange).with(REQUEST_ROUTING_KEY));
 		admin.declareQueue(QueueBuilder.durable(REPLY_QUEUE).quorum().build());
 		admin.declareQueue(QueueBuilder.durable(HEALTH_QUEUE).quorum().build());
+		final var directQueue = QueueBuilder.durable(DIRECT_QUEUE).quorum().build();
+		admin.declareQueue(directQueue);
+		admin.declareBinding(BindingBuilder.bind(directQueue).to(exchange).with(DIRECT_ROUTING_KEY));
 		connectionFactory.destroy();
 	}
 
@@ -235,6 +244,48 @@ class RabbitMqBrokerTest {
 			}
 
 			await().atMost(Duration.ofSeconds(15)).until(() -> reasonOfAlarmPublish(publisher) == null);
+		});
+	}
+
+	/**
+	 * The broker blocks only the connection that publishes. The channel of the publish that got it blocked waits for its
+	 * confirm, so the publisher connection has no idle channel left, and a new one would wait in the socket.
+	 */
+	@Test
+	void whileTheBrokerBlocksPublishingTheRabbitHealthCheckAnswers() {
+		contextRunner().withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.withPropertyValues("dept44.rabbitmq.publish-confirm-timeout=1s")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				final var publisher = context.getBean(Dept44RabbitPublisher.class);
+				final var health = context.getBean("rabbitHealthContributor", HealthIndicator.class);
+				publisher.publish(OutgoingMessage.to(EXCHANGE, ALARM_ROUTING_KEY).withPayload(new Payload("before the alarm")));
+				assertThat(health.health()).extracting(Health::getStatus).isEqualTo(Status.UP);
+
+				memoryAlarm(true);
+				try {
+					await().atMost(Duration.ofSeconds(15)).until(() -> reasonOfAlarmPublish(publisher) == BLOCKED);
+					assertTimeoutPreemptively(Duration.ofSeconds(10), () -> assertThat(health.health()).extracting(Health::getStatus).isEqualTo(Status.UP));
+				} finally {
+					memoryAlarm(false);
+				}
+
+				await().atMost(Duration.ofSeconds(15)).until(() -> reasonOfAlarmPublish(publisher) == null);
+			});
+	}
+
+	/**
+	 * The direct container runs the listener on the thread the RabbitMQ client hands the delivery to, and its retry waits
+	 * there. On the client's own pool of one thread per CPU, a message being retried would hold up every other direct
+	 * consumer on the connection.
+	 */
+	@Test
+	void aDirectListenerRunsOnAVirtualThread() {
+		contextRunner().withUserConfiguration(DirectListener.class).withPropertyValues("spring.rabbitmq.listener.type=direct").run(context -> {
+			assertThat(context).hasNotFailed();
+			context.getBean(Dept44RabbitPublisher.class).publish(OutgoingMessage.to(EXCHANGE, DIRECT_ROUTING_KEY).withPayload(new Payload("direct")));
+
+			assertThat(DirectListener.ON_A_VIRTUAL_THREAD.poll(10, SECONDS)).isTrue();
 		});
 	}
 
@@ -395,6 +446,16 @@ class RabbitMqBrokerTest {
 		@RabbitListener(id = ID, queues = HEALTH_QUEUE)
 		void receive(final Payload payload) {
 			// Never gets a message
+		}
+	}
+
+	static class DirectListener {
+
+		static final BlockingQueue<Boolean> ON_A_VIRTUAL_THREAD = new LinkedBlockingQueue<>();
+
+		@RabbitListener(queues = DIRECT_QUEUE)
+		void receive(final Payload payload) {
+			ON_A_VIRTUAL_THREAD.add(Thread.currentThread().isVirtual());
 		}
 	}
 

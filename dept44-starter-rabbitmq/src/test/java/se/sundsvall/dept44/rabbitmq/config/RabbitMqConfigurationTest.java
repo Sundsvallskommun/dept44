@@ -1,14 +1,16 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import com.rabbitmq.client.Channel;
-import java.io.EOFException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
+import java.net.ProtocolException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import org.jspecify.annotations.NullUnmarked;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,10 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor;
+import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ThreadChannelConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
@@ -41,7 +46,11 @@ import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.RabbitListenerRetrySettingsCustomizer;
 import org.springframework.boot.amqp.autoconfigure.RabbitTemplateConfigurer;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
+import org.springframework.boot.amqp.autoconfigure.health.RabbitHealthContributorAutoConfiguration;
+import org.springframework.boot.amqp.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.health.contributor.CompositeHealthContributor;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.retry.RetryPolicySettings;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -50,6 +59,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ErrorHandler;
 import se.sundsvall.dept44.rabbitmq.Dept44RabbitPublisher;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
@@ -177,9 +187,9 @@ class RabbitMqConfigurationTest {
 
 	@Test
 	void aServicesOwnTransientFailuresDecideBothTheRetryAndWhatBecomesOfTheMessage() {
-		final var transientFailures = TransientFailures.defaults().withOutage(EOFException.class::isInstance);
+		final var transientFailures = TransientFailures.defaults().withOutage(ProtocolException.class::isInstance);
 		final var message = new Message(new byte[0]);
-		final var failure = new ListenerExecutionFailedException("Listener method failed", new UncheckedIOException(new EOFException("unexpected end of stream")), message);
+		final var failure = new ListenerExecutionFailedException("Listener method failed", new UncheckedIOException(new ProtocolException("unexpected end of stream")), message);
 
 		contextRunner.withBean(TransientFailures.class, () -> transientFailures).run(context -> {
 			final var settings = new RetryPolicySettings();
@@ -234,6 +244,79 @@ class RabbitMqConfigurationTest {
 		contextRunner.withPropertyValues(property).run(context -> assertThat(context)
 			.doesNotHaveBean(RabbitListenersHealthIndicator.class)
 			.hasSingleBean(StoppedListenerLiveness.class));
+	}
+
+	@Test
+	void theRabbitHealthCheckRunsOnTheListenersConnection() {
+		contextRunner.withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.run(context -> assertThat(context).getBean("rabbitHealthContributor")
+				.isInstanceOfSatisfying(RabbitHealthIndicator.class, indicator -> assertOnTheListenersConnection(indicator, context.getBean(RabbitTemplate.class))));
+	}
+
+	@Test
+	void eachTemplateGetsARabbitHealthCheckOnTheListenersConnection() {
+		contextRunner.withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.withUserConfiguration(TwoTemplates.class)
+			.run(context -> {
+				final var contributor = context.getBean("rabbitHealthContributor", CompositeHealthContributor.class);
+				assertThat(contributor.getContributor("fooTemplate"))
+					.isInstanceOfSatisfying(RabbitHealthIndicator.class, indicator -> assertOnTheListenersConnection(indicator, context.getBean("fooTemplate", RabbitTemplate.class)));
+				assertThat(contributor.getContributor("barTemplate"))
+					.isInstanceOfSatisfying(RabbitHealthIndicator.class, indicator -> assertOnTheListenersConnection(indicator, context.getBean("barTemplate", RabbitTemplate.class)));
+			});
+	}
+
+	@Test
+	void theRabbitHealthCheckRunsOnTheListenersConnectionAlsoWhereTheFactoryWouldPublishOnItsOwn() {
+		// A ThreadChannelConnectionFactory sets every template to publish on a connection of its own. It has no correlated
+		// confirms, so the service would declare its own publisher
+		contextRunner.withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.withBean(ThreadChannelConnectionFactory.class, () -> new ThreadChannelConnectionFactory(new com.rabbitmq.client.ConnectionFactory()))
+			.withBean(Dept44RabbitPublisher.class, () -> mock(Dept44RabbitPublisher.class))
+			.run(context -> assertThat(context).getBean("rabbitHealthContributor")
+				.isInstanceOfSatisfying(RabbitHealthIndicator.class, indicator -> assertOnTheListenersConnection(indicator, context.getBean(RabbitTemplate.class))));
+	}
+
+	@Test
+	void theRabbitHealthCheckIsTurnedOffAsSpringBoots() {
+		contextRunner.withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.withPropertyValues("management.health.rabbit.enabled=false")
+			.run(context -> assertThat(context).doesNotHaveBean("rabbitHealthContributor"));
+	}
+
+	@Test
+	void aServicesOwnRabbitHealthIndicatorWins() {
+		final var indicator = mock(HealthIndicator.class);
+
+		contextRunner.withConfiguration(AutoConfigurations.of(RabbitHealthContributorAutoConfiguration.class))
+			.withBean("rabbitHealthIndicator", HealthIndicator.class, () -> indicator)
+			.run(context -> assertThat(context).doesNotHaveBean("rabbitHealthContributor").getBean("rabbitHealthIndicator").isSameAs(indicator));
+	}
+
+	private static void assertOnTheListenersConnection(final RabbitHealthIndicator indicator, final RabbitTemplate templateBean) {
+		assertThat(indicator).extracting("rabbitTemplate").isInstanceOfSatisfying(RabbitTemplate.class, template -> {
+			assertThat(template).isNotSameAs(templateBean);
+			assertThat(template.getConnectionFactory()).isSameAs(templateBean.getConnectionFactory());
+			assertThat(template.isUsePublisherConnection()).isFalse();
+		});
+	}
+
+	@Test
+	void everyConnectionFactoryRunsTheDeliveriesOnVirtualThreadsNamedAfterIt() {
+		contextRunner.withUserConfiguration(OwnConnectionFactory.class).run(context -> {
+			final var connectionFactory = context.getBean(CachingConnectionFactory.class);
+
+			assertRunsOnVirtualThreadsNamed(connectionFactory, "ownConnectionFactory-");
+			assertRunsOnVirtualThreadsNamed((AbstractConnectionFactory) connectionFactory.getPublisherConnectionFactory(), "ownConnectionFactory-");
+		});
+	}
+
+	private static void assertRunsOnVirtualThreadsNamed(final AbstractConnectionFactory connectionFactory, final String prefix) throws Exception {
+		final Callable<Thread> currentThread = Thread::currentThread;
+		final var thread = ((ExecutorService) ReflectionTestUtils.getField(connectionFactory, "executorService")).submit(currentThread).get();
+
+		assertThat(thread.isVirtual()).isTrue();
+		assertThat(thread.getName()).startsWith(prefix);
 	}
 
 	@Test
@@ -471,6 +554,20 @@ class RabbitMqConfigurationTest {
 			final var rabbitTemplate = new RabbitTemplate();
 			configurer.configure(rabbitTemplate, connectionFactory);
 			return rabbitTemplate;
+		}
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class OwnConnectionFactory {
+
+		@Bean
+		CachingConnectionFactory ownConnectionFactory() {
+			final var connectionFactory = new CachingConnectionFactory("localhost");
+			connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
+			connectionFactory.setPublisherReturns(true);
+			// Replaced by the starter's
+			connectionFactory.setExecutor(mock(ExecutorService.class));
+			return connectionFactory;
 		}
 	}
 

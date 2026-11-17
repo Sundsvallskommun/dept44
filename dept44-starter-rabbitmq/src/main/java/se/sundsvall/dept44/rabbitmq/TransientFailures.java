@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.rabbitmq;
 
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import java.io.EOFException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -38,8 +39,9 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT
  * <li>A server error, a 5xx from a called service. It may pass, or it may be this message's data that the service
  * fails on every time: dept44's Feign error decoder answers 502 for all of them, so they cannot be told apart. A
  * listener retries it, and has the message dead-lettered once the retries are over, so that a message that always
- * fails holds up no others for longer than that. A publish the broker nacks is handled the same way: a channel that
- * closed passes, an exchange that is missing does not.</li>
+ * fails holds up no others for longer than that. A called service that closes the connection before it answers, which
+ * OkHttp reports as an {@link EOFException}, is handled the same way, since it may be this message that crashed it. So
+ * is a publish the broker nacks: a channel that closed passes, an exchange that is missing does not.</li>
  * </ul>
  * Any other failure is dead-lettered at once. A listener that throws {@link AmqpRejectAndDontRequeueException},
  * {@link ImmediateRequeueAmqpException} or {@link ImmediateAcknowledgeAmqpException} has said what becomes of the
@@ -84,7 +86,9 @@ public final class TransientFailures {
 			// A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked
 			// was not sent, and waits out the alarm. One that was returned does not pass by trying again.
 			Stream.of(publish(TIMEOUT), publish(INTERRUPTED), publish(BLOCKED))).toList(),
-		List.of(ServerProblem.class::isInstance, publish(NACKED)));
+		// An outage wins over a server error, so an end of stream from the database, which Spring wraps in an outage, stays
+		// one
+		List.of(ServerProblem.class::isInstance, EOFException.class::isInstance, publish(NACKED)));
 
 	private final List<Predicate<Throwable>> outageList;
 	private final List<Predicate<Throwable>> serverErrors;

@@ -24,6 +24,7 @@ import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.INTERRU
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.NACKED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.RETURNED;
 import static se.sundsvall.dept44.rabbitmq.RabbitPublishException.Reason.TIMEOUT;
+import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
 
 /**
  * Publishes a message and returns once the broker has taken responsibility for it, or throws
@@ -50,6 +51,9 @@ public class Dept44RabbitPublisher {
 	private final BlockedConnections blockedConnections = new BlockedConnections();
 
 	/**
+	 * Create one publisher for each template, and reuse it. Each one adds a listener to the template's connection factory
+	 * that stays for as long as the factory, so a publisher created for each call adds up.
+	 *
 	 * @param  rabbitTemplate           the template to publish with, on a connection of its own with correlated publisher
 	 *                                  confirms and returns, and mandatory set
 	 * @param  confirmTimeout           how long to wait for the broker to confirm a message
@@ -133,7 +137,8 @@ public class Dept44RabbitPublisher {
 		}, correlationData);
 
 		awaitConfirm(messageId, description, correlationData);
-		LOG.info("{} was confirmed by the broker", description);
+		// The message id may be one the service passes on from a message it received
+		LOG.info("{} was confirmed by the broker", sanitizeForLogging(description));
 	}
 
 	private void awaitConfirm(final String messageId, final String description, final CorrelationData correlationData) {

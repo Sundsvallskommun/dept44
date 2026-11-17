@@ -106,6 +106,16 @@ class Dept44RabbitPublisherTest {
 	}
 
 	@Test
+	void aMessageIdPassedOnCannotForgeALine(final CapturedOutput output) {
+		brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+		publisher.publish(message().withMessageId("message-id\nForged line"));
+
+		assertThat(output.getOut()).contains("Message message-id Forged line to exchange 'exchange' with routing key 'routing-key' was confirmed by the broker")
+			.doesNotContain("\nForged line");
+	}
+
+	@Test
 	void publishSetsThePropertiesAndReturnsOnAck(final CapturedOutput output) {
 		final var sent = brokerAnswers(correlationData -> correlationData.getFuture().complete(new CorrelationData.Confirm(true, null)));
 

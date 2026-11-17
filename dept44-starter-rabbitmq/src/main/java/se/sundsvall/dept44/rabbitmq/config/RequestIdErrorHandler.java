@@ -22,7 +22,7 @@ class RequestIdErrorHandler implements ErrorHandler {
 
 	@Override
 	public void handleError(final Throwable throwable) {
-		MessageRequestId.setForErrorHandler(throwable instanceof final ListenerExecutionFailedException failed ? failed.getFailedMessage() : null);
+		MessageRequestId.setForErrorHandler(throwable, throwable instanceof final ListenerExecutionFailedException failed ? failed.getFailedMessage() : null);
 		try {
 			delegate.handleError(throwable);
 		} finally {

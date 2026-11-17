@@ -1,8 +1,8 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
-import java.io.EOFException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
+import java.net.ProtocolException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -337,8 +337,8 @@ class ListenerRetryBrokerTest {
 	}
 
 	/**
-	 * As a service that calls another through a client the starter does not know, and counts the end of stream it gets
-	 * when that service goes away mid-request as an outage
+	 * As a service that counts a failure the starter does not know as an outage, such as the end of stream OkHttp reports
+	 * for a response body that is cut off
 	 */
 	static class ServiceOutageListener {
 
@@ -346,13 +346,13 @@ class ListenerRetryBrokerTest {
 
 		@Bean
 		TransientFailures transientFailures() {
-			return TransientFailures.defaults().withOutage(EOFException.class::isInstance);
+			return TransientFailures.defaults().withOutage(ProtocolException.class::isInstance);
 		}
 
 		@RabbitListener(queues = SERVICE_OUTAGE)
 		void serviceOutage(final RabbitMqBrokerTest.Payload payload) {
 			ATTEMPTS.incrementAndGet();
-			throw new UncheckedIOException(new EOFException("unexpected end of stream"));
+			throw new UncheckedIOException(new ProtocolException("unexpected end of stream"));
 		}
 	}
 }

@@ -103,6 +103,33 @@ class ListenerLogAdviceTest {
 	}
 
 	@Test
+	void aDeliveryCountThatIsNotANumberCountsAsNone(final CapturedOutput output) throws Throwable {
+		// As a producer may set the header, which Spring AMQP then hands over as a string
+		final var message = message();
+		message.getMessageProperties().setHeader("x-delivery-count", "2\nForged line");
+		when(invocation.getArguments()).thenReturn(arguments(message));
+		when(invocation.proceed()).thenReturn(null);
+
+		advice.invoke(invocation);
+
+		assertThat(output.getOut()).containsPattern(line(0, "was acknowledged")).doesNotContain("Forged line");
+	}
+
+	@Test
+	void whatTheProducerSetCannotForgeALine(final CapturedOutput output) throws Throwable {
+		final var message = message();
+		message.getMessageProperties().setMessageId("message-id\nForged line");
+		message.getMessageProperties().setReceivedRoutingKey("routing-key\r\nForged line");
+		when(invocation.getArguments()).thenReturn(arguments(message));
+		when(invocation.proceed()).thenReturn(null);
+
+		advice.invoke(invocation);
+
+		assertThat(output.getOut()).contains("Message message-id Forged line from queue 'queue' with routing key 'routing-key  Forged line'")
+			.doesNotContain("\nForged line");
+	}
+
+	@Test
 	void aBatchIsLoggedAsOne(final CapturedOutput output) throws Throwable {
 		final var first = message();
 		final var second = message();

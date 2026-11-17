@@ -3,12 +3,14 @@ package se.sundsvall.dept44.rabbitmq.config;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.AbstractRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
@@ -18,17 +20,24 @@ import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.RabbitListenerRetrySettingsCustomizer;
 import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
+import org.springframework.boot.amqp.autoconfigure.health.RabbitHealthContributorAutoConfiguration;
+import org.springframework.boot.amqp.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.health.autoconfigure.contributor.CompositeHealthContributorConfiguration;
 import org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator;
+import org.springframework.boot.health.contributor.HealthContributor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
@@ -44,7 +53,7 @@ import static java.util.Optional.ofNullable;
 /**
  * Only loaded when {@code dept44.rabbitmq.enabled} is true, see {@link RabbitMqAutoConfigurationImportFilter}.
  */
-@AutoConfiguration(after = RabbitAutoConfiguration.class)
+@AutoConfiguration(after = RabbitAutoConfiguration.class, before = RabbitHealthContributorAutoConfiguration.class)
 @EnableConfigurationProperties(RabbitMqProperties.class)
 class RabbitMqConfiguration {
 
@@ -89,6 +98,35 @@ class RabbitMqConfiguration {
 					requireNoTransactionWithConfirms(rabbitTemplate.isChannelTransacted(), rabbitTemplate.getConnectionFactory(), "RabbitTemplate '%s'".formatted(beanName));
 					rabbitTemplate.setUsePublisherConnection(!rabbitTemplate.isChannelTransacted());
 					rabbitTemplate.addBeforePublishPostProcessors(new RequestIdHeaders());
+				}
+				return bean;
+			}
+		};
+	}
+
+	/**
+	 * Gives every connection factory, Spring Boot's and the service's own, an executor that runs the deliveries of each
+	 * channel on virtual threads, so that one consumer never waits for another. An executor the service has set itself is
+	 * replaced.
+	 * <p>
+	 * Without it, the RabbitMQ client hands the deliveries of a connection's consumers to a pool of one thread per CPU,
+	 * one thread in a pod with a single CPU. The direct listener container runs the listener on that thread, and its retry
+	 * waits there between attempts. One message retried for up to 15 minutes would then hold up every other direct
+	 * consumer on the connection. The client still hands a channel's deliveries over one at a time, in order.
+	 * <p>
+	 * The threads are named after the connection factory's bean, for the thread in the log lines. The executor also runs
+	 * what the factory would run on its own executor, such as the wait for a publish's confirm. At shutdown the factory
+	 * does not wait for such work on an executor it was given, so a publish not yet confirmed then is nacked as the
+	 * connection closes, where it would otherwise get up to 30 seconds.
+	 */
+	@Bean
+	static BeanPostProcessor dept44RabbitConsumerThreads() {
+		return new BeanPostProcessor() {
+			@Override
+			public Object postProcessBeforeInitialization(final Object bean, final String beanName) {
+				if (bean instanceof final AbstractConnectionFactory connectionFactory) {
+					// Also the publisher connection factory's
+					connectionFactory.setExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name(beanName + "-", 0).factory()));
 				}
 				return bean;
 			}
@@ -231,6 +269,11 @@ class RabbitMqConfiguration {
 		return new StoppedListenerLiveness(context);
 	}
 
+	@Bean
+	UndeclaredTopologyWarning dept44UndeclaredTopologyWarning(final ConfigurableListableBeanFactory beanFactory) {
+		return new UndeclaredTopologyWarning(beanFactory);
+	}
+
 	/**
 	 * Left out where the service has more than one template and none of them is primary. It then declares its own, with
 	 * the template it wants.
@@ -240,5 +283,41 @@ class RabbitMqConfiguration {
 	@ConditionalOnSingleCandidate(RabbitTemplate.class)
 	Dept44RabbitPublisher dept44RabbitPublisher(final RabbitTemplate rabbitTemplate, final RabbitMqProperties properties) {
 		return new Dept44RabbitPublisher(rabbitTemplate, properties.publishConfirmTimeout());
+	}
+
+	/**
+	 * Spring Boot's {@code rabbit} health check, one for each {@link RabbitTemplate} bean as Spring Boot's, but on the
+	 * listeners' connection. Each template bean publishes on a connection of its own, see
+	 * {@link #dept44RabbitTemplateAdvisor()}, which the broker blocks during a memory or disk alarm. The check then waits
+	 * in the socket for a channel until the alarm clears, and so do {@code /actuator/health} and a readiness probe that
+	 * includes it. The template the check runs on is not a bean, so the advisor leaves it on the listeners' connection.
+	 * The broker blocks that one too once a listener returns a reply, which Spring AMQP publishes on the consumer's
+	 * channel.
+	 * <p>
+	 * Replaces Spring Boot's, which backs off for a bean of this name.
+	 */
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnBean(RabbitTemplate.class)
+	@ConditionalOnEnabledHealthIndicator("rabbit")
+	static class RabbitHealthConfiguration extends CompositeHealthContributorConfiguration<RabbitHealthIndicator, RabbitTemplate> {
+
+		RabbitHealthConfiguration() {
+			super(template -> new RabbitHealthIndicator(onTheListenersConnection(template.getConnectionFactory())));
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(name = {
+			"rabbitHealthIndicator", "rabbitHealthContributor"
+		})
+		HealthContributor rabbitHealthContributor(final ConfigurableListableBeanFactory beanFactory) {
+			return createContributor(beanFactory, RabbitTemplate.class);
+		}
+
+		private static RabbitTemplate onTheListenersConnection(final ConnectionFactory connectionFactory) {
+			final var template = new RabbitTemplate(connectionFactory);
+			// A ThreadChannelConnectionFactory sets it to true
+			template.setUsePublisherConnection(false);
+			return template;
+		}
 	}
 }

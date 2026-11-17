@@ -24,7 +24,7 @@ class RequestIdListenerAdvice implements MethodInterceptor {
 			.orElse(null);
 
 		MessageRequestId.forgetFailed();
-		MessageRequestId.set(message);
+		MessageRequestId.setMessageRequestId(message);
 		try {
 			return invocation.proceed();
 		} catch (final RuntimeException e) {

@@ -38,11 +38,20 @@ public class RabbitMqAutoConfigurationImportFilter implements AutoConfigurationI
 		final var enabled = Boolean.parseBoolean(requireNonNull(environment, "environment").getProperty(ENABLED_PROPERTY));
 		final var matches = new boolean[autoConfigurationClasses.length];
 		for (var index = 0; index < autoConfigurationClasses.length; index++) {
-			final var autoConfigurationClass = autoConfigurationClasses[index];
-			// An entry already left out by another filter is null
-			matches[index] = autoConfigurationClass == null || (enabled ? !DISABLED_CONFIGURATION.equals(autoConfigurationClass) : !isRabbitMq(autoConfigurationClass));
+			matches[index] = isKept(autoConfigurationClasses[index], enabled);
 		}
 		return matches;
+	}
+
+	private static boolean isKept(final @Nullable String autoConfigurationClass, final boolean enabled) {
+		// An entry already left out by another filter is null
+		if (autoConfigurationClass == null) {
+			return true;
+		}
+		if (enabled) {
+			return !DISABLED_CONFIGURATION.equals(autoConfigurationClass);
+		}
+		return !isRabbitMq(autoConfigurationClass);
 	}
 
 	private static boolean isRabbitMq(final String autoConfigurationClass) {

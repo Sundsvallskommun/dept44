@@ -7,9 +7,9 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLTransientException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.AmqpConnectException;
@@ -81,14 +81,7 @@ public final class TransientFailures {
 		// A circuit breaker that has opened, on a repository or a Feign client, does not even try the call
 		CallNotPermittedException.class);
 
-	private static final TransientFailures DEFAULTS = new TransientFailures(
-		Stream.concat(OUTAGES.stream().map(type -> type::isInstance),
-			// A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked
-			// was not sent, and waits out the alarm. One that was returned does not pass by trying again.
-			Stream.of(publish(TIMEOUT), publish(INTERRUPTED), publish(BLOCKED))).toList(),
-		// An outage wins over a server error, so an end of stream from the database, which Spring wraps in an outage, stays
-		// one
-		List.of(ServerProblem.class::isInstance, EOFException.class::isInstance, publish(NACKED)));
+	private static final TransientFailures DEFAULTS = new TransientFailures(defaultOutages(), defaultServerErrors());
 
 	private final List<Predicate<Throwable>> outageList;
 	private final List<Predicate<Throwable>> serverErrors;
@@ -96,6 +89,27 @@ public final class TransientFailures {
 	private TransientFailures(final List<Predicate<Throwable>> outageList, final List<Predicate<Throwable>> serverErrors) {
 		this.outageList = outageList;
 		this.serverErrors = serverErrors;
+	}
+
+	private static List<Predicate<Throwable>> defaultOutages() {
+		final var outages = new ArrayList<Predicate<Throwable>>();
+		for (final var type : OUTAGES) {
+			outages.add(type::isInstance);
+		}
+		// A publish that timed out or was interrupted: the broker may still have the message. One the broker blocked was not
+		// sent, and waits out the alarm. One that was returned does not pass by trying again.
+		outages.add(publish(TIMEOUT));
+		outages.add(publish(INTERRUPTED));
+		outages.add(publish(BLOCKED));
+		return List.copyOf(outages);
+	}
+
+	/**
+	 * An outage wins over a server error, so an end of stream from the database, which Spring wraps in an outage, stays
+	 * one
+	 */
+	private static List<Predicate<Throwable>> defaultServerErrors() {
+		return List.of(ServerProblem.class::isInstance, EOFException.class::isInstance, publish(NACKED));
 	}
 
 	/**
@@ -144,7 +158,8 @@ public final class TransientFailures {
 	}
 
 	private static boolean anyMatches(final List<Throwable> causes, final List<Predicate<Throwable>> kind) {
-		return causes.stream().anyMatch(cause -> kind.stream().anyMatch(predicate -> predicate.test(cause)));
+		return causes.stream().anyMatch(cause -> kind.stream()
+			.anyMatch(predicate -> predicate.test(cause)));
 	}
 
 	private static Predicate<Throwable> publish(final RabbitPublishException.Reason reason) {
@@ -152,7 +167,9 @@ public final class TransientFailures {
 	}
 
 	private static List<Predicate<Throwable>> append(final List<Predicate<Throwable>> predicates, final Predicate<Throwable> predicate) {
-		return Stream.concat(predicates.stream(), Stream.of(predicate)).toList();
+		final var appended = new ArrayList<>(predicates);
+		appended.add(predicate);
+		return List.copyOf(appended);
 	}
 
 	/**

@@ -32,9 +32,15 @@ final class MessageRequestId {
 	/**
 	 * @param message the message, or null when there is none to take them from
 	 */
-	static void set(final @Nullable Message message) {
-		set(header(message, RequestId.HEADER_NAME).filter(requestId -> VALID_REQUEST_ID.matcher(requestId).matches()).orElse(null),
-			header(message, Identifier.HEADER_NAME).orElse(null));
+	static void setMessageRequestId(final @Nullable Message message) {
+		final var xRequestId = header(message, RequestId.HEADER_NAME)
+			.filter(id -> VALID_REQUEST_ID.matcher(id).matches())
+			.orElse(null);
+
+		final var xSentBy = header(message, Identifier.HEADER_NAME)
+			.orElse(null);
+
+		setMessageRequestId(xRequestId, xSentBy);
 	}
 
 	/**
@@ -56,9 +62,9 @@ final class MessageRequestId {
 	}
 
 	/**
-	 * As {@link #set(Message)}, but with what the delivery that just failed was handled under, when it was kept for this
-	 * very failure. A delivery kept but never handed to an error handler, as when its container had stopped, is not used
-	 * for a failure that did not pass the advice, such as one in an after-receive post-processor.
+	 * As {@link #setMessageRequestId(Message)}, but with what the delivery that just failed was handled under, when it was
+	 * kept for this very failure. A delivery kept but never handed to an error handler, as when its container had
+	 * stopped, is not used for a failure that did not pass the advice, such as one in an after-receive post-processor.
 	 */
 	static void setForErrorHandler(final Throwable failure, final @Nullable Message failedMessage) {
 		final var handledUnder = FAILED.get();
@@ -67,11 +73,11 @@ final class MessageRequestId {
 			RequestId.init(handledUnder.requestId());
 			Identifier.set(handledUnder.identifier());
 		} else {
-			set(failedMessage);
+			setMessageRequestId(failedMessage);
 		}
 	}
 
-	private static void set(final @Nullable String requestId, final @Nullable String identifier) {
+	private static void setMessageRequestId(final @Nullable String requestId, final @Nullable String identifier) {
 		RequestId.init(requestId);
 		Identifier.set(Identifier.parse(identifier));
 	}

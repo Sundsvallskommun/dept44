@@ -42,13 +42,16 @@ class UndeclaredTopologyWarning implements SmartInitializingSingleton {
 		}
 		final var undeclared = findUndeclared();
 		if (!undeclared.isEmpty()) {
-			LOG.warn("Nothing declares {} on the broker, since the service has no AmqpAdmin bean, as with spring.rabbitmq.dynamic=false. Declare them through rabbitmq-topology",
-				String.join(", ", undeclared));
+			final var joined = String.join(", ", undeclared);
+			LOG.warn("Nothing declares {} on the broker, since the service has no AmqpAdmin bean, as with spring.rabbitmq.dynamic=false. " +
+				"Declare them through rabbitmq-topology", joined);
 		}
 	}
 
 	List<String> findUndeclared() {
-		return Stream.concat(created(Declarable.class), created(Declarables.class).flatMap(declarables -> declarables.getDeclarables().stream()))
+		final var declaredOneByOne = created(Declarable.class);
+		final var declaredTogether = created(Declarables.class).flatMap(declarables -> declarables.getDeclarables().stream());
+		return Stream.concat(declaredOneByOne, declaredTogether)
 			// One that a RabbitAdmin would skip as well
 			.filter(Declarable::shouldDeclare)
 			.map(UndeclaredTopologyWarning::describe)
@@ -69,9 +72,14 @@ class UndeclaredTopologyWarning implements SmartInitializingSingleton {
 		return switch (declarable) {
 			case final Queue queue -> "queue '%s'".formatted(queue.getName());
 			case final Exchange exchange -> "exchange '%s'".formatted(exchange.getName());
-			case final Binding binding -> "binding of %s '%s' to exchange '%s' with routing key '%s'"
-				.formatted(binding.getDestinationType().name().toLowerCase(Locale.ROOT), binding.getDestination(), binding.getExchange(), binding.getRoutingKey());
+			case final Binding binding -> describe(binding);
 			default -> declarable.toString();
 		};
+	}
+
+	private static String describe(final Binding binding) {
+		final var destinationType = binding.getDestinationType().name().toLowerCase(Locale.ROOT);
+		return "binding of %s '%s' to exchange '%s' with routing key '%s'"
+			.formatted(destinationType, binding.getDestination(), binding.getExchange(), binding.getRoutingKey());
 	}
 }

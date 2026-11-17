@@ -138,7 +138,8 @@ public class Dept44RabbitPublisher {
 
 		awaitConfirm(messageId, description, correlationData);
 		// The message id may be one the service passes on from a message it received
-		LOG.info("{} was confirmed by the broker", sanitizeForLogging(description));
+		final var sanitizedDescription = sanitizeForLogging(description);
+		LOG.info("{} was confirmed by the broker", sanitizedDescription);
 	}
 
 	private void awaitConfirm(final String messageId, final String description, final CorrelationData correlationData) {

@@ -1,5 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
 import org.springframework.util.ErrorHandler;
 
@@ -22,11 +24,18 @@ class RequestIdErrorHandler implements ErrorHandler {
 
 	@Override
 	public void handleError(final Throwable throwable) {
-		MessageRequestId.setForErrorHandler(throwable, throwable instanceof final ListenerExecutionFailedException failed ? failed.getFailedMessage() : null);
+		MessageRequestId.setForErrorHandler(throwable, failedMessage(throwable));
 		try {
 			delegate.handleError(throwable);
 		} finally {
 			MessageRequestId.clear();
 		}
+	}
+
+	private static @Nullable Message failedMessage(final Throwable throwable) {
+		if (throwable instanceof final ListenerExecutionFailedException failed) {
+			return failed.getFailedMessage();
+		}
+		return null;
 	}
 }

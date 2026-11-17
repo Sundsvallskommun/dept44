@@ -13,8 +13,6 @@ import org.springframework.amqp.rabbit.listener.api.ChannelAwareBatchMessageList
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.SmartLifecycle;
 
-import static java.util.Optional.ofNullable;
-
 /**
  * Carries the request id into what a listener container does after the listener's own code, in every container in the
  * registry when the context starts:
@@ -69,7 +67,10 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 	private static void addReplyHeaders(final AbstractMessageListenerContainer container) {
 		if (container.getMessageListener() instanceof final AbstractAdaptableMessageListener listener) {
 			final var postProcessors = new ArrayList<MessagePostProcessor>();
-			ofNullable(listener.getBeforeSendReplyPostProcessors()).map(Arrays::asList).ifPresent(postProcessors::addAll);
+			final var existing = listener.getBeforeSendReplyPostProcessors();
+			if (existing != null) {
+				postProcessors.addAll(Arrays.asList(existing));
+			}
 			// A restarted context starts this again
 			if (postProcessors.stream().noneMatch(RequestIdHeaders.class::isInstance)) {
 				postProcessors.add(new RequestIdHeaders());

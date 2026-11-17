@@ -12,6 +12,7 @@ import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 import static org.springframework.core.annotation.MergedAnnotations.SearchStrategy.TYPE_HIERARCHY;
 
@@ -68,7 +69,12 @@ class DisabledListenerWarning implements SmartInitializingSingleton {
 	}
 
 	private static boolean hasListener(final Class<?> type) {
-		return MergedAnnotations.from(type, TYPE_HIERARCHY).isPresent(RabbitListener.class)
-			|| !MethodIntrospector.selectMethods(type, (MethodIntrospector.MetadataLookup<Boolean>) method -> MergedAnnotations.from(method, TYPE_HIERARCHY).isPresent(RabbitListener.class) ? Boolean.TRUE : null).isEmpty();
+		final var isListenerClass = MergedAnnotations.from(type, TYPE_HIERARCHY).isPresent(RabbitListener.class);
+		if (isListenerClass) {
+			return true;
+		}
+		final ReflectionUtils.MethodFilter isListenerMethod = method -> MergedAnnotations.from(method, TYPE_HIERARCHY).isPresent(RabbitListener.class);
+		final var listenerMethods = MethodIntrospector.selectMethods(type, isListenerMethod);
+		return !listenerMethods.isEmpty();
 	}
 }

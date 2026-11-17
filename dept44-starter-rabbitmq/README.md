@@ -92,8 +92,9 @@ Not every reason is worth trying again:
   message id.
 - `BLOCKED` passes when the alarm clears. Nothing was sent.
 - `RETURNED` does not pass. No queue is bound for the routing key, and that is a topology error.
-- `NACKED` can go either way. A missing exchange, with `NOT_FOUND` in the message, does not pass. Another channel that
-  closed may, and the broker may already have the message, so publish it again with the same message id.
+- `NACKED` can go either way. A missing exchange does not pass. Another channel that closed may, and the broker may
+  already have the message, so publish it again with the same message id. The message does not reliably tell the two
+  apart: on a missing exchange it may hold the broker's `NOT_FOUND` or only `Channel closed by application`.
 
 A listener that publishes and lets the exception out gets the same split: `TIMEOUT`, `INTERRUPTED` and `BLOCKED` are
 retried as an outage, `NACKED` as a server error, and `RETURNED` is dead-lettered at once.

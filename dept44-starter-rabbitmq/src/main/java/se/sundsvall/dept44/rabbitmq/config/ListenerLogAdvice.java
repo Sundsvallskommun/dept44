@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.listener.ContainerUtils;
+import se.sundsvall.dept44.util.LogUtils;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
@@ -67,7 +69,10 @@ class ListenerLogAdvice implements MethodInterceptor {
 		if (ContainerUtils.shouldRequeue(false, failure, NO_LOG)) {
 			return Outcome.REQUEUED;
 		}
-		return ContainerUtils.isAmqpReject(failure) ? Outcome.REJECTED : Outcome.FAILED;
+		if (ContainerUtils.isAmqpReject(failure)) {
+			return Outcome.REJECTED;
+		}
+		return Outcome.FAILED;
 	}
 
 	/**
@@ -104,17 +109,32 @@ class ListenerLogAdvice implements MethodInterceptor {
 
 		if (data instanceof final Message message) {
 			final var properties = message.getMessageProperties();
-			// Absent on the first delivery. A Long from the broker, while one a producer set may be anything, a string too
-			final var deliveryCount = properties.getHeader(DELIVERY_COUNT) instanceof final Number count ? count : 0;
-			LOG.info("Message {} from queue '{}' with routing key '{}' (delivery count {}, {} ms) {}", sanitizeForLogging(properties.getMessageId()), properties.getConsumerQueue(),
-				sanitizeForLogging(properties.getReceivedRoutingKey()), deliveryCount, millis, outcome.description);
+			final var messageId = sanitizeForLogging(properties.getMessageId());
+			final var queue = properties.getConsumerQueue();
+			final var routingKey = sanitizeForLogging(properties.getReceivedRoutingKey());
+			LOG.info("Message {} from queue '{}' with routing key '{}' (delivery count {}, {} ms) {}",
+				messageId, queue, routingKey, deliveryCount(properties), millis, outcome.description);
 		} else if (data instanceof final List<?> batch && !batch.isEmpty() && batch.getFirst() instanceof final Message first) {
 			final var messageIds = batch.stream()
 				.map(Message.class::cast)
-				.map(message -> String.valueOf(sanitizeForLogging(message.getMessageProperties().getMessageId())))
+				.map(Message::getMessageProperties)
+				.map(MessageProperties::getMessageId)
+				.map(LogUtils::sanitizeForLogging)
+				.map(String::valueOf)
 				.collect(joining(", "));
-			LOG.info("Batch of messages {} from queue '{}' ({} ms) {}", messageIds, first.getMessageProperties().getConsumerQueue(), millis, outcome.description);
+			final var queue = first.getMessageProperties().getConsumerQueue();
+			LOG.info("Batch of messages {} from queue '{}' ({} ms) {}", messageIds, queue, millis, outcome.description);
 		}
+	}
+
+	/**
+	 * Absent on the first delivery. A Long from the broker, while one a producer set may be anything, a string too
+	 */
+	private static Number deliveryCount(final MessageProperties properties) {
+		if (properties.getHeader(DELIVERY_COUNT) instanceof final Number count) {
+			return count;
+		}
+		return 0;
 	}
 
 	private enum Outcome {

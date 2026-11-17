@@ -10,11 +10,13 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.ImmediateRequeueAmqpException;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.listener.ContainerUtils;
 import org.springframework.amqp.listener.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.retry.MessageBatchRecoverer;
 import org.springframework.core.NestedExceptionUtils;
 import se.sundsvall.dept44.rabbitmq.TransientFailures;
+import se.sundsvall.dept44.util.LogUtils;
 
 import static java.util.stream.Collectors.joining;
 import static se.sundsvall.dept44.util.LogUtils.sanitizeForLogging;
@@ -68,9 +70,15 @@ class TransientFailureRecoverer implements MessageBatchRecoverer {
 
 	private ListenerExecutionFailedException outcome(final List<Message> messages, final Throwable cause, final boolean batch) {
 		final var failed = messages.toArray(Message[]::new);
-		final var messageIds = messages.stream().map(message -> String.valueOf(sanitizeForLogging(message.getMessageProperties().getMessageId()))).collect(joining(", "));
+		final var messageIds = messages.stream()
+			.map(Message::getMessageProperties)
+			.map(MessageProperties::getMessageId)
+			.map(LogUtils::sanitizeForLogging)
+			.map(String::valueOf)
+			.collect(joining(", "));
 		final var queue = messages.getFirst().getMessageProperties().getConsumerQueue();
-		final var rootCause = sanitizeForLogging(NestedExceptionUtils.getMostSpecificCause(cause).toString());
+		final var mostSpecificCause = NestedExceptionUtils.getMostSpecificCause(cause);
+		final var rootCause = sanitizeForLogging(mostSpecificCause.toString());
 
 		if (decidedByTheListener(cause)) {
 			if (batch && asksToPutBack(cause) && !wasInterrupted(cause)) {

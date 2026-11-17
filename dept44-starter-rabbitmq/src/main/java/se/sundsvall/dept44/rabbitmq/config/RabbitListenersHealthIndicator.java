@@ -51,7 +51,10 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 				stopped.put(id, queues(container));
 			}
 		}
-		return stopped.isEmpty() ? Health.up().build() : Health.down().withDetail("stopped", stopped).build();
+		if (stopped.isEmpty()) {
+			return Health.up().build();
+		}
+		return Health.down().withDetail("stopped", stopped).build();
 	}
 
 	/**
@@ -70,6 +73,9 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 	}
 
 	static List<String> queues(final MessageListenerContainer container) {
-		return container instanceof final AbstractMessageListenerContainer listenerContainer ? List.of(listenerContainer.getQueueNames()) : List.of();
+		if (container instanceof final AbstractMessageListenerContainer listenerContainer) {
+			return List.of(listenerContainer.getQueueNames());
+		}
+		return List.of();
 	}
 }

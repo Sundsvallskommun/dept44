@@ -32,7 +32,8 @@ public class RabbitMqDefaultPropertiesEnvironmentPostProcessor implements Enviro
 			return;
 		}
 		try {
-			final var defaults = PropertiesLoaderUtils.loadProperties(new ClassPathResource(location, RabbitMqDefaultPropertiesEnvironmentPostProcessor.class.getClassLoader()));
+			final var resource = new ClassPathResource(location, RabbitMqDefaultPropertiesEnvironmentPostProcessor.class.getClassLoader());
+			final var defaults = PropertiesLoaderUtils.loadProperties(resource);
 			environment.getPropertySources().addLast(new PropertiesPropertySource(PROPERTY_SOURCE_NAME, defaults));
 		} catch (final IOException e) {
 			throw new UncheckedIOException("Could not load " + location, e);

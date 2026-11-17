@@ -2,9 +2,10 @@ package se.sundsvall.dept44.rabbitmq.config;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import org.aopalliance.aop.Advice;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.config.AbstractRabbitListenerContainerFactory;
@@ -48,7 +49,6 @@ import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 import static java.util.Objects.requireNonNullElse;
-import static java.util.Optional.ofNullable;
 
 /**
  * Only loaded when {@code dept44.rabbitmq.enabled} is true, see {@link RabbitMqAutoConfigurationImportFilter}.
@@ -95,7 +95,8 @@ class RabbitMqConfiguration {
 			@Override
 			public Object postProcessAfterInitialization(final Object bean, final String beanName) {
 				if (bean instanceof final RabbitTemplate rabbitTemplate) {
-					requireNoTransactionWithConfirms(rabbitTemplate.isChannelTransacted(), rabbitTemplate.getConnectionFactory(), "RabbitTemplate '%s'".formatted(beanName));
+					final var description = "RabbitTemplate '%s'".formatted(beanName);
+					requireNoTransactionWithConfirms(rabbitTemplate.isChannelTransacted(), rabbitTemplate.getConnectionFactory(), description);
 					rabbitTemplate.setUsePublisherConnection(!rabbitTemplate.isChannelTransacted());
 					rabbitTemplate.addBeforePublishPostProcessors(new RequestIdHeaders());
 				}
@@ -125,8 +126,9 @@ class RabbitMqConfiguration {
 			@Override
 			public Object postProcessBeforeInitialization(final Object bean, final String beanName) {
 				if (bean instanceof final AbstractConnectionFactory connectionFactory) {
+					final var threadFactory = Thread.ofVirtual().name(beanName + "-", 0).factory();
 					// Also the publisher connection factory's
-					connectionFactory.setExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name(beanName + "-", 0).factory()));
+					connectionFactory.setExecutor(Executors.newThreadPerTaskExecutor(threadFactory));
 				}
 				return bean;
 			}
@@ -150,7 +152,8 @@ class RabbitMqConfiguration {
 	 */
 	@Bean
 	static BeanPostProcessor dept44RequestIdListenerAdvisor(final Environment environment) {
-		final var listener = Binder.get(environment).bindOrCreate("spring.rabbitmq", RabbitProperties.class).getListener();
+		final var rabbitProperties = Binder.get(environment).bindOrCreate("spring.rabbitmq", RabbitProperties.class);
+		final var listener = rabbitProperties.getListener();
 		return new BeanPostProcessor() {
 			@Override
 			public Object postProcessAfterInitialization(final Object bean, final String beanName) {
@@ -163,14 +166,30 @@ class RabbitMqConfiguration {
 					if (settlesEachMessageAsTheListenerEnds(factory, listener)) {
 						adviceChain.add(new ListenerLogAdvice());
 					}
-					// Once each, also in a chain taken from a factory the advisor has already been through
-					ofNullable(factory.getAdviceChain()).map(Arrays::stream)
-						.ifPresent(advice -> advice.filter(a -> !(a instanceof RequestIdListenerAdvice || a instanceof ListenerLogAdvice)).forEach(adviceChain::add));
+					adviceChain.addAll(adviceOfOthers(factory.getAdviceChain()));
 					factory.setAdviceChain(adviceChain.toArray(Advice[]::new));
 				}
 				return bean;
 			}
 		};
+	}
+
+	/**
+	 * The advice in a factory's chain that is not the starter's. The starter's own is there in a chain taken from a factory
+	 * the advisor has already been through, and goes in once each.
+	 */
+	private static List<Advice> adviceOfOthers(final Advice @Nullable [] chain) {
+		if (chain == null) {
+			return List.of();
+		}
+		final var others = new ArrayList<Advice>();
+		for (final var advice : chain) {
+			final var isTheStartersOwn = advice instanceof RequestIdListenerAdvice || advice instanceof ListenerLogAdvice;
+			if (!isTheStartersOwn) {
+				others.add(advice);
+			}
+		}
+		return others;
 	}
 
 	/**

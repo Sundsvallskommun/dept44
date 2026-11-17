@@ -67,10 +67,24 @@ class StoppedListenerLiveness implements ApplicationListener<ApplicationEvent> {
 	}
 
 	private void markBroken(final MessageListenerContainer container, final ListenerContainerConsumerFailedEvent failed) {
-		final var failure = Optional.ofNullable(failed.getThrowable()).map(Throwable::toString).orElse(null);
+		final var listener = listenerOf(container);
+		final var queues = RabbitListenersHealthIndicator.queues(container);
+		// As a string, since SLF4J would take a throwable last as the exception to log, stack trace and all
+		final var failure = Optional.ofNullable(failed.getThrowable())
+			.map(Throwable::toString)
+			.orElse(null);
 		LOG.error("RabbitMQ listener {} on queues {} has stopped for good: {}. Marking the application broken, so that its liveness probe fails and it is restarted",
-			container instanceof final AbstractMessageListenerContainer listenerContainer ? listenerContainer.getListenerId() : container,
-			RabbitListenersHealthIndicator.queues(container), failure);
+			listener, queues, failure);
 		AvailabilityChangeEvent.publish(context, LivenessState.BROKEN);
+	}
+
+	/**
+	 * The listener id, for a container that has one
+	 */
+	private static Object listenerOf(final MessageListenerContainer container) {
+		if (container instanceof final AbstractMessageListenerContainer listenerContainer) {
+			return listenerContainer.getListenerId();
+		}
+		return container;
 	}
 }

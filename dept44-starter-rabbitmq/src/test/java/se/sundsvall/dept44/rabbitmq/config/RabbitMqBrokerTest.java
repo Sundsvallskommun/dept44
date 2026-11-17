@@ -158,10 +158,11 @@ class RabbitMqBrokerTest {
 
 	@Test
 	void messageToAMissingExchangeIsNacked() {
+		// No check on the message: Spring AMQP nacks with the broker's NOT_FOUND or with "Channel closed by application",
+		// whichever of its two nacks takes the pending confirm first
 		run(context -> assertThatExceptionOfType(RabbitPublishException.class)
 			.isThrownBy(() -> context.getBean(Dept44RabbitPublisher.class).publish(OutgoingMessage.to("dept44.missing", ROUTING_KEY).withPayload(new Payload("value"))))
-			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED))
-			.withMessageContaining("NOT_FOUND"));
+			.satisfies(e -> assertThat(e.getReason()).isEqualTo(NACKED)));
 	}
 
 	@Test

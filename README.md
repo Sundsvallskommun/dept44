@@ -43,6 +43,8 @@ across projects. Here’s an overview:
   for testing database-backed services.
 - **`dept44-starter-scheduler`**: Streamlines scheduled task management with robust exception handling, automated health
   checks, and ShedLock integration.
+- **`dept44-starter-rabbitmq`**: Publishing and consuming over RabbitMQ, with safe defaults and publishing the broker has
+  confirmed.
 
 For more details, see each module’s README or documentation in the repository.
 
@@ -109,16 +111,16 @@ dept44:
 
 Per verifier, under `dept44.jwt-verification.verifiers.<name>`:
 
-|     Property      | Default |                                       Description                                        |
-|-------------------|---------|------------------------------------------------------------------------------------------|
-| `header-name`     |         | Required. The header that holds the JWT. Each verifier needs a header of its own         |
+|     Property      | Default |                                                            Description                                                            |
+|-------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `header-name`     |         | Required. The header that holds the JWT. Each verifier needs a header of its own                                                  |
 | `jwk-set-uris`    |         | Required. The issuer's JWKS URLs, `https` only (`http` to `localhost`, `127.0.0.1` and `[::1]` is allowed); their keys are merged |
-| `issuer`          |         | If set (not blank), the JWT's `iss` must equal it. Needed when the keys are shared, as with Entra ID |
-| `audiences`       |         | If set, the JWT's `aud` must contain one of them                                         |
-| `excluded-paths`  |         | Path patterns this verifier doesn't check, on top of the global ones                     |
-| `algorithms`      | `RS256` | Accepted signature algorithms (`RS*`, `PS*`, `ES*`)                                      |
-| `connect-timeout` | `5s`    | Connect timeout when fetching the keys, for the worst case (100 ms to 5 min)             |
-| `read-timeout`    | `10s`   | Read timeout when fetching the keys, for the worst case (100 ms to 5 min)                |
+| `issuer`          |         | If set (not blank), the JWT's `iss` must equal it. Needed when the keys are shared, as with Entra ID                              |
+| `audiences`       |         | If set, the JWT's `aud` must contain one of them                                                                                  |
+| `excluded-paths`  |         | Path patterns this verifier doesn't check, on top of the global ones                                                              |
+| `algorithms`      | `RS256` | Accepted signature algorithms (`RS*`, `PS*`, `ES*`)                                                                               |
+| `connect-timeout` | `5s`    | Connect timeout when fetching the keys, for the worst case (100 ms to 5 min)                                                      |
+| `read-timeout`    | `10s`   | Read timeout when fetching the keys, for the worst case (100 ms to 5 min)                                                         |
 
 A signature only proves whose keys signed the JWT. Keys that belong to one issuer only, such as a gateway's own
 certificate, need nothing more. Entra ID signs the tokens of every tenant with the same keys, even at a tenant's own key URL, so a verifier for

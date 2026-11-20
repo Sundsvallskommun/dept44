@@ -1,0 +1,4 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+se.sundsvall.dept44.rabbitmq.config.RabbitMqDefaultPropertiesEnvironmentPostProcessor
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+se.sundsvall.dept44.rabbitmq.config.RabbitMqAutoConfigurationImportFilter

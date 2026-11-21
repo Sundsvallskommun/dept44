@@ -78,7 +78,7 @@
 		<jmh.version>1.37</jmh.version>
 		<jsonwebtoken.version>0.13.0</jsonwebtoken.version>
 		<!-- Spring boot admin -->
-		<spring-boot-admin.version>4.1.4</spring-boot-admin.version>
+		<spring-boot-admin.version>4.1.5</spring-boot-admin.version>
 		<!-- Plugin versions -->
 		<wiremock-spring-boot-version>4.4.3</wiremock-spring-boot-version>
 		<maven-api.version>3.10.0</maven-api.version>

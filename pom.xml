@@ -98,7 +98,7 @@
 		<spotless-maven-plugin-version>3.11.0</spotless-maven-plugin-version>
 		<maven-plugin-annotations.version>3.16.0</maven-plugin-annotations.version>
 		<maven-plugin-plugin.version>3.16.0</maven-plugin-plugin.version>
-		<exec-maven-plugin.version>3.6.4</exec-maven-plugin.version>
+		<exec-maven-plugin.version>3.7.0</exec-maven-plugin.version>
 		<lombok.version>1.18.48</lombok.version>
 		<spotbugs-annotations.version>4.10.5</spotbugs-annotations.version>
 		<central-publishing-maven-plugin.version>0.12.0</central-publishing-maven-plugin.version>

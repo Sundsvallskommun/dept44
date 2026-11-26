@@ -22,7 +22,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
@@ -68,22 +67,9 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 		final var registered = new HashSet<MessageListenerContainer>();
 		for (final var id : registry.getListenerContainerIds()) {
 			final var container = registry.getListenerContainer(id);
-			if (isNull(container)) {
-				continue;
-			}
-			registered.add(container);
-			if (!container.isAutoStartup()) {
-				continue;
-			}
-			if (container.isRunning()) {
-				final var withoutConsumer = queuesWithoutConsumer(container);
-				if (!withoutConsumer.isEmpty()) {
-					notConsuming.put(id, withoutConsumer);
-				}
-			} else {
-				// Forgotten, so that once started again it counts as not consuming until the broker confirms a consumer
-				consumed.remove(container);
-				stopped.put(id, queues(container));
+			if (nonNull(container)) {
+				registered.add(container);
+				check(id, container, stopped, notConsuming);
 			}
 		}
 		// A container the service has unregistered is gone for good
@@ -138,6 +124,26 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 	private void notConsumedFrom(final Object container, final String queue) {
 		if (container instanceof final MessageListenerContainer listenerContainer) {
 			consumed.computeIfPresent(listenerContainer, (_, queues) -> without(queues, queue));
+		}
+	}
+
+	/**
+	 * Puts the container under stopped or under notConsuming, where it is either. A container that is not started
+	 * automatically is neither.
+	 */
+	private void check(final String id, final MessageListenerContainer container, final Map<String, List<String>> stopped, final Map<String, List<String>> notConsuming) {
+		if (!container.isAutoStartup()) {
+			return;
+		}
+		if (container.isRunning()) {
+			final var withoutConsumer = queuesWithoutConsumer(container);
+			if (!withoutConsumer.isEmpty()) {
+				notConsuming.put(id, withoutConsumer);
+			}
+		} else {
+			// Forgotten, so that once started again it counts as not consuming until the broker confirms a consumer
+			consumed.remove(container);
+			stopped.put(id, queues(container));
 		}
 	}
 

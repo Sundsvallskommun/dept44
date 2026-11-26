@@ -23,8 +23,8 @@ import org.springframework.context.SmartLifecycle;
  * so that a header the service sets itself wins.</li>
  * </ul>
  * It keeps each container trying a login the broker refuses, as the direct container does by default. The simple
- * container would stop for good instead, and fail the startup with it, while the broker lacks the service's user, as
- * after a broker rebuild. This overrides {@code mlc.possible.authentication.failure.fatal} in Spring AMQP's
+ * container would otherwise fail the startup, or stop for good while the service runs, when the broker refuses its
+ * login, as after a broker rebuild. This overrides {@code mlc.possible.authentication.failure.fatal} in Spring AMQP's
  * {@code spring.amqp.global.properties}, and a container customizer of the service's own. Spring Boot has no property
  * for it.
  * <p>
@@ -37,14 +37,14 @@ import org.springframework.context.SmartLifecycle;
  * Runs in the phase just before the registry, which starts the containers. A container the service declares as a bean
  * of its own, outside the registry, keeps all of this as it is, and so does one created after startup.
  */
-class RequestIdContainerInstaller implements SmartLifecycle {
+class ListenerContainerInstaller implements SmartLifecycle {
 
-	private static final Logger LOG = LoggerFactory.getLogger(RequestIdContainerInstaller.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ListenerContainerInstaller.class);
 
 	private final ObjectProvider<RabbitListenerEndpointRegistry> registry;
 	private volatile boolean running;
 
-	RequestIdContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
+	ListenerContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
 		this.registry = registry;
 	}
 

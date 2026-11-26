@@ -26,7 +26,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
@@ -298,8 +297,8 @@ class RabbitMqBrokerTest {
 
 	/**
 	 * As when the broker is rebuilt under a running service, and its user comes back after the service has tried to
-	 * reconnect. Spring Boot's rabbit health only checks that a connection opens. The container keeps trying the refused
-	 * login, and consumes again once the user is back. The application stays live all along, and its REST API with it.
+	 * reconnect. The container keeps trying the refused login, and consumes again once the user is back. The application
+	 * stays live all along, and its REST API with it.
 	 */
 	@Test
 	void aListenerThatLosesItsUserReportsDownAndConsumesOnceTheUserIsBack() throws Exception {
@@ -374,8 +373,6 @@ class RabbitMqBrokerTest {
 				final var health = context.getBean(RabbitListenersHealthIndicator.class);
 				final var notConsuming = Map.entry("notConsuming", Map.of(LaterListener.ID, List.of(LATER_QUEUE)));
 				assertThat(health.health().getDetails()).containsExactly(notConsuming);
-				assertThat(context.getBean(RabbitListenerEndpointRegistry.class).getListenerContainer(LaterListener.ID))
-					.satisfies(container -> assertThat(container.isRunning()).isTrue());
 
 				declareQueue(LATER_QUEUE, LATER_ROUTING_KEY);
 				awaitUp(health);
@@ -435,7 +432,7 @@ class RabbitMqBrokerTest {
 	void aBrokerRestartLeavesTheApplicationLiveAndTheListenerConsuming() throws Exception {
 		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
 			.withUserConfiguration(Listener.class)
-			// As in the test above, so that a refused login would show as one
+			// One address, as in aListenerThatLosesItsUserReportsDownAndConsumesOnceTheUserIsBack
 			.withPropertyValues("spring.rabbitmq.host=" + ipv4(BROKER.getHost()))
 			.run(context -> {
 				assertThat(context).hasNotFailed();

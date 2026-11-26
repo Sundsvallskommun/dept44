@@ -22,15 +22,18 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
- * Reports DOWN for each listener container in the registry that should be running but is not, under {@code stopped},
- * and for each one that runs without a consumer on one of its queues, under {@code notConsuming}, with the queues.
+ * Reports DOWN for each listener container in the registry that should be running but is not, under {@code stopped}
+ * with its queues, and for each one that runs without a consumer on one of its queues, under {@code notConsuming} with
+ * those queues.
  * <p>
  * A container runs without a consumer while the broker lacks its queue or refuses its login. It keeps trying, and
- * consumes once the queue or the user is back, while Spring Boot's rabbit health only checks that a connection opens.
- * A queue counts as consumed from once the broker has confirmed a consumer on it, and no longer once the container
+ * consumes once the queue or the user is back. Spring Boot's rabbit health only checks that a connection opens, and
+ * stays UP meanwhile. A queue counts as consumed from once the broker has confirmed a consumer on it, and no longer
+ * once the container
  * says the queue is missing or one of its consumers has failed. A cancelled consumer says nothing about the queues: the
  * container has stopped one it no longer needs, while the others go on, or it starts the consumer again, which then
  * says for itself whether its queue is there. A consumer does not say which container it belongs to, so a consumer on
@@ -62,21 +65,29 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 		}
 		final var stopped = new TreeMap<String, List<String>>();
 		final var notConsuming = new TreeMap<String, List<String>>();
+		final var registered = new HashSet<MessageListenerContainer>();
 		for (final var id : registry.getListenerContainerIds()) {
 			final var container = registry.getListenerContainer(id);
-			if (nonNull(container) && container.isAutoStartup()) {
-				if (container.isRunning()) {
-					final var withoutConsumer = queuesWithoutConsumer(container);
-					if (!withoutConsumer.isEmpty()) {
-						notConsuming.put(id, withoutConsumer);
-					}
-				} else {
-					// Started again, it has no consumer until the broker confirms one
-					consumed.remove(container);
-					stopped.put(id, queues(container));
+			if (isNull(container)) {
+				continue;
+			}
+			registered.add(container);
+			if (!container.isAutoStartup()) {
+				continue;
+			}
+			if (container.isRunning()) {
+				final var withoutConsumer = queuesWithoutConsumer(container);
+				if (!withoutConsumer.isEmpty()) {
+					notConsuming.put(id, withoutConsumer);
 				}
+			} else {
+				// Forgotten, so that once started again it counts as not consuming until the broker confirms a consumer
+				consumed.remove(container);
+				stopped.put(id, queues(container));
 			}
 		}
+		// A container the service has unregistered is gone for good
+		consumed.keySet().retainAll(registered);
 		if (stopped.isEmpty() && notConsuming.isEmpty()) {
 			return Health.up().build();
 		}

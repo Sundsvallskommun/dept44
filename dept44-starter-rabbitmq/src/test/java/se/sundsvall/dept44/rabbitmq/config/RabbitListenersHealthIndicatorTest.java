@@ -1,6 +1,8 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +24,7 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,13 +54,58 @@ class RabbitListenersHealthIndicatorTest {
 
 	@Test
 	void upWhileEveryContainerThatShouldRunConsumesFromEachOfItsQueues() {
-		runningOn("q.a");
+		runningOn("q.a", "q.b");
 		containers(Map.of("running", running));
 		// The containers start, and their consumers with them, before the context says it has refreshed
 		indicator.onApplicationEvent(consumeOk("q.a"));
+		indicator.onApplicationEvent(consumeOk("q.b"));
 		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
 
 		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+	}
+
+	/**
+	 * As when one of a container's queues is missing at startup: the container consumes from the others
+	 */
+	@Test
+	void downForTheQueuesWithoutAConsumerOnly() {
+		runningOn("q.a", "q.b");
+		containers(Map.of("running", running));
+		indicator.onApplicationEvent(new MissingQueueEvent(running, "q.b"));
+		indicator.onApplicationEvent(consumeOk("q.a"));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var health = indicator.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getDetails()).containsExactly(Map.entry("notConsuming", Map.of("running", List.of("q.b"))));
+	}
+
+	@Test
+	void listsTheContainersByListenerId() {
+		final var other = mock(SimpleMessageListenerContainer.class);
+		runningOn("q.a");
+		when(other.isAutoStartup()).thenReturn(true);
+		when(other.isRunning()).thenReturn(true);
+		when(other.getQueueNames()).thenReturn(new String[] {
+			"q.other"
+		});
+		// In an order of their own, and with ids a hash map would put in yet another order
+		final var containers = new LinkedHashMap<String, SimpleMessageListenerContainer>();
+		containers.put("q", running);
+		containers.put("b", other);
+		containers.put("r", container("q.r"));
+		containers.put("c", container("q.c"));
+		when(registry.getListenerContainerIds()).thenReturn(new LinkedHashSet<>(containers.keySet()));
+		containers.forEach((id, container) -> when(registry.getListenerContainer(id)).thenReturn(container));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var details = indicator.health().getDetails();
+
+		final var notConsuming = (Map<?, ?>) details.get("notConsuming");
+		final var stopped = (Map<?, ?>) details.get("stopped");
+		assertThat(notConsuming).extractingFromEntries(Map.Entry::getKey).containsExactly("b", "q");
+		assertThat(stopped).extractingFromEntries(Map.Entry::getKey).containsExactly("c", "r");
 	}
 
 	@Test
@@ -148,6 +196,7 @@ class RabbitListenersHealthIndicatorTest {
 	 */
 	@Test
 	void aCancelledDirectConsumerCountsOnlyForItsOwnQueue() {
+		// A simple container stands in for the direct one: the indicator goes by the events, not by the type
 		runningOn("q.a", "q.b");
 		containers(Map.of("running", running));
 		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
@@ -163,6 +212,71 @@ class RabbitListenersHealthIndicatorTest {
 
 		indicator.onApplicationEvent(consumeOk("q.b"));
 		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+	}
+
+	@Test
+	void aConsumerOnAQueueCountsForEveryContainerInTheRegistryOnIt() {
+		runningOn("q.a");
+		final var other = mock(SimpleMessageListenerContainer.class);
+		when(other.isAutoStartup()).thenReturn(true);
+		when(other.isRunning()).thenReturn(true);
+		when(other.getQueueNames()).thenReturn(new String[] {
+			"q.a"
+		});
+		containers(Map.of("running", running, "other", other));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		indicator.onApplicationEvent(consumeOk("q.a"));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+	}
+
+	@Test
+	void downWithTheStoppedAndTheNotConsumingContainersApart() {
+		runningOn("q.a");
+		final var stopped = container("q.stopped");
+		containers(Map.of("running", running, "stopped", stopped));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var health = indicator.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getDetails()).containsOnly(
+			Map.entry("stopped", Map.of("stopped", List.of("q.stopped"))),
+			Map.entry("notConsuming", Map.of("running", List.of("q.a"))));
+	}
+
+	@Test
+	void aRunningContainerTheServiceStartsItselfDoesNotCount() {
+		when(running.isAutoStartup()).thenReturn(false);
+		// Lenient, since the indicator should not even ask: a running container without a consumer would count otherwise
+		lenient().when(running.isRunning()).thenReturn(true);
+		lenient().when(running.getQueueNames()).thenReturn(new String[] {
+			"q.a"
+		});
+		containers(Map.of("running", running));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+	}
+
+	/**
+	 * As for a service that registers and unregisters listeners at runtime. The same container shows that its entry is
+	 * gone, where a service would get a new one when it registers the listener again.
+	 */
+	@Test
+	void forgetsAContainerNoLongerInTheRegistry() {
+		runningOn("q.a");
+		containers(Map.of("running", running));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+		indicator.onApplicationEvent(consumeOk("q.a"));
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+
+		when(registry.getListenerContainerIds()).thenReturn(Set.of());
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+		when(registry.getListenerContainerIds()).thenReturn(Set.of("running"));
+
+		assertThat(indicator.health().getDetails()).containsExactly(Map.entry("notConsuming", Map.of("running", List.of("q.a"))));
 	}
 
 	@Test

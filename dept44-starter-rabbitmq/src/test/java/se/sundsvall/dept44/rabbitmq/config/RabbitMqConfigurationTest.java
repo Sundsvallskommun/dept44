@@ -252,8 +252,9 @@ class RabbitMqConfigurationTest {
 	}
 
 	/**
-	 * As for a service that sets missing-queues-fatal back to true, and whose queue is then removed. A restarted pod would
-	 * not answer REST calls either while the queue is missing. rabbitListeners shows the container as stopped.
+	 * As for a service that sets missing-queues-fatal back to true, and whose queue is then removed. Restarting the pod
+	 * would not help: it would fail its startup, and answer no REST calls, until the queue is back. A container in the
+	 * registry shows as stopped in rabbitListeners instead.
 	 */
 	@Test
 	void aListenerContainerStoppedForGoodLeavesTheApplicationLive() {

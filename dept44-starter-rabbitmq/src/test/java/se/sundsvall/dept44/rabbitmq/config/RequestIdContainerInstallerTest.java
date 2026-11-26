@@ -70,6 +70,16 @@ class RequestIdContainerInstallerTest {
 	}
 
 	@Test
+	void aContainerKeepsTryingALoginTheBrokerRefuses() {
+		final var container = new SimpleMessageListenerContainer();
+		when(mockRegistry.getListenerContainers()).thenReturn(List.of(container));
+
+		new RequestIdContainerInstaller(registry()).start();
+
+		assertThat(container.isPossibleAuthenticationFailureFatal()).isFalse();
+	}
+
+	@Test
 	void installsOnlyOnceOverARestart() {
 		final var container = containerWith(new MessageListenerAdapter(new Object()));
 		when(mockRegistry.getListenerContainers()).thenReturn(List.of(container));

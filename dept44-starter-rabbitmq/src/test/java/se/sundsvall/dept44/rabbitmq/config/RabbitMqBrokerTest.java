@@ -26,6 +26,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
@@ -85,6 +86,11 @@ class RabbitMqBrokerTest {
 	private static final String HEALTH_QUEUE = "dept44.test.health";
 	private static final String DIRECT_QUEUE = "dept44.test.direct";
 	private static final String DIRECT_ROUTING_KEY = "direct";
+	// Not declared up front, as a queue the topology lacks
+	private static final String LATER_QUEUE = "dept44.test.later";
+	private static final String LATER_ROUTING_KEY = "later";
+	private static final String DIRECT_LATER_QUEUE = "dept44.test.direct-later";
+	private static final String DIRECT_LATER_ROUTING_KEY = "direct-later";
 
 	@BeforeAll
 	static void startBroker() {
@@ -292,11 +298,11 @@ class RabbitMqBrokerTest {
 
 	/**
 	 * As when the broker is rebuilt under a running service, and its user comes back after the service has tried to
-	 * reconnect. Spring AMQP stops the container for good on the refused login, while Spring Boot's rabbit health only
-	 * checks that a connection opens, and reports UP once the user is back.
+	 * reconnect. Spring Boot's rabbit health only checks that a connection opens. The container keeps trying the refused
+	 * login, and consumes again once the user is back. The application stays live all along, and its REST API with it.
 	 */
 	@Test
-	void aListenerWhoseLoginIsRefusedReportsDownAndMarksTheApplicationBroken() throws Exception {
+	void aListenerThatLosesItsUserReportsDownAndConsumesOnceTheUserIsBack() throws Exception {
 		rabbitmqctl("add_user", "dept44-health", "secret");
 		rabbitmqctl("set_permissions", "-p", "/", "dept44-health", ".*", ".*", ".*");
 
@@ -311,17 +317,110 @@ class RabbitMqBrokerTest {
 				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
 				final var availability = context.getBean(ApplicationAvailability.class);
 				final var health = context.getBean(RabbitListenersHealthIndicator.class);
-				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
-				assertThat(health.health().getStatus()).isEqualTo(Status.UP);
+				awaitUp(health);
 
 				rabbitmqctl("delete_user", "dept44-health");
 				rabbitmqctl("close_all_connections", "the user is gone");
 
-				await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
-					assertThat(health.health().getStatus()).isEqualTo(Status.DOWN);
-					assertThat(health.health().getDetails()).containsEntry("stopped", Map.of(HealthListener.ID, List.of(HEALTH_QUEUE)));
-					assertThat(availability.getLivenessState()).isEqualTo(LivenessState.BROKEN);
-				});
+				await().atMost(Duration.ofSeconds(30))
+					.untilAsserted(() -> assertThat(health.health().getDetails()).containsExactly(Map.entry("notConsuming", Map.of(HealthListener.ID, List.of(HEALTH_QUEUE)))));
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+
+				rabbitmqctl("add_user", "dept44-health", "secret");
+				rabbitmqctl("set_permissions", "-p", "/", "dept44-health", ".*", ".*", ".*");
+
+				awaitUp(health);
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+			});
+	}
+
+	/**
+	 * As when the service's configuration names a user the broker does not have, or not yet. The service starts, and its
+	 * listener consumes once the user is there.
+	 */
+	@Test
+	void aListenerWhoseLoginIsRefusedAtStartupStartsAndConsumesOnceTheUserIsThere() throws Exception {
+		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
+			.withUserConfiguration(HealthListener.class)
+			// One address, as in the test above
+			.withPropertyValues("spring.rabbitmq.host=" + ipv4(BROKER.getHost()), "spring.rabbitmq.username=dept44-startup", "spring.rabbitmq.password=secret")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+				final var availability = context.getBean(ApplicationAvailability.class);
+				final var health = context.getBean(RabbitListenersHealthIndicator.class);
+				assertThat(health.health().getDetails()).containsExactly(Map.entry("notConsuming", Map.of(HealthListener.ID, List.of(HEALTH_QUEUE))));
+
+				rabbitmqctl("add_user", "dept44-startup", "secret");
+				rabbitmqctl("set_permissions", "-p", "/", "dept44-startup", ".*", ".*", ".*");
+
+				awaitUp(health);
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+			});
+	}
+
+	/**
+	 * As when the topology lacks the service's queue, at startup or later on. The service starts, and its listener
+	 * consumes once the queue is there. The application stays live all along, and its REST API with it.
+	 */
+	@Test
+	void aListenerWhoseQueueIsMissingOrDeletedKeepsTheServiceUpAndConsumesOnceTheQueueIsThere() {
+		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
+			.withUserConfiguration(LaterListener.class)
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+				final var availability = context.getBean(ApplicationAvailability.class);
+				final var health = context.getBean(RabbitListenersHealthIndicator.class);
+				final var notConsuming = Map.entry("notConsuming", Map.of(LaterListener.ID, List.of(LATER_QUEUE)));
+				assertThat(health.health().getDetails()).containsExactly(notConsuming);
+				assertThat(context.getBean(RabbitListenerEndpointRegistry.class).getListenerContainer(LaterListener.ID))
+					.satisfies(container -> assertThat(container.isRunning()).isTrue());
+
+				declareQueue(LATER_QUEUE, LATER_ROUTING_KEY);
+				awaitUp(health);
+				assertReceived(context, LATER_ROUTING_KEY, LaterListener.SEEN, "once the queue is there");
+
+				asAdmin(admin -> admin.deleteQueue(LATER_QUEUE));
+				await().atMost(Duration.ofSeconds(40)).untilAsserted(() -> assertThat(health.health().getDetails()).containsExactly(notConsuming));
+
+				declareQueue(LATER_QUEUE, LATER_ROUTING_KEY);
+				awaitUp(health);
+				assertReceived(context, LATER_ROUTING_KEY, LaterListener.SEEN, "once the queue is back");
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
+			});
+	}
+
+	/**
+	 * As the test above, with the direct container. It has a consumer for each queue, which it starts again on its own,
+	 * and its consumers say from a class of their own that they consume. Once the queue is deleted, the container says
+	 * first that the consumer was cancelled, which says nothing about the queue, and then that the queue is missing, as it
+	 * starts the consumer again.
+	 */
+	@Test
+	void aDirectListenerWhoseQueueIsMissingOrDeletedKeepsTheServiceUpAndConsumesOnceTheQueueIsThere() {
+		contextRunner().withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class))
+			.withUserConfiguration(DirectLaterListener.class)
+			.withPropertyValues("spring.rabbitmq.listener.type=direct")
+			.run(context -> {
+				assertThat(context).hasNotFailed();
+				AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+				final var availability = context.getBean(ApplicationAvailability.class);
+				final var health = context.getBean(RabbitListenersHealthIndicator.class);
+				final var notConsuming = Map.entry("notConsuming", Map.of(DirectLaterListener.ID, List.of(DIRECT_LATER_QUEUE)));
+				assertThat(health.health().getDetails()).containsExactly(notConsuming);
+
+				declareQueue(DIRECT_LATER_QUEUE, DIRECT_LATER_ROUTING_KEY);
+				awaitUp(health);
+				assertReceived(context, DIRECT_LATER_ROUTING_KEY, DirectLaterListener.SEEN, "once the queue is there");
+
+				asAdmin(admin -> admin.deleteQueue(DIRECT_LATER_QUEUE));
+				await().atMost(Duration.ofSeconds(40)).untilAsserted(() -> assertThat(health.health().getDetails()).containsExactly(notConsuming));
+
+				declareQueue(DIRECT_LATER_QUEUE, DIRECT_LATER_ROUTING_KEY);
+				awaitUp(health);
+				assertReceived(context, DIRECT_LATER_ROUTING_KEY, DirectLaterListener.SEEN, "once the queue is back");
+				assertThat(availability.getLivenessState()).isEqualTo(LivenessState.CORRECT);
 			});
 	}
 
@@ -382,6 +481,41 @@ class RabbitMqBrokerTest {
 		command[0] = "rabbitmqctl";
 		System.arraycopy(arguments, 0, command, 1, arguments.length);
 		assertThat(BROKER.execInContainer(command).getExitCode()).isZero();
+	}
+
+	/**
+	 * A container waits 5 s between its attempts, and tries a missing queue 3 more times 5 s apart within each
+	 */
+	private static void awaitUp(final RabbitListenersHealthIndicator health) {
+		await().atMost(Duration.ofSeconds(40)).untilAsserted(() -> assertThat(health.health().getStatus()).isEqualTo(Status.UP));
+	}
+
+	private static void assertReceived(final ApplicationContext context, final String routingKey, final BlockingQueue<Payload> seen, final String value) throws InterruptedException {
+		context.getBean(Dept44RabbitPublisher.class).publish(OutgoingMessage.to(EXCHANGE, routingKey).withPayload(new Payload(value)));
+
+		assertThat(seen.poll(10, SECONDS)).isEqualTo(new Payload(value));
+	}
+
+	/**
+	 * As rabbitmq-topology would declare it
+	 */
+	private static void declareQueue(final String name, final String routingKey) {
+		final var queue = QueueBuilder.durable(name).quorum().build();
+		asAdmin(admin -> {
+			admin.declareQueue(queue);
+			admin.declareBinding(BindingBuilder.bind(queue).to(new DirectExchange(EXCHANGE)).with(routingKey));
+		});
+	}
+
+	private static void asAdmin(final Consumer<RabbitAdmin> action) {
+		final var connectionFactory = new CachingConnectionFactory(BROKER.getHost(), BROKER.getAmqpPort());
+		connectionFactory.setUsername(BROKER.getAdminUsername());
+		connectionFactory.setPassword(BROKER.getAdminPassword());
+		try {
+			action.accept(new RabbitAdmin(connectionFactory));
+		} finally {
+			connectionFactory.destroy();
+		}
 	}
 
 	/**
@@ -457,6 +591,28 @@ class RabbitMqBrokerTest {
 		@RabbitListener(queues = DIRECT_QUEUE)
 		void receive(final Payload payload) {
 			ON_A_VIRTUAL_THREAD.add(Thread.currentThread().isVirtual());
+		}
+	}
+
+	static class LaterListener {
+
+		static final String ID = "dept44.later";
+		static final BlockingQueue<Payload> SEEN = new LinkedBlockingQueue<>();
+
+		@RabbitListener(id = ID, queues = LATER_QUEUE)
+		void receive(final Payload payload) {
+			SEEN.add(payload);
+		}
+	}
+
+	static class DirectLaterListener {
+
+		static final String ID = "dept44.direct-later";
+		static final BlockingQueue<Payload> SEEN = new LinkedBlockingQueue<>();
+
+		@RabbitListener(id = ID, queues = DIRECT_LATER_QUEUE)
+		void receive(final Payload payload) {
+			SEEN.add(payload);
 		}
 	}
 

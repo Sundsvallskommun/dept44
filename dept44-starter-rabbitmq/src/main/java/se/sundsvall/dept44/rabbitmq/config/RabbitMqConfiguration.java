@@ -279,15 +279,6 @@ class RabbitMqConfiguration {
 		return new RabbitListenersHealthIndicator(context, registry);
 	}
 
-	/**
-	 * Has the service restarted once a listener container stops for good. Not tied to the health indicator, so that
-	 * turning that off does not turn this off too.
-	 */
-	@Bean
-	StoppedListenerLiveness dept44StoppedListenerLiveness(final ApplicationContext context) {
-		return new StoppedListenerLiveness(context);
-	}
-
 	@Bean
 	UndeclaredTopologyWarning dept44UndeclaredTopologyWarning(final ConfigurableListableBeanFactory beanFactory) {
 		return new UndeclaredTopologyWarning(beanFactory);

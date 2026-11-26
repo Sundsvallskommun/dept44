@@ -297,28 +297,44 @@ publishes opens the listeners' connection for the check alone. A
 does Spring Boot's.
 
 That indicator only checks that a connection opens. It says nothing about the listeners. Spring AMQP's simple
-container, Spring Boot's default, stops for good when the broker refuses its login, as when the broker is rebuilt and
-the service's user comes back after the service has tried to reconnect, or when its queue stays missing. Nothing
-starts the container again, and its queue fills while the service reports UP. The starter therefore adds two things:
+container, Spring Boot's default, fails the startup when the broker lacks its queue or refuses its login, and the REST
+API goes down with it, for a fault in the broker. When that happens while the service runs, as when the broker is
+rebuilt and the service's user comes back after the service has tried to reconnect, the container stops for good.
+Nothing starts it again, and its queue fills while the rabbit health reports UP.
+
+The starter keeps the listener containers running instead. `spring.rabbitmq.listener.simple.missing-queues-fatal` is
+`false` by default, and the starter turns `possibleAuthenticationFailureFatal` off on each container in the registry.
+That overrides `mlc.possible.authentication.failure.fatal` in Spring AMQP's `spring.amqp.global.properties`, and a
+container customizer of the service's own. A container keeps trying, and consumes once the queue or the user is back:
+
+- The simple container tries again about every 5 s. Where only some of its queues are missing, it consumes from the
+  others and tries the missing ones every 60 s.
+- The direct container, which does both by default, starts a consumer again within 5 to 10 s.
+
+Two kinds of container keep Spring AMQP's default and fail the startup on a missing queue. One is a container the
+service declares as a bean of its own. The other comes from a container factory the service sets up in code without
+Spring Boot's configurer, which the property does not reach. A container bean of the service's own also keeps the fatal
+login. There is no property to have the fatal login back on the others.
 
 - `rabbitListeners` in `/actuator/health` is DOWN for each container in the registry that should run but does not,
-  with its queues. Running is not consuming: a container that retries a broker it cannot reach, or a vhost it may not
-  use, is UP. `management.health.rabbit-listeners.enabled=false` turns it off, as any other health indicator.
-- Once Spring AMQP has stopped a container for good because the broker lacks the user or the queue, the starter marks
-  the application `LivenessState.BROKEN`. The liveness probe then fails, and Kubernetes restarts the pod. The restart
-  starts the container again, or fails until the user or the queue is back. This covers a container the service
-  declares as a bean of its own too, and cannot be turned off. It also covers a container the service starts itself,
-  with `autoStartup` off, which `rabbitListeners` leaves out. A call to `start()` by the service that fails because the
-  user or the queue is missing therefore restarts the pod as well, besides throwing.
+  under `stopped`, and for each one that runs without a consumer on one of its queues, under `notConsuming`, with the
+  queues. It is in neither the liveness nor the readiness group, so Kubernetes neither restarts the pod nor stops
+  sending it requests, while Spring Boot Admin shows the service as DOWN. A container that is not started
+  automatically does not count, and neither does a container bean of the service's own.
+  `management.health.rabbit-listeners.enabled=false` turns it off, as any other health indicator.
+- A consumer does not say which container it belongs to. Any consumer on a queue, also one of a container outside the
+  registry, therefore counts for every container in the registry that listens to it.
+- The startup takes about 15 s longer for each simple container whose queue is missing. The container tries the queue
+  3 more times, 5 s apart, before it goes on. The containers start one after another, so the delays add up.
+  spring-boot-chart's startup probe allows about 310 s, which leaves room for fewer than 20 such containers.
+- While a queue is missing, Spring AMQP logs a warning for each of those attempts and then an error, every 20 s or so
+  for each consumer. While the login is refused, it logs an error with its stack trace about every 5 s for each
+  consumer.
 
-The restart costs the REST API as well. The pod is down while it restarts, and crash-loops while the user or the queue
-is missing. After a broker rebuild that is about a minute. A queue removed from the topology while its consumer still
-listens to it keeps the service down until one of the two is fixed.
-
-A container the service stops itself shows as DOWN in `rabbitListeners`, but does not restart the pod. Neither does a
-fatal failure the listener causes, such as a message it cannot handle, since the restarted service would only get the
-message again. The direct container retries a refused login and a missing queue until they are back, and needs
-neither.
+A service that sets `spring.rabbitmq.listener.simple.missing-queues-fatal=true` gets Spring's failing startup back. A
+container that then stops for good shows as `stopped` in `rabbitListeners`, and nothing restarts the pod. Neither does
+a container the service stops itself, or one stopped by a fatal failure the listener causes, such as a message it
+cannot handle.
 
 ### Request id over the queue
 
@@ -415,6 +431,7 @@ on a publisher the service creates itself.
 | `spring.rabbitmq.listener.direct.observation-enabled`                  | `true`                      | As above, for a service that uses the direct listener container                         |
 | `spring.rabbitmq.listener.simple.retry.*`, `listener.direct.retry.*`   | on, 1 s to 30 s, 20 retries | See [Failures in a listener](#failures-in-a-listener)                                   |
 | `spring.rabbitmq.listener.simple.prefetch`, `listener.direct.prefetch` | `1`                         | See [Prefetch](#prefetch)                                                               |
+| `spring.rabbitmq.listener.simple.missing-queues-fatal`                 | `false`                     | A missing queue does not fail the startup, see [Health](#health)                        |
 
 ## The classes
 
@@ -430,8 +447,9 @@ of the listeners. Everything is off until the service sets `dept44.rabbitmq.enab
   `RabbitMqProperties` and the two that `META-INF/spring.factories` registers.
 
 The defaults live in `dept44-rabbitmq-default.properties`, and a service overrides any of them in its own
-configuration. They turn on publisher confirms and returns, set prefetch to 1, retry for about 8 minutes (15 at most)
-and set `dynamic=false`, since the topology is declared through rabbitmq-topology.
+configuration. They turn on publisher confirms and returns, set prefetch to 1, retry for about 8 minutes (15 at most),
+keep a listener whose queue is missing trying instead of failing the startup, and set `dynamic=false`, since the
+topology is declared through rabbitmq-topology.
 
 ### The `se.sundsvall.dept44.rabbitmq` package
 
@@ -466,6 +484,5 @@ visible outside the package.
 | Request id | `RequestIdHeaders`                                           | Sends the request id and user identifier as headers on every outgoing message and reply, under the names Feign and WebClient use. A header the service has set itself stays as it is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Request id | `RequestIdErrorHandler`                                      | Runs the container's error handler under the message's request id. The container calls it after the advice has already cleared the id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Request id | `RequestIdContainerInstaller`                                | Goes through every container in the registry before they start. It wraps the error handler in `RequestIdErrorHandler` and adds `RequestIdHeaders` to the replies a listener returns. It warns about a listener whose failed messages go back with a `basic.nack`, which does not count against `x-delivery-limit`, and fails the startup for a transacted container while publisher confirms are on.                                                                                                                                                                                                                                                                                          |
-| Health     | `RabbitListenersHealthIndicator`                             | The `rabbitListeners` health indicator. It is DOWN, with the queues listed, when a container that should start automatically has stopped, and UNKNOWN before the context has started. `management.health.rabbit-listeners.enabled=false` turns it off.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Health     | `StoppedListenerLiveness`                                    | Marks liveness BROKEN when a container has stopped for good because the broker lacks the service's user or queue. The liveness probe then fails, and Kubernetes restarts the pod. This includes a container the service starts itself. It cannot be turned off.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Health     | `RabbitListenersHealthIndicator`                             | The `rabbitListeners` health indicator. It is DOWN, with the queues listed under `stopped` or `notConsuming`, when a container that should start automatically has stopped or runs without a consumer on one of its queues, and UNKNOWN before the context has started. `management.health.rabbit-listeners.enabled=false` turns it off.                                                                                                                                                                                                                                                                                                                                                      |
 

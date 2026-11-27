@@ -14,30 +14,37 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Carries the request id into what a listener container does after the listener's own code, in every container in the
- * registry when the context starts:
+ * Sets up every listener container in the registry as the context starts. It carries the request id into what a
+ * container does after the listener's own code:
  * <ul>
  * <li>Wraps the container's error handler, Spring AMQP's or the service's own, in a {@link RequestIdErrorHandler}.</li>
  * <li>Adds {@link RequestIdHeaders} to the replies a listener sends as its return value. Spring AMQP sends those on the
  * consumer's channel, not through a {@code RabbitTemplate}. It is added after the listener's own reply post-processors,
  * so that a header the service sets itself wins.</li>
  * </ul>
+ * It keeps each container trying a login the broker refuses, as the direct container does by default. The simple
+ * container would otherwise fail the startup, or stop for good while the service runs, when the broker refuses its
+ * login, as after a broker rebuild. This overrides {@code mlc.possible.authentication.failure.fatal} in Spring AMQP's
+ * {@code spring.amqp.global.properties}, and a container customizer of the service's own. Spring Boot has no property
+ * for it.
+ * <p>
  * It also warns about a listener whose messages never reach the dead letter queue after an outage, see
  * {@link #warnIfPutBackUncounted}, and fails the startup for a channel-transacted container while the publisher
  * confirms are on, see {@link RabbitMqConfiguration#requireNoTransactionWithConfirms}.
  * <p>
- * Done here rather than on the container factory, which has no getter for either: setting one there would replace the
- * service's. Runs in the phase just before the registry, which starts the containers. A container the service declares
- * as a bean of its own, outside the registry, keeps both as they are, and so does one created after startup.
+ * The error handler and the reply post-processors are set here rather than on the container factory, which has no
+ * getter for them: setting one there would replace the service's. Nor has the factory a setter for the fatal login.
+ * Runs in the phase just before the registry, which starts the containers. A container the service declares as a bean
+ * of its own, outside the registry, keeps all of this as it is, and so does one created after startup.
  */
-class RequestIdContainerInstaller implements SmartLifecycle {
+class ListenerContainerInstaller implements SmartLifecycle {
 
-	private static final Logger LOG = LoggerFactory.getLogger(RequestIdContainerInstaller.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ListenerContainerInstaller.class);
 
 	private final ObjectProvider<RabbitListenerEndpointRegistry> registry;
 	private volatile boolean running;
 
-	RequestIdContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
+	ListenerContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
 		this.registry = registry;
 	}
 
@@ -52,6 +59,7 @@ class RequestIdContainerInstaller implements SmartLifecycle {
 				wrapErrorHandler(container);
 				addReplyHeaders(container);
 				warnIfPutBackUncounted(container);
+				container.setPossibleAuthenticationFailureFatal(false);
 			});
 		running = true;
 	}

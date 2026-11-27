@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import com.rabbitmq.client.Channel;
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
 import java.net.ProtocolException;
@@ -33,6 +34,8 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ThreadChannelConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.ListenerContainerConsumerFailedEvent;
+import org.springframework.amqp.rabbit.listener.QueuesNotAvailableException;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.AbstractAdaptableMessageListener;
@@ -49,6 +52,10 @@ import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainer
 import org.springframework.boot.amqp.autoconfigure.health.RabbitHealthContributorAutoConfiguration;
 import org.springframework.boot.amqp.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.AvailabilityChangeEvent;
+import org.springframework.boot.availability.LivenessState;
 import org.springframework.boot.health.contributor.CompositeHealthContributor;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
@@ -230,20 +237,38 @@ class RabbitMqConfigurationTest {
 	}
 
 	@Test
-	void listenersReportTheirHealthAsRabbitListenersAndRestartTheApplicationOnceStoppedForGood() {
+	void listenersReportTheirHealthAsRabbitListeners() {
 		contextRunner.run(context -> assertThat(context).hasBean("rabbitListenersHealthIndicator")
-			.hasSingleBean(RabbitListenersHealthIndicator.class)
-			.hasSingleBean(StoppedListenerLiveness.class));
+			.hasSingleBean(RabbitListenersHealthIndicator.class));
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = {
 		"management.health.rabbit-listeners.enabled=false", "management.health.defaults.enabled=false"
 	})
-	void theListenersHealthCanBeTurnedOffButNotTheRestart(final String property) {
+	void theListenersHealthCanBeTurnedOff(final String property) {
 		contextRunner.withPropertyValues(property).run(context -> assertThat(context)
-			.doesNotHaveBean(RabbitListenersHealthIndicator.class)
-			.hasSingleBean(StoppedListenerLiveness.class));
+			.doesNotHaveBean(RabbitListenersHealthIndicator.class));
+	}
+
+	/**
+	 * As for a service that sets missing-queues-fatal back to true, and whose queue is then removed. Restarting the pod
+	 * would not help: it would fail its startup, and answer no REST calls, until the queue is back. A container in the
+	 * registry shows as stopped in rabbitListeners instead.
+	 */
+	@Test
+	void aListenerContainerStoppedForGoodLeavesTheApplicationLive() {
+		contextRunner.withConfiguration(AutoConfigurations.of(ApplicationAvailabilityAutoConfiguration.class)).run(context -> {
+			assertThat(context).hasNotFailed();
+			// As SpringApplication sets it once the application has started, which the context runner does not
+			AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+			final var stopped = new SimpleMessageListenerContainer();
+
+			context.publishEvent(new ListenerContainerConsumerFailedEvent(stopped, "Consumer queue(s) not available",
+				new QueuesNotAvailableException("Cannot prepare queue for listener", new IOException("NOT_FOUND")), true));
+
+			assertThat(context.getBean(ApplicationAvailability.class).getLivenessState()).isEqualTo(LivenessState.CORRECT);
+		});
 	}
 
 	@Test

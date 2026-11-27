@@ -45,6 +45,7 @@ class RabbitMqDefaultPropertiesEnvironmentPostProcessorTest {
 			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".retry.max-retries")).isEqualTo("20");
 			assertThat(environment.getProperty("spring.rabbitmq.listener." + container + ".prefetch")).isEqualTo("1");
 		}
+		assertThat(environment.getProperty("spring.rabbitmq.listener.simple.missing-queues-fatal")).isEqualTo("false");
 	}
 
 	@Test

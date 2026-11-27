@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class RequestIdContainerInstallerTest {
+class ListenerContainerInstallerTest {
 
 	@Mock
 	private RabbitListenerEndpointRegistry mockRegistry;
@@ -37,7 +37,7 @@ class RequestIdContainerInstallerTest {
 		withOwn.setErrorHandler(own);
 		final var other = mock(MessageListenerContainer.class);
 		when(mockRegistry.getListenerContainers()).thenReturn(List.of(withDefault, withOwn, other));
-		final var installer = new RequestIdContainerInstaller(registry());
+		final var installer = new ListenerContainerInstaller(registry());
 
 		installer.start();
 
@@ -59,7 +59,7 @@ class RequestIdContainerInstallerTest {
 		final var plain = containerWith(plainListener);
 		when(mockRegistry.getListenerContainers()).thenReturn(List.of(withOwn, withNone, plain));
 
-		new RequestIdContainerInstaller(registry()).start();
+		new ListenerContainerInstaller(registry()).start();
 
 		final var withOwnPostProcessors = replyPostProcessors(withOwn);
 		assertThat(withOwnPostProcessors).hasSize(2);
@@ -70,10 +70,20 @@ class RequestIdContainerInstallerTest {
 	}
 
 	@Test
+	void aContainerKeepsTryingALoginTheBrokerRefuses() {
+		final var container = new SimpleMessageListenerContainer();
+		when(mockRegistry.getListenerContainers()).thenReturn(List.of(container));
+
+		new ListenerContainerInstaller(registry()).start();
+
+		assertThat(container.isPossibleAuthenticationFailureFatal()).isFalse();
+	}
+
+	@Test
 	void installsOnlyOnceOverARestart() {
 		final var container = containerWith(new MessageListenerAdapter(new Object()));
 		when(mockRegistry.getListenerContainers()).thenReturn(List.of(container));
-		final var installer = new RequestIdContainerInstaller(registry());
+		final var installer = new ListenerContainerInstaller(registry());
 
 		installer.start();
 		final var wrapped = container.getErrorHandler();
@@ -86,7 +96,7 @@ class RequestIdContainerInstallerTest {
 
 	@Test
 	void stops() {
-		final var installer = new RequestIdContainerInstaller(registry());
+		final var installer = new ListenerContainerInstaller(registry());
 		installer.start();
 
 		installer.stop();
@@ -98,7 +108,7 @@ class RequestIdContainerInstallerTest {
 	void runsJustBeforeTheRegistryStartsTheContainers() {
 		when(mockRegistry.getPhase()).thenReturn(Integer.MAX_VALUE);
 
-		assertThat(new RequestIdContainerInstaller(registry()).getPhase()).isEqualTo(Integer.MAX_VALUE - 1);
+		assertThat(new ListenerContainerInstaller(registry()).getPhase()).isEqualTo(Integer.MAX_VALUE - 1);
 	}
 
 	private static SimpleMessageListenerContainer containerWith(final MessageListener listener) {

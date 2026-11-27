@@ -266,8 +266,8 @@ class RabbitMqConfiguration {
 	 * Gets the registry through a provider: a bean that depends on the registry is started after it, whatever its phase.
 	 */
 	@Bean
-	RequestIdContainerInstaller dept44RequestIdContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
-		return new RequestIdContainerInstaller(registry);
+	ListenerContainerInstaller dept44ListenerContainerInstaller(final ObjectProvider<RabbitListenerEndpointRegistry> registry) {
+		return new ListenerContainerInstaller(registry);
 	}
 
 	/**
@@ -277,15 +277,6 @@ class RabbitMqConfiguration {
 	@ConditionalOnEnabledHealthIndicator("rabbit-listeners")
 	RabbitListenersHealthIndicator rabbitListenersHealthIndicator(final ApplicationContext context, final RabbitListenerEndpointRegistry registry) {
 		return new RabbitListenersHealthIndicator(context, registry);
-	}
-
-	/**
-	 * Has the service restarted once a listener container stops for good. Not tied to the health indicator, so that
-	 * turning that off does not turn this off too.
-	 */
-	@Bean
-	StoppedListenerLiveness dept44StoppedListenerLiveness(final ApplicationContext context) {
-		return new StoppedListenerLiveness(context);
 	}
 
 	@Bean

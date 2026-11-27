@@ -1,6 +1,7 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.core.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.ConsumeOkEvent;
 import org.springframework.amqp.rabbit.listener.ListenerContainerConsumerFailedEvent;
 import org.springframework.amqp.rabbit.listener.ListenerContainerConsumerTerminatedEvent;
@@ -24,6 +26,7 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -280,24 +283,120 @@ class RabbitListenersHealthIndicatorTest {
 	}
 
 	@Test
-	void eventsFromAContainerOutsideTheRegistryChangeNothing() {
+	void eventsFromAContainerNeitherInTheRegistryNorABeanChangeNothing() {
 		runningOn("q.a");
 		containers(Map.of("running", running));
 		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
 		indicator.onApplicationEvent(consumeOk("q.a"));
-		// Such as a container the service declares as a bean of its own, on the same queue
-		final var ownBean = container("q.a");
+		// Such as a container the service creates with new, on the same queue
+		final var outside = container("q.a");
 
-		indicator.onApplicationEvent(new ListenerContainerConsumerFailedEvent(ownBean, "Consumer raised exception, attempting restart", new IOException("Connection reset"), false));
-		indicator.onApplicationEvent(new MissingQueueEvent(ownBean, "q.a"));
+		indicator.onApplicationEvent(new ListenerContainerConsumerFailedEvent(outside, "Consumer raised exception, attempting restart", new IOException("Connection reset"), false));
+		indicator.onApplicationEvent(new MissingQueueEvent(outside, "q.a"));
 
 		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+	}
+
+	/**
+	 * As for a container the service declares as a bean of its own, outside the registry. It keeps Spring AMQP's fatal
+	 * defaults, and stops for good once its queue goes missing or the broker refuses its login.
+	 */
+	@Test
+	void downForAStoppedContainerBeanUnderItsBeanName() {
+		runningOn("q.a");
+		containers(Map.of("running", running));
+		when(context.getBeansOfType(MessageListenerContainer.class, false, false)).thenReturn(Map.of("ownContainer", container("q.own")));
+		indicator.onApplicationEvent(consumeOk("q.a"));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var health = indicator.health();
+
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getDetails()).containsExactly(Map.entry("stopped", Map.of("ownContainer", List.of("q.own"))));
+	}
+
+	@Test
+	void aRunningContainerBeanCountsAsAnyOther() {
+		runningOn("q.own");
+		when(context.getBeansOfType(MessageListenerContainer.class, false, false)).thenReturn(Map.of("ownContainer", running));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+		assertThat(indicator.health().getDetails()).containsExactly(Map.entry("notConsuming", Map.of("ownContainer", List.of("q.own"))));
+
+		indicator.onApplicationEvent(consumeOk("q.own"));
+
+		// Twice, since the bean is not in the registry and must not be forgotten as if unregistered
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+		assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+
+		indicator.onApplicationEvent(new MissingQueueEvent(running, "q.own"));
+		assertThat(indicator.health().getDetails()).containsExactly(Map.entry("notConsuming", Map.of("ownContainer", List.of("q.own"))));
+	}
+
+	/**
+	 * The service starts the container again after the indicator has found it stopped, and the broker confirms its
+	 * consumer before the indicator forgets the container's queues
+	 */
+	@Test
+	void keepsAConsumerConfirmedWhileAStoppedContainerIsStartedAgain() {
+		when(running.isAutoStartup()).thenReturn(true);
+		when(running.getQueueNames()).thenReturn(new String[] {
+			"q.a"
+		});
+		when(running.isRunning()).thenAnswer(_ -> {
+			indicator.onApplicationEvent(consumeOk("q.a"));
+			return false;
+		}).thenReturn(true);
+		containers(Map.of("running", running));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var foundStopped = indicator.health();
+		final var startedAgain = indicator.health();
+
+		assertThat(foundStopped.getDetails()).containsExactly(Map.entry("stopped", Map.of("running", List.of("q.a"))));
+		assertThat(startedAgain.getStatus()).isEqualTo(Status.UP);
+	}
+
+	/**
+	 * The service registers a listener after the indicator has read the registry, and the broker confirms its consumer
+	 * before the indicator forgets the containers no longer registered
+	 */
+	@Test
+	void keepsAConsumerOfAContainerRegisteredWhileTheHealthIsChecked() {
+		final var registered = new HashMap<String, MessageListenerContainer>();
+		when(registry.getListenerContainerIds()).thenAnswer(_ -> Set.copyOf(registered.keySet()));
+		when(registry.getListenerContainer(anyString())).thenAnswer(invocation -> registered.get(invocation.getArgument(0, String.class)));
+		when(registry.getListenerContainers()).thenAnswer(_ -> List.copyOf(registered.values()));
+		final var added = mock(SimpleMessageListenerContainer.class);
+		when(added.isAutoStartup()).thenReturn(true);
+		when(added.isRunning()).thenReturn(true);
+		when(added.getQueueNames()).thenReturn(new String[] {
+			"q.added"
+		});
+		when(running.isAutoStartup()).thenReturn(true);
+		when(running.getQueueNames()).thenReturn(new String[] {
+			"q.a"
+		});
+		when(running.isRunning()).thenAnswer(_ -> {
+			registered.put("added", added);
+			indicator.onApplicationEvent(consumeOk("q.added"));
+			return true;
+		}).thenReturn(true);
+		registered.put("running", running);
+		indicator.onApplicationEvent(consumeOk("q.a"));
+		indicator.onApplicationEvent(new ContextRefreshedEvent(context));
+
+		final var whileRegistered = indicator.health();
+		final var registeredSince = indicator.health();
+
+		assertThat(whileRegistered.getStatus()).isEqualTo(Status.UP);
+		assertThat(registeredSince.getStatus()).isEqualTo(Status.UP);
 	}
 
 	@Test
 	void aContainerStartedAgainIsNotConsumingUntilItsConsumersAreBack() {
 		when(running.isAutoStartup()).thenReturn(true);
-		when(running.isRunning()).thenReturn(false, true);
+		// Stopped as it is checked, and still as its queues are forgotten
+		when(running.isRunning()).thenReturn(false, false, true);
 		when(running.getQueueNames()).thenReturn(new String[] {
 			"q.a"
 		});

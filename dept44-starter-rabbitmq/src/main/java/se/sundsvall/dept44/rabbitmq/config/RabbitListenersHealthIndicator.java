@@ -1,12 +1,15 @@
 package se.sundsvall.dept44.rabbitmq.config;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jspecify.annotations.Nullable;
 import org.springframework.amqp.core.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.ConsumeOkEvent;
@@ -25,9 +28,11 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import static java.util.Objects.nonNull;
 
 /**
- * Reports DOWN for each listener container in the registry that should be running but is not, under {@code stopped}
- * with its queues, and for each one that runs without a consumer on one of its queues, under {@code notConsuming} with
- * those queues.
+ * Reports DOWN for each listener container that should be running but is not, under {@code stopped} with its queues,
+ * and for each one that runs without a consumer on one of its queues, under {@code notConsuming} with those queues. The
+ * containers are those in the registry, by listener id, and those the service declares as beans of its own, by bean
+ * name. A container bean keeps Spring AMQP's fatal defaults, so it stops for good where a container in the registry
+ * keeps trying.
  * <p>
  * A container runs without a consumer while the broker lacks its queue or refuses its login. It keeps trying, and
  * consumes once the queue or the user is back. Spring Boot's rabbit health only checks that a connection opens, and
@@ -36,7 +41,7 @@ import static java.util.Objects.nonNull;
  * says the queue is missing or one of its consumers has failed. A cancelled consumer says nothing about the queues: the
  * container has stopped one it no longer needs, while the others go on, or it starts the consumer again, which then
  * says for itself whether its queue is there. A consumer does not say which container it belongs to, so a consumer on
- * a queue counts for every container in the registry that listens to it.
+ * a queue counts for every container that listens to it.
  * <p>
  * A container that is not started automatically does not count. Until the context has started the containers, and
  * once it closes, the health is UNKNOWN: the registry's own {@code isRunning()} cannot tell, since it turns false only
@@ -64,16 +69,9 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 		}
 		final var stopped = new TreeMap<String, List<String>>();
 		final var notConsuming = new TreeMap<String, List<String>>();
-		final var registered = new HashSet<MessageListenerContainer>();
-		for (final var id : registry.getListenerContainerIds()) {
-			final var container = registry.getListenerContainer(id);
-			if (nonNull(container)) {
-				registered.add(container);
-				check(id, container, stopped, notConsuming);
-			}
-		}
-		// A container the service has unregistered is gone for good
-		consumed.keySet().retainAll(registered);
+		final var containers = containers();
+		containers.forEach((id, container) -> check(id, container, stopped, notConsuming));
+		forgetUnregistered(containers.values());
 		if (stopped.isEmpty() && notConsuming.isEmpty()) {
 			return Health.up().build();
 		}
@@ -110,16 +108,15 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 	 * The event comes from the consumer, which does not say which container it belongs to
 	 */
 	private void consumedFrom(final String queue) {
-		for (final var id : registry.getListenerContainerIds()) {
-			final var container = registry.getListenerContainer(id);
-			if (nonNull(container) && queues(container).contains(queue)) {
+		for (final var container : containers().values()) {
+			if (queues(container).contains(queue)) {
 				consumed.merge(container, Set.of(queue), RabbitListenersHealthIndicator::union);
 			}
 		}
 	}
 
 	/**
-	 * Only a container in the registry has an entry to change
+	 * Only a container from {@link #containers()} has an entry to change
 	 */
 	private void notConsumedFrom(final Object container, final String queue) {
 		if (container instanceof final MessageListenerContainer listenerContainer) {
@@ -142,9 +139,45 @@ class RabbitListenersHealthIndicator implements HealthIndicator, ApplicationList
 			}
 		} else {
 			// Forgotten, so that once started again it counts as not consuming until the broker confirms a consumer
-			consumed.remove(container);
+			consumed.computeIfPresent(container, RabbitListenersHealthIndicator::keptWhileRunning);
 			stopped.put(id, queues(container));
 		}
+	}
+
+	/**
+	 * Decided on the container as it is now: one the service has started since it was found stopped may already have a
+	 * consumer. A container is running before it starts its consumers.
+	 */
+	private static @Nullable Set<String> keptWhileRunning(final MessageListenerContainer container, final Set<String> queues) {
+		if (container.isRunning()) {
+			return queues;
+		}
+		return null;
+	}
+
+	/**
+	 * The containers in the registry, by listener id, and those the service declares as beans of its own, by bean name.
+	 * Prototype beans are left out rather than created.
+	 */
+	private Map<String, MessageListenerContainer> containers() {
+		final var beans = context.getBeansOfType(MessageListenerContainer.class, false, false);
+		final var containers = new HashMap<>(beans);
+		for (final var id : registry.getListenerContainerIds()) {
+			final var container = registry.getListenerContainer(id);
+			if (nonNull(container)) {
+				containers.put(id, container);
+			}
+		}
+		return containers;
+	}
+
+	/**
+	 * A container the service has unregistered is gone for good. The registry is read as it is now, since a container
+	 * registered after the containers were checked may already have a consumer.
+	 */
+	private void forgetUnregistered(final Collection<MessageListenerContainer> checked) {
+		final var registered = registry.getListenerContainers();
+		consumed.keySet().removeIf(container -> !checked.contains(container) && !registered.contains(container));
 	}
 
 	private List<String> queuesWithoutConsumer(final MessageListenerContainer container) {

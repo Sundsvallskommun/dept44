@@ -312,12 +312,12 @@ customizer of the service's own. A container keeps trying, and consumes once the
   others and tries the missing ones every 60 s.
 - The direct container, which does both by default, starts a consumer again within 5 to 10 s.
 
-`rabbitListeners` in `/actuator/health` is DOWN for each container in the registry that should run but does not,
-under `stopped` with its queues, and for each one that runs without a consumer on one of its queues, under
-`notConsuming` with those queues. It is in neither the liveness nor the readiness group, so Kubernetes neither
-restarts the pod nor stops sending it requests, while Spring Boot Admin shows the service as DOWN. A container that is
-not started automatically does not count, and neither does a container bean of the service's own.
-`management.health.rabbit-listeners.enabled=false` turns it off, as any other health indicator.
+`rabbitListeners` in `/actuator/health` is DOWN for each container that should run but does not, under `stopped` with
+its queues, and for each one that runs without a consumer on one of its queues, under `notConsuming` with those
+queues. It counts the containers in the registry, by listener id, and the service's own container beans, by bean name.
+It is in neither the liveness nor the readiness group, so Kubernetes neither restarts the pod nor stops sending it
+requests, while Spring Boot Admin shows the service as DOWN. A container that is not started automatically does not
+count. `management.health.rabbit-listeners.enabled=false` turns it off, as any other health indicator.
 
 `rabbitListeners` goes by the events the containers publish, and some of them say less than it would need:
 
@@ -325,7 +325,7 @@ not started automatically does not count, and neither does a container bean of t
   reached or refuses the vhost, and for about 5 s after the broker closes a simple container's connection, as when a
   node of the cluster restarts. Spring Boot Admin can show such a short DOWN, and notify about it.
 - A consumer does not say which container it belongs to. Any consumer of the service's own on a queue, also one of a
-  container outside the registry, therefore counts for every container in the registry that listens to it.
+  container that is neither in the registry nor a bean, therefore counts for every container that listens to it.
 - When one of a simple container's several queues is deleted, the broker cancels the container's consumer for all of
   them. For about 15 s, while the container tries the deleted queue, it consumes from none of them, but
   `notConsuming` lists only the deleted one.
@@ -360,11 +360,14 @@ Two kinds of simple container keep Spring AMQP's default and fail the startup on
 the service declares as a bean of its own. The other comes from a container factory the service sets up in code
 without Spring Boot's configurer, which the property does not reach. A container bean of the service's own also keeps
 the fatal login, and so does a container created after startup, such as one for a `@RabbitListener` on a `@Lazy` bean.
+While the service runs, each of them stops for good once its queue goes missing or the broker refuses its login,
+whichever of the two it keeps fatal, and shows as `stopped`.
 
 A service that sets `spring.rabbitmq.listener.simple.missing-queues-fatal=true` gets the failing startup on a missing
 queue back. There is no property to have the fatal login back. A container whose queue then goes missing while the
 service runs stops for good and shows as `stopped`, as does a container the service stops itself, or one stopped by a
-fatal failure the listener causes, such as a message it cannot handle. Nothing restarts the pod for any of them.
+fatal failure the listener causes, such as a message it cannot handle. Nothing restarts the pod for a stopped
+container, whatever stopped it.
 
 ### Request id over the queue
 

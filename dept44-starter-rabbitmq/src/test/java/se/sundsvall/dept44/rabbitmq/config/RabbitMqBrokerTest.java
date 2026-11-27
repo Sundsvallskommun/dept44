@@ -26,6 +26,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
@@ -90,6 +91,8 @@ class RabbitMqBrokerTest {
 	private static final String LATER_ROUTING_KEY = "later";
 	private static final String DIRECT_LATER_QUEUE = "dept44.test.direct-later";
 	private static final String DIRECT_LATER_ROUTING_KEY = "direct-later";
+	// Declared by the test that deletes it
+	private static final String BEAN_QUEUE = "dept44.test.bean";
 
 	@BeforeAll
 	static void startBroker() {
@@ -422,6 +425,26 @@ class RabbitMqBrokerTest {
 	}
 
 	/**
+	 * As for a container the service declares as a bean of its own. It keeps Spring AMQP's fatal defaults, and stops for
+	 * good once its queue is deleted, after it has tried the queue 3 more times 5 s apart.
+	 */
+	@Test
+	void aContainerBeanWhoseQueueIsDeletedShowsAsStopped() {
+		asAdmin(admin -> admin.declareQueue(QueueBuilder.durable(BEAN_QUEUE).quorum().build()));
+
+		contextRunner().withUserConfiguration(ContainerBean.class).run(context -> {
+			assertThat(context).hasNotFailed();
+			final var health = context.getBean(RabbitListenersHealthIndicator.class);
+			awaitUp(health);
+
+			asAdmin(admin -> admin.deleteQueue(BEAN_QUEUE));
+
+			final var stopped = Map.entry("stopped", Map.of(ContainerBean.NAME, List.of(BEAN_QUEUE)));
+			await().atMost(Duration.ofSeconds(40)).untilAsserted(() -> assertThat(health.health().getDetails()).containsExactly(stopped));
+		});
+	}
+
+	/**
 	 * As when the broker restarts under a running service. The connection drops, and the listener's consumer reconnects
 	 * once the broker is back. A refused connection is not fatal, so the application stays live and is not restarted.
 	 * <p>
@@ -610,6 +633,22 @@ class RabbitMqBrokerTest {
 		@RabbitListener(id = ID, queues = DIRECT_LATER_QUEUE)
 		void receive(final Payload payload) {
 			SEEN.add(payload);
+		}
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class ContainerBean {
+
+		static final String NAME = "ownContainer";
+
+		@Bean(NAME)
+		SimpleMessageListenerContainer ownContainer(final ConnectionFactory connectionFactory) {
+			final var container = new SimpleMessageListenerContainer(connectionFactory);
+			container.setQueueNames(BEAN_QUEUE);
+			container.setMessageListener(_ -> {
+				// Never gets a message
+			});
+			return container;
 		}
 	}
 
